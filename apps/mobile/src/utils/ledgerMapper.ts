@@ -1,0 +1,16 @@
+import type { LedgerEntry } from "../types/ledger";
+import type { LedgerEntryRow } from "../types/supabase";
+
+export function mapLedgerEntryRow(row: LedgerEntryRow, authorName?: string): LedgerEntry {
+  return {
+    authorId: row.user_id,
+    authorName,
+    id: row.id,
+    date: row.occurred_on,
+    type: row.entry_type,
+    amount: Number(row.amount),
+    category: row.category,
+    note: row.note,
+    sourceType: row.source_type,
+  };
+}

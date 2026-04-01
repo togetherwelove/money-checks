@@ -1,0 +1,39 @@
+{
+  "name": "mobile",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./index.ts",
+  "scripts": {
+    "build:info": "node scripts/write-build-info.cjs",
+    "dev": "node scripts/write-build-info.cjs && expo start",
+    "android": "node scripts/write-build-info.cjs && expo run:android",
+    "ios": "node scripts/write-build-info.cjs && expo run:ios",
+    "web": "node scripts/write-build-info.cjs && expo start --web --host lan",
+    "web:build": "node scripts/write-build-info.cjs && expo export --platform web && workbox generateSW workbox-config.cjs",
+    "web:serve": "python -m http.server 8080 --directory dist",
+    "lint": "biome check .",
+    "format": "biome format --write ."
+  },
+  "dependencies": {
+    "@expo/metro-runtime": "~5.0.5",
+    "@expo/vector-icons": "~14.1.0",
+    "@supabase/supabase-js": "^2.101.1",
+    "expo": "~53.0.9",
+    "expo-camera": "~16.1.6",
+    "expo-image-picker": "~16.1.4",
+    "expo-sqlite": "^55.0.11",
+    "expo-status-bar": "~2.2.3",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "react-native": "0.79.2",
+    "react-native-url-polyfill": "^3.0.0",
+    "react-native-web": "^0.20.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "@types/react": "~19.0.10",
+    "babel-preset-expo": "~13.0.0",
+    "typescript": "~5.8.3",
+    "workbox-cli": "^7.3.0"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "money-checks",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.10.0",
+  "scripts": {
+    "bootstrap:mobile": "pnpm --filter mobile install",
+    "lint:mobile": "pnpm --filter mobile biome check .",
+    "format:mobile": "pnpm --filter mobile biome format --write ."
+  }
+}
+
