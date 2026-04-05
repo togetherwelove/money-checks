@@ -4,6 +4,12 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { AppColors } from "../constants/colors";
 import type { CalendarDay } from "../types/ledger";
 import { formatCurrency } from "../utils/calendar";
+import {
+  CALENDAR_DAY_CELL_MIN_HEIGHT,
+  CALENDAR_ROW_HEIGHT,
+  CALENDAR_ROW_PADDING,
+} from "./monthCalendarPager/calendarLayout";
+import { getVisibleCalendarDays } from "./monthCalendarPager/calendarWeekCount";
 
 type MonthCalendarProps = {
   days: CalendarDay[];
@@ -12,13 +18,9 @@ type MonthCalendarProps = {
 };
 
 const CELL_WIDTH = "14.2857%";
-const CALENDAR_CELL_MIN_HEIGHT = 48;
-const CALENDAR_ROW_PADDING_VERTICAL = 2;
-
-export const CALENDAR_ROW_HEIGHT = CALENDAR_CELL_MIN_HEIGHT + CALENDAR_ROW_PADDING_VERTICAL * 2;
 
 export function MonthCalendar({ days, onSelectDate, selectedDate }: MonthCalendarProps) {
-  const visibleDays = useMemo(() => getVisibleDays(days), [days]);
+  const visibleDays = useMemo(() => getVisibleCalendarDays(days), [days]);
 
   return (
     <View style={styles.container}>
@@ -106,24 +108,6 @@ function DayCell({
   );
 }
 
-function getVisibleDays(days: CalendarDay[]): CalendarDay[] {
-  return chunkDays(days).filter(weekHasCurrentMonth).flat();
-}
-
-export function getCalendarWeekCount(days: CalendarDay[]): number {
-  return chunkDays(days).filter(weekHasCurrentMonth).length;
-}
-
-function chunkDays(days: CalendarDay[]): CalendarDay[][] {
-  return Array.from({ length: Math.ceil(days.length / 7) }, (_value, weekIndex) =>
-    days.slice(weekIndex * 7, weekIndex * 7 + 7),
-  );
-}
-
-function weekHasCurrentMonth(week: CalendarDay[]): boolean {
-  return week.some((day) => day.isCurrentMonth);
-}
-
 const styles = StyleSheet.create({
   container: {
     width: "100%",
@@ -135,11 +119,11 @@ const styles = StyleSheet.create({
   daySlot: {
     width: CELL_WIDTH,
     paddingHorizontal: 1,
-    paddingVertical: CALENDAR_ROW_PADDING_VERTICAL,
+    paddingVertical: CALENDAR_ROW_PADDING,
   },
   dayCell: {
     position: "relative",
-    minHeight: CALENDAR_CELL_MIN_HEIGHT,
+    minHeight: CALENDAR_DAY_CELL_MIN_HEIGHT,
     paddingHorizontal: 2,
     paddingVertical: 2,
     backgroundColor: AppColors.surface,

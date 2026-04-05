@@ -1,13 +1,12 @@
 export function resolveFallbackDisplayName(
   userMetadata: Record<string, unknown> | undefined,
-  email: string | undefined,
+  _email: string | undefined,
 ): string {
   return (
     getStringMetadata(userMetadata, "full_name") ??
     getStringMetadata(userMetadata, "name") ??
     getStringMetadata(userMetadata, "user_name") ??
     getStringMetadata(userMetadata, "preferred_username") ??
-    email ??
     ""
   );
 }

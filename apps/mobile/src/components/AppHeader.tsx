@@ -1,46 +1,63 @@
+import type { ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
-import { AppMessages } from "../constants/messages";
-import type { LedgerAppScreen } from "../types/app";
 import { IconActionButton } from "./IconActionButton";
 
 type AppHeaderProps = {
-  activeScreen: LedgerAppScreen;
+  isMenuOpen?: boolean;
+  leadingAction?: ReactNode;
   onOpenMenu: () => void;
+  titleLabel?: string | null;
+  yearLabel?: string | null;
 };
 
-export function AppHeader({ activeScreen, onOpenMenu }: AppHeaderProps) {
+export function AppHeader({
+  isMenuOpen = false,
+  leadingAction = null,
+  onOpenMenu,
+  titleLabel = null,
+  yearLabel = null,
+}: AppHeaderProps) {
+  const centerLabel = yearLabel ?? titleLabel;
+
   return (
     <View style={styles.container}>
-      <View pointerEvents="none" style={styles.titleOverlay}>
-        <Text style={styles.titleText}>{AppMessages.brand}</Text>
+      <View style={styles.sideSlot}>{leadingAction}</View>
+      <View pointerEvents="none" style={styles.titleSlot}>
+        {centerLabel ? <Text style={styles.titleText}>{centerLabel}</Text> : null}
       </View>
-      <IconActionButton icon="menu" isActive={activeScreen === "menu"} onPress={onOpenMenu} />
+      <View style={[styles.sideSlot, styles.menuSlot]}>
+        <IconActionButton icon="menu" isActive={isMenuOpen} onPress={onOpenMenu} />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    position: "relative",
     flexDirection: "row",
-    justifyContent: "flex-end",
     alignItems: "center",
-    minHeight: 50,
+    minHeight: 60,
     paddingHorizontal: 8,
     paddingVertical: 6,
   },
-  titleOverlay: {
-    position: "absolute",
-    left: 8,
-    right: 8,
+  sideSlot: {
+    width: 104,
+    justifyContent: "center",
+  },
+  menuSlot: {
+    alignItems: "flex-end",
+  },
+  titleSlot: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: 8,
   },
   titleText: {
     color: AppColors.text,
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: "800",
   },
 });

@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
 import { AppMessages } from "../constants/messages";
-import { signOutFromApp } from "../lib/auth/googleAuth";
+import { signOutFromApp } from "../lib/auth/signOut";
 
 type SessionBarProps = {
   email: string;

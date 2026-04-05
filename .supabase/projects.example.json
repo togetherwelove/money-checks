@@ -1,0 +1,8 @@
+{
+  "development": {
+    "projectRef": "your-development-project-ref"
+  },
+  "test": {
+    "projectRef": "your-test-project-ref"
+  }
+}

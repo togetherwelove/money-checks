@@ -1,27 +1,32 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
+import { useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
 
+import { EntryDatePickerModal } from "../components/EntryDatePickerModal";
 import { EntryDateToolbar } from "../components/EntryDateToolbar";
+import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { LedgerEditorPanel } from "../components/LedgerEditorPanel";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
-import { AppMessages } from "../constants/messages";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
+import { appPlatform } from "../lib/appPlatform";
 import { addDays, formatSelectedDate, parseIsoDate, toIsoDate } from "../utils/calendar";
 
 const PREVIOUS_DAY_OFFSET = -1;
 const NEXT_DAY_OFFSET = 1;
 
 type EntryScreenProps = {
-  onCancelEntry: () => void;
   onSaveEntry: () => Promise<void>;
   state: LedgerScreenState;
 };
 
-export function EntryScreen({ onCancelEntry, onSaveEntry, state }: EntryScreenProps) {
+export function EntryScreen({ onSaveEntry, state }: EntryScreenProps) {
   const actualToday = new Date();
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const {
     draft,
     editingEntryId,
+    entries,
     errorMessage,
     selectedDate,
     handleSelectDate,
@@ -29,31 +34,55 @@ export function EntryScreen({ onCancelEntry, onSaveEntry, state }: EntryScreenPr
     updateDraftField,
     updateDraftType,
   } = state;
+  const pickerMode = appPlatform.entryDatePickerMode;
+
+  const handleOpenDatePicker = () => {
+    if (pickerMode === "native" && appPlatform.usesAndroidDatePickerDialog) {
+      DateTimePickerAndroid.open({
+        mode: "date",
+        value: parseIsoDate(selectedDate),
+        onChange: (_event, nextDate) => {
+          if (!nextDate) {
+            return;
+          }
+
+          handleSelectDate(toIsoDate(nextDate));
+        },
+      });
+      return;
+    }
+
+    setIsDatePickerOpen(true);
+  };
 
   return (
-    <ScrollView contentContainerStyle={styles.content} style={styles.screen}>
-      <View style={styles.header}>
-        <View style={styles.headerText}>
-          <Text style={styles.title}>{AppMessages.entryScreenTitle}</Text>
-          <Text style={styles.subtitle}>{AppMessages.entryScreenSubtitle}</Text>
-        </View>
-      </View>
-      {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
-      <EntryDateToolbar
-        dateLabel={formatSelectedDate(selectedDate)}
-        onMoveNextDay={() => moveDay(selectedDate, NEXT_DAY_OFFSET, handleSelectDate)}
-        onMovePreviousDay={() => moveDay(selectedDate, PREVIOUS_DAY_OFFSET, handleSelectDate)}
-        onMoveToToday={() => handleSelectDate(toIsoDate(actualToday))}
+    <>
+      <KeyboardAwareScrollView contentContainerStyle={styles.content} style={styles.screen}>
+        {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
+        <EntryDateToolbar
+          dateLabel={formatSelectedDate(selectedDate)}
+          onMoveNextDay={() => moveDay(selectedDate, NEXT_DAY_OFFSET, handleSelectDate)}
+          onMovePreviousDay={() => moveDay(selectedDate, PREVIOUS_DAY_OFFSET, handleSelectDate)}
+          onMoveToToday={() => handleSelectDate(toIsoDate(actualToday))}
+          onPressDateLabel={handleOpenDatePicker}
+        />
+        <LedgerEditorPanel
+          draft={draft}
+          editingEntryId={editingEntryId}
+          onChangeDraft={updateDraftField}
+          onSaveEntry={onSaveEntry}
+          onSelectType={updateDraftType}
+        />
+      </KeyboardAwareScrollView>
+      <EntryDatePickerModal
+        entries={entries}
+        isOpen={isDatePickerOpen}
+        mode={pickerMode}
+        onClose={() => setIsDatePickerOpen(false)}
+        onSelectDate={handleSelectDate}
+        selectedDate={selectedDate}
       />
-      <LedgerEditorPanel
-        draft={draft}
-        editingEntryId={editingEntryId}
-        onCancelEdit={onCancelEntry}
-        onChangeDraft={updateDraftField}
-        onSaveEntry={onSaveEntry}
-        onSelectType={updateDraftType}
-      />
-    </ScrollView>
+    </>
   );
 }
 
@@ -76,27 +105,6 @@ const styles = StyleSheet.create({
     gap: AppLayout.cardGap,
     backgroundColor: AppColors.background,
     paddingBottom: 24,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: 12,
-    paddingTop: 8,
-  },
-  headerText: {
-    flex: 1,
-    gap: 4,
-  },
-  title: {
-    color: AppColors.text,
-    fontSize: 22,
-    fontWeight: "800",
-  },
-  subtitle: {
-    color: AppColors.mutedText,
-    fontSize: 13,
-    lineHeight: 18,
   },
   error: {
     color: AppColors.expense,

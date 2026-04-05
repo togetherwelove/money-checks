@@ -1,7 +1,9 @@
 import type { ProfileDisplayRow } from "../types/supabase";
+import { isValidDisplayName } from "../utils/displayName";
 import { supabase } from "./supabase";
 
 const PROFILE_TABLE = "profiles";
+const INVALID_DISPLAY_NAME_ERROR = "Display name is required.";
 
 export async function fetchProfileDisplayName(userId: string): Promise<string> {
   const { data, error } = await supabase
@@ -25,6 +27,10 @@ export async function updateOwnProfileDisplayName(
   userId: string,
   displayName: string,
 ): Promise<string> {
+  if (!isValidDisplayName(displayName)) {
+    throw new Error(INVALID_DISPLAY_NAME_ERROR);
+  }
+
   const { data, error } = await supabase
     .from(PROFILE_TABLE)
     .update({ display_name: displayName.trim() })

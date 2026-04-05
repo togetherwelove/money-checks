@@ -9,13 +9,19 @@ import type {
   LedgerBookJoinRequestProfileRow,
   LedgerBookMemberProfileRow,
   LedgerBookRow,
-  ProfileRow,
 } from "../types/supabase";
 import { mapLedgerBookRow } from "../utils/ledgerBookMapper";
+import { logAppError, logAppWarning } from "./logAppError";
 import { supabase } from "./supabase";
 
 const GET_ACCESSIBLE_LEDGER_BOOK_FUNCTION = "get_accessible_ledger_book";
+const ENSURE_OWN_PERSONAL_LEDGER_BOOK_FUNCTION = "ensure_own_personal_ledger_book";
 const PROFILES_TABLE = "profiles";
+
+type ActiveBookProfileRow = {
+  active_book_id: string | null;
+  id: string;
+};
 
 export async function fetchLedgerBookById(bookId: string): Promise<LedgerBook> {
   const { data, error: bookError } = await supabase
@@ -34,16 +40,39 @@ export async function fetchLedgerBookById(bookId: string): Promise<LedgerBook> {
 export async function fetchActiveLedgerBook(userId: string): Promise<LedgerBook | null> {
   const { data: profile, error: profileError } = await supabase
     .from(PROFILES_TABLE)
-    .select("active_book_id")
+    .select("id, active_book_id")
     .eq("id", userId)
-    .single<ProfileRow>();
+    .maybeSingle<ActiveBookProfileRow>();
 
   if (profileError) {
     throw profileError;
   }
 
+  if (!profile) {
+    logAppWarning("LedgerBooks", "Profile row missing. Recreating own profile.", { userId });
+    const { error: insertProfileError } = await supabase
+      .from(PROFILES_TABLE)
+      .insert({ id: userId });
+
+    if (insertProfileError) {
+      logAppError("LedgerBooks", insertProfileError, {
+        step: "insert_missing_profile",
+        userId,
+      });
+      throw insertProfileError;
+    }
+  }
+
   if (!profile?.active_book_id) {
-    return null;
+    const { data: ensuredBookId, error: ensureBookError } = await supabase.rpc(
+      ENSURE_OWN_PERSONAL_LEDGER_BOOK_FUNCTION,
+    );
+
+    if (ensureBookError || typeof ensuredBookId !== "string" || !ensuredBookId) {
+      throw ensureBookError ?? new Error("Failed to provision the personal ledger book.");
+    }
+
+    return fetchLedgerBookById(ensuredBookId);
   }
 
   return fetchLedgerBookById(profile.active_book_id);

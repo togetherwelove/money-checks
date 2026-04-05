@@ -1,38 +1,27 @@
-import { StyleSheet, Text, View } from "react-native";
-
-import { AppColors } from "../constants/colors";
-import { IconActionButton } from "./IconActionButton";
+import { DateNavigationToolbar } from "./DateNavigationToolbar";
 
 type CalendarToolbarProps = {
   monthLabel: string;
+  onMoveNextMonth: () => void;
+  onMovePreviousMonth: () => void;
   onMoveToCurrentMonth: () => void;
+  onPressMonthLabel: () => void;
 };
 
-export function CalendarToolbar({ monthLabel, onMoveToCurrentMonth }: CalendarToolbarProps) {
+export function CalendarToolbar({
+  monthLabel,
+  onMoveNextMonth,
+  onMovePreviousMonth,
+  onMoveToCurrentMonth,
+  onPressMonthLabel,
+}: CalendarToolbarProps) {
   return (
-    <View style={styles.container}>
-      <Text style={styles.monthLabel}>{monthLabel}</Text>
-      <View style={styles.todayButton}>
-        <IconActionButton icon="clock" onPress={onMoveToCurrentMonth} />
-      </View>
-    </View>
+    <DateNavigationToolbar
+      label={monthLabel}
+      onMoveNext={onMoveNextMonth}
+      onMovePrevious={onMovePreviousMonth}
+      onMoveToCurrent={onMoveToCurrentMonth}
+      onPressLabel={onPressMonthLabel}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    position: "relative",
-    alignItems: "flex-start",
-    justifyContent: "center",
-    minHeight: 28,
-  },
-  monthLabel: {
-    color: AppColors.accent,
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  todayButton: {
-    position: "absolute",
-    right: 0,
-  },
-});

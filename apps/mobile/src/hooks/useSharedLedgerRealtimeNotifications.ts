@@ -3,10 +3,12 @@ import { useEffect, useRef } from "react";
 
 import { DEFAULT_MEMBER_DISPLAY_NAME } from "../constants/ledgerDisplay";
 import { fetchProfileDisplayName } from "../lib/profiles";
+import { consumeSharedLedgerExitIntent } from "../lib/sharedLedgerExitIntent";
 import { supabase } from "../lib/supabase";
 import {
   createMemberJoinedBookEvent,
   createMemberLeftBookEvent,
+  createMemberRemovedFromBookEvent,
   createOtherMemberCreatedEntryEvent,
   createOtherMemberDeletedEntryEvent,
   createOtherMemberUpdatedEntryEvent,
@@ -155,7 +157,19 @@ export function useSharedLedgerRealtimeNotifications({
       }
 
       const deletedUserId = typeof payload.old.user_id === "string" ? payload.old.user_id : null;
-      if (!deletedUserId || deletedUserId === currentUserId) {
+      if (!deletedUserId) {
+        return;
+      }
+
+      if (deletedUserId === currentUserId) {
+        if (consumeSharedLedgerExitIntent(currentUserId, currentBook.id)) {
+          return;
+        }
+
+        const actorName = await resolveDisplayName(currentBook.ownerId);
+        await notifyLedgerEventRef.current(
+          createMemberRemovedFromBookEvent(actorName, currentBook.name),
+        );
         return;
       }
 

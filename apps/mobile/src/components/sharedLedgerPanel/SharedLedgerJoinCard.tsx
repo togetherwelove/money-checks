@@ -42,7 +42,7 @@ export function SharedLedgerJoinCard({
       />
       {isJoinBlocked ? (
         <Text style={[styles.hintText, styles.errorText]}>
-          {ShareLedgerSecurityCopy.joinRequestBlockedForSharedOwner}
+          {ShareLedgerSecurityCopy.joinRequestBlockedForSharedMember}
         </Text>
       ) : null}
       <Text style={styles.hintText}>{ShareLedgerSecurityCopy.joinRequestHint}</Text>

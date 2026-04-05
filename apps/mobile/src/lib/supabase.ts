@@ -1,18 +1,18 @@
 import "react-native-url-polyfill/auto";
 
 import { createClient } from "@supabase/supabase-js";
-import { Platform } from "react-native";
 
+import { appPlatform } from "./appPlatform";
 import { authStorage } from "./supabaseStorage";
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? "";
-const supabasePublishableKey = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "";
+export const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? "";
+export const supabasePublishableKey = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "";
 
 export const supabase = createClient(supabaseUrl, supabasePublishableKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: Platform.OS === "web",
+    detectSessionInUrl: false,
     storage: authStorage,
   },
 });

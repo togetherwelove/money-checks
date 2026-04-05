@@ -1,13 +1,14 @@
 import {
+  CALENDAR_DAYS_PER_WEEK,
+  CALENDAR_WEEK_ROWS,
+} from "../components/monthCalendarPager/calendarLayout";
+import {
   EMPTY_CATEGORY_LABEL,
   KRW_CURRENCY_SUFFIX,
   formatMonthLabel,
 } from "../constants/ledgerDisplay";
 import type { CalendarDay, LedgerEntry, MonthlyLedgerSummary } from "../types/ledger";
 import { formatAmountNumber } from "./amount";
-
-const CALENDAR_WEEKS = 6;
-const CALENDAR_DAYS_PER_WEEK = 7;
 
 const selectedDateFormatter = new Intl.DateTimeFormat("ko-KR", {
   month: "long",
@@ -86,7 +87,7 @@ function buildCalendarDays(
   const firstDay = startOfMonth(monthDate);
   const startOffset = firstDay.getDay();
   const daysInMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0).getDate();
-  const totalCells = CALENDAR_WEEKS * CALENDAR_DAYS_PER_WEEK;
+  const totalCells = CALENDAR_WEEK_ROWS * CALENDAR_DAYS_PER_WEEK;
   const previousMonth = addMonths(monthDate, -1);
   const nextMonth = addMonths(monthDate, 1);
   const previousMonthLastDay = new Date(

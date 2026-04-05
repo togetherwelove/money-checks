@@ -11,6 +11,7 @@ import {
   toIsoDate,
 } from "../utils/calendar";
 import { createDraft, sanitizeAmountInput } from "../utils/ledgerEntries";
+import { buildMonthlyInsights } from "../utils/monthlyInsights";
 import { removeLedgerEntry, saveLedgerEntry } from "./ledgerScreenState/helpers";
 import type { BusyTaskTracker, LedgerScreenState } from "./ledgerScreenState/types";
 import { useActiveLedgerBook } from "./ledgerScreenState/useActiveLedgerBook";
@@ -43,6 +44,10 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
 
   const monthlyLedger = useMemo(
     () => buildMonthlyLedger(getMonthKey(visibleMonth), entries),
+    [entries, visibleMonth],
+  );
+  const monthlyInsights = useMemo(
+    () => buildMonthlyInsights(getMonthKey(visibleMonth), entries),
     [entries, visibleMonth],
   );
   const selectedEntries = useMemo(
@@ -135,6 +140,7 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
     joinSharedLedgerBookByCode,
     leaveSharedLedgerBook,
     monthlyLedger,
+    monthlyInsights,
     pendingJoinRequests,
     approveLedgerJoinRequest,
     rejectLedgerJoinRequest,

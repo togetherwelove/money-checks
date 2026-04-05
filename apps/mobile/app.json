@@ -23,6 +23,7 @@
       "adaptiveIcon": {
         "backgroundColor": "#f5f1e8"
       }
-    }
+    },
+    "plugins": ["@react-native-community/datetimepicker", "expo-sqlite", "expo-font"]
   }
 }

@@ -22,8 +22,8 @@ export function resolveSharedLedgerJoinErrorMessage(error: unknown): string {
     return ShareLedgerMessages.joinCooldownError;
   }
 
-  if (errorText.includes("Shared ledger owners cannot request another shared ledger.")) {
-    return ShareLedgerMessages.joinSharedOwnerBlockedError;
+  if (errorText.includes("Active shared ledger editors cannot request another shared ledger.")) {
+    return ShareLedgerMessages.joinSharedMemberBlockedError;
   }
 
   if (errorText.includes("Ledger book not found for code")) {

@@ -1,14 +1,18 @@
 import { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { StyleSheet, Text, TextInput, View } from "react-native";
 
 import { ActionButton } from "../components/ActionButton";
-import { ScreenHeaderBlock } from "../components/ScreenHeaderBlock";
+import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { AccountVersionFooter } from "../components/accountScreen/AccountVersionFooter";
+import { DeleteAccountCard } from "../components/accountScreen/DeleteAccountCard";
 import { AppColors } from "../constants/colors";
+import { EmailAuthCopy } from "../constants/emailAuth";
+import { NicknameAutofillProps } from "../constants/inputAutofill";
 import { AppLayout } from "../constants/layout";
 import { AppMessages } from "../constants/messages";
-import { signOutFromApp } from "../lib/auth/googleAuth";
+import { signOutFromApp } from "../lib/auth/signOut";
 import { fetchOwnProfileDisplayName, updateOwnProfileDisplayName } from "../lib/profiles";
+import { isValidDisplayName, normalizeDisplayNameCandidate } from "../utils/displayName";
 
 type AccountScreenProps = {
   email: string;
@@ -27,8 +31,9 @@ export function AccountScreen({ email, fallbackDisplayName, userId }: AccountScr
     const loadProfile = async () => {
       try {
         const nextDisplayName = await fetchOwnProfileDisplayName(userId);
-        if (isMounted && nextDisplayName.trim()) {
-          setDisplayName(nextDisplayName);
+        const normalizedDisplayName = normalizeDisplayNameCandidate(nextDisplayName);
+        if (isMounted && normalizedDisplayName) {
+          setDisplayName(normalizedDisplayName);
         }
       } catch {
         if (isMounted) {
@@ -45,6 +50,12 @@ export function AccountScreen({ email, fallbackDisplayName, userId }: AccountScr
   }, [fallbackDisplayName, userId]);
 
   const handleSaveDisplayName = async () => {
+    if (!isValidDisplayName(displayName)) {
+      setHasError(true);
+      setStatusMessage(AppMessages.accountNicknameRequiredError);
+      return;
+    }
+
     try {
       const savedDisplayName = await updateOwnProfileDisplayName(userId, displayName);
       setDisplayName(savedDisplayName || fallbackDisplayName);
@@ -57,17 +68,17 @@ export function AccountScreen({ email, fallbackDisplayName, userId }: AccountScr
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.content} style={styles.screen}>
-      <ScreenHeaderBlock eyebrow={AppMessages.menuTitle} title={AppMessages.accountTitle} />
+    <KeyboardAwareScrollView contentContainerStyle={styles.content} style={styles.screen}>
       <View style={[styles.card, styles.primaryCard]}>
         <Text style={styles.cardTitle}>{AppMessages.accountSessionTitle}</Text>
         <InfoRow label={AppMessages.accountEmail} value={email} />
-        <InfoRow label={AppMessages.accountProvider} value={AppMessages.accountProviderValue} />
+        <InfoRow label={AppMessages.accountProvider} value={EmailAuthCopy.accountProviderValue} />
       </View>
       <View style={styles.card}>
         <Text style={styles.cardTitle}>{AppMessages.accountNicknameTitle}</Text>
         <Text style={styles.label}>{AppMessages.accountNicknameLabel}</Text>
         <TextInput
+          {...NicknameAutofillProps}
           onChangeText={(value) => {
             setDisplayName(value);
             if (statusMessage) {
@@ -103,8 +114,9 @@ export function AccountScreen({ email, fallbackDisplayName, userId }: AccountScr
           />
         </View>
       </View>
+      <DeleteAccountCard />
       <AccountVersionFooter />
-    </ScrollView>
+    </KeyboardAwareScrollView>
   );
 }
 

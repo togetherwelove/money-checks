@@ -1,6 +1,6 @@
 export const AppBuildInfo = {
   appVersion: "1.0.0",
-  buildId: "20260402-000406",
-  builtAtIso: "2026-04-01T15:04:06.390Z",
-  builtAtLabel: "2026-04-02 00:04:06 KST",
+  buildId: "20260404-020110",
+  builtAtIso: "2026-04-03T17:01:10.851Z",
+  builtAtLabel: "2026-04-04 02:01:10 KST",
 } as const;

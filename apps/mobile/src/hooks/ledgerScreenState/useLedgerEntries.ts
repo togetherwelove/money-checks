@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { DEFAULT_MEMBER_DISPLAY_NAME } from "../../constants/ledgerDisplay";
 import { AppMessages } from "../../constants/messages";
+import { logAppError } from "../../lib/logAppError";
 import { fetchProfileDisplayName } from "../../lib/profiles";
 import { supabase } from "../../lib/supabase";
 import type { LedgerEntry } from "../../types/ledger";
@@ -53,7 +54,12 @@ export function useLedgerEntries(
         if (isMounted) {
           setEntries(nextEntries);
         }
-      } catch {
+      } catch (error) {
+        logAppError("LedgerEntries", error, {
+          activeBookId,
+          step: "load_entries",
+          visibleMonth: visibleMonth.toISOString(),
+        });
         if (isMounted) {
           setEntriesError(AppMessages.ledgerError);
         }
@@ -102,7 +108,12 @@ export function useLedgerEntries(
       try {
         authorName =
           (await fetchProfileDisplayName(changedRow.user_id)).trim() || DEFAULT_MEMBER_DISPLAY_NAME;
-      } catch {
+      } catch (error) {
+        logAppError("LedgerEntries", error, {
+          authorUserId: changedRow.user_id,
+          entryId: changedRow.id,
+          step: "load_entry_author_name",
+        });
         authorName = DEFAULT_MEMBER_DISPLAY_NAME;
       }
 
@@ -152,7 +163,12 @@ export function useLedgerEntries(
     try {
       const nextEntries = await loadBookEntries(activeBookId, visibleMonth);
       setEntries(nextEntries);
-    } catch {
+    } catch (error) {
+      logAppError("LedgerEntries", error, {
+        activeBookId,
+        step: "refresh_entries",
+        visibleMonth: visibleMonth.toISOString(),
+      });
       setEntriesError(AppMessages.ledgerError);
     } finally {
       setIsRefreshing(false);

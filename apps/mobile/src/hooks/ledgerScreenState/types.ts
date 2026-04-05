@@ -2,6 +2,7 @@ import type {
   LedgerEntry,
   LedgerEntryDraft,
   LedgerEntryType,
+  MonthlyInsights,
   MonthlyLedgerSummary,
 } from "../../types/ledger";
 import type { LedgerBook } from "../../types/ledgerBook";
@@ -24,6 +25,7 @@ export type LedgerScreenState = {
   joinSharedLedgerBookByCode: (shareCode: string) => Promise<JoinSharedLedgerBookAttempt>;
   leaveSharedLedgerBook: () => Promise<boolean>;
   monthlyLedger: MonthlyLedgerSummary;
+  monthlyInsights: MonthlyInsights;
   pendingJoinRequests: LedgerBookJoinRequest[];
   approveLedgerJoinRequest: (requestId: string) => Promise<boolean>;
   rejectLedgerJoinRequest: (requestId: string) => Promise<boolean>;

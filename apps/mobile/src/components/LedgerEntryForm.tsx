@@ -1,17 +1,18 @@
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { StyleSheet, TextInput, View } from "react-native";
 
 import { CategorySelector } from "../components/CategorySelector";
 import { CATEGORY_OPTIONS } from "../constants/categories";
 import { AppColors } from "../constants/colors";
+import { DisabledAutofillProps } from "../constants/inputAutofill";
 import { AppMessages } from "../constants/messages";
 import type { LedgerEntryDraft, LedgerEntryType } from "../types/ledger";
 import { formatAmountInput } from "../utils/amount";
 import { ActionButton } from "./ActionButton";
+import { EntryDirectionSelector } from "./EntryDirectionSelector";
 
 type LedgerEntryFormProps = {
   draft: LedgerEntryDraft;
   editingEntryId: string | null;
-  onCancelEdit: () => void;
   onChangeDraft: (field: keyof LedgerEntryDraft, value: string) => void;
   onSaveEntry: () => void;
   onSelectType: (type: LedgerEntryType) => void;
@@ -20,7 +21,6 @@ type LedgerEntryFormProps = {
 export function LedgerEntryForm({
   draft,
   editingEntryId,
-  onCancelEdit,
   onChangeDraft,
   onSaveEntry,
   onSelectType,
@@ -29,19 +29,9 @@ export function LedgerEntryForm({
 
   return (
     <View style={styles.form}>
-      <View style={styles.typeRow}>
-        <TypeButton
-          isActive={draft.type === "income"}
-          label={AppMessages.editorTypeIncome}
-          onPress={() => onSelectType("income")}
-        />
-        <TypeButton
-          isActive={draft.type === "expense"}
-          label={AppMessages.editorTypeExpense}
-          onPress={() => onSelectType("expense")}
-        />
-      </View>
+      <EntryDirectionSelector onSelectType={onSelectType} selectedType={draft.type} />
       <TextInput
+        {...DisabledAutofillProps}
         keyboardType="number-pad"
         onChangeText={(value) => onChangeDraft("amount", value)}
         placeholder={AppMessages.editorAmount}
@@ -50,6 +40,7 @@ export function LedgerEntryForm({
       />
       <CategorySelector
         categories={categories}
+        entryType={draft.type}
         onSelectCategory={(category) => onChangeDraft("category", category)}
         selectedCategory={draft.category}
         title={AppMessages.editorCategory}
@@ -66,56 +57,14 @@ export function LedgerEntryForm({
           onPress={onSaveEntry}
           variant="primary"
         />
-        <ActionButton label={AppMessages.editorCancel} onPress={onCancelEdit} />
       </View>
     </View>
-  );
-}
-
-function TypeButton({
-  isActive,
-  label,
-  onPress,
-}: {
-  isActive: boolean;
-  label: string;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable onPress={onPress} style={[styles.typeButton, isActive && styles.activeTypeButton]}>
-      <Text style={[styles.typeButtonText, isActive && styles.activeTypeButtonText]}>{label}</Text>
-    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   form: {
     gap: 8,
-  },
-  typeRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  typeButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    borderWidth: 1,
-    borderColor: AppColors.border,
-    borderRadius: 999,
-    backgroundColor: AppColors.surface,
-  },
-  activeTypeButton: {
-    borderColor: AppColors.primary,
-    backgroundColor: AppColors.surfaceStrong,
-  },
-  typeButtonText: {
-    color: AppColors.text,
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  activeTypeButtonText: {
-    color: AppColors.primary,
-    fontWeight: "700",
   },
   input: {
     paddingHorizontal: 8,
@@ -126,7 +75,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   formActions: {
-    flexDirection: "row",
-    gap: 8,
+    paddingTop: 4,
   },
 });

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Platform } from "react-native";
 
+import { appPlatform } from "../lib/appPlatform";
 import {
   type BrowserNotificationPermissionState,
   readBrowserNotificationPermission,
@@ -53,7 +53,7 @@ const NOTIFICATION_ASSETS = {
 
 export function useLedgerNotifications(userId: string): LedgerNotificationsState {
   const [permission, setPermission] = useState<BrowserNotificationPermissionState>(() =>
-    Platform.OS === "web" ? readBrowserNotificationPermission() : "unsupported",
+    appPlatform.supportsBrowserNotifications ? readBrowserNotificationPermission() : "unsupported",
   );
   const {
     preferenceGroups,
@@ -64,14 +64,14 @@ export function useLedgerNotifications(userId: string): LedgerNotificationsState
   } = useNotificationPreferences(userId);
 
   useEffect(() => {
-    if (Platform.OS !== "web") {
+    if (!appPlatform.supportsBrowserNotifications) {
       return;
     }
 
     setPermission(readBrowserNotificationPermission());
   }, []);
 
-  const isSupported = Platform.OS === "web" && permission !== "unsupported";
+  const isSupported = appPlatform.supportsBrowserNotifications && permission !== "unsupported";
 
   const requestNotifications = async () => {
     const nextPermission = await requestBrowserNotificationPermission();
@@ -126,7 +126,7 @@ export function useLedgerNotifications(userId: string): LedgerNotificationsState
     permissionState: permission,
     preferenceGroups,
     requestNotifications,
-    showNotificationSettings: Platform.OS === "web",
+    showNotificationSettings: appPlatform.showsNotificationSettings,
     statusMessage: getStatusMessage(permission),
     updatePreference: updateEventPreference,
     updateThresholdPeriod,

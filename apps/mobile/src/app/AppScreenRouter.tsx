@@ -5,9 +5,9 @@ import type {
 } from "../notifications/domain/notificationEvents";
 import type { NotificationPreferenceGroup } from "../notifications/preferences/notificationPreferences";
 import { AccountScreen } from "../screens/AccountScreen";
+import { ChartScreen } from "../screens/ChartScreen";
 import { EntryScreen } from "../screens/EntryScreen";
 import { HomeScreen } from "../screens/HomeScreen";
-import { MenuScreen } from "../screens/MenuScreen";
 import { NotificationSettingsScreen } from "../screens/NotificationSettingsScreen";
 import { ShareLedgerScreen } from "../screens/ShareLedgerScreen";
 import type { LedgerAppScreen } from "../types/app";
@@ -21,17 +21,14 @@ type AppScreenRouterProps = {
   notificationPreferenceGroups: NotificationPreferenceGroup[];
   notificationPermissionLabel: string;
   notificationStatusMessage: string;
-  onCancelEntry: () => void;
   onChangeNotificationThreshold: (key: NotificationThresholdKey, value: string) => void;
   onChangeNotificationThresholdPeriod: (
     key: NotificationThresholdKey,
     period: NotificationThresholdPeriod,
   ) => void;
   onEditSelectedEntry: (entry: LedgerEntry) => void;
-  onOpenAccount: () => void;
-  onOpenNotificationSettings: () => void;
+  onOpenCharts: () => void;
   onOpenEntry: () => void;
-  onOpenShare: () => void;
   onSaveEntry: () => Promise<void>;
   onToggleNotificationPreference: (
     eventType: NotificationPreferenceGroup["items"][number]["type"],
@@ -50,14 +47,11 @@ export function AppScreenRouter({
   notificationPreferenceGroups,
   notificationPermissionLabel,
   notificationStatusMessage,
-  onCancelEntry,
   onChangeNotificationThreshold,
   onChangeNotificationThresholdPeriod,
   onEditSelectedEntry,
-  onOpenAccount,
-  onOpenNotificationSettings,
+  onOpenCharts,
   onOpenEntry,
-  onOpenShare,
   onSaveEntry,
   onToggleNotificationPreference,
   onSelectCalendarDate,
@@ -89,17 +83,6 @@ export function AppScreenRouter({
     );
   }
 
-  if (activeScreen === "menu") {
-    return (
-      <MenuScreen
-        onOpenAccount={onOpenAccount}
-        onOpenNotificationSettings={onOpenNotificationSettings}
-        onOpenShare={onOpenShare}
-        showNotificationSettings={showNotificationSettings}
-      />
-    );
-  }
-
   if (activeScreen === "share") {
     return (
       <ShareLedgerScreen
@@ -115,15 +98,18 @@ export function AppScreenRouter({
     );
   }
 
+  if (activeScreen === "charts") {
+    return <ChartScreen state={ledgerState} />;
+  }
+
   if (activeScreen === "entry") {
-    return (
-      <EntryScreen onCancelEntry={onCancelEntry} onSaveEntry={onSaveEntry} state={ledgerState} />
-    );
+    return <EntryScreen onSaveEntry={onSaveEntry} state={ledgerState} />;
   }
 
   return (
     <HomeScreen
       onEditSelectedEntry={onEditSelectedEntry}
+      onOpenCharts={onOpenCharts}
       onOpenEntry={onOpenEntry}
       onSelectCalendarDate={onSelectCalendarDate}
       state={ledgerState}

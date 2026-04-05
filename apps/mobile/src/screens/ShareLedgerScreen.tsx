@@ -1,13 +1,12 @@
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
-import { ScrollView, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
 
-import { ScreenHeaderBlock } from "../components/ScreenHeaderBlock";
+import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { SharedLedgerPanel } from "../components/SharedLedgerPanel";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import { DEFAULT_MEMBER_DISPLAY_NAME } from "../constants/ledgerDisplay";
-import { AppMessages } from "../constants/messages";
 import { fetchLedgerBookMembers } from "../lib/ledgerBooks";
 import { fetchProfileDisplayName } from "../lib/profiles";
 import { supabase } from "../lib/supabase";
@@ -106,8 +105,7 @@ export function ShareLedgerScreen({
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.content} style={styles.screen}>
-      <ScreenHeaderBlock eyebrow={AppMessages.menuTitle} title={AppMessages.shareTitle} />
+    <KeyboardAwareScrollView contentContainerStyle={styles.content} style={styles.screen}>
       <SharedLedgerPanel
         activeBook={activeBook}
         currentUserId={userId}
@@ -119,7 +117,7 @@ export function ShareLedgerScreen({
         onRejectJoinRequest={onRejectJoinRequest}
         pendingJoinRequests={pendingJoinRequests}
       />
-    </ScrollView>
+    </KeyboardAwareScrollView>
   );
 
   async function handleMemberChange(

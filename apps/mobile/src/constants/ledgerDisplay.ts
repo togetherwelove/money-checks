@@ -5,7 +5,6 @@ export const KRW_CURRENCY_SUFFIX = "원";
 export const SHARE_CODE_LENGTH = 16;
 
 const monthLabelFormatter = new Intl.DateTimeFormat("ko-KR", {
-  year: "numeric",
   month: "long",
 });
 

@@ -5,8 +5,19 @@
   "packageManager": "pnpm@10.10.0",
   "scripts": {
     "bootstrap:mobile": "pnpm --filter mobile install",
+    "env:mobile:dev": "node scripts/select-mobile-env.cjs development",
+    "env:mobile:test": "node scripts/select-mobile-env.cjs test",
+    "dev:mobile:dev": "node scripts/select-mobile-env.cjs development && pnpm --filter mobile dev",
+    "dev:mobile:test": "node scripts/select-mobile-env.cjs test && pnpm --filter mobile dev",
     "lint:mobile": "pnpm --filter mobile biome check .",
-    "format:mobile": "pnpm --filter mobile biome format --write ."
+    "format:mobile": "pnpm --filter mobile biome format --write .",
+    "supabase:link:dev": "node scripts/run-supabase-target.cjs development link",
+    "supabase:link:test": "node scripts/run-supabase-target.cjs test link",
+    "supabase:functions:deploy:dev": "node scripts/run-supabase-target.cjs development functions deploy delete-account",
+    "supabase:functions:deploy:test": "node scripts/run-supabase-target.cjs test functions deploy delete-account",
+    "test:mobile": "pnpm --filter mobile test",
+    "test:mobile:watch": "pnpm --filter mobile test:watch",
+    "test:mobile:coverage": "pnpm --filter mobile test:coverage",
+    "verify:mobile": "pnpm --filter mobile exec tsc --noEmit -p tsconfig.json && pnpm --filter mobile test && pnpm --filter mobile lint && pnpm --filter mobile web:build"
   }
 }
-

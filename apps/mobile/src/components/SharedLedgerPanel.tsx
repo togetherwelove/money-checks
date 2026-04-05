@@ -10,6 +10,7 @@ import type {
 import type { LedgerBookMember } from "../types/ledgerBookMember";
 import { SharedLedgerBookCard } from "./sharedLedgerPanel/SharedLedgerBookCard";
 import { SharedLedgerJoinCard } from "./sharedLedgerPanel/SharedLedgerJoinCard";
+import { isJoinRequestBlockedByActiveSharedLedger } from "./sharedLedgerPanel/joinRequestBlock";
 import { sharedLedgerPanelStyles as styles } from "./sharedLedgerPanel/sharedLedgerPanelStyles";
 
 type SharedLedgerPanelProps = {
@@ -38,12 +39,14 @@ export function SharedLedgerPanel({
   const [shareCodeInput, setShareCodeInput] = useState("");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [hasJoinError, setHasJoinError] = useState(false);
-  const isSharedOwner =
-    Boolean(activeBook && activeBook.ownerId === currentUserId) &&
-    members.some((member) => member.userId !== currentUserId);
+  const isJoinBlocked = isJoinRequestBlockedByActiveSharedLedger({
+    activeBook,
+    currentUserId,
+    members,
+  });
 
   const handleJoin = async () => {
-    if (isSharedOwner) {
+    if (isJoinBlocked) {
       return;
     }
 
@@ -117,7 +120,7 @@ export function SharedLedgerPanel({
       <SharedLedgerJoinCard
         canLeaveSharedBook={canLeaveSharedBook}
         hasJoinError={hasJoinError}
-        isJoinBlocked={isSharedOwner}
+        isJoinBlocked={isJoinBlocked}
         onChangeShareCodeInput={(value) => {
           setShareCodeInput(value.toUpperCase());
           if (statusMessage) {

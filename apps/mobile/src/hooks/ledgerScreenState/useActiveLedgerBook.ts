@@ -9,6 +9,11 @@ import {
   removeMemberFromActiveLedgerBook,
   requestLedgerBookJoinByCode,
 } from "../../lib/ledgerBooks";
+import { logAppError } from "../../lib/logAppError";
+import {
+  clearSharedLedgerExitIntent,
+  markSharedLedgerExitIntent,
+} from "../../lib/sharedLedgerExitIntent";
 import { resolveSharedLedgerJoinErrorMessage } from "../../lib/sharedLedgerJoinError";
 import { supabase } from "../../lib/supabase";
 import type { LedgerBook } from "../../types/ledgerBook";
@@ -41,7 +46,8 @@ export function useActiveLedgerBook(
     try {
       const nextBook = await fetchActiveLedgerBook(userId);
       setActiveBook(nextBook);
-    } catch {
+    } catch (error) {
+      logAppError("ActiveLedgerBook", error, { step: "refresh_active_book", userId });
       setActiveBookError(AppMessages.ledgerError);
     } finally {
       setIsLoadingBook(false);
@@ -60,7 +66,8 @@ export function useActiveLedgerBook(
         if (isMounted) {
           setActiveBook(nextBook);
         }
-      } catch {
+      } catch (error) {
+        logAppError("ActiveLedgerBook", error, { step: "load_active_book", userId });
         if (isMounted) {
           setActiveBookError(AppMessages.ledgerError);
         }
@@ -98,7 +105,12 @@ export function useActiveLedgerBook(
         if (isMounted) {
           setActiveBook(nextBook);
         }
-      } catch {
+      } catch (error) {
+        logAppError("ActiveLedgerBook", error, {
+          nextActiveBookId,
+          step: "handle_profile_change",
+          userId,
+        });
         if (isMounted) {
           setActiveBookError(AppMessages.ledgerError);
         }
@@ -152,6 +164,11 @@ export function useActiveLedgerBook(
         result: joinResult,
       };
     } catch (error) {
+      logAppError("ActiveLedgerBook", error, {
+        shareCode: normalizedCode,
+        step: "join_shared_ledger_book",
+        userId,
+      });
       const errorMessage = resolveSharedLedgerJoinErrorMessage(error);
       setActiveBookError(errorMessage);
       return {
@@ -163,6 +180,10 @@ export function useActiveLedgerBook(
 
   const leaveSharedLedgerBook = async () => {
     setActiveBookError(null);
+    const shouldTrackExitIntent = Boolean(activeBook && activeBook.ownerId !== userId);
+    if (shouldTrackExitIntent && activeBook) {
+      markSharedLedgerExitIntent(userId, activeBook.id);
+    }
 
     try {
       const nextBook = await trackBusyTask(async () => {
@@ -171,7 +192,15 @@ export function useActiveLedgerBook(
       });
       setActiveBook(nextBook);
       return Boolean(nextBook);
-    } catch {
+    } catch (error) {
+      logAppError("ActiveLedgerBook", error, {
+        activeBookId: activeBook?.id ?? null,
+        step: "leave_shared_ledger_book",
+        userId,
+      });
+      if (shouldTrackExitIntent && activeBook) {
+        clearSharedLedgerExitIntent(userId, activeBook.id);
+      }
       setActiveBookError(AppMessages.accountDisconnectError);
       return false;
     }
@@ -183,7 +212,12 @@ export function useActiveLedgerBook(
     try {
       await trackBusyTask(() => removeMemberFromActiveLedgerBook(targetUserId));
       return true;
-    } catch {
+    } catch (error) {
+      logAppError("ActiveLedgerBook", error, {
+        step: "remove_shared_ledger_member",
+        targetUserId,
+        userId,
+      });
       setActiveBookError(AppMessages.accountKickError);
       return false;
     }

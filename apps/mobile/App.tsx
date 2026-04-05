@@ -1,56 +1,67 @@
 import type { Session } from "@supabase/supabase-js";
-import { useEffect, useRef, useState } from "react";
-import { SafeAreaView, StatusBar, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { StatusBar, StyleSheet, Text, View } from "react-native";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 import { AppScreenRouter } from "./src/app/AppScreenRouter";
 import { AppHeader } from "./src/components/AppHeader";
+import { AppMenuDrawer } from "./src/components/AppMenuDrawer";
+import { BackToCalendarAction } from "./src/components/BackToCalendarAction";
 import { BlockingOverlay } from "./src/components/BlockingOverlay";
 import { AppColors } from "./src/constants/colors";
 import { AppMessages } from "./src/constants/messages";
+import { useAuthOnboarding } from "./src/hooks/useAuthOnboarding";
 import { useLedgerNotifications } from "./src/hooks/useLedgerNotifications";
 import { useLedgerScreenState } from "./src/hooks/useLedgerScreenState";
-import { useNotificationPermissionAutoRequest } from "./src/hooks/useNotificationPermissionAutoRequest";
 import { useSharedLedgerRealtimeNotifications } from "./src/hooks/useSharedLedgerRealtimeNotifications";
 import { useSupabaseSession } from "./src/hooks/useSupabaseSession";
+import { getAppHeaderTitle, showsCalendarReturnAction } from "./src/lib/appHeaderTitle";
+import { buildAppMenuItems } from "./src/lib/menuItems";
+import { updateOwnProfileDisplayName } from "./src/lib/profiles";
 import { AuthScreen } from "./src/screens/AuthScreen";
+import { NicknameSetupScreen } from "./src/screens/NicknameSetupScreen";
+import { PermissionOnboardingScreen } from "./src/screens/PermissionOnboardingScreen";
 import type { LedgerAppScreen } from "./src/types/app";
 import type { LedgerEntry } from "./src/types/ledger";
 import { resolveFallbackDisplayName } from "./src/utils/sessionDisplayName";
 
 export default function App() {
-  const { isLoading, session } = useSupabaseSession();
+  const { errorMessage, isLoading, session } = useSupabaseSession();
 
-  if (isLoading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor={AppColors.background} />
-        <Text style={styles.loadingText}>{AppMessages.authLoading}</Text>
-      </SafeAreaView>
-    );
-  }
-
-  if (!session) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor={AppColors.background} />
-        <AuthScreen />
-      </SafeAreaView>
-    );
-  }
-
-  return <SignedInApp session={session} />;
+  return (
+    <SafeAreaProvider>
+      {isLoading ? (
+        <SafeAreaView style={styles.container}>
+          <StatusBar barStyle="dark-content" backgroundColor={AppColors.background} />
+          <Text style={styles.loadingText}>{AppMessages.authLoading}</Text>
+        </SafeAreaView>
+      ) : !session ? (
+        <SafeAreaView style={styles.container}>
+          <StatusBar barStyle="dark-content" backgroundColor={AppColors.background} />
+          <AuthScreen initialErrorMessage={errorMessage} />
+        </SafeAreaView>
+      ) : (
+        <SignedInApp session={session} />
+      )}
+    </SafeAreaProvider>
+  );
 }
 
 function SignedInApp({ session }: { session: Session }) {
   const [activeScreen, setActiveScreen] = useState<LedgerAppScreen>("calendar");
-  const hasTriggeredNotificationAutoRequest = useRef(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const fallbackDisplayName = resolveFallbackDisplayName(
+    session.user.user_metadata,
+    session.user.email,
+  );
   const notifications = useLedgerNotifications(session.user.id);
   const ledgerState = useLedgerScreenState(session);
-  const notificationPermissionAutoRequest = useNotificationPermissionAutoRequest(
-    session.user.id,
-    notifications.permissionState,
-    notifications.isSupported,
-  );
+  const authOnboarding = useAuthOnboarding({
+    fallbackDisplayName,
+    isNotificationSupported: notifications.isSupported,
+    permissionState: notifications.permissionState,
+    userId: session.user.id,
+  });
 
   useSharedLedgerRealtimeNotifications({
     activeBook: ledgerState.activeBook,
@@ -60,7 +71,31 @@ function SignedInApp({ session }: { session: Session }) {
   });
 
   const handleOpenCalendar = () => setActiveScreen("calendar");
+  const handleBackToCalendar = () => {
+    if (activeScreen === "entry") {
+      ledgerState.resetEditor(ledgerState.selectedDate);
+    }
+    setActiveScreen("calendar");
+  };
+  const handleToggleCharts = () =>
+    setActiveScreen((currentScreen) => (currentScreen === "charts" ? "calendar" : "charts"));
   const handleOpenEntry = () => setActiveScreen("entry");
+  const menuItems = buildAppMenuItems(notifications.showNotificationSettings);
+
+  const handleCompleteNicknameOnboarding = async (displayName: string) => {
+    try {
+      const savedDisplayName = await updateOwnProfileDisplayName(session.user.id, displayName);
+      authOnboarding.completeNicknameOnboarding(savedDisplayName || displayName);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const handleCompletePermissionOnboarding = async () => {
+    await notifications.requestNotifications();
+    authOnboarding.completePermissionOnboarding();
+  };
 
   const handleSaveEntry = async () => {
     const currentEntries = ledgerState.entries;
@@ -78,64 +113,71 @@ function SignedInApp({ session }: { session: Session }) {
     handleOpenEntry();
   };
 
-  useEffect(() => {
-    if (
-      activeScreen !== "calendar" ||
-      !notificationPermissionAutoRequest.shouldAutoRequest ||
-      hasTriggeredNotificationAutoRequest.current
-    ) {
-      return;
-    }
+  if (authOnboarding.isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor={AppColors.background} />
+        <Text style={styles.loadingText}>{AppMessages.authLoading}</Text>
+      </SafeAreaView>
+    );
+  }
 
-    hasTriggeredNotificationAutoRequest.current = true;
-    notificationPermissionAutoRequest.completeAutoRequest();
-    void notifications.requestNotifications();
-  }, [
-    activeScreen,
-    notificationPermissionAutoRequest.completeAutoRequest,
-    notificationPermissionAutoRequest.shouldAutoRequest,
-    notifications.requestNotifications,
-  ]);
+  if (authOnboarding.step === "nickname") {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor={AppColors.background} />
+        <NicknameSetupScreen
+          initialDisplayName={authOnboarding.suggestedDisplayName}
+          onSubmit={handleCompleteNicknameOnboarding}
+        />
+      </SafeAreaView>
+    );
+  }
+
+  if (authOnboarding.step === "notification-permission") {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor={AppColors.background} />
+        <PermissionOnboardingScreen
+          onAllow={handleCompletePermissionOnboarding}
+          onSkip={authOnboarding.completePermissionOnboarding}
+        />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={AppColors.background} />
       <View style={styles.headerShell}>
         <AppHeader
-          activeScreen={activeScreen}
-          onOpenMenu={() =>
-            setActiveScreen((currentScreen) => (currentScreen === "menu" ? "calendar" : "menu"))
+          isMenuOpen={isMenuOpen}
+          leadingAction={
+            showsCalendarReturnAction(activeScreen) ? (
+              <BackToCalendarAction onPress={handleBackToCalendar} />
+            ) : null
           }
+          titleLabel={getAppHeaderTitle(activeScreen)}
+          yearLabel={
+            activeScreen === "calendar" ? String(ledgerState.visibleMonth.getFullYear()) : null
+          }
+          onOpenMenu={() => setIsMenuOpen((currentValue) => !currentValue)}
         />
       </View>
       <View style={styles.body}>
         <AppScreenRouter
           activeScreen={activeScreen}
           email={session.user.email ?? ""}
-          fallbackDisplayName={resolveFallbackDisplayName(
-            session.user.user_metadata,
-            session.user.email,
-          )}
+          fallbackDisplayName={fallbackDisplayName}
           ledgerState={ledgerState}
           notificationPreferenceGroups={notifications.preferenceGroups}
           notificationPermissionLabel={notifications.permissionLabel}
           notificationStatusMessage={notifications.statusMessage}
-          onCancelEntry={() => {
-            ledgerState.resetEditor(ledgerState.selectedDate);
-            handleOpenCalendar();
-          }}
           onChangeNotificationThresholdPeriod={notifications.updateThresholdPeriod}
           onChangeNotificationThreshold={notifications.updateThresholdValue}
           onEditSelectedEntry={handleEditEntryFromCalendar}
-          onOpenAccount={() => setActiveScreen("account")}
-          onOpenNotificationSettings={() => setActiveScreen("notification-settings")}
+          onOpenCharts={handleToggleCharts}
           onOpenEntry={handleOpenEntry}
-          onOpenShare={() => {
-            setActiveScreen("share");
-            if (ledgerState.activeBook?.ownerId === session.user.id) {
-              void ledgerState.refreshSharedLedgerBook();
-            }
-          }}
           onSaveEntry={handleSaveEntry}
           onToggleNotificationPreference={notifications.updatePreference}
           onSelectCalendarDate={(isoDate) => {
@@ -146,6 +188,21 @@ function SignedInApp({ session }: { session: Session }) {
           userId={session.user.id}
         />
       </View>
+      <AppMenuDrawer
+        isOpen={isMenuOpen}
+        items={menuItems}
+        onClose={() => setIsMenuOpen(false)}
+        onSelectItem={(targetScreen) => {
+          setIsMenuOpen(false);
+          if (targetScreen === "calendar") {
+            ledgerState.resetEditor(ledgerState.selectedDate);
+          }
+          if (targetScreen === "share" && ledgerState.activeBook?.ownerId === session.user.id) {
+            void ledgerState.refreshSharedLedgerBook();
+          }
+          setActiveScreen(targetScreen);
+        }}
+      />
       {ledgerState.isBusy ? <BlockingOverlay /> : null}
     </SafeAreaView>
   );

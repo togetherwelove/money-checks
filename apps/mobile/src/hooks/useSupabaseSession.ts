@@ -2,14 +2,11 @@ import type { Session } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 
 import { supabase } from "../lib/supabase";
-
-type SessionState = {
-  isLoading: boolean;
-  session: Session | null;
-};
+import { type SessionState, createResolvedSessionState, loadInitialSession } from "./sessionState";
 
 export function useSupabaseSession(): SessionState {
   const [sessionState, setSessionState] = useState<SessionState>({
+    errorMessage: null,
     isLoading: true,
     session: null,
   });
@@ -17,11 +14,11 @@ export function useSupabaseSession(): SessionState {
   useEffect(() => {
     let isMounted = true;
 
-    supabase.auth.getSession().then(({ data }) => {
+    void loadInitialSession(() => supabase.auth.getSession()).then((nextState) => {
       if (!isMounted) {
         return;
       }
-      setSessionState({ isLoading: false, session: data.session });
+      setSessionState(nextState);
     });
 
     const {
@@ -30,7 +27,7 @@ export function useSupabaseSession(): SessionState {
       if (!isMounted) {
         return;
       }
-      setSessionState({ isLoading: false, session });
+      setSessionState(createResolvedSessionState(session));
     });
 
     return () => {

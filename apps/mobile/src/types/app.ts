@@ -1,7 +1,7 @@
 export type LedgerAppScreen =
   | "account"
   | "calendar"
+  | "charts"
   | "entry"
-  | "menu"
   | "notification-settings"
   | "share";

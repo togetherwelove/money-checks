@@ -1,12 +1,10 @@
-import { StyleSheet, Text, View } from "react-native";
-
-import { AppColors } from "../constants/colors";
-import { IconActionButton } from "./IconActionButton";
+import { DateNavigationToolbar } from "./DateNavigationToolbar";
 
 type EntryDateToolbarProps = {
   dateLabel: string;
   onMoveNextDay: () => void;
   onMovePreviousDay: () => void;
+  onPressDateLabel: () => void;
   onMoveToToday: () => void;
 };
 
@@ -14,35 +12,16 @@ export function EntryDateToolbar({
   dateLabel,
   onMoveNextDay,
   onMovePreviousDay,
+  onPressDateLabel,
   onMoveToToday,
 }: EntryDateToolbarProps) {
   return (
-    <View style={styles.container}>
-      <Text style={styles.dateLabel}>{dateLabel}</Text>
-      <View style={styles.actions}>
-        <IconActionButton icon="chevron-left" onPress={onMovePreviousDay} />
-        <IconActionButton icon="clock" onPress={onMoveToToday} />
-        <IconActionButton icon="chevron-right" onPress={onMoveNextDay} />
-      </View>
-    </View>
+    <DateNavigationToolbar
+      label={dateLabel}
+      onMoveNext={onMoveNextDay}
+      onMovePrevious={onMovePreviousDay}
+      onMoveToCurrent={onMoveToToday}
+      onPressLabel={onPressDateLabel}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-  },
-  dateLabel: {
-    color: AppColors.accent,
-    fontSize: 14,
-    fontWeight: "700",
-    flex: 1,
-  },
-  actions: {
-    flexDirection: "row",
-    gap: 8,
-  },
-});

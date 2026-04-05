@@ -39,3 +39,26 @@ export type MonthlyLedgerSummary = {
   topExpenseCategory: string;
   days: CalendarDay[];
 };
+
+export type MonthlyChangeDirection = "increase" | "decrease" | "same";
+
+export type MonthlyComparisonMetric = {
+  currentAmount: number;
+  previousAmount: number;
+  deltaAmount: number;
+  direction: MonthlyChangeDirection;
+};
+
+export type MonthlyCategoryExpense = {
+  amount: number;
+  category: string;
+  share: number;
+};
+
+export type MonthlyInsights = {
+  currentMonthLabel: string;
+  previousMonthLabel: string;
+  expenseComparison: MonthlyComparisonMetric;
+  incomeComparison: MonthlyComparisonMetric;
+  categoryExpenses: MonthlyCategoryExpense[];
+};

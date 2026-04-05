@@ -1,18 +1,23 @@
+import type { ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
 
 type ScreenHeaderBlockProps = {
+  action?: ReactNode;
   eyebrow?: string;
   subtitle?: string;
   title: string;
 };
 
-export function ScreenHeaderBlock({ eyebrow, subtitle, title }: ScreenHeaderBlockProps) {
+export function ScreenHeaderBlock({ action, eyebrow, subtitle, title }: ScreenHeaderBlockProps) {
   return (
     <View style={styles.header}>
       {eyebrow ? <Text style={styles.eyebrow}>{eyebrow}</Text> : null}
-      <Text style={styles.title}>{title}</Text>
+      <View style={styles.titleRow}>
+        <Text style={styles.title}>{title}</Text>
+        {action ? <View style={styles.action}>{action}</View> : null}
+      </View>
       {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
     </View>
   );
@@ -29,10 +34,20 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     letterSpacing: 0.4,
   },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
   title: {
+    flex: 1,
     color: AppColors.text,
     fontSize: 22,
     fontWeight: "800",
+  },
+  action: {
+    flexShrink: 0,
   },
   subtitle: {
     color: AppColors.mutedText,

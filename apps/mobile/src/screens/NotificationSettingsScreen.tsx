@@ -1,10 +1,9 @@
-import { ScrollView, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
 
-import { ScreenHeaderBlock } from "../components/ScreenHeaderBlock";
+import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { NotificationSettingsCard } from "../components/accountScreen/NotificationSettingsCard";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
-import { NotificationUiCopy } from "../notifications/config/notificationCopy";
 import type {
   NotificationThresholdKey,
   NotificationThresholdPeriod,
@@ -35,11 +34,7 @@ export function NotificationSettingsScreen({
   onToggleNotificationPreference,
 }: NotificationSettingsScreenProps) {
   return (
-    <ScrollView contentContainerStyle={styles.content} style={styles.screen}>
-      <ScreenHeaderBlock
-        eyebrow={NotificationUiCopy.headerEyebrow}
-        title={NotificationUiCopy.screenTitle}
-      />
+    <KeyboardAwareScrollView contentContainerStyle={styles.content} style={styles.screen}>
       <NotificationSettingsCard
         onChangeThresholdPeriod={onChangeNotificationThresholdPeriod}
         onChangeThresholdValue={onChangeNotificationThreshold}
@@ -48,7 +43,7 @@ export function NotificationSettingsScreen({
         preferenceGroups={notificationPreferenceGroups}
         statusMessage={notificationStatusMessage}
       />
-    </ScrollView>
+    </KeyboardAwareScrollView>
   );
 }
 
