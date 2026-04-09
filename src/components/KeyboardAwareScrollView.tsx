@@ -7,6 +7,7 @@ import { KeyboardLayout } from "../constants/keyboard";
 type KeyboardAwareScrollViewProps = PropsWithChildren<{
   centerContent?: boolean;
   contentContainerStyle?: StyleProp<ViewStyle>;
+  scrollEnabled?: boolean;
   style?: StyleProp<ViewStyle>;
 }>;
 
@@ -14,6 +15,7 @@ export function KeyboardAwareScrollView({
   centerContent = false,
   children,
   contentContainerStyle,
+  scrollEnabled = true,
   style,
 }: KeyboardAwareScrollViewProps) {
   return (
@@ -28,6 +30,7 @@ export function KeyboardAwareScrollView({
         Platform.OS === "ios" ? KeyboardLayout.dismissMode.ios : KeyboardLayout.dismissMode.android
       }
       keyboardShouldPersistTaps={KeyboardLayout.persistTaps}
+      scrollEnabled={scrollEnabled}
       style={[styles.scroll, style]}
     >
       {children}

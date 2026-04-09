@@ -1,19 +1,23 @@
+import * as Clipboard from "expo-clipboard";
 import { Text, View } from "react-native";
 
 import { EMPTY_VALUE_PLACEHOLDER } from "../../constants/ledgerDisplay";
 import { AppMessages } from "../../constants/messages";
+import { ShareLedgerCopy } from "../../constants/shareLedgerCopy";
+import { showNativeToast } from "../../lib/nativeToast";
 import type { LedgerBook } from "../../types/ledgerBook";
 import type { LedgerBookJoinRequest } from "../../types/ledgerBookJoinRequest";
 import type { LedgerBookMember } from "../../types/ledgerBookMember";
+import { IconActionButton } from "../IconActionButton";
 import { LedgerBookJoinRequests } from "../LedgerBookJoinRequests";
 import { LedgerBookMembers } from "../LedgerBookMembers";
 import { sharedLedgerPanelStyles as styles } from "./sharedLedgerPanelStyles";
 
 type SharedLedgerBookCardProps = {
   activeBook: LedgerBook | null;
-  onApproveJoinRequest: (requestId: string) => Promise<boolean>;
   currentUserId: string;
   members: LedgerBookMember[];
+  onApproveJoinRequest: (requestId: string) => Promise<boolean>;
   onKickMember: (targetUserId: string) => Promise<boolean>;
   onRejectJoinRequest: (requestId: string) => Promise<boolean>;
   pendingJoinRequests: LedgerBookJoinRequest[];
@@ -21,15 +25,26 @@ type SharedLedgerBookCardProps = {
 
 export function SharedLedgerBookCard({
   activeBook,
-  onApproveJoinRequest,
   currentUserId,
   members,
+  onApproveJoinRequest,
   onKickMember,
   onRejectJoinRequest,
   pendingJoinRequests,
 }: SharedLedgerBookCardProps) {
   const isSharedBook = Boolean(activeBook && activeBook.ownerId !== currentUserId);
   const isOwner = Boolean(activeBook && activeBook.ownerId === currentUserId);
+  const shareCode = activeBook?.shareCode ?? null;
+
+  const handleCopyShareCode = () => {
+    if (!shareCode) {
+      return;
+    }
+
+    void Clipboard.setStringAsync(shareCode).then(() => {
+      showNativeToast(ShareLedgerCopy.copySuccessToast);
+    });
+  };
 
   return (
     <View style={[styles.section, styles.primarySection]}>
@@ -51,14 +66,23 @@ export function SharedLedgerBookCard({
       <Text style={styles.bookName}>{activeBook?.name ?? AppMessages.accountBookFallback}</Text>
       <View style={styles.codeBlock}>
         <Text style={styles.sectionLabel}>{AppMessages.accountShareCode}</Text>
-        <Text
-          adjustsFontSizeToFit
-          minimumFontScale={0.7}
-          numberOfLines={1}
-          style={styles.shareCode}
-        >
-          {activeBook?.shareCode ?? EMPTY_VALUE_PLACEHOLDER}
-        </Text>
+        <View style={styles.shareCodeRow}>
+          <Text
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+            numberOfLines={1}
+            style={styles.shareCode}
+          >
+            {shareCode ?? EMPTY_VALUE_PLACEHOLDER}
+          </Text>
+          {shareCode ? (
+            <IconActionButton
+              accessibilityLabel={ShareLedgerCopy.copyActionAccessibilityLabel}
+              icon="copy"
+              onPress={handleCopyShareCode}
+            />
+          ) : null}
+        </View>
         <Text style={styles.helpText}>{AppMessages.accountShareCodeHint}</Text>
       </View>
       {activeBook ? (

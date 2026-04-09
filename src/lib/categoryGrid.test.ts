@@ -1,26 +1,26 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  resolveCategoryCellSize,
   resolveCategoryDropIndex,
   resolveCategoryGridHeight,
+  resolveCategoryGridMetrics,
   resolveCategoryGridPosition,
 } from "./categoryGrid";
 
 describe("categoryGrid", () => {
   it("builds grid positions by row and column", () => {
-    expect(resolveCategoryGridPosition(4, 90)).toEqual({ x: 96, y: 96 });
+    expect(resolveCategoryGridPosition(4, 58, 5)).toEqual({ x: 256, y: 0 });
   });
 
   it("computes the full grid height", () => {
-    expect(resolveCategoryGridHeight(5, 90)).toBe(186);
+    expect(resolveCategoryGridHeight(10, 58, 5)).toBe(122);
   });
 
   it("clamps the drop index inside the visible grid", () => {
-    expect(resolveCategoryDropIndex(280, 140, { left: 0, top: 0, width: 282 }, 90, 5)).toBe(4);
+    expect(resolveCategoryDropIndex(320, 90, { left: 0, top: 0, width: 344 }, 58, 5, 10)).toBe(9);
   });
 
-  it("resolves a positive cell size from container width", () => {
-    expect(resolveCategoryCellSize(282)).toBe(90);
+  it("resolves dynamic grid metrics from container width", () => {
+    expect(resolveCategoryGridMetrics(344)).toEqual({ cellSize: 64, columns: 5 });
   });
 });

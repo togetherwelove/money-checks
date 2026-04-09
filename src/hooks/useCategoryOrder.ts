@@ -7,6 +7,7 @@ import type { LedgerEntryType } from "../types/ledger";
 type UseCategoryOrderResult = {
   moveCategory: (fromIndex: number, toIndex: number) => void;
   orderedCategories: string[];
+  replaceOrderedCategories: (nextCategories: string[]) => void;
   saveCurrentOrder: () => void;
 };
 
@@ -36,6 +37,10 @@ export function useCategoryOrder(
       );
     },
     orderedCategories,
+    replaceOrderedCategories: (nextCategories) => {
+      orderedCategoriesRef.current = nextCategories;
+      setOrderedCategories(nextCategories);
+    },
     saveCurrentOrder: () => saveCategoryOrder(type, orderedCategoriesRef.current),
   };
 }

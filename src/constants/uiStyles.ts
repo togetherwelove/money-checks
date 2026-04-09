@@ -49,6 +49,7 @@ export const CompactLabelTextStyle: TextStyle = {
 };
 
 export const FormInputTextStyle: TextStyle = {
+  minHeight: AuthControls.controlHeight,
   paddingHorizontal: AuthControls.horizontalPadding,
   paddingVertical: AuthControls.verticalPadding,
   borderWidth: 1,

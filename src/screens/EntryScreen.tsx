@@ -20,6 +20,7 @@ type EntryScreenProps = {
 export function EntryScreen({ onSaveEntry, state }: EntryScreenProps) {
   const actualToday = new Date();
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [isCategoryDragging, setIsCategoryDragging] = useState(false);
   const {
     draft,
     editingEntryId,
@@ -54,7 +55,11 @@ export function EntryScreen({ onSaveEntry, state }: EntryScreenProps) {
 
   return (
     <>
-      <KeyboardAwareScrollView contentContainerStyle={styles.content} style={styles.screen}>
+      <KeyboardAwareScrollView
+        contentContainerStyle={styles.content}
+        scrollEnabled={!isCategoryDragging}
+        style={styles.screen}
+      >
         {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
         <EntryDateToolbar
           dateLabel={formatSelectedDate(selectedDate)}
@@ -65,6 +70,7 @@ export function EntryScreen({ onSaveEntry, state }: EntryScreenProps) {
           draft={draft}
           editingEntryId={editingEntryId}
           onChangeDraft={updateDraftField}
+          onCategoryDraggingChange={setIsCategoryDragging}
           onSaveEntry={onSaveEntry}
           onSelectType={updateDraftType}
         />

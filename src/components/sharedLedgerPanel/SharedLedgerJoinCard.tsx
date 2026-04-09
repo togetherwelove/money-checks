@@ -45,7 +45,6 @@ export function SharedLedgerJoinCard({
           {ShareLedgerSecurityCopy.joinRequestBlockedForSharedMember}
         </Text>
       ) : null}
-      <Text style={styles.hintText}>{ShareLedgerSecurityCopy.joinRequestHint}</Text>
       {!statusMessage ? (
         <Text style={styles.hintText}>{AppMessages.accountJoinEmptyHint}</Text>
       ) : null}

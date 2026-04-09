@@ -46,7 +46,13 @@ export const sharedLedgerPanelStyles = StyleSheet.create({
     borderRadius: 14,
     backgroundColor: AppColors.surface,
   },
+  shareCodeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+  },
   shareCode: {
+    flex: 1,
     color: AppColors.primary,
     fontSize: 22,
     fontWeight: "800",

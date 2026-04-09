@@ -8,7 +8,7 @@ export const AppMessages = {
   calendarTab: "달력",
   backToCalendarAction: "달력으로",
   entryTab: "기록",
-  entryScreenTitle: "기록 입력 및 수정",
+  entryScreenTitle: "입출금 내역 등록",
   entryScreenSubtitle: "선택한 날짜의 수입과 지출을 관리합니다.",
   editorTitle: "기록 입력",
   editorEmpty: "아직 기록이 없습니다.",

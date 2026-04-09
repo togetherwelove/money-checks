@@ -2,6 +2,7 @@ import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import type { Session } from "@supabase/supabase-js";
 import { useState } from "react";
 import { StatusBar, StyleSheet, Text, View } from "react-native";
+import { RootSiblingParent } from "react-native-root-siblings";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 import { AppScreenRouter } from "./src/app/AppScreenRouter";
@@ -35,19 +36,21 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      {isLoading ? (
-        <SafeAreaView style={styles.container}>
-          <StatusBar barStyle="dark-content" backgroundColor={AppColors.background} />
-          <Text style={styles.loadingText}>{AppMessages.authLoading}</Text>
-        </SafeAreaView>
-      ) : !session ? (
-        <SafeAreaView style={styles.container}>
-          <StatusBar barStyle="dark-content" backgroundColor={AppColors.background} />
-          <AuthScreen initialErrorMessage={errorMessage} />
-        </SafeAreaView>
-      ) : (
-        <SignedInApp session={session} />
-      )}
+      <RootSiblingParent>
+        {isLoading ? (
+          <SafeAreaView style={styles.container}>
+            <StatusBar barStyle="dark-content" backgroundColor={AppColors.background} />
+            <Text style={styles.loadingText}>{AppMessages.authLoading}</Text>
+          </SafeAreaView>
+        ) : !session ? (
+          <SafeAreaView style={styles.container}>
+            <StatusBar barStyle="dark-content" backgroundColor={AppColors.background} />
+            <AuthScreen initialErrorMessage={errorMessage} />
+          </SafeAreaView>
+        ) : (
+          <SignedInApp session={session} />
+        )}
+      </RootSiblingParent>
     </SafeAreaProvider>
   );
 }

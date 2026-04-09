@@ -6,7 +6,7 @@ describe("appHeaderTitle", () => {
     expect(getAppHeaderTitle("account")).toBe("계정");
     expect(getAppHeaderTitle("share")).toBe("가계부 공유");
     expect(getAppHeaderTitle("charts")).toBe("차트");
-    expect(getAppHeaderTitle("entry")).toBe("기록 입력 및 수정");
+    expect(getAppHeaderTitle("entry")).toBe("입출금 내역 등록");
     expect(getAppHeaderTitle("notification-settings")).toBe(NotificationUiCopy.screenTitle);
   });
 

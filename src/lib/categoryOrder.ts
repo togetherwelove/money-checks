@@ -19,6 +19,15 @@ export function moveCategoryItem(
   return nextCategories;
 }
 
+export function resolvePreviewCategoryOrder(
+  categories: readonly string[],
+  draggedCategory: string,
+  toIndex: number,
+): string[] {
+  const fromIndex = categories.indexOf(draggedCategory);
+  return moveCategoryItem(categories, fromIndex, toIndex);
+}
+
 export function resolveCategoryOrder(
   baseCategories: readonly string[],
   storedCategories: readonly string[] | null | undefined,

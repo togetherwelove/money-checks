@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { useRef } from "react";
 import { CATEGORY_GRID_GAP } from "../constants/categorySelector";
-import { AppColors } from "../constants/colors";
+import { FormLabelTextStyle } from "../constants/uiStyles";
 import { useCategoryGridDrag } from "../hooks/useCategoryGridDrag";
 import { useCategoryOrder } from "../hooks/useCategoryOrder";
 import type { LedgerEntryType } from "../types/ledger";
@@ -11,6 +11,7 @@ import { CategoryGridItem } from "./categorySelector/CategoryGridItem";
 type CategorySelectorProps = {
   categories: readonly string[];
   entryType: LedgerEntryType;
+  onDraggingChange?: (isDragging: boolean) => void;
   selectedCategory: string;
   title: string;
   onSelectCategory: (category: string) => void;
@@ -19,12 +20,13 @@ type CategorySelectorProps = {
 export function CategorySelector({
   categories,
   entryType,
+  onDraggingChange,
   selectedCategory,
   title,
   onSelectCategory,
 }: CategorySelectorProps) {
   const optionsRef = useRef<View>(null);
-  const { moveCategory, orderedCategories, saveCurrentOrder } = useCategoryOrder(
+  const { orderedCategories, replaceOrderedCategories, saveCurrentOrder } = useCategoryOrder(
     entryType,
     categories,
   );
@@ -38,8 +40,9 @@ export function CategorySelector({
     handleDragMove,
     handleDragStart,
   } = useCategoryGridDrag({
-    moveCategory,
+    onDraggingChange,
     orderedCategories,
+    replaceOrderedCategories,
     saveCurrentOrder,
   });
 
@@ -76,11 +79,7 @@ const styles = StyleSheet.create({
   container: {
     gap: 6,
   },
-  title: {
-    color: AppColors.mutedText,
-    fontSize: 12,
-    fontWeight: "600",
-  },
+  title: FormLabelTextStyle,
   options: {
     position: "relative",
     width: "100%",

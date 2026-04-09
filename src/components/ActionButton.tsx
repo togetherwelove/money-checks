@@ -73,14 +73,15 @@ export function ActionButton({
 
 const styles = StyleSheet.create({
   button: {
-    paddingHorizontal: 12,
+    minHeight: AuthControls.controlHeight,
+    paddingHorizontal: AuthControls.horizontalPadding,
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
   },
   compactButton: {
-    paddingVertical: 8,
-    borderRadius: 999,
+    paddingVertical: AuthControls.verticalPadding,
+    borderRadius: AuthControls.borderRadius,
   },
   largeButton: {
     paddingHorizontal: AuthControls.horizontalPadding,
@@ -96,11 +97,11 @@ const styles = StyleSheet.create({
   },
   secondaryButton: {
     borderColor: AppColors.border,
-    backgroundColor: AppColors.surface,
+    backgroundColor: AppColors.background,
   },
   destructiveButton: {
     borderColor: AppColors.expense,
-    backgroundColor: AppColors.surface,
+    backgroundColor: AppColors.expenseSoft,
   },
   disabledButton: {
     opacity: 0.45,
@@ -110,7 +111,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   compactText: {
-    fontSize: 12,
+    fontSize: 15,
   },
   largeText: {
     fontSize: 15,

@@ -1,9 +1,10 @@
 import { Feather } from "@expo/vector-icons";
 import { Pressable, StyleSheet } from "react-native";
 
+import { AuthControls } from "../constants/authControls";
 import { AppColors } from "../constants/colors";
 
-export const ICON_ACTION_BUTTON_SIZE = 38;
+export const ICON_ACTION_BUTTON_SIZE = AuthControls.controlHeight;
 
 type IconActionButtonProps = {
   accessibilityLabel?: string;
@@ -35,7 +36,7 @@ const styles = StyleSheet.create({
     height: ICON_ACTION_BUTTON_SIZE,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 12,
+    borderRadius: AuthControls.borderRadius,
   },
   activeButton: {
     opacity: 1,

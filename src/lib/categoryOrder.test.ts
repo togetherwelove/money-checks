@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { moveCategoryItem, resolveCategoryOrder } from "./categoryOrder";
+import {
+  moveCategoryItem,
+  resolveCategoryOrder,
+  resolvePreviewCategoryOrder,
+} from "./categoryOrder";
 
 describe("resolveCategoryOrder", () => {
   it("keeps stored categories first and appends new defaults", () => {
@@ -31,5 +35,20 @@ describe("moveCategoryItem", () => {
 
   it("returns the original order for invalid indexes", () => {
     expect(moveCategoryItem(["식비", "교통"], -1, 1)).toEqual(["식비", "교통"]);
+  });
+});
+
+describe("resolvePreviewCategoryOrder", () => {
+  it("keeps row-crossing preview stable from the original drag order", () => {
+    expect(resolvePreviewCategoryOrder(["A", "B", "C", "D", "E", "F", "G", "H"], "B", 6)).toEqual([
+      "A",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "B",
+      "H",
+    ]);
   });
 });

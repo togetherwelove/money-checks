@@ -13,6 +13,7 @@ import {
   parseIsoDate,
   toIsoDate,
 } from "../utils/calendar";
+import { ActionButton } from "./ActionButton";
 import { IconActionButton } from "./IconActionButton";
 import { MonthCalendar } from "./MonthCalendar";
 import { WeekdayHeader } from "./WeekdayHeader";
@@ -81,15 +82,15 @@ export function EntryDatePickerModal({
                 }}
                 value={draftDate}
               />
-              <Pressable
+              <ActionButton
+                fullWidth
+                label={EntryDatePickerCopy.confirmAction}
                 onPress={() => {
                   onSelectDate(toIsoDate(draftDate));
                   onClose();
                 }}
-                style={styles.confirmButton}
-              >
-                <Text style={styles.confirmText}>{EntryDatePickerCopy.confirmAction}</Text>
-              </Pressable>
+                variant="primary"
+              />
             </>
           ) : (
             <>
@@ -154,18 +155,6 @@ const styles = StyleSheet.create({
     color: AppColors.mutedText,
     fontSize: 13,
     fontWeight: "700",
-  },
-  confirmButton: {
-    alignSelf: "flex-end",
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 999,
-    backgroundColor: AppColors.primary,
-  },
-  confirmText: {
-    color: AppColors.inverseText,
-    fontSize: 13,
-    fontWeight: "800",
   },
   monthRow: {
     flexDirection: "row",
