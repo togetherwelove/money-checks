@@ -11,10 +11,6 @@ type AuthenticatedUser = {
   id: string;
 };
 
-type DeleteAccountRequestBody = {
-  accessToken?: string;
-};
-
 type OwnedBookRow = {
   id: string;
 };
@@ -36,8 +32,14 @@ type LedgerBooksQueryBuilder = {
 
 type LedgerBookMembersQueryBuilder = {
   select: (columns: string) => {
-    in: (column: string, values: string[]) => {
-      neq: (nextColumn: string, value: string) => {
+    in: (
+      column: string,
+      values: string[],
+    ) => {
+      neq: (
+        nextColumn: string,
+        value: string,
+      ) => {
         limit: (count: number) => QueryBuilderResult<OtherMemberRow>;
       };
     };
@@ -53,9 +55,9 @@ export type DeleteAccountAdminClient = {
       accessToken: string,
     ) => Promise<{ data: { user: AuthenticatedUser | null }; error: Error | null }>;
   };
-  from: (tableName: "ledger_book_members" | "ledger_books") =>
-    | LedgerBookMembersQueryBuilder
-    | LedgerBooksQueryBuilder;
+  from: (
+    tableName: "ledger_book_members" | "ledger_books",
+  ) => LedgerBookMembersQueryBuilder | LedgerBooksQueryBuilder;
 };
 
 type DeleteAccountHandlerOptions = {
@@ -81,11 +83,7 @@ export async function handleDeleteAccountRequest(
       return createJsonResponse(500, { error: DELETE_FAILED_MESSAGE });
     }
 
-    const requestBody = await readDeleteAccountRequestBody(request);
-    const accessToken =
-      extractBearerToken(request.headers.get("Authorization")) ??
-      requestBody.accessToken?.trim() ??
-      null;
+    const accessToken = extractBearerToken(request.headers.get("Authorization"));
     if (!accessToken) {
       return createJsonResponse(401, { error: "Unauthorized" });
     }
@@ -124,15 +122,6 @@ export function extractBearerToken(authHeader: string | null): string | null {
   }
 
   return authHeader.slice("Bearer ".length).trim();
-}
-
-async function readDeleteAccountRequestBody(request: Request): Promise<DeleteAccountRequestBody> {
-  try {
-    const parsedBody = (await request.json()) as DeleteAccountRequestBody | null;
-    return parsedBody ?? {};
-  } catch {
-    return {};
-  }
 }
 
 async function ownsSharedLedgerWithOtherMembers(

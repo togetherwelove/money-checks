@@ -6,11 +6,7 @@ type DeleteAccountResponse = {
 };
 
 type DeleteAccountRequestOptions = {
-  accessToken: string | null;
-  invokeFn: (
-    functionName: string,
-    options: { body: { accessToken: string } },
-  ) => Promise<{
+  invokeFn: (functionName: string) => Promise<{
     data: DeleteAccountResponse | null;
     error: unknown;
   }>;
@@ -20,17 +16,10 @@ type DeleteAccountRequestOptions = {
 const DELETE_ACCOUNT_FUNCTION = "delete-account";
 
 export async function deleteAccountRequest({
-  accessToken,
   invokeFn,
   onDeleted,
 }: DeleteAccountRequestOptions): Promise<void> {
-  if (!accessToken) {
-    throw new Error(AccountDeletionMessages.errorFallback);
-  }
-
-  const { data, error } = await invokeFn(DELETE_ACCOUNT_FUNCTION, {
-    body: { accessToken },
-  });
+  const { data, error } = await invokeFn(DELETE_ACCOUNT_FUNCTION);
 
   if (error) {
     const payload = await readFunctionsErrorPayload(error);

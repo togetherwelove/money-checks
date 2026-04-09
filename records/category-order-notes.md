@@ -1,24 +1,24 @@
-# 분류 순서 조정 기록
+﻿# 遺꾨쪟 ?쒖꽌 議곗젙 湲곕줉
 
-최종 갱신: 2026-04-03
-상태: 적용 완료
+理쒖쥌 媛깆떊: 2026-04-03
+?곹깭: ?곸슜 ?꾨즺
 
-## 유스케이스
+## ?좎뒪耳?댁뒪
 
-- 기록 화면에서 수입/지출 분류는 정사각형 카드 그리드로 표시한다.
-- 사용자가 분류 카드를 길게 누르면 순서 변경 상태가 된다.
-- 사용자가 다른 분류 카드를 누르면, 길게 누른 분류 카드가 그 위치로 이동한다.
-- 같은 카드를 다시 누르면 순서 변경 상태만 해제한다.
-- 수입과 지출의 분류 순서는 서로 독립적으로 저장한다.
+- 湲곕줉 ?붾㈃?먯꽌 ?섏엯/吏異?遺꾨쪟???뺤궗媛곹삎 移대뱶 洹몃━?쒕줈 ?쒖떆?쒕떎.
+- ?ъ슜?먭? 遺꾨쪟 移대뱶瑜?湲멸쾶 ?꾨Ⅴ硫??쒖꽌 蹂寃??곹깭媛 ?쒕떎.
+- ?ъ슜?먭? ?ㅻⅨ 遺꾨쪟 移대뱶瑜??꾨Ⅴ硫? 湲멸쾶 ?꾨Ⅸ 遺꾨쪟 移대뱶媛 洹??꾩튂濡??대룞?쒕떎.
+- 媛숈? 移대뱶瑜??ㅼ떆 ?꾨Ⅴ硫??쒖꽌 蹂寃??곹깭留??댁젣?쒕떎.
+- ?섏엯怨?吏異쒖쓽 遺꾨쪟 ?쒖꽌???쒕줈 ?낅┰?곸쑝濡???ν븳??
 
-## 자동 테스트
+## ?먮룞 ?뚯뒪??
+- [categoryOrder.test.ts](/C:/git/money-checks/src/lib/categoryOrder.test.ts)
+  - ??λ맂 ?쒖꽌? 湲곕낯 遺꾨쪟 蹂묓빀 洹쒖튃
+  - ?좏깮??遺꾨쪟瑜??ㅻⅨ ?꾩튂濡??대룞?쒗궎???쒖꽌 怨꾩궛
 
-- [categoryOrder.test.ts](/C:/git/money-checks/apps/mobile/src/lib/categoryOrder.test.ts)
-  - 저장된 순서와 기본 분류 병합 규칙
-  - 선택한 분류를 다른 위치로 이동시키는 순서 계산
+## 援ы쁽 硫붾え
 
-## 구현 메모
+- ?쒖꽌 怨꾩궛? [categoryOrder.ts](/C:/git/money-checks/src/lib/categoryOrder.ts)?먯꽌 泥섎━?쒕떎.
+- 濡쒖뺄 ??μ? [categoryOrderStorage.ts](/C:/git/money-checks/src/lib/categoryOrderStorage.ts)?먯꽌 泥섎━?쒕떎.
+- ?붾㈃ ?곹깭??[useCategoryOrder.ts](/C:/git/money-checks/src/hooks/useCategoryOrder.ts)?먯꽌 愿由ы븳??
 
-- 순서 계산은 [categoryOrder.ts](/C:/git/money-checks/apps/mobile/src/lib/categoryOrder.ts)에서 처리한다.
-- 로컬 저장은 [categoryOrderStorage.ts](/C:/git/money-checks/apps/mobile/src/lib/categoryOrderStorage.ts)에서 처리한다.
-- 화면 상태는 [useCategoryOrder.ts](/C:/git/money-checks/apps/mobile/src/hooks/useCategoryOrder.ts)에서 관리한다.

@@ -8,6 +8,6 @@ export default defineConfig({
     },
     environment: "node",
     globals: true,
-    include: ["src/**/*.test.ts", "../../supabase/functions/**/*.test.ts"],
+    include: ["src/**/*.test.ts", "supabase/functions/**/*.test.ts"],
   },
 });

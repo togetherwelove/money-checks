@@ -1,9 +1,9 @@
 import {
   DELETE_BLOCKED_MESSAGE,
   DELETE_FAILED_MESSAGE,
+  type DeleteAccountAdminClient,
   extractBearerToken,
   handleDeleteAccountRequest,
-  type DeleteAccountAdminClient,
 } from "./deleteAccountHandler";
 
 describe("deleteAccountHandler", () => {
@@ -14,10 +14,27 @@ describe("deleteAccountHandler", () => {
   });
 
   it("rejects requests without an access token", async () => {
-    const response = await handleDeleteAccountRequest(new Request("https://example.com", {
-      method: "POST",
-    }), {
-      createAdminClient: () => createAdminClientMock(),
+    const response = await handleDeleteAccountRequest(
+      new Request("https://example.com", {
+        method: "POST",
+      }),
+      {
+        createAdminClient: () => createAdminClientMock(),
+        serviceRoleKey: "service-role-key",
+        supabaseUrl: "https://example.supabase.co",
+      },
+    );
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({ error: "Unauthorized" });
+  });
+
+  it("rejects requests when the authenticated user cannot be resolved", async () => {
+    const response = await handleDeleteAccountRequest(createAuthorizedRequest(), {
+      createAdminClient: () =>
+        createAdminClientMock({
+          userError: new Error("invalid user"),
+        }),
       serviceRoleKey: "service-role-key",
       supabaseUrl: "https://example.supabase.co",
     });
@@ -64,16 +81,27 @@ describe("deleteAccountHandler", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ success: true });
   });
+
+  it("returns success when the user does not own any ledger books", async () => {
+    const response = await handleDeleteAccountRequest(createAuthorizedRequest(), {
+      createAdminClient: () =>
+        createAdminClientMock({
+          ownedBooks: [],
+        }),
+      serviceRoleKey: "service-role-key",
+      supabaseUrl: "https://example.supabase.co",
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ success: true });
+  });
 });
 
 function createAuthorizedRequest(): Request {
   return new Request("https://example.com", {
     method: "POST",
-    body: JSON.stringify({
-      accessToken: "sample-token",
-    }),
     headers: {
-      "Content-Type": "application/json",
+      Authorization: "Bearer sample-token",
     },
   });
 }
@@ -86,9 +114,7 @@ type AdminClientMockOptions = {
   userId?: string;
 };
 
-function createAdminClientMock(
-  options: AdminClientMockOptions = {},
-): DeleteAccountAdminClient {
+function createAdminClientMock(options: AdminClientMockOptions = {}): DeleteAccountAdminClient {
   const userId = options.userId ?? "user-1";
   const ownedBooks = options.ownedBooks ?? [{ id: "book-1" }];
   const otherMembers = options.otherMembers ?? [];

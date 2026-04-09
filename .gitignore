@@ -16,12 +16,6 @@ node_modules/
 *.pyd
 .env
 .env.*
-!.env.example
-!**/.env.example
-!.env.development.example
-!**/.env.development.example
-!.env.test.example
-!**/.env.test.example
 .supabase/projects.json
 *.log
 .codex-logs/

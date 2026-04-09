@@ -2,24 +2,11 @@ import { AccountDeletionMessages } from "../../constants/accountDeletionMessages
 import { deleteAccountRequest } from "./deleteAccountRequest";
 
 describe("deleteAccountRequest", () => {
-  it("throws the fallback message when the access token is missing", async () => {
-    await expect(
-      deleteAccountRequest({
-        accessToken: null,
-        invokeFn: vi.fn(async () => ({
-          data: { success: true },
-          error: null,
-        })),
-        onDeleted: vi.fn(async () => undefined),
-      }),
-    ).rejects.toThrow(AccountDeletionMessages.errorFallback);
-  });
-
   it("throws the server error message when the request is rejected", async () => {
     const invokeFn = vi.fn(async () => ({
       data: null,
       error: {
-        context: new Response(JSON.stringify({ error: "다른 멤버를 먼저 정리해 주세요." }), {
+        context: new Response(JSON.stringify({ error: "?ㅻⅨ 硫ㅻ쾭瑜?癒쇱? ?뺣━??二쇱꽭??" }), {
           status: 409,
         }),
         message: "Edge Function returned a non-2xx status code",
@@ -28,11 +15,10 @@ describe("deleteAccountRequest", () => {
 
     await expect(
       deleteAccountRequest({
-        accessToken: "token",
         invokeFn,
         onDeleted: vi.fn(async () => undefined),
       }),
-    ).rejects.toThrow("다른 멤버를 먼저 정리해 주세요.");
+    ).rejects.toThrow("?ㅻⅨ 硫ㅻ쾭瑜?癒쇱? ?뺣━??二쇱꽭??");
   });
 
   it("falls back to the generic error when the function response has no JSON body", async () => {
@@ -48,7 +34,6 @@ describe("deleteAccountRequest", () => {
 
     await expect(
       deleteAccountRequest({
-        accessToken: "token",
         invokeFn,
         onDeleted: vi.fn(async () => undefined),
       }),
@@ -65,7 +50,6 @@ describe("deleteAccountRequest", () => {
 
     await expect(
       deleteAccountRequest({
-        accessToken: "token",
         invokeFn,
         onDeleted: vi.fn(async () => undefined),
       }),
@@ -85,7 +69,6 @@ describe("deleteAccountRequest", () => {
 
     await expect(
       deleteAccountRequest({
-        accessToken: "token",
         invokeFn,
         onDeleted: vi.fn(async () => undefined),
       }),
@@ -100,14 +83,11 @@ describe("deleteAccountRequest", () => {
     const onDeleted = vi.fn(async () => undefined);
 
     await deleteAccountRequest({
-      accessToken: "token",
       invokeFn,
       onDeleted,
     });
 
-    expect(invokeFn).toHaveBeenCalledWith("delete-account", {
-      body: { accessToken: "token" },
-    });
+    expect(invokeFn).toHaveBeenCalledWith("delete-account");
     expect(onDeleted).toHaveBeenCalledTimes(1);
   });
 });

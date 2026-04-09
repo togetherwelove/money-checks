@@ -1,4 +1,9 @@
 {
-  "compilerOptions": {},
-  "extends": "expo/tsconfig.base"
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "moduleSuffixes": [".web", ".native", ""],
+    "strict": true,
+    "types": ["vitest/globals"]
+  },
+  "exclude": ["dist", "node_modules", "supabase/functions"]
 }

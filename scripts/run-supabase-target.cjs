@@ -5,7 +5,9 @@ const { spawnSync } = require("node:child_process");
 const [, , targetName, ...supabaseArgs] = process.argv;
 
 if (!targetName || supabaseArgs.length === 0) {
-  console.error("Usage: node scripts/run-supabase-target.cjs <development|test> <supabase args...>");
+  console.error(
+    "Usage: node scripts/run-supabase-target.cjs <development|test> <supabase args...>",
+  );
   process.exit(1);
 }
 
