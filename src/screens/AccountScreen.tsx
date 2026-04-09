@@ -3,12 +3,15 @@ import { StyleSheet, Text, TextInput, View } from "react-native";
 
 import { ActionButton } from "../components/ActionButton";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
+import { TextLinkButton } from "../components/TextLinkButton";
 import { AccountVersionFooter } from "../components/accountScreen/AccountVersionFooter";
-import { DeleteAccountCard } from "../components/accountScreen/DeleteAccountCard";
+import { DeleteAccountModal } from "../components/accountScreen/DeleteAccountModal";
+import { AccountDeletionMessages } from "../constants/accountDeletionMessages";
 import { AppColors } from "../constants/colors";
 import { EmailAuthCopy } from "../constants/emailAuth";
 import { NicknameAutofillProps } from "../constants/inputAutofill";
 import { AppLayout } from "../constants/layout";
+import { LedgerBookNicknameCopy } from "../constants/ledgerBookNickname";
 import { AppMessages } from "../constants/messages";
 import {
   CardTitleTextStyle,
@@ -31,6 +34,7 @@ export function AccountScreen({ email, fallbackDisplayName, userId }: AccountScr
   const [displayName, setDisplayName] = useState(fallbackDisplayName);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [hasError, setHasError] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -83,31 +87,32 @@ export function AccountScreen({ email, fallbackDisplayName, userId }: AccountScr
       </View>
       <View style={styles.card}>
         <Text style={styles.cardTitle}>{AppMessages.accountNicknameTitle}</Text>
-        <Text style={styles.label}>{AppMessages.accountNicknameSubtitle}</Text>
-        <TextInput
-          {...NicknameAutofillProps}
-          onChangeText={(value) => {
-            setDisplayName(value);
-            if (statusMessage) {
-              setStatusMessage(null);
-            }
-          }}
-          placeholder={fallbackDisplayName || AppMessages.accountNicknamePlaceholder}
-          style={styles.input}
-          value={displayName}
-        />
+        <View style={styles.inlineEditRow}>
+          <TextInput
+            {...NicknameAutofillProps}
+            onChangeText={(value) => {
+              setDisplayName(value);
+              if (statusMessage) {
+                setStatusMessage(null);
+              }
+            }}
+            placeholder={fallbackDisplayName || AppMessages.accountNicknamePlaceholder}
+            style={styles.inlineInput}
+            value={displayName}
+          />
+          <View style={styles.nicknameActionSlot}>
+            <ActionButton
+              label={AppMessages.accountNicknameSave}
+              onPress={handleSaveDisplayName}
+              variant="primary"
+            />
+          </View>
+        </View>
         {statusMessage ? (
           <Text style={[styles.statusText, hasError ? styles.errorText : styles.successText]}>
             {statusMessage}
           </Text>
         ) : null}
-        <View style={styles.actionRow}>
-          <ActionButton
-            label={AppMessages.accountNicknameSave}
-            onPress={handleSaveDisplayName}
-            variant="primary"
-          />
-        </View>
       </View>
       <View style={styles.card}>
         <Text style={styles.cardTitle}>{AppMessages.accountActionTitle}</Text>
@@ -115,11 +120,19 @@ export function AccountScreen({ email, fallbackDisplayName, userId }: AccountScr
           <ActionButton
             label={AppMessages.authSignOut}
             onPress={signOutFromApp}
-            variant="destructive"
+            size="inline"
+            variant="secondary"
+          />
+        </View>
+        <View style={styles.deleteActionRow}>
+          <TextLinkButton
+            label={AccountDeletionMessages.openAction}
+            onPress={() => setIsDeleteModalOpen(true)}
+            tone="destructive"
           />
         </View>
       </View>
-      <DeleteAccountCard />
+      <DeleteAccountModal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} />
       <AccountVersionFooter />
     </KeyboardAwareScrollView>
   );
@@ -158,6 +171,18 @@ const styles = StyleSheet.create({
   },
   label: CompactLabelTextStyle,
   input: FormInputTextStyle,
+  inlineEditRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  inlineInput: {
+    ...FormInputTextStyle,
+    flex: 1,
+  },
+  nicknameActionSlot: {
+    minWidth: LedgerBookNicknameCopy.actionMinWidth,
+  },
   value: {
     color: AppColors.text,
     fontSize: 14,
@@ -172,5 +197,9 @@ const styles = StyleSheet.create({
   },
   actionRow: {
     paddingTop: 2,
+  },
+  deleteActionRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
   },
 });

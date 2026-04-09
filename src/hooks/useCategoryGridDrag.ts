@@ -11,23 +11,25 @@ import {
   resolveDraggedCategoryPosition,
 } from "../lib/categoryGrid";
 import { resolvePreviewCategoryOrder } from "../lib/categoryOrder";
+import type { CategoryDefinition } from "../types/category";
 
 type UseCategoryGridDragParams = {
   onDraggingChange?: (isDragging: boolean) => void;
-  orderedCategories: string[];
-  replaceOrderedCategories: (nextCategories: string[]) => void;
+  orderedCategories: CategoryDefinition[];
+  replaceOrderedCategories: (nextCategories: CategoryDefinition[]) => void;
   saveCurrentOrder: () => void;
 };
 
 type UseCategoryGridDragResult = {
   cellSize: number;
+  columns: number;
   containerHeight: number;
-  draggingCategory: string | null;
-  getAnimatedPosition: (category: string) => Animated.ValueXY;
+  draggingCategoryId: string | null;
+  getAnimatedPosition: (categoryId: string) => Animated.ValueXY;
   handleContainerLayout: (view: View | null, width: number) => void;
-  handleDragEnd: (category: string) => void;
-  handleDragMove: (category: string, pageX: number, pageY: number) => void;
-  handleDragStart: (category: string, pageX: number, pageY: number) => void;
+  handleDragEnd: (categoryId: string) => void;
+  handleDragMove: (categoryId: string, pageX: number, pageY: number) => void;
+  handleDragStart: (categoryId: string, pageX: number, pageY: number) => void;
 };
 
 export function useCategoryGridDrag({
@@ -41,10 +43,10 @@ export function useCategoryGridDrag({
     top: 0,
     width: 0,
   });
-  const [draggingCategory, setDraggingCategory] = useState<string | null>(null);
+  const [draggingCategoryId, setDraggingCategoryId] = useState<string | null>(null);
   const animatedPositionsRef = useRef<Record<string, Animated.ValueXY>>({});
-  const draggingCategoryRef = useRef<string | null>(null);
-  const dragStartOrderRef = useRef<string[]>([]);
+  const draggingCategoryIdRef = useRef<string | null>(null);
+  const dragStartOrderRef = useRef<CategoryDefinition[]>([]);
   const dragTargetIndexRef = useRef<number | null>(null);
   const orderedCategoriesRef = useRef(orderedCategories);
   const gridMetrics = resolveCategoryGridMetrics(containerBounds.width);
@@ -59,11 +61,11 @@ export function useCategoryGridDrag({
       const nextPosition = resolveCategoryGridPosition(index, cellSize, columns);
       const animatedPosition = getAnimatedPositionValue(
         animatedPositionsRef.current,
-        category,
+        category.id,
         nextPosition,
       );
 
-      if (draggingCategoryRef.current === category) {
+      if (draggingCategoryIdRef.current === category.id) {
         continue;
       }
 
@@ -78,13 +80,18 @@ export function useCategoryGridDrag({
 
   return {
     cellSize,
+    columns,
     containerHeight: resolveCategoryGridHeight(orderedCategories.length, cellSize, columns),
-    draggingCategory,
-    getAnimatedPosition: (category) =>
+    draggingCategoryId,
+    getAnimatedPosition: (categoryId) =>
       getAnimatedPositionValue(
         animatedPositionsRef.current,
-        category,
-        resolveCategoryGridPosition(orderedCategories.indexOf(category), cellSize, columns),
+        categoryId,
+        resolveCategoryGridPosition(
+          orderedCategories.findIndex((category) => category.id === categoryId),
+          cellSize,
+          columns,
+        ),
       ),
     handleContainerLayout: (view, width) => {
       if (!view) {
@@ -95,16 +102,18 @@ export function useCategoryGridDrag({
         setContainerBounds({ left, top, width });
       });
     },
-    handleDragEnd: (category) => {
-      if (draggingCategoryRef.current !== category) {
+    handleDragEnd: (categoryId) => {
+      if (draggingCategoryIdRef.current !== categoryId) {
         return;
       }
 
-      const finalIndex = orderedCategoriesRef.current.indexOf(category);
+      const finalIndex = orderedCategoriesRef.current.findIndex(
+        (category) => category.id === categoryId,
+      );
       const finalPosition = resolveCategoryGridPosition(finalIndex, cellSize, columns);
       const animatedPosition = getAnimatedPositionValue(
         animatedPositionsRef.current,
-        category,
+        categoryId,
         finalPosition,
       );
 
@@ -114,22 +123,22 @@ export function useCategoryGridDrag({
         toValue: finalPosition,
         useNativeDriver: false,
       }).start(() => {
-        draggingCategoryRef.current = null;
+        draggingCategoryIdRef.current = null;
         dragStartOrderRef.current = [];
         dragTargetIndexRef.current = null;
-        setDraggingCategory(null);
+        setDraggingCategoryId(null);
         onDraggingChange?.(false);
         saveCurrentOrder();
       });
     },
-    handleDragMove: (category, pageX, pageY) => {
-      if (draggingCategoryRef.current !== category || cellSize <= 0) {
+    handleDragMove: (categoryId, pageX, pageY) => {
+      if (draggingCategoryIdRef.current !== categoryId || cellSize <= 0) {
         return;
       }
 
       const animatedPosition = getAnimatedPositionValue(
         animatedPositionsRef.current,
-        category,
+        categoryId,
         resolveDraggedCategoryPosition(pageX, pageY, containerBounds, cellSize),
       );
       const nextPosition = resolveDraggedCategoryPosition(pageX, pageY, containerBounds, cellSize);
@@ -150,23 +159,25 @@ export function useCategoryGridDrag({
 
       dragTargetIndexRef.current = toIndex;
       replaceOrderedCategories(
-        resolvePreviewCategoryOrder(dragStartOrderRef.current, category, toIndex),
+        resolvePreviewCategoryOrder(dragStartOrderRef.current, categoryId, toIndex),
       );
     },
-    handleDragStart: (category, pageX, pageY) => {
+    handleDragStart: (categoryId, pageX, pageY) => {
       if (cellSize <= 0) {
         return;
       }
 
-      draggingCategoryRef.current = category;
+      draggingCategoryIdRef.current = categoryId;
       dragStartOrderRef.current = [...orderedCategoriesRef.current];
-      dragTargetIndexRef.current = dragStartOrderRef.current.indexOf(category);
-      setDraggingCategory(category);
+      dragTargetIndexRef.current = dragStartOrderRef.current.findIndex(
+        (category) => category.id === categoryId,
+      );
+      setDraggingCategoryId(categoryId);
       onDraggingChange?.(true);
 
       const animatedPosition = getAnimatedPositionValue(
         animatedPositionsRef.current,
-        category,
+        categoryId,
         resolveDraggedCategoryPosition(pageX, pageY, containerBounds, cellSize),
       );
       animatedPosition.setValue(

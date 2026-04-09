@@ -1,8 +1,12 @@
-export function moveCategoryItem(
-  categories: readonly string[],
+type CategoryOrderItem = {
+  id: string;
+};
+
+export function moveCategoryItem<T>(
+  categories: readonly T[],
   fromIndex: number,
   toIndex: number,
-): string[] {
+): T[] {
   if (
     fromIndex < 0 ||
     toIndex < 0 ||
@@ -19,27 +23,29 @@ export function moveCategoryItem(
   return nextCategories;
 }
 
-export function resolvePreviewCategoryOrder(
-  categories: readonly string[],
-  draggedCategory: string,
+export function resolvePreviewCategoryOrder<T extends CategoryOrderItem>(
+  categories: readonly T[],
+  draggedCategoryId: string,
   toIndex: number,
-): string[] {
-  const fromIndex = categories.indexOf(draggedCategory);
+): T[] {
+  const fromIndex = categories.findIndex((category) => category.id === draggedCategoryId);
   return moveCategoryItem(categories, fromIndex, toIndex);
 }
 
-export function resolveCategoryOrder(
-  baseCategories: readonly string[],
-  storedCategories: readonly string[] | null | undefined,
-): string[] {
-  if (!storedCategories?.length) {
+export function resolveCategoryOrder<T extends CategoryOrderItem>(
+  baseCategories: readonly T[],
+  storedCategoryIds: readonly string[] | null | undefined,
+): T[] {
+  if (!storedCategoryIds?.length) {
     return [...baseCategories];
   }
 
-  const knownCategories = new Set(baseCategories);
-  const orderedCategories = storedCategories.filter((category) => knownCategories.has(category));
-  const seenCategories = new Set(orderedCategories);
-  const remainingCategories = baseCategories.filter((category) => !seenCategories.has(category));
+  const categoryMap = new Map(baseCategories.map((category) => [category.id, category]));
+  const orderedCategories = storedCategoryIds
+    .map((categoryId) => categoryMap.get(categoryId))
+    .filter((category): category is T => Boolean(category));
+  const seenCategories = new Set(orderedCategories.map((category) => category.id));
+  const remainingCategories = baseCategories.filter((category) => !seenCategories.has(category.id));
 
   return [...orderedCategories, ...remainingCategories];
 }

@@ -11,7 +11,7 @@ type BackToCalendarActionProps = {
 export function BackToCalendarAction({ onPress }: BackToCalendarActionProps) {
   return (
     <Pressable onPress={onPress} style={styles.button}>
-      <Feather color={AppColors.primary} name="arrow-left" size={16} />
+      <Feather color={AppColors.primary} name="arrow-left" size={18} />
       <Text style={styles.label}>{AppMessages.backToCalendarAction}</Text>
     </Pressable>
   );
@@ -28,7 +28,7 @@ const styles = StyleSheet.create({
   },
   label: {
     color: AppColors.primary,
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "700",
   },
 });

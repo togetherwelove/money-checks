@@ -29,6 +29,6 @@ export function LedgerEditorPanel(props: LedgerEditorPanelProps) {
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 2,
+    position: "relative",
   },
 });

@@ -4,23 +4,15 @@ import { Animated, ScrollView, StyleSheet, View } from "react-native";
 
 import { MonthCalendarPageView } from "./monthCalendarPager/MonthCalendarPageView";
 import { CALENDAR_MAX_HEIGHT } from "./monthCalendarPager/calendarLayout";
+import type { MonthCalendarPagerProps } from "./monthCalendarPager/monthCalendarPagerTypes";
+import { animateViewportHeight } from "./monthCalendarPager/monthCalendarPagerUtils";
 import {
-  type MonthPage,
-  animateViewportHeight,
-} from "./monthCalendarPager/monthCalendarPagerUtils";
-import { resolveMonthOffsetFromScrollOffset } from "./monthCalendarPager/monthCalendarScrollSnap";
-
-type MonthCalendarPagerProps = {
-  currentPage: MonthPage;
-  nextPage: MonthPage;
-  onMoveMonth: (monthOffset: number) => void;
-  onSelectDate: (isoDate: string) => void;
-  previousPage: MonthPage;
-  selectedDate: string;
-};
+  CURRENT_PAGE_INDEX,
+  resolveMonthOffsetFromPageIndex,
+  resolvePageIndexFromScrollOffset,
+} from "./monthCalendarPager/monthCalendarScrollSnap";
 
 const PAGE_HEIGHT = CALENDAR_MAX_HEIGHT;
-const CURRENT_PAGE_INDEX = 1;
 
 export function MonthCalendarPager({
   currentPage,
@@ -40,9 +32,9 @@ export function MonthCalendarPager({
   useEffect(() => {
     if (!isReadyRef.current) {
       isReadyRef.current = true;
-      scrollToPage(CURRENT_PAGE_INDEX, false);
       currentPageKeyRef.current = currentPage.key;
       viewportHeight.setValue(currentPage.height);
+      scrollToPage(scrollViewRef, CURRENT_PAGE_INDEX, false);
       return;
     }
 
@@ -53,7 +45,7 @@ export function MonthCalendarPager({
     currentPageKeyRef.current = currentPage.key;
     isResettingRef.current = true;
     pendingMonthOffsetRef.current = 0;
-    scrollToPage(CURRENT_PAGE_INDEX, false);
+    scrollToPage(scrollViewRef, CURRENT_PAGE_INDEX, false);
     requestAnimationFrame(() => {
       isResettingRef.current = false;
       animateViewportHeight(viewportHeight, currentPage.height);
@@ -64,21 +56,14 @@ export function MonthCalendarPager({
     if (isResettingRef.current) {
       return;
     }
-
-    const monthOffset = resolveMonthOffsetFromScrollOffset(offsetY, PAGE_HEIGHT);
+    const monthOffset = resolveMonthOffsetFromPageIndex(
+      resolvePageIndexFromScrollOffset(offsetY, PAGE_HEIGHT),
+    );
     if (monthOffset === 0 || pendingMonthOffsetRef.current !== 0) {
       return;
     }
-
     pendingMonthOffsetRef.current = monthOffset;
     onMoveMonth(monthOffset);
-  };
-
-  const scrollToPage = (pageIndex: number, animated: boolean) => {
-    scrollViewRef.current?.scrollTo({
-      y: pageIndex * PAGE_HEIGHT,
-      animated,
-    });
   };
 
   return (
@@ -88,12 +73,8 @@ export function MonthCalendarPager({
           bounces={false}
           contentOffset={{ x: 0, y: PAGE_HEIGHT }}
           decelerationRate="fast"
-          onScrollEndDrag={(event) => {
-            handleScrollEnd(event.nativeEvent.contentOffset.y);
-          }}
-          onMomentumScrollEnd={(event) => {
-            handleScrollEnd(event.nativeEvent.contentOffset.y);
-          }}
+          onMomentumScrollEnd={(event) => handleScrollEnd(event.nativeEvent.contentOffset.y)}
+          onScrollEndDrag={(event) => handleScrollEnd(event.nativeEvent.contentOffset.y)}
           pagingEnabled
           ref={scrollViewRef}
           scrollEventThrottle={16}
@@ -126,20 +107,31 @@ export function MonthCalendarPager({
   );
 }
 
+function scrollToPage(
+  scrollViewRef: React.RefObject<ScrollView | null>,
+  pageIndex: number,
+  animated: boolean,
+) {
+  scrollViewRef.current?.scrollTo({
+    animated,
+    y: pageIndex * PAGE_HEIGHT,
+  });
+}
+
 function PageContainer({ children }: { children: ReactNode }) {
   return <View style={styles.page}>{children}</View>;
 }
 
 const styles = StyleSheet.create({
-  viewport: {
-    overflow: "hidden",
-    width: "100%",
+  page: {
+    height: PAGE_HEIGHT,
+    justifyContent: "flex-start",
   },
   scrollFrame: {
     height: PAGE_HEIGHT,
   },
-  page: {
-    height: PAGE_HEIGHT,
-    justifyContent: "flex-start",
+  viewport: {
+    overflow: "hidden",
+    width: "100%",
   },
 });

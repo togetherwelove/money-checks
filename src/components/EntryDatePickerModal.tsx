@@ -5,6 +5,7 @@ import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { AppColors } from "../constants/colors";
 import { EntryDatePickerCopy } from "../constants/entryDatePickerCopy";
 import { AppLayout } from "../constants/layout";
+import { ModalActionRowStyle } from "../constants/uiStyles";
 import type { LedgerEntry } from "../types/ledger";
 import {
   addMonths,
@@ -82,15 +83,17 @@ export function EntryDatePickerModal({
                 }}
                 value={draftDate}
               />
-              <ActionButton
-                fullWidth
-                label={EntryDatePickerCopy.confirmAction}
-                onPress={() => {
-                  onSelectDate(toIsoDate(draftDate));
-                  onClose();
-                }}
-                variant="primary"
-              />
+              <View style={styles.actionRow}>
+                <ActionButton
+                  label={EntryDatePickerCopy.confirmAction}
+                  onPress={() => {
+                    onSelectDate(toIsoDate(draftDate));
+                    onClose();
+                  }}
+                  size="inline"
+                  variant="primary"
+                />
+              </View>
             </>
           ) : (
             <>
@@ -162,6 +165,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 8,
   },
+  actionRow: ModalActionRowStyle,
   monthLabel: {
     color: AppColors.text,
     fontSize: 14,

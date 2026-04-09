@@ -19,6 +19,7 @@ type EntryScreenProps = {
 
 export function EntryScreen({ onSaveEntry, state }: EntryScreenProps) {
   const actualToday = new Date();
+  const todayIsoDate = toIsoDate(actualToday);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isCategoryDragging, setIsCategoryDragging] = useState(false);
   const {
@@ -63,8 +64,9 @@ export function EntryScreen({ onSaveEntry, state }: EntryScreenProps) {
         {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
         <EntryDateToolbar
           dateLabel={formatSelectedDate(selectedDate)}
-          onMoveToToday={() => handleSelectDate(toIsoDate(actualToday))}
+          onMoveToToday={() => handleSelectDate(todayIsoDate)}
           onPressDateLabel={handleOpenDatePicker}
+          showMoveToToday={selectedDate !== todayIsoDate}
         />
         <LedgerEditorPanel
           draft={draft}

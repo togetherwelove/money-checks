@@ -1,7 +1,9 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useEffect, useMemo, useState } from "react";
+import { StyleSheet, View } from "react-native";
 
 import { CalendarPickerCopy } from "../../constants/calendarPicker";
+import { ModalActionRowStyle } from "../../constants/uiStyles";
 import { parseIsoDate, toIsoDate } from "../../utils/calendar";
 import { ActionButton } from "../ActionButton";
 import { CalendarPickerModalShell } from "./CalendarPickerModalShell";
@@ -49,15 +51,21 @@ export function NativeYearPickerModal({
         }}
         value={draftDate}
       />
-      <ActionButton
-        label={CalendarPickerCopy.yearPickerConfirmAction}
-        fullWidth
-        onPress={() => {
-          onSelectDate(toIsoDate(draftDate));
-          onClose();
-        }}
-        variant="primary"
-      />
+      <View style={styles.actionRow}>
+        <ActionButton
+          label={CalendarPickerCopy.yearPickerConfirmAction}
+          onPress={() => {
+            onSelectDate(toIsoDate(draftDate));
+            onClose();
+          }}
+          size="inline"
+          variant="primary"
+        />
+      </View>
     </CalendarPickerModalShell>
   );
 }
+
+const styles = StyleSheet.create({
+  actionRow: ModalActionRowStyle,
+});

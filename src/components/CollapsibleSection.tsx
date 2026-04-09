@@ -1,12 +1,8 @@
-import type { ReactNode } from "react";
-import { useEffect, useRef, useState } from "react";
-import { Animated, type LayoutChangeEvent, StyleSheet, View } from "react-native";
+import { type ReactNode, useEffect, useState } from "react";
+import { View } from "react-native";
+import Collapsible from "react-native-collapsible";
 
-import {
-  COLLAPSIBLE_HEIGHT_DURATION_MS,
-  COLLAPSIBLE_OPACITY_DURATION_MS,
-  COLLAPSIBLE_TRANSLATE_Y,
-} from "../constants/animation";
+import { COLLAPSIBLE_DURATION_MS } from "../constants/animation";
 
 type CollapsibleSectionProps = {
   children: ReactNode;
@@ -14,71 +10,21 @@ type CollapsibleSectionProps = {
 };
 
 export function CollapsibleSection({ children, isCollapsed }: CollapsibleSectionProps) {
-  const [contentHeight, setContentHeight] = useState<number | null>(null);
-  const heightValue = useRef(new Animated.Value(0)).current;
-  const opacityValue = useRef(new Animated.Value(1)).current;
-  const translateYValue = useRef(new Animated.Value(0)).current;
+  const [hasActivatedAnimation, setHasActivatedAnimation] = useState(isCollapsed);
 
   useEffect(() => {
-    if (contentHeight === null) {
-      return;
+    if (isCollapsed) {
+      setHasActivatedAnimation(true);
     }
+  }, [isCollapsed]);
 
-    Animated.parallel([
-      Animated.timing(heightValue, {
-        duration: COLLAPSIBLE_HEIGHT_DURATION_MS,
-        toValue: isCollapsed ? 0 : contentHeight,
-        useNativeDriver: false,
-      }),
-      Animated.timing(opacityValue, {
-        duration: COLLAPSIBLE_OPACITY_DURATION_MS,
-        toValue: isCollapsed ? 0 : 1,
-        useNativeDriver: false,
-      }),
-      Animated.timing(translateYValue, {
-        duration: COLLAPSIBLE_OPACITY_DURATION_MS,
-        toValue: isCollapsed ? -COLLAPSIBLE_TRANSLATE_Y : 0,
-        useNativeDriver: false,
-      }),
-    ]).start();
-  }, [contentHeight, heightValue, isCollapsed, opacityValue, translateYValue]);
-
-  const handleLayout = (event: LayoutChangeEvent) => {
-    const nextHeight = event.nativeEvent.layout.height;
-    if (nextHeight <= 0 || nextHeight === contentHeight) {
-      return;
-    }
-
-    setContentHeight(nextHeight);
-    if (!isCollapsed) {
-      heightValue.setValue(nextHeight);
-    }
-  };
+  if (!hasActivatedAnimation && !isCollapsed) {
+    return <View>{children}</View>;
+  }
 
   return (
-    <Animated.View
-      style={[
-        styles.container,
-        contentHeight === null ? null : { height: heightValue },
-        {
-          opacity: opacityValue,
-          transform: [{ translateY: translateYValue }],
-        },
-      ]}
-    >
-      <View onLayout={handleLayout} style={styles.content}>
-        {children}
-      </View>
-    </Animated.View>
+    <Collapsible collapsed={isCollapsed} duration={COLLAPSIBLE_DURATION_MS} renderChildrenCollapsed>
+      {children}
+    </Collapsible>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    overflow: "hidden",
-    width: "100%",
-  },
-  content: {
-    width: "100%",
-  },
-});

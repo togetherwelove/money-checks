@@ -77,3 +77,9 @@ export const SupportingTextStyle: TextStyle = {
   fontSize: 12,
   lineHeight: 18,
 };
+
+export const ModalActionRowStyle: ViewStyle = {
+  flexDirection: "row",
+  justifyContent: "flex-end",
+  gap: 8,
+};

@@ -34,6 +34,7 @@ export function HomeScreen({
   onSelectCalendarDate,
   state,
 }: HomeScreenProps) {
+  const todayIsoDate = toIsoDate(new Date());
   const [isCalendarCollapsed, setIsCalendarCollapsed] = useState(false);
   const {
     errorMessage,
@@ -56,8 +57,9 @@ export function HomeScreen({
             <CalendarToolbar
               monthLabel={monthlyLedger.monthLabel}
               onSelectToday={() => {
-                onSelectCalendarDate(toIsoDate(new Date()));
+                onSelectCalendarDate(todayIsoDate);
               }}
+              showMoveToCurrent={selectedDate !== todayIsoDate}
             />
             <WeekdayHeader />
             <MonthCalendarPager

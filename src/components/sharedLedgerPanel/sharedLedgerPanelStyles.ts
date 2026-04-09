@@ -2,6 +2,8 @@ import { StyleSheet } from "react-native";
 
 import { AppColors } from "../../constants/colors";
 import { AppLayout } from "../../constants/layout";
+import { LedgerBookNicknameCopy } from "../../constants/ledgerBookNickname";
+import { FormInputTextStyle } from "../../constants/uiStyles";
 
 export const sharedLedgerPanelStyles = StyleSheet.create({
   panel: {
@@ -21,9 +23,13 @@ export const sharedLedgerPanelStyles = StyleSheet.create({
   },
   sectionHeader: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
     gap: 8,
+  },
+  headerContent: {
+    flex: 1,
+    gap: 6,
   },
   sectionTitle: {
     color: AppColors.text,
@@ -36,9 +42,29 @@ export const sharedLedgerPanelStyles = StyleSheet.create({
     fontWeight: "600",
   },
   bookName: {
+    flexShrink: 1,
     color: AppColors.text,
     fontSize: 18,
     fontWeight: "800",
+  },
+  bookNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: 6,
+  },
+  bookNameEditRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "stretch",
+    gap: 8,
+  },
+  bookNameHeaderInput: {
+    ...FormInputTextStyle,
+    flex: 1,
+  },
+  bookNameActionSlot: {
+    minWidth: LedgerBookNicknameCopy.actionMinWidth,
   },
   codeBlock: {
     gap: 4,
@@ -49,10 +75,11 @@ export const sharedLedgerPanelStyles = StyleSheet.create({
   shareCodeRow: {
     flexDirection: "row",
     alignItems: "center",
+    alignSelf: "flex-start",
     gap: 2,
   },
   shareCode: {
-    flex: 1,
+    flexShrink: 1,
     color: AppColors.primary,
     fontSize: 22,
     fontWeight: "800",
@@ -97,12 +124,10 @@ export const sharedLedgerPanelStyles = StyleSheet.create({
     paddingTop: 4,
   },
   stateBadge: {
+    flexShrink: 0,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
-  },
-  personalBadge: {
-    backgroundColor: AppColors.accentSoft,
   },
   sharedBadge: {
     backgroundColor: AppColors.incomeSoft,
@@ -110,9 +135,6 @@ export const sharedLedgerPanelStyles = StyleSheet.create({
   stateBadgeText: {
     fontSize: 11,
     fontWeight: "700",
-  },
-  personalBadgeText: {
-    color: AppColors.accent,
   },
   sharedBadgeText: {
     color: AppColors.income,

@@ -1,7 +1,7 @@
+import { Feather } from "@expo/vector-icons";
 import { useMemo, useRef } from "react";
 import {
   Animated,
-  type GestureResponderEvent,
   PanResponder,
   type PanResponderGestureState,
   StyleSheet,
@@ -11,20 +11,23 @@ import {
 import {
   CATEGORY_DRAG_LONG_PRESS_MS,
   CATEGORY_DRAG_START_THRESHOLD,
+  CATEGORY_ICON_LABEL_GAP,
+  CATEGORY_ICON_SIZE,
 } from "../../constants/categorySelector";
 import { AppColors } from "../../constants/colors";
 import { resolveDraggedCategoryScale } from "../../lib/categoryGrid";
+import type { CategoryDefinition } from "../../types/category";
 
 type CategoryGridItemProps = {
   animatedPosition: Animated.ValueXY;
-  category: string;
+  category: CategoryDefinition;
   cellSize: number;
   isActive: boolean;
   isDragging: boolean;
-  onDragEnd: (category: string) => void;
-  onDragMove: (category: string, pageX: number, pageY: number) => void;
-  onDragStart: (category: string, pageX: number, pageY: number) => void;
-  onPressCategory: (category: string) => void;
+  onDragEnd: (categoryId: string) => void;
+  onDragMove: (categoryId: string, pageX: number, pageY: number) => void;
+  onDragStart: (categoryId: string, pageX: number, pageY: number) => void;
+  onPressCategory: (category: CategoryDefinition) => void;
 };
 
 export function CategoryGridItem({
@@ -40,6 +43,7 @@ export function CategoryGridItem({
 }: CategoryGridItemProps) {
   const dragTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasDraggedRef = useRef(false);
+  const iconName = category.iconName;
 
   const panResponder = useMemo(
     () =>
@@ -49,7 +53,7 @@ export function CategoryGridItem({
           hasDraggedRef.current = false;
           dragTimerRef.current = setTimeout(() => {
             hasDraggedRef.current = true;
-            onDragStart(category, gestureState.x0, gestureState.y0);
+            onDragStart(category.id, gestureState.x0, gestureState.y0);
           }, CATEGORY_DRAG_LONG_PRESS_MS);
         },
         onPanResponderMove: (_event, gestureState) => {
@@ -61,14 +65,14 @@ export function CategoryGridItem({
             return;
           }
 
-          onDragMove(category, gestureState.moveX, gestureState.moveY);
+          onDragMove(category.id, gestureState.moveX, gestureState.moveY);
         },
         onPanResponderRelease: (_event, gestureState) => {
           clearDragTimer(dragTimerRef.current);
           dragTimerRef.current = null;
 
           if (hasDraggedRef.current) {
-            onDragEnd(category);
+            onDragEnd(category.id);
             return;
           }
 
@@ -81,7 +85,7 @@ export function CategoryGridItem({
           dragTimerRef.current = null;
 
           if (hasDraggedRef.current) {
-            onDragEnd(category);
+            onDragEnd(category.id);
           }
         },
         onStartShouldSetPanResponder: () => true,
@@ -109,7 +113,12 @@ export function CategoryGridItem({
         },
       ]}
     >
-      <Text style={[styles.optionText, isActive && styles.activeOptionText]}>{category}</Text>
+      <Feather
+        color={isActive ? AppColors.primary : AppColors.mutedText}
+        name={iconName}
+        size={CATEGORY_ICON_SIZE}
+      />
+      <Text style={[styles.optionText, isActive && styles.activeOptionText]}>{category.label}</Text>
     </Animated.View>
   );
 }
@@ -135,6 +144,7 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.surface,
     alignItems: "center",
     justifyContent: "center",
+    gap: CATEGORY_ICON_LABEL_GAP,
   },
   optionText: {
     color: AppColors.text,

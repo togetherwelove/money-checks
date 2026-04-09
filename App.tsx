@@ -2,6 +2,7 @@ import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import type { Session } from "@supabase/supabase-js";
 import { useState } from "react";
 import { StatusBar, StyleSheet, Text, View } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { RootSiblingParent } from "react-native-root-siblings";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
@@ -36,21 +37,23 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <RootSiblingParent>
-        {isLoading ? (
-          <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="dark-content" backgroundColor={AppColors.background} />
-            <Text style={styles.loadingText}>{AppMessages.authLoading}</Text>
-          </SafeAreaView>
-        ) : !session ? (
-          <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="dark-content" backgroundColor={AppColors.background} />
-            <AuthScreen initialErrorMessage={errorMessage} />
-          </SafeAreaView>
-        ) : (
-          <SignedInApp session={session} />
-        )}
-      </RootSiblingParent>
+      <GestureHandlerRootView style={styles.gestureRoot}>
+        <RootSiblingParent>
+          {isLoading ? (
+            <SafeAreaView style={styles.container}>
+              <StatusBar barStyle="dark-content" backgroundColor={AppColors.background} />
+              <Text style={styles.loadingText}>{AppMessages.authLoading}</Text>
+            </SafeAreaView>
+          ) : !session ? (
+            <SafeAreaView style={styles.container}>
+              <StatusBar barStyle="dark-content" backgroundColor={AppColors.background} />
+              <AuthScreen initialErrorMessage={errorMessage} />
+            </SafeAreaView>
+          ) : (
+            <SignedInApp session={session} />
+          )}
+        </RootSiblingParent>
+      </GestureHandlerRootView>
     </SafeAreaProvider>
   );
 }
@@ -251,6 +254,9 @@ function SignedInApp({ session }: { session: Session }) {
 }
 
 const styles = StyleSheet.create({
+  gestureRoot: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     backgroundColor: AppColors.background,

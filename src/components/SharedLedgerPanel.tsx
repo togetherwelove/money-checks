@@ -2,6 +2,7 @@ import { useState } from "react";
 import { View } from "react-native";
 
 import { AppMessages } from "../constants/messages";
+import { useLedgerBookNickname } from "../hooks/useLedgerBookNickname";
 import type { LedgerBook } from "../types/ledgerBook";
 import type {
   JoinSharedLedgerBookAttempt,
@@ -39,6 +40,17 @@ export function SharedLedgerPanel({
   const [shareCodeInput, setShareCodeInput] = useState("");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [hasJoinError, setHasJoinError] = useState(false);
+  const {
+    bookNameInput,
+    displayedBookName,
+    handleChangeBookName,
+    handleSaveBookName,
+    isOwner,
+    statusMessage: bookNameStatusMessage,
+  } = useLedgerBookNickname({
+    activeBook,
+    currentUserId,
+  });
   const isJoinBlocked = isJoinRequestBlockedByActiveSharedLedger({
     activeBook,
     currentUserId,
@@ -110,11 +122,17 @@ export function SharedLedgerPanel({
     <View style={styles.panel}>
       <SharedLedgerBookCard
         activeBook={activeBook}
+        bookName={displayedBookName}
+        bookNameInput={bookNameInput}
+        bookNameStatusMessage={bookNameStatusMessage}
         currentUserId={currentUserId}
+        isOwner={isOwner}
         members={members}
         onApproveJoinRequest={handleApproveJoinRequest}
+        onChangeBookName={handleChangeBookName}
         onKickMember={handleKickMember}
         onRejectJoinRequest={handleRejectJoinRequest}
+        onSaveBookName={handleSaveBookName}
         pendingJoinRequests={pendingJoinRequests}
       />
       <SharedLedgerJoinCard

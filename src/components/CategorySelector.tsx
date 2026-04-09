@@ -1,15 +1,21 @@
 import { StyleSheet, Text, View } from "react-native";
 
-import { useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import { CATEGORY_GRID_GAP } from "../constants/categorySelector";
 import { FormLabelTextStyle } from "../constants/uiStyles";
 import { useCategoryGridDrag } from "../hooks/useCategoryGridDrag";
 import { useCategoryOrder } from "../hooks/useCategoryOrder";
+import { useCustomCategories } from "../hooks/useCustomCategories";
+import { resolveCategoryGridHeight, resolveCategoryGridPosition } from "../lib/categoryGrid";
+import { mergeCustomCategories, sortCustomCategoriesByVisibleOrder } from "../lib/customCategories";
+import type { CategoryDefinition } from "../types/category";
 import type { LedgerEntryType } from "../types/ledger";
+import { CategoryAddGridItem } from "./categorySelector/CategoryAddGridItem";
+import { CategoryCustomizerModal } from "./categorySelector/CategoryCustomizerModal";
 import { CategoryGridItem } from "./categorySelector/CategoryGridItem";
 
 type CategorySelectorProps = {
-  categories: readonly string[];
+  categories: readonly CategoryDefinition[];
   entryType: LedgerEntryType;
   onDraggingChange?: (isDragging: boolean) => void;
   selectedCategory: string;
@@ -26,14 +32,18 @@ export function CategorySelector({
   onSelectCategory,
 }: CategorySelectorProps) {
   const optionsRef = useRef<View>(null);
-  const { orderedCategories, replaceOrderedCategories, saveCurrentOrder } = useCategoryOrder(
-    entryType,
-    categories,
+  const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
+  const { customCategories, saveCustomCategories } = useCustomCategories(entryType);
+  const mergedCategories = useMemo(
+    () => mergeCustomCategories(categories, customCategories),
+    [categories, customCategories],
   );
+  const { commitOrderedCategories, orderedCategories, replaceOrderedCategories, saveCurrentOrder } =
+    useCategoryOrder(entryType, mergedCategories);
   const {
     cellSize,
-    containerHeight,
-    draggingCategory,
+    columns,
+    draggingCategoryId,
     getAnimatedPosition,
     handleContainerLayout,
     handleDragEnd,
@@ -46,6 +56,13 @@ export function CategorySelector({
     saveCurrentOrder,
   });
 
+  const addButtonPosition = resolveCategoryGridPosition(
+    orderedCategories.length,
+    cellSize,
+    columns,
+  );
+  const gridHeight = resolveCategoryGridHeight(orderedCategories.length + 1, cellSize, columns);
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{title}</Text>
@@ -54,23 +71,75 @@ export function CategorySelector({
           handleContainerLayout(optionsRef.current, event.nativeEvent.layout.width)
         }
         ref={optionsRef}
-        style={[styles.options, { height: containerHeight }]}
+        style={[styles.options, { height: gridHeight }]}
       >
         {orderedCategories.map((category) => (
           <CategoryGridItem
-            animatedPosition={getAnimatedPosition(category)}
+            animatedPosition={getAnimatedPosition(category.id)}
             category={category}
             cellSize={cellSize}
-            isActive={selectedCategory === category}
-            isDragging={draggingCategory === category}
-            key={category}
+            isActive={selectedCategory === category.label}
+            isDragging={draggingCategoryId === category.id}
+            key={category.id}
             onDragEnd={handleDragEnd}
             onDragMove={handleDragMove}
             onDragStart={handleDragStart}
-            onPressCategory={onSelectCategory}
+            onPressCategory={(nextCategory) => onSelectCategory(nextCategory.label)}
           />
         ))}
+        {cellSize > 0 ? (
+          <CategoryAddGridItem
+            cellSize={cellSize}
+            left={addButtonPosition.x}
+            onPress={() => setIsCustomizerOpen(true)}
+            top={addButtonPosition.y}
+          />
+        ) : null}
       </View>
+      <CategoryCustomizerModal
+        categories={orderedCategories}
+        baseCategories={categories}
+        entryType={entryType}
+        isOpen={isCustomizerOpen}
+        onClose={() => setIsCustomizerOpen(false)}
+        onSaveCategories={(nextCategories) => {
+          const previousSelectedCustomCategory = customCategories.find(
+            (category) => category.label === selectedCategory,
+          );
+          const nextCustomCategories = nextCategories.filter(
+            (category) => category.source === "custom",
+          );
+          saveCustomCategories(
+            sortCustomCategoriesByVisibleOrder(nextCustomCategories, nextCategories),
+          );
+          commitOrderedCategories(nextCategories);
+
+          if (previousSelectedCustomCategory) {
+            const nextSelectedCustomCategory = nextCategories.find(
+              (category) => category.id === previousSelectedCustomCategory.id,
+            );
+            if (nextSelectedCustomCategory?.label !== selectedCategory) {
+              if (nextSelectedCustomCategory) {
+                onSelectCategory(nextSelectedCustomCategory.label);
+                return;
+              }
+
+              if (nextCategories[0]) {
+                onSelectCategory(nextCategories[0].label);
+              }
+              return;
+            }
+          }
+
+          const selectedCategoryStillExists = nextCategories.some(
+            (category) => category.label === selectedCategory,
+          );
+          if (!selectedCategoryStillExists && nextCategories[0]) {
+            onSelectCategory(nextCategories[0].label);
+            return;
+          }
+        }}
+      />
     </View>
   );
 }

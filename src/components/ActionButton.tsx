@@ -10,7 +10,7 @@ type ActionButtonProps = {
   label: string;
   loading?: boolean;
   onPress: () => unknown;
-  size?: "compact" | "large";
+  size?: "compact" | "inline" | "large";
   variant?: "primary" | "secondary" | "destructive";
 };
 
@@ -83,6 +83,12 @@ const styles = StyleSheet.create({
     paddingVertical: AuthControls.verticalPadding,
     borderRadius: AuthControls.borderRadius,
   },
+  inlineButton: {
+    minHeight: AuthControls.inlineControlHeight,
+    paddingHorizontal: AuthControls.inlineHorizontalPadding,
+    paddingVertical: AuthControls.inlineVerticalPadding,
+    borderRadius: 10,
+  },
   largeButton: {
     paddingHorizontal: AuthControls.horizontalPadding,
     paddingVertical: AuthControls.verticalPadding,
@@ -112,6 +118,9 @@ const styles = StyleSheet.create({
   },
   compactText: {
     fontSize: 15,
+  },
+  inlineText: {
+    fontSize: 13,
   },
   largeText: {
     fontSize: 15,

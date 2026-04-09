@@ -1,19 +1,20 @@
 const MIN_PAGE_INDEX = 0;
-const CENTER_PAGE_INDEX = 1;
+export const CURRENT_PAGE_INDEX = 1;
 const MAX_PAGE_INDEX = 2;
 
-export function resolveMonthOffsetFromScrollOffset(
-  offsetY: number,
-  pageHeight: number,
-): -1 | 0 | 1 {
+export function resolvePageIndexFromScrollOffset(offsetY: number, pageHeight: number): number {
   const rawPageIndex = Math.round(offsetY / pageHeight);
-  const pageIndex = Math.max(MIN_PAGE_INDEX, Math.min(MAX_PAGE_INDEX, rawPageIndex));
+  return Math.max(MIN_PAGE_INDEX, Math.min(MAX_PAGE_INDEX, rawPageIndex));
+}
 
-  if (pageIndex < CENTER_PAGE_INDEX) {
+export function resolveMonthOffsetFromPageIndex(pageIndex: number): -1 | 0 | 1 {
+  const resolvedPageIndex = Math.max(MIN_PAGE_INDEX, Math.min(MAX_PAGE_INDEX, pageIndex));
+
+  if (resolvedPageIndex < CURRENT_PAGE_INDEX) {
     return -1;
   }
 
-  if (pageIndex > CENTER_PAGE_INDEX) {
+  if (resolvedPageIndex > CURRENT_PAGE_INDEX) {
     return 1;
   }
 

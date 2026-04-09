@@ -1,17 +1,26 @@
 import type { LedgerEntryType } from "../types/ledger";
 
 type EntryDirectionDefinition = {
-  description: string;
   label: string;
 };
 
 export const EntryDirectionCopy: Record<LedgerEntryType, EntryDirectionDefinition> = {
   expense: {
     label: "지출",
-    description: "나간 돈을 기록합니다.",
   },
   income: {
     label: "수입",
-    description: "들어온 돈을 기록합니다.",
   },
 };
+
+export const EntryDirectionOrder: LedgerEntryType[] = ["expense", "income"];
+
+export const EntryDirectionLayout = {
+  containerInset: 4,
+  containerRadius: 18,
+  optionCount: EntryDirectionOrder.length,
+  optionGap: 4,
+  optionRadius: 14,
+  optionMinHeight: 44,
+  slideDurationMs: 180,
+} as const;

@@ -6,9 +6,10 @@ export const AccountDeletionMessages = {
   confirmLabel: "확인 문구",
   confirmPlaceholder: "삭제",
   deleting: "계정을 삭제하고 있습니다.",
-  description: "계정을 삭제하면 프로필, 가계부 기록, 참여 정보가 완전히 삭제됩니다.",
+  description: "계정 삭제 시 프로필, 가계부 기록, 참여 정보가 완전히 삭제됩니다.",
   errorFallback: "계정을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.",
   instruction: "이 작업은 되돌릴 수 없습니다.",
-  title: "계정 삭제",
+  openAction: "계정 삭제",
+  title: "계정을 삭제할까요?",
   triggerWord: "삭제",
 } as const;
