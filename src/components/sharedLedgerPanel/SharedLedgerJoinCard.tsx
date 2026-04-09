@@ -11,8 +11,8 @@ type SharedLedgerJoinCardProps = {
   hasJoinError: boolean;
   isJoinBlocked: boolean;
   onChangeShareCodeInput: (value: string) => void;
-  onJoin: () => void;
-  onLeave: () => void;
+  onJoin: () => unknown;
+  onLeave: () => unknown;
   shareCodeInput: string;
   statusMessage: string | null;
 };

@@ -2,16 +2,15 @@ import type { Session } from "@supabase/supabase-js";
 import type { Dispatch, SetStateAction } from "react";
 import { useMemo, useState } from "react";
 
+import type { MonthPage } from "../components/monthCalendarPager/monthCalendarPagerUtils";
 import type { LedgerEntry, LedgerEntryDraft } from "../types/ledger";
-import {
-  buildMonthlyLedger,
-  getMonthKey,
-  parseIsoDate,
-  startOfMonth,
-  toIsoDate,
-} from "../utils/calendar";
+import { addMonths, getMonthKey, parseIsoDate, startOfMonth, toIsoDate } from "../utils/calendar";
 import { createDraft, sanitizeAmountInput } from "../utils/ledgerEntries";
-import { buildMonthlyInsights } from "../utils/monthlyInsights";
+import {
+  getMonthPageFromCache,
+  getMonthlyInsightsFromCache,
+  getMonthlyLedgerFromCache,
+} from "./ledgerScreenState/calendarMonthData";
 import { removeLedgerEntry, saveLedgerEntry } from "./ledgerScreenState/helpers";
 import type { BusyTaskTracker, LedgerScreenState } from "./ledgerScreenState/types";
 import { useActiveLedgerBook } from "./ledgerScreenState/useActiveLedgerBook";
@@ -39,20 +38,39 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
   } = useActiveLedgerBook(session.user.id, trackBusyTask);
   const { approveLedgerJoinRequest, pendingJoinRequests, rejectLedgerJoinRequest } =
     useLedgerJoinRequests(activeBook, session.user.id, trackBusyTask);
-  const { entries, entriesError, isLoadingEntries, isRefreshing, refreshLedger, setEntries } =
-    useLedgerEntries(activeBook?.id ?? null, visibleMonth);
+  const {
+    entries,
+    entriesError,
+    entryCache,
+    isLoadingEntries,
+    isRefreshing,
+    refreshLedger,
+    setEntries,
+  } = useLedgerEntries(activeBook?.id ?? null, visibleMonth);
 
   const monthlyLedger = useMemo(
-    () => buildMonthlyLedger(getMonthKey(visibleMonth), entries),
-    [entries, visibleMonth],
+    () => getMonthlyLedgerFromCache(entryCache, visibleMonth),
+    [entryCache, visibleMonth],
   );
   const monthlyInsights = useMemo(
-    () => buildMonthlyInsights(getMonthKey(visibleMonth), entries),
-    [entries, visibleMonth],
+    () => getMonthlyInsightsFromCache(entryCache, visibleMonth),
+    [entryCache, visibleMonth],
   );
   const selectedEntries = useMemo(
     () => entries.filter((entry) => entry.date === selectedDate),
     [entries, selectedDate],
+  );
+  const previousMonthPage = useMemo<MonthPage>(
+    () => getMonthPageFromCache(entryCache, addMonths(visibleMonth, -1)),
+    [entryCache, visibleMonth],
+  );
+  const currentMonthPage = useMemo<MonthPage>(
+    () => getMonthPageFromCache(entryCache, visibleMonth),
+    [entryCache, visibleMonth],
+  );
+  const nextMonthPage = useMemo<MonthPage>(
+    () => getMonthPageFromCache(entryCache, addMonths(visibleMonth, 1)),
+    [entryCache, visibleMonth],
   );
 
   const resetEditor = (isoDate: string) => {
@@ -139,9 +157,12 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
     isRefreshing,
     joinSharedLedgerBookByCode,
     leaveSharedLedgerBook,
+    currentMonthPage,
     monthlyLedger,
     monthlyInsights,
+    nextMonthPage,
     pendingJoinRequests,
+    previousMonthPage,
     approveLedgerJoinRequest,
     rejectLedgerJoinRequest,
     removeSharedLedgerMember,

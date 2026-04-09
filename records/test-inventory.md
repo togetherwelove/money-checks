@@ -28,7 +28,7 @@ Track the automated tests that currently run in this project and clarify what ea
 - [authOnboarding.test.ts](/C:/git/money-checks/src/lib/authOnboarding.test.ts)
   - Nickname and notification onboarding step resolution
 - [emailPasswordAuth.test.ts](/C:/git/money-checks/src/lib/auth/emailPasswordAuth.test.ts)
-  - Email sign-up, sign-in, and sign-out behavior
+  - Email sign-in, sign-up OTP request, OTP verification, resend, and sign-out behavior
 - [sessionState.test.ts](/C:/git/money-checks/src/hooks/sessionState.test.ts)
   - Initial session loading and fallback behavior
 - [monthlyInsights.test.ts](/C:/git/money-checks/src/utils/monthlyInsights.test.ts)

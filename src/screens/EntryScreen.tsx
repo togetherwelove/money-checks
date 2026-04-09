@@ -10,10 +10,7 @@ import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
 import { appPlatform } from "../lib/appPlatform";
-import { addDays, formatSelectedDate, parseIsoDate, toIsoDate } from "../utils/calendar";
-
-const PREVIOUS_DAY_OFFSET = -1;
-const NEXT_DAY_OFFSET = 1;
+import { formatSelectedDate, parseIsoDate, toIsoDate } from "../utils/calendar";
 
 type EntryScreenProps = {
   onSaveEntry: () => Promise<void>;
@@ -61,8 +58,6 @@ export function EntryScreen({ onSaveEntry, state }: EntryScreenProps) {
         {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
         <EntryDateToolbar
           dateLabel={formatSelectedDate(selectedDate)}
-          onMoveNextDay={() => moveDay(selectedDate, NEXT_DAY_OFFSET, handleSelectDate)}
-          onMovePreviousDay={() => moveDay(selectedDate, PREVIOUS_DAY_OFFSET, handleSelectDate)}
           onMoveToToday={() => handleSelectDate(toIsoDate(actualToday))}
           onPressDateLabel={handleOpenDatePicker}
         />
@@ -84,15 +79,6 @@ export function EntryScreen({ onSaveEntry, state }: EntryScreenProps) {
       />
     </>
   );
-}
-
-function moveDay(
-  selectedDate: string,
-  dayOffset: number,
-  handleSelectDate: (isoDate: string) => void,
-) {
-  const nextDate = addDays(parseIsoDate(selectedDate), dayOffset);
-  handleSelectDate(toIsoDate(nextDate));
 }
 
 const styles = StyleSheet.create({

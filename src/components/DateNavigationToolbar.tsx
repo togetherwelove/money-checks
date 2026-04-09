@@ -1,33 +1,38 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
-import { IconActionButton } from "./IconActionButton";
+import { ICON_ACTION_BUTTON_SIZE, IconActionButton } from "./IconActionButton";
 
 type DateNavigationToolbarProps = {
   label: string;
-  onMoveNext: () => void;
-  onMovePrevious: () => void;
   onMoveToCurrent: () => void;
-  onPressLabel: () => void;
+  onPressLabel?: (() => void) | null;
 };
 
 export function DateNavigationToolbar({
   label,
-  onMoveNext,
-  onMovePrevious,
   onMoveToCurrent,
-  onPressLabel,
+  onPressLabel = null,
 }: DateNavigationToolbarProps) {
+  const labelNode = onPressLabel ? (
+    <Pressable onPress={onPressLabel} style={styles.labelButton}>
+      <Text style={styles.labelText}>{label}</Text>
+    </Pressable>
+  ) : (
+    <View style={styles.labelButton}>
+      <Text style={styles.labelText}>{label}</Text>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
-      <Pressable onPress={onPressLabel} style={styles.labelButton}>
-        <Text style={styles.labelText}>{label}</Text>
-      </Pressable>
-      <View style={styles.actions}>
-        <IconActionButton icon="chevron-left" onPress={onMovePrevious} />
-        <IconActionButton icon="clock" onPress={onMoveToCurrent} />
-        <IconActionButton icon="chevron-right" onPress={onMoveNext} />
-      </View>
+      <View style={styles.leadingSpace} />
+      {labelNode}
+      <IconActionButton
+        accessibilityLabel="오늘 날짜로 이동"
+        icon="crosshair"
+        onPress={onMoveToCurrent}
+      />
     </View>
   );
 }
@@ -39,17 +44,17 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 8,
   },
+  leadingSpace: {
+    width: ICON_ACTION_BUTTON_SIZE,
+  },
   labelButton: {
     flex: 1,
+    alignItems: "center",
     paddingVertical: 6,
   },
   labelText: {
     color: AppColors.accent,
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: "700",
-  },
-  actions: {
-    flexDirection: "row",
-    gap: 8,
   },
 });

@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../../constants/colors";
+import { InsetPanelStyle } from "../../constants/uiStyles";
 import type {
   NotificationPreferenceGroup as NotificationPreferenceGroupState,
   NotificationThresholdField as NotificationThresholdFieldState,
@@ -69,10 +70,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   list: {
-    borderWidth: 1,
-    borderColor: AppColors.border,
-    borderRadius: 16,
-    backgroundColor: AppColors.background,
+    ...InsetPanelStyle,
     paddingHorizontal: 12,
   },
 });

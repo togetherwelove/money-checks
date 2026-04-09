@@ -1,3 +1,4 @@
+import type { MonthPage } from "../../components/monthCalendarPager/monthCalendarPagerUtils";
 import type {
   LedgerEntry,
   LedgerEntryDraft,
@@ -18,6 +19,7 @@ export type LedgerScreenState = {
   draft: LedgerEntryDraft;
   editingEntryId: string | null;
   errorMessage: string | null;
+  currentMonthPage: MonthPage;
   entries: LedgerEntry[];
   isBusy: boolean;
   isLoading: boolean;
@@ -26,7 +28,9 @@ export type LedgerScreenState = {
   leaveSharedLedgerBook: () => Promise<boolean>;
   monthlyLedger: MonthlyLedgerSummary;
   monthlyInsights: MonthlyInsights;
+  nextMonthPage: MonthPage;
   pendingJoinRequests: LedgerBookJoinRequest[];
+  previousMonthPage: MonthPage;
   approveLedgerJoinRequest: (requestId: string) => Promise<boolean>;
   rejectLedgerJoinRequest: (requestId: string) => Promise<boolean>;
   removeSharedLedgerMember: (targetUserId: string) => Promise<boolean>;

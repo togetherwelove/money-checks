@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { memo, useCallback, useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
@@ -19,8 +19,14 @@ type MonthCalendarProps = {
 
 const CELL_WIDTH = "14.2857%";
 
-export function MonthCalendar({ days, onSelectDate, selectedDate }: MonthCalendarProps) {
+function MonthCalendarComponent({ days, onSelectDate, selectedDate }: MonthCalendarProps) {
   const visibleDays = useMemo(() => getVisibleCalendarDays(days), [days]);
+  const handleSelectDate = useCallback(
+    (isoDate: string) => {
+      onSelectDate(isoDate);
+    },
+    [onSelectDate],
+  );
 
   return (
     <View style={styles.container}>
@@ -31,7 +37,7 @@ export function MonthCalendar({ days, onSelectDate, selectedDate }: MonthCalenda
               <DayCell
                 day={day}
                 isSelected={day.isoDate === selectedDate}
-                onPress={() => onSelectDate(day.isoDate)}
+                onSelectDate={handleSelectDate}
               />
             ) : (
               <View style={[styles.dayCell, styles.emptyDayCell]} />
@@ -43,21 +49,26 @@ export function MonthCalendar({ days, onSelectDate, selectedDate }: MonthCalenda
   );
 }
 
-function DayCell({
+export const MonthCalendar = memo(MonthCalendarComponent);
+
+const DayCell = memo(function DayCell({
   day,
   isSelected,
-  onPress,
+  onSelectDate,
 }: {
   day: CalendarDay;
   isSelected: boolean;
-  onPress: () => void;
+  onSelectDate: (isoDate: string) => void;
 }) {
   const hasEntry = day.income > 0 || day.expense > 0;
   const isAdjacentMonth = !day.isCurrentMonth;
+  const handlePress = useCallback(() => {
+    onSelectDate(day.isoDate);
+  }, [day.isoDate, onSelectDate]);
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={handlePress}
       style={[styles.dayCell, isAdjacentMonth && styles.adjacentMonthCell]}
     >
       <View style={styles.dayContent}>
@@ -106,7 +117,7 @@ function DayCell({
       </View>
     </Pressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

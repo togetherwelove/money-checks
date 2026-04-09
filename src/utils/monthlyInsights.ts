@@ -14,6 +14,20 @@ export function buildMonthlyInsights(monthKey: string, entries: LedgerEntry[]): 
   const currentMonthEntries = filterEntriesByMonth(entries, monthKey);
   const previousMonthEntries = filterEntriesByMonth(entries, toMonthKey(previousMonthDate));
 
+  return buildMonthlyInsightsFromMonths(
+    currentMonthDate,
+    currentMonthEntries,
+    previousMonthEntries,
+  );
+}
+
+export function buildMonthlyInsightsFromMonths(
+  currentMonthDate: Date,
+  currentMonthEntries: LedgerEntry[],
+  previousMonthEntries: LedgerEntry[],
+): MonthlyInsights {
+  const previousMonthDate = addMonths(currentMonthDate, -1);
+
   return {
     categoryExpenses: buildCategoryExpenses(currentMonthEntries),
     currentMonthLabel: formatMonthLabel(currentMonthDate),

@@ -72,6 +72,7 @@ export function EntryDatePickerModal({
               <DateTimePicker
                 display="inline"
                 mode="date"
+                locale="ko-KR"
                 onChange={(_event, nextDate) => {
                   if (!nextDate) {
                     return;

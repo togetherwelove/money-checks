@@ -127,8 +127,8 @@ export function SharedLedgerPanel({
             setStatusMessage(null);
           }
         }}
-        onJoin={() => void handleJoin()}
-        onLeave={() => void handleLeave()}
+        onJoin={handleJoin}
+        onLeave={handleLeave}
         shareCodeInput={shareCodeInput}
         statusMessage={statusMessage}
       />

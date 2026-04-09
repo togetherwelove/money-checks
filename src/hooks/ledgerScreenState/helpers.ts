@@ -5,14 +5,17 @@ import {
   updateLedgerEntry,
 } from "../../lib/ledgerEntries";
 import type { LedgerEntry } from "../../types/ledger";
-import { getLedgerWindowEnd, getLedgerWindowStart } from "../../utils/ledgerMonthWindow";
+import { getLedgerMonthEnd, getLedgerMonthStart } from "../../utils/ledgerMonthWindow";
 import type { BusyTaskTracker } from "./types";
 
-export async function loadBookEntries(bookId: string, visibleMonth: Date): Promise<LedgerEntry[]> {
+export async function loadLedgerMonthEntries(
+  bookId: string,
+  visibleMonth: Date,
+): Promise<LedgerEntry[]> {
   return fetchLedgerEntries(
     bookId,
-    getLedgerWindowStart(visibleMonth),
-    getLedgerWindowEnd(visibleMonth),
+    getLedgerMonthStart(visibleMonth),
+    getLedgerMonthEnd(visibleMonth),
   );
 }
 

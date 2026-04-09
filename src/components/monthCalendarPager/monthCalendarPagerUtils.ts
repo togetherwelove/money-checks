@@ -9,6 +9,7 @@ import { getCalendarWeekCount } from "./calendarWeekCount";
 export type MonthPage = {
   height: number;
   key: string;
+  signature: string;
   summary: MonthlyLedgerSummary;
 };
 
@@ -19,6 +20,11 @@ const SPRING_CONFIG = {
   useNativeDriver: true,
 } as const;
 
+const HEIGHT_ANIMATION_CONFIG = {
+  duration: 180,
+  useNativeDriver: false,
+} as const;
+
 export function buildMonthPage(
   entries: LedgerEntry[],
   visibleMonth: Date,
@@ -26,11 +32,25 @@ export function buildMonthPage(
 ): MonthPage {
   const month = addMonths(visibleMonth, monthOffset);
   const summary = buildMonthlyLedger(getMonthKey(month), entries);
+  return buildMonthPageFromSummary(getMonthKey(month), summary);
+}
+
+export function buildMonthPageFromSummary(
+  monthKey: string,
+  summary: MonthlyLedgerSummary,
+): MonthPage {
   return {
     height: getCalendarWeekCount(summary.days) * CALENDAR_ROW_HEIGHT,
-    key: getMonthKey(month),
+    key: monthKey,
+    signature: buildMonthPageSignature(summary),
     summary,
   };
+}
+
+function buildMonthPageSignature(summary: MonthlyLedgerSummary): string {
+  return summary.days
+    .map((day) => `${day.isoDate}:${day.income}:${day.expense}:${day.isToday ? 1 : 0}`)
+    .join("|");
 }
 
 export function resolveViewportHeight(currentHeight: number, targetHeight: number): number {
@@ -68,4 +88,11 @@ export function animateTo(
     }
     onComplete?.();
   });
+}
+
+export function animateViewportHeight(heightValue: Animated.Value, nextHeight: number) {
+  Animated.timing(heightValue, {
+    ...HEIGHT_ANIMATION_CONFIG,
+    toValue: nextHeight,
+  }).start();
 }

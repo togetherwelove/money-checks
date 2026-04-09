@@ -5,56 +5,67 @@ type DeleteAccountResponse = {
   success?: boolean;
 };
 
+type DeleteAccountFetch = (
+  input: string,
+  init: {
+    headers: Record<string, string>;
+    method: "POST";
+  },
+) => Promise<Response>;
+
 type DeleteAccountRequestOptions = {
-  invokeFn: (functionName: string) => Promise<{
-    data: DeleteAccountResponse | null;
-    error: unknown;
-  }>;
+  accessToken: string;
+  fetchFn: DeleteAccountFetch;
+  functionUrl: string;
+  publishableKey: string;
   onDeleted: () => Promise<void>;
 };
 
-const DELETE_ACCOUNT_FUNCTION = "delete-account";
-
 export async function deleteAccountRequest({
-  invokeFn,
+  accessToken,
+  fetchFn,
+  functionUrl,
+  publishableKey,
   onDeleted,
 }: DeleteAccountRequestOptions): Promise<void> {
-  const { data, error } = await invokeFn(DELETE_ACCOUNT_FUNCTION);
+  const response = await fetchFn(functionUrl, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      apikey: publishableKey,
+      "Content-Type": "application/json",
+    },
+  });
 
-  if (error) {
-    const payload = await readFunctionsErrorPayload(error);
+  const payload = await readDeleteAccountResponse(response);
+  if (!response.ok) {
     console.error("[deleteAccountRequest] Request failed", {
-      error,
       payload,
+      status: response.status,
+      statusText: response.statusText,
     });
     throw new Error(payload.errorMessage || AccountDeletionMessages.errorFallback);
   }
 
-  if (data?.success !== true) {
+  if (payload.success !== true) {
     throw new Error(AccountDeletionMessages.errorFallback);
   }
 
   await onDeleted();
 }
 
-async function readFunctionsErrorPayload(error: unknown): Promise<{
+async function readDeleteAccountResponse(response: Response): Promise<{
   errorMessage: string | null;
   rawText: string | null;
+  success: boolean;
 }> {
-  const context = extractErrorContext(error);
-  if (!context) {
-    return {
-      errorMessage: extractErrorMessage(error),
-      rawText: null,
-    };
-  }
-
   try {
-    const rawText = await context.text();
+    const rawText = await response.text();
     if (!rawText.trim()) {
       return {
-        errorMessage: extractErrorMessage(error),
+        errorMessage: null,
         rawText: null,
+        success: false,
       };
     }
 
@@ -64,37 +75,22 @@ async function readFunctionsErrorPayload(error: unknown): Promise<{
         errorMessage:
           typeof parsedPayload.error === "string" && parsedPayload.error.trim()
             ? parsedPayload.error
-            : extractErrorMessage(error),
+            : null,
         rawText,
+        success: parsedPayload.success === true,
       };
     } catch {
       return {
-        errorMessage: extractErrorMessage(error),
+        errorMessage: rawText.trim(),
         rawText,
+        success: false,
       };
     }
   } catch {
     return {
-      errorMessage: extractErrorMessage(error),
+      errorMessage: null,
       rawText: null,
+      success: false,
     };
   }
-}
-
-function extractErrorContext(error: unknown): Response | null {
-  if (!error || typeof error !== "object") {
-    return null;
-  }
-
-  const context = Reflect.get(error, "context");
-  return context instanceof Response ? context : null;
-}
-
-function extractErrorMessage(error: unknown): string | null {
-  if (!error || typeof error !== "object") {
-    return null;
-  }
-
-  const message = Reflect.get(error, "message");
-  return typeof message === "string" && message.trim() ? message : null;
 }

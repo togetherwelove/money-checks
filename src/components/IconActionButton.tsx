@@ -3,15 +3,27 @@ import { Pressable, StyleSheet } from "react-native";
 
 import { AppColors } from "../constants/colors";
 
+export const ICON_ACTION_BUTTON_SIZE = 38;
+
 type IconActionButtonProps = {
+  accessibilityLabel?: string;
   icon: keyof typeof Feather.glyphMap;
   isActive?: boolean;
   onPress: () => void;
 };
 
-export function IconActionButton({ icon, isActive = false, onPress }: IconActionButtonProps) {
+export function IconActionButton({
+  accessibilityLabel,
+  icon,
+  isActive = false,
+  onPress,
+}: IconActionButtonProps) {
   return (
-    <Pressable onPress={onPress} style={[styles.button, isActive && styles.activeButton]}>
+    <Pressable
+      accessibilityLabel={accessibilityLabel}
+      onPress={onPress}
+      style={[styles.button, isActive && styles.activeButton]}
+    >
       <Feather color={isActive ? AppColors.primary : AppColors.mutedText} name={icon} size={18} />
     </Pressable>
   );
@@ -19,8 +31,8 @@ export function IconActionButton({ icon, isActive = false, onPress }: IconAction
 
 const styles = StyleSheet.create({
   button: {
-    width: 38,
-    height: 38,
+    width: ICON_ACTION_BUTTON_SIZE,
+    height: ICON_ACTION_BUTTON_SIZE,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 12,

@@ -1,3 +1,4 @@
+import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import type { Session } from "@supabase/supabase-js";
 import { useState } from "react";
 import { StatusBar, StyleSheet, Text, View } from "react-native";
@@ -8,6 +9,8 @@ import { AppHeader } from "./src/components/AppHeader";
 import { AppMenuDrawer } from "./src/components/AppMenuDrawer";
 import { BackToCalendarAction } from "./src/components/BackToCalendarAction";
 import { BlockingOverlay } from "./src/components/BlockingOverlay";
+import { ScreenSlideTransition } from "./src/components/ScreenSlideTransition";
+import { NativeYearPickerModal } from "./src/components/calendarPicker/NativeYearPickerModal";
 import { AppColors } from "./src/constants/colors";
 import { AppMessages } from "./src/constants/messages";
 import { useAuthOnboarding } from "./src/hooks/useAuthOnboarding";
@@ -16,6 +19,7 @@ import { useLedgerScreenState } from "./src/hooks/useLedgerScreenState";
 import { useSharedLedgerRealtimeNotifications } from "./src/hooks/useSharedLedgerRealtimeNotifications";
 import { useSupabaseSession } from "./src/hooks/useSupabaseSession";
 import { getAppHeaderTitle, showsCalendarReturnAction } from "./src/lib/appHeaderTitle";
+import { appPlatform } from "./src/lib/appPlatform";
 import { buildAppMenuItems } from "./src/lib/menuItems";
 import { updateOwnProfileDisplayName } from "./src/lib/profiles";
 import { AuthScreen } from "./src/screens/AuthScreen";
@@ -23,6 +27,7 @@ import { NicknameSetupScreen } from "./src/screens/NicknameSetupScreen";
 import { PermissionOnboardingScreen } from "./src/screens/PermissionOnboardingScreen";
 import type { LedgerAppScreen } from "./src/types/app";
 import type { LedgerEntry } from "./src/types/ledger";
+import { parseIsoDate, toIsoDate } from "./src/utils/calendar";
 import { resolveFallbackDisplayName } from "./src/utils/sessionDisplayName";
 
 export default function App() {
@@ -50,6 +55,7 @@ export default function App() {
 function SignedInApp({ session }: { session: Session }) {
   const [activeScreen, setActiveScreen] = useState<LedgerAppScreen>("calendar");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isYearPickerOpen, setIsYearPickerOpen] = useState(false);
   const fallbackDisplayName = resolveFallbackDisplayName(
     session.user.user_metadata,
     session.user.email,
@@ -81,6 +87,29 @@ function SignedInApp({ session }: { session: Session }) {
     setActiveScreen((currentScreen) => (currentScreen === "charts" ? "calendar" : "charts"));
   const handleOpenEntry = () => setActiveScreen("entry");
   const menuItems = buildAppMenuItems(notifications.showNotificationSettings);
+  const handleOpenYearPicker = () => {
+    if (activeScreen !== "calendar") {
+      return;
+    }
+
+    if (appPlatform.usesAndroidDatePickerDialog) {
+      DateTimePickerAndroid.open({
+        display: "spinner",
+        mode: "date",
+        value: parseIsoDate(ledgerState.selectedDate),
+        onChange: (_event, nextDate) => {
+          if (!nextDate) {
+            return;
+          }
+
+          ledgerState.handleSelectDate(toIsoDate(nextDate));
+        },
+      });
+      return;
+    }
+
+    setIsYearPickerOpen(true);
+  };
 
   const handleCompleteNicknameOnboarding = async (displayName: string) => {
     try {
@@ -157,6 +186,8 @@ function SignedInApp({ session }: { session: Session }) {
               <BackToCalendarAction onPress={handleBackToCalendar} />
             ) : null
           }
+          onPressCenterLabel={activeScreen === "calendar" ? handleOpenYearPicker : null}
+          showsCenterLabelIndicator={activeScreen === "calendar"}
           titleLabel={getAppHeaderTitle(activeScreen)}
           yearLabel={
             activeScreen === "calendar" ? String(ledgerState.visibleMonth.getFullYear()) : null
@@ -165,28 +196,30 @@ function SignedInApp({ session }: { session: Session }) {
         />
       </View>
       <View style={styles.body}>
-        <AppScreenRouter
-          activeScreen={activeScreen}
-          email={session.user.email ?? ""}
-          fallbackDisplayName={fallbackDisplayName}
-          ledgerState={ledgerState}
-          notificationPreferenceGroups={notifications.preferenceGroups}
-          notificationPermissionLabel={notifications.permissionLabel}
-          notificationStatusMessage={notifications.statusMessage}
-          onChangeNotificationThresholdPeriod={notifications.updateThresholdPeriod}
-          onChangeNotificationThreshold={notifications.updateThresholdValue}
-          onEditSelectedEntry={handleEditEntryFromCalendar}
-          onOpenCharts={handleToggleCharts}
-          onOpenEntry={handleOpenEntry}
-          onSaveEntry={handleSaveEntry}
-          onToggleNotificationPreference={notifications.updatePreference}
-          onSelectCalendarDate={(isoDate) => {
-            ledgerState.handleSelectDate(isoDate);
-            handleOpenCalendar();
-          }}
-          showNotificationSettings={notifications.showNotificationSettings}
-          userId={session.user.id}
-        />
+        <ScreenSlideTransition screenKey={activeScreen}>
+          <AppScreenRouter
+            activeScreen={activeScreen}
+            email={session.user.email ?? ""}
+            fallbackDisplayName={fallbackDisplayName}
+            ledgerState={ledgerState}
+            notificationPreferenceGroups={notifications.preferenceGroups}
+            notificationPermissionLabel={notifications.permissionLabel}
+            notificationStatusMessage={notifications.statusMessage}
+            onChangeNotificationThresholdPeriod={notifications.updateThresholdPeriod}
+            onChangeNotificationThreshold={notifications.updateThresholdValue}
+            onEditSelectedEntry={handleEditEntryFromCalendar}
+            onOpenCharts={handleToggleCharts}
+            onOpenEntry={handleOpenEntry}
+            onSaveEntry={handleSaveEntry}
+            onToggleNotificationPreference={notifications.updatePreference}
+            onSelectCalendarDate={(isoDate) => {
+              ledgerState.handleSelectDate(isoDate);
+              handleOpenCalendar();
+            }}
+            showNotificationSettings={notifications.showNotificationSettings}
+            userId={session.user.id}
+          />
+        </ScreenSlideTransition>
       </View>
       <AppMenuDrawer
         isOpen={isMenuOpen}
@@ -202,6 +235,12 @@ function SignedInApp({ session }: { session: Session }) {
           }
           setActiveScreen(targetScreen);
         }}
+      />
+      <NativeYearPickerModal
+        isOpen={activeScreen === "calendar" && appPlatform.isIOS && isYearPickerOpen}
+        onClose={() => setIsYearPickerOpen(false)}
+        onSelectDate={ledgerState.handleSelectDate}
+        selectedDate={ledgerState.selectedDate}
       />
       {ledgerState.isBusy ? <BlockingOverlay /> : null}
     </SafeAreaView>

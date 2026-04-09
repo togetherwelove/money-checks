@@ -10,6 +10,13 @@ import { EmailAuthCopy } from "../constants/emailAuth";
 import { NicknameAutofillProps } from "../constants/inputAutofill";
 import { AppLayout } from "../constants/layout";
 import { AppMessages } from "../constants/messages";
+import {
+  CardTitleTextStyle,
+  CompactLabelTextStyle,
+  FormInputTextStyle,
+  StatusMessageTextStyle,
+  SurfaceCardStyle,
+} from "../constants/uiStyles";
 import { signOutFromApp } from "../lib/auth/signOut";
 import { fetchOwnProfileDisplayName, updateOwnProfileDisplayName } from "../lib/profiles";
 import { isValidDisplayName, normalizeDisplayNameCandidate } from "../utils/displayName";
@@ -76,7 +83,7 @@ export function AccountScreen({ email, fallbackDisplayName, userId }: AccountScr
       </View>
       <View style={styles.card}>
         <Text style={styles.cardTitle}>{AppMessages.accountNicknameTitle}</Text>
-        <Text style={styles.label}>{AppMessages.accountNicknameLabel}</Text>
+        <Text style={styles.label}>{AppMessages.accountNicknameSubtitle}</Text>
         <TextInput
           {...NicknameAutofillProps}
           onChangeText={(value) => {
@@ -97,7 +104,7 @@ export function AccountScreen({ email, fallbackDisplayName, userId }: AccountScr
         <View style={styles.actionRow}>
           <ActionButton
             label={AppMessages.accountNicknameSave}
-            onPress={() => void handleSaveDisplayName()}
+            onPress={handleSaveDisplayName}
             variant="primary"
           />
         </View>
@@ -107,9 +114,7 @@ export function AccountScreen({ email, fallbackDisplayName, userId }: AccountScr
         <View style={styles.actionRow}>
           <ActionButton
             label={AppMessages.authSignOut}
-            onPress={() => {
-              void signOutFromApp();
-            }}
+            onPress={signOutFromApp}
             variant="destructive"
           />
         </View>
@@ -140,49 +145,25 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   card: {
+    ...SurfaceCardStyle,
     gap: 8,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: AppColors.border,
-    borderRadius: AppLayout.cardRadius,
-    backgroundColor: AppColors.surface,
   },
   primaryCard: {
     backgroundColor: AppColors.surfaceMuted,
   },
-  cardTitle: {
-    color: AppColors.text,
-    fontSize: 15,
-    fontWeight: "800",
-  },
+  cardTitle: CardTitleTextStyle,
   infoRow: {
     gap: 4,
     paddingVertical: 6,
   },
-  label: {
-    color: AppColors.mutedText,
-    fontSize: 11,
-    fontWeight: "600",
-  },
-  input: {
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: AppColors.border,
-    borderRadius: 14,
-    backgroundColor: AppColors.background,
-    color: AppColors.text,
-    fontSize: 16,
-  },
+  label: CompactLabelTextStyle,
+  input: FormInputTextStyle,
   value: {
     color: AppColors.text,
     fontSize: 14,
     fontWeight: "700",
   },
-  statusText: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
+  statusText: StatusMessageTextStyle,
   successText: {
     color: AppColors.income,
   },

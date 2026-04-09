@@ -2,9 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { authMock } = vi.hoisted(() => ({
   authMock: {
+    resend: vi.fn(),
     signInWithPassword: vi.fn(),
     signOut: vi.fn(),
     signUp: vi.fn(),
+    verifyOtp: vi.fn(),
   },
 }));
 
@@ -16,16 +18,20 @@ vi.mock("../supabase", () => ({
 
 import {
   normalizeEmail,
+  resendEmailSignUpOtp,
   signInWithEmailPassword,
   signUpWithEmailPassword,
+  verifyEmailSignUpOtp,
 } from "./emailPasswordAuth";
 import { signOutFromApp } from "./signOut";
 
 describe("emailPasswordAuth", () => {
   beforeEach(() => {
+    authMock.resend.mockReset();
     authMock.signInWithPassword.mockReset();
     authMock.signOut.mockReset();
     authMock.signUp.mockReset();
+    authMock.verifyOtp.mockReset();
   });
 
   it("normalizes email input", () => {
@@ -56,7 +62,7 @@ describe("emailPasswordAuth", () => {
     );
   });
 
-  it("returns confirmation-required when sign-up does not create a session", async () => {
+  it("returns otp-required when sign-up does not create a session", async () => {
     authMock.signUp.mockResolvedValue({
       data: {
         session: null,
@@ -65,8 +71,31 @@ describe("emailPasswordAuth", () => {
     });
 
     await expect(signUpWithEmailPassword("  USER@Example.COM ", "Secret123!")).resolves.toBe(
-      "confirmation-required",
+      "otp-required",
     );
+  });
+
+  it("verifies sign-up otp with the normalized email", async () => {
+    authMock.verifyOtp.mockResolvedValue({ error: null });
+
+    await verifyEmailSignUpOtp("  USER@Example.COM ", "123456");
+
+    expect(authMock.verifyOtp).toHaveBeenCalledWith({
+      email: "user@example.com",
+      token: "123456",
+      type: "email",
+    });
+  });
+
+  it("resends the sign-up otp with the normalized email", async () => {
+    authMock.resend.mockResolvedValue({ error: null });
+
+    await resendEmailSignUpOtp("  USER@Example.COM ");
+
+    expect(authMock.resend).toHaveBeenCalledWith({
+      email: "user@example.com",
+      type: "signup",
+    });
   });
 
   it("signs the user out without oauth-specific logic", async () => {

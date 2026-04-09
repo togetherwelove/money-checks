@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { AppColors } from "../../constants/colors";
 import { DisabledAutofillProps } from "../../constants/inputAutofill";
+import { FormInputTextStyle, InsetPanelStyle } from "../../constants/uiStyles";
 import type { NotificationThresholdField as NotificationThresholdFieldState } from "../../notifications/preferences/notificationPreferences";
 import { formatAmountInput } from "../../utils/amount";
 
@@ -78,14 +79,12 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   periodOption: {
+    ...InsetPanelStyle,
     flex: 1,
     alignItems: "center",
     paddingHorizontal: 10,
     paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: AppColors.border,
     borderRadius: 12,
-    backgroundColor: AppColors.surface,
   },
   periodOptionText: {
     color: AppColors.text,
@@ -101,14 +100,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   input: {
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: AppColors.border,
-    borderRadius: 14,
-    backgroundColor: AppColors.background,
-    color: AppColors.text,
-    fontSize: 16,
+    ...FormInputTextStyle,
     textAlign: "right",
   },
 });

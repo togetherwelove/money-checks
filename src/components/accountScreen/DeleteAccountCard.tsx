@@ -4,7 +4,14 @@ import { StyleSheet, Text, TextInput, View } from "react-native";
 import { AccountDeletionMessages } from "../../constants/accountDeletionMessages";
 import { AppColors } from "../../constants/colors";
 import { DisabledAutofillProps } from "../../constants/inputAutofill";
-import { AppLayout } from "../../constants/layout";
+import {
+  CardTitleTextStyle,
+  CompactLabelTextStyle,
+  FormInputTextStyle,
+  NoteTextStyle,
+  StatusMessageTextStyle,
+  SurfaceCardStyle,
+} from "../../constants/uiStyles";
 import { deleteOwnAccount } from "../../lib/auth/deleteAccount";
 import { ActionButton } from "../ActionButton";
 
@@ -56,7 +63,8 @@ export function DeleteAccountCard() {
         <ActionButton
           disabled={!isReadyToDelete || isDeleting}
           label={AccountDeletionMessages.action}
-          onPress={() => void handleDeleteAccount()}
+          loading={isDeleting}
+          onPress={handleDeleteAccount}
           variant="destructive"
         />
       </View>
@@ -74,18 +82,11 @@ function resolveDeleteErrorMessage(error: unknown): string {
 
 const styles = StyleSheet.create({
   card: {
+    ...SurfaceCardStyle,
     gap: 8,
-    padding: 14,
-    borderWidth: 1,
     borderColor: AppColors.expense,
-    borderRadius: AppLayout.cardRadius,
-    backgroundColor: AppColors.surface,
   },
-  title: {
-    color: AppColors.text,
-    fontSize: 15,
-    fontWeight: "800",
-  },
+  title: CardTitleTextStyle,
   description: {
     color: AppColors.text,
     fontSize: 13,
@@ -96,29 +97,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
   },
-  label: {
-    color: AppColors.mutedText,
-    fontSize: 11,
-    fontWeight: "600",
-  },
-  input: {
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: AppColors.border,
-    borderRadius: 14,
-    backgroundColor: AppColors.background,
-    color: AppColors.text,
-    fontSize: 16,
-  },
-  hint: {
-    color: AppColors.mutedText,
-    fontSize: 12,
-  },
+  label: CompactLabelTextStyle,
+  input: FormInputTextStyle,
+  hint: NoteTextStyle,
   status: {
     color: AppColors.expense,
-    fontSize: 12,
-    fontWeight: "600",
+    ...StatusMessageTextStyle,
   },
   actionRow: {
     paddingTop: 2,

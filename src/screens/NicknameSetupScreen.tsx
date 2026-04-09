@@ -6,8 +6,14 @@ import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { ScreenHeaderBlock } from "../components/ScreenHeaderBlock";
 import { AuthOnboardingMessages } from "../constants/authOnboarding";
 import { AppColors } from "../constants/colors";
-import { DisabledAutofillProps } from "../constants/inputAutofill";
+import { OnboardingNicknameInputProps } from "../constants/inputAutofill";
 import { AppLayout } from "../constants/layout";
+import {
+  FormInputTextStyle,
+  FormLabelTextStyle,
+  StatusMessageTextStyle,
+  SurfaceCardStyle,
+} from "../constants/uiStyles";
 import { isValidDisplayName } from "../utils/displayName";
 
 type NicknameSetupScreenProps = {
@@ -46,7 +52,7 @@ export function NicknameSetupScreen({ initialDisplayName, onSubmit }: NicknameSe
       <View style={styles.card}>
         <Text style={styles.label}>{AuthOnboardingMessages.nicknameLabel}</Text>
         <TextInput
-          {...DisabledAutofillProps}
+          {...OnboardingNicknameInputProps}
           onChangeText={(value) => {
             setDisplayName(value);
             if (errorMessage) {
@@ -60,9 +66,7 @@ export function NicknameSetupScreen({ initialDisplayName, onSubmit }: NicknameSe
         {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
         <ActionButton
           label={AuthOnboardingMessages.nicknamePrimaryAction}
-          onPress={() => {
-            void handleSubmit();
-          }}
+          onPress={handleSubmit}
           variant="primary"
         />
       </View>
@@ -80,31 +84,13 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   card: {
+    ...SurfaceCardStyle,
     gap: 10,
-    borderWidth: 1,
-    borderColor: AppColors.border,
-    borderRadius: 24,
-    backgroundColor: AppColors.surface,
-    padding: 16,
   },
-  label: {
-    color: AppColors.mutedText,
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  input: {
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: AppColors.border,
-    borderRadius: 16,
-    backgroundColor: AppColors.background,
-    color: AppColors.text,
-    fontSize: 16,
-  },
+  label: FormLabelTextStyle,
+  input: FormInputTextStyle,
   errorText: {
     color: AppColors.expense,
-    fontSize: 12,
-    lineHeight: 18,
+    ...StatusMessageTextStyle,
   },
 });

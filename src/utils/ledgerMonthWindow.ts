@@ -1,5 +1,13 @@
 import { addMonths, toIsoDate } from "./calendar";
 
+export function getLedgerMonthStart(date: Date): string {
+  return toIsoDate(new Date(date.getFullYear(), date.getMonth(), 1));
+}
+
+export function getLedgerMonthEnd(date: Date): string {
+  return toIsoDate(new Date(date.getFullYear(), date.getMonth() + 1, 0));
+}
+
 export function getLedgerWindowStart(date: Date): string {
   return toIsoDate(new Date(date.getFullYear(), date.getMonth() - 1, 1));
 }

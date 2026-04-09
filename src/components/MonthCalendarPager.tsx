@@ -1,138 +1,145 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, PanResponder, StyleSheet, View } from "react-native";
+import type { ReactNode } from "react";
+import { useEffect, useRef } from "react";
+import { Animated, ScrollView, StyleSheet, View } from "react-native";
 
-import type { LedgerEntry } from "../types/ledger";
 import { MonthCalendarPageView } from "./monthCalendarPager/MonthCalendarPageView";
-import { resolveMonthOffset } from "./monthCalendarPager/monthCalendarGesture";
+import { CALENDAR_MAX_HEIGHT } from "./monthCalendarPager/calendarLayout";
 import {
-  animateTo,
-  buildMonthPage,
-  clampDrag,
-  resolveTargetTop,
+  type MonthPage,
+  animateViewportHeight,
 } from "./monthCalendarPager/monthCalendarPagerUtils";
+import { resolveMonthOffsetFromScrollOffset } from "./monthCalendarPager/monthCalendarScrollSnap";
 
 type MonthCalendarPagerProps = {
-  entries: LedgerEntry[];
+  currentPage: MonthPage;
+  nextPage: MonthPage;
   onMoveMonth: (monthOffset: number) => void;
   onSelectDate: (isoDate: string) => void;
+  previousPage: MonthPage;
   selectedDate: string;
-  visibleMonth: Date;
 };
 
-const SWIPE_START_DISTANCE = 12;
-const SWIPE_CAPTURE_RATIO = 1.2;
+const PAGE_HEIGHT = CALENDAR_MAX_HEIGHT;
+const CURRENT_PAGE_INDEX = 1;
 
 export function MonthCalendarPager({
-  entries,
+  currentPage,
+  nextPage,
   onMoveMonth,
   onSelectDate,
+  previousPage,
   selectedDate,
-  visibleMonth,
 }: MonthCalendarPagerProps) {
-  const translateY = useRef(new Animated.Value(0)).current;
-  const isAnimatingRef = useRef(false);
-  const visibleMonthKeyRef = useRef<string | null>(null);
-  const currentPage = useMemo(
-    () => buildMonthPage(entries, visibleMonth, 0),
-    [entries, visibleMonth],
-  );
-  const previousPage = useMemo(
-    () => buildMonthPage(entries, visibleMonth, -1),
-    [entries, visibleMonth],
-  );
-  const nextPage = useMemo(() => buildMonthPage(entries, visibleMonth, 1), [entries, visibleMonth]);
-  const [activeOffset, setActiveOffset] = useState<0 | 1 | -1>(0);
-  const viewportHeight = currentPage.height;
+  const scrollViewRef = useRef<ScrollView | null>(null);
+  const isReadyRef = useRef(false);
+  const isResettingRef = useRef(false);
+  const pendingMonthOffsetRef = useRef<-1 | 0 | 1>(0);
+  const currentPageKeyRef = useRef<string | null>(null);
+  const viewportHeight = useRef(new Animated.Value(currentPage.height)).current;
 
   useEffect(() => {
-    if (visibleMonthKeyRef.current === currentPage.key) {
+    if (!isReadyRef.current) {
+      isReadyRef.current = true;
+      scrollToPage(CURRENT_PAGE_INDEX, false);
+      currentPageKeyRef.current = currentPage.key;
+      viewportHeight.setValue(currentPage.height);
       return;
     }
 
-    visibleMonthKeyRef.current = currentPage.key;
-    translateY.setValue(0);
-    setActiveOffset(0);
-  }, [currentPage.key, translateY]);
+    if (currentPageKeyRef.current === currentPage.key) {
+      return;
+    }
 
-  const targetPage = activeOffset === -1 ? previousPage : nextPage;
+    currentPageKeyRef.current = currentPage.key;
+    isResettingRef.current = true;
+    pendingMonthOffsetRef.current = 0;
+    scrollToPage(CURRENT_PAGE_INDEX, false);
+    requestAnimationFrame(() => {
+      isResettingRef.current = false;
+      animateViewportHeight(viewportHeight, currentPage.height);
+    });
+  }, [currentPage.height, currentPage.key, viewportHeight]);
 
-  const panResponder = useMemo(
-    () =>
-      PanResponder.create({
-        onMoveShouldSetPanResponder: (_event, gestureState) =>
-          !isAnimatingRef.current &&
-          Math.abs(gestureState.dy) > SWIPE_START_DISTANCE &&
-          Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * SWIPE_CAPTURE_RATIO,
-        onPanResponderGrant: () => {
-          translateY.stopAnimation();
-        },
-        onPanResponderMove: (_event, gestureState) => {
-          const nextOffset = gestureState.dy === 0 ? 0 : gestureState.dy < 0 ? 1 : -1;
-          setActiveOffset((currentOffset) =>
-            currentOffset === nextOffset ? currentOffset : nextOffset,
-          );
-          translateY.setValue(clampDrag(gestureState.dy, currentPage.height));
-        },
-        onPanResponderRelease: (_event, gestureState) => {
-          const monthOffset = resolveMonthOffset(
-            gestureState.dy,
-            gestureState.vy,
-            currentPage.height,
-          );
-          if (monthOffset === 0) {
-            animateTo(translateY, isAnimatingRef, 0, () => {
-              setActiveOffset(0);
-            });
-            return;
-          }
+  const handleScrollEnd = (offsetY: number) => {
+    if (isResettingRef.current) {
+      return;
+    }
 
-          setActiveOffset(monthOffset);
-          animateTo(
-            translateY,
-            isAnimatingRef,
-            monthOffset > 0 ? -currentPage.height : currentPage.height,
-            () => {
-              onMoveMonth(monthOffset);
-            },
-          );
-        },
-        onPanResponderTerminate: () => {
-          animateTo(translateY, isAnimatingRef, 0, () => {
-            setActiveOffset(0);
-          });
-        },
-      }),
-    [currentPage.height, onMoveMonth, translateY],
-  );
+    const monthOffset = resolveMonthOffsetFromScrollOffset(offsetY, PAGE_HEIGHT);
+    if (monthOffset === 0 || pendingMonthOffsetRef.current !== 0) {
+      return;
+    }
+
+    pendingMonthOffsetRef.current = monthOffset;
+    onMoveMonth(monthOffset);
+  };
+
+  const scrollToPage = (pageIndex: number, animated: boolean) => {
+    scrollViewRef.current?.scrollTo({
+      y: pageIndex * PAGE_HEIGHT,
+      animated,
+    });
+  };
 
   return (
-    <View {...panResponder.panHandlers} style={[styles.viewport, { height: viewportHeight }]}>
-      {activeOffset !== 0 ? (
-        <MonthCalendarPageView
-          days={targetPage.summary.days}
-          isActive
-          top={resolveTargetTop(activeOffset, currentPage.height, targetPage.height)}
-          onSelectDate={onSelectDate}
-          selectedDate={selectedDate}
-          translateY={translateY}
-        />
-      ) : null}
-      <MonthCalendarPageView
-        days={currentPage.summary.days}
-        isActive={activeOffset === 0}
-        top={0}
-        onSelectDate={onSelectDate}
-        selectedDate={selectedDate}
-        translateY={translateY}
-      />
-    </View>
+    <Animated.View style={[styles.viewport, { height: viewportHeight }]}>
+      <View style={styles.scrollFrame}>
+        <ScrollView
+          bounces={false}
+          contentOffset={{ x: 0, y: PAGE_HEIGHT }}
+          decelerationRate="fast"
+          onScrollEndDrag={(event) => {
+            handleScrollEnd(event.nativeEvent.contentOffset.y);
+          }}
+          onMomentumScrollEnd={(event) => {
+            handleScrollEnd(event.nativeEvent.contentOffset.y);
+          }}
+          pagingEnabled
+          ref={scrollViewRef}
+          scrollEventThrottle={16}
+          showsVerticalScrollIndicator={false}
+        >
+          <PageContainer>
+            <MonthCalendarPageView
+              days={previousPage.summary.days}
+              onSelectDate={onSelectDate}
+              selectedDate={selectedDate}
+            />
+          </PageContainer>
+          <PageContainer>
+            <MonthCalendarPageView
+              days={currentPage.summary.days}
+              onSelectDate={onSelectDate}
+              selectedDate={selectedDate}
+            />
+          </PageContainer>
+          <PageContainer>
+            <MonthCalendarPageView
+              days={nextPage.summary.days}
+              onSelectDate={onSelectDate}
+              selectedDate={selectedDate}
+            />
+          </PageContainer>
+        </ScrollView>
+      </View>
+    </Animated.View>
   );
+}
+
+function PageContainer({ children }: { children: ReactNode }) {
+  return <View style={styles.page}>{children}</View>;
 }
 
 const styles = StyleSheet.create({
   viewport: {
-    width: "100%",
     overflow: "hidden",
-    position: "relative",
+    width: "100%",
+  },
+  scrollFrame: {
+    height: PAGE_HEIGHT,
+  },
+  page: {
+    height: PAGE_HEIGHT,
+    justifyContent: "flex-start",
   },
 });

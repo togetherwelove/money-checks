@@ -1,0 +1,78 @@
+import type { TextStyle, ViewStyle } from "react-native";
+
+import { AuthControls } from "./authControls";
+import { AppColors } from "./colors";
+import { AppLayout } from "./layout";
+
+const CARD_PADDING = 16;
+
+export const SurfaceCardStyle: ViewStyle = {
+  borderWidth: 1,
+  borderColor: AppColors.border,
+  borderRadius: AppLayout.cardRadius,
+  backgroundColor: AppColors.surface,
+  padding: CARD_PADDING,
+};
+
+export const InsetBoxStyle: ViewStyle = {
+  borderWidth: 1,
+  borderColor: AppColors.border,
+  borderRadius: AuthControls.borderRadius,
+  backgroundColor: AppColors.background,
+  paddingHorizontal: AuthControls.horizontalPadding,
+  paddingVertical: AuthControls.verticalPadding,
+};
+
+export const InsetPanelStyle: ViewStyle = {
+  borderWidth: 1,
+  borderColor: AppColors.border,
+  borderRadius: AuthControls.borderRadius,
+  backgroundColor: AppColors.background,
+};
+
+export const CardTitleTextStyle: TextStyle = {
+  color: AppColors.text,
+  fontSize: 15,
+  fontWeight: "800",
+};
+
+export const FormLabelTextStyle: TextStyle = {
+  color: AppColors.mutedText,
+  fontSize: 12,
+  fontWeight: "700",
+};
+
+export const CompactLabelTextStyle: TextStyle = {
+  color: AppColors.mutedText,
+  fontSize: 11,
+  fontWeight: "600",
+};
+
+export const FormInputTextStyle: TextStyle = {
+  paddingHorizontal: AuthControls.horizontalPadding,
+  paddingVertical: AuthControls.verticalPadding,
+  borderWidth: 1,
+  borderColor: AppColors.border,
+  borderRadius: AuthControls.borderRadius,
+  backgroundColor: AppColors.background,
+  color: AppColors.text,
+  fontSize: 16,
+};
+
+export const StatusMessageTextStyle: TextStyle = {
+  fontSize: 12,
+  fontWeight: "600",
+  lineHeight: 18,
+};
+
+export const NoteTextStyle: TextStyle = {
+  color: AppColors.mutedStrongText,
+  fontSize: 12,
+  lineHeight: 18,
+};
+
+export const SupportingTextStyle: TextStyle = {
+  color: AppColors.mutedText,
+  fontSize: 12,
+  lineHeight: 18,
+};

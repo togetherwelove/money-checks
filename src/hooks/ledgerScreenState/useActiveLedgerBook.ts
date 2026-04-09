@@ -2,6 +2,8 @@ import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 
 import { AppMessages } from "../../constants/messages";
+import { isMissingUserRecordError } from "../../lib/auth/missingUserRecordError";
+import { signOutFromApp } from "../../lib/auth/signOut";
 import {
   fetchActiveLedgerBook,
   fetchLedgerBookById,
@@ -48,6 +50,10 @@ export function useActiveLedgerBook(
       setActiveBook(nextBook);
     } catch (error) {
       logAppError("ActiveLedgerBook", error, { step: "refresh_active_book", userId });
+      if (isMissingUserRecordError(error)) {
+        await signOutFromApp();
+        return;
+      }
       setActiveBookError(AppMessages.ledgerError);
     } finally {
       setIsLoadingBook(false);
@@ -68,6 +74,10 @@ export function useActiveLedgerBook(
         }
       } catch (error) {
         logAppError("ActiveLedgerBook", error, { step: "load_active_book", userId });
+        if (isMissingUserRecordError(error)) {
+          await signOutFromApp();
+          return;
+        }
         if (isMounted) {
           setActiveBookError(AppMessages.ledgerError);
         }

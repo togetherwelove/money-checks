@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../../constants/colors";
-import { AppLayout } from "../../constants/layout";
+import { InsetPanelStyle, SupportingTextStyle, SurfaceCardStyle } from "../../constants/uiStyles";
 import { NotificationUiCopy } from "../../notifications/config/notificationCopy";
 import type {
   NotificationPreferenceGroup as NotificationPreferenceGroupState,
@@ -60,18 +60,11 @@ export function NotificationSettingsCard({
 
 const styles = StyleSheet.create({
   card: {
+    ...SurfaceCardStyle,
     gap: 8,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: AppColors.border,
-    borderRadius: AppLayout.cardRadius,
-    backgroundColor: AppColors.surface,
   },
   permissionList: {
-    borderWidth: 1,
-    borderColor: AppColors.border,
-    borderRadius: 16,
-    backgroundColor: AppColors.background,
+    ...InsetPanelStyle,
     paddingHorizontal: 12,
   },
   permissionRow: {
@@ -95,11 +88,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
   },
-  statusText: {
-    color: AppColors.mutedText,
-    fontSize: 12,
-    lineHeight: 17,
-  },
+  statusText: SupportingTextStyle,
   preferenceBlock: {
     gap: 10,
     paddingTop: 2,

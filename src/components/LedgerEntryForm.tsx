@@ -14,7 +14,7 @@ type LedgerEntryFormProps = {
   draft: LedgerEntryDraft;
   editingEntryId: string | null;
   onChangeDraft: (field: keyof LedgerEntryDraft, value: string) => void;
-  onSaveEntry: () => void;
+  onSaveEntry: () => void | Promise<void>;
   onSelectType: (type: LedgerEntryType) => void;
 };
 

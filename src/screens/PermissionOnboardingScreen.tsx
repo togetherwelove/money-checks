@@ -5,6 +5,7 @@ import { ScreenHeaderBlock } from "../components/ScreenHeaderBlock";
 import { AuthOnboardingMessages } from "../constants/authOnboarding";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
+import { NoteTextStyle, SurfaceCardStyle } from "../constants/uiStyles";
 
 type PermissionOnboardingScreenProps = {
   onAllow: () => Promise<void>;
@@ -22,9 +23,7 @@ export function PermissionOnboardingScreen({ onAllow, onSkip }: PermissionOnboar
       <View style={styles.card}>
         <ActionButton
           label={AuthOnboardingMessages.permissionPrimaryAction}
-          onPress={() => {
-            void onAllow();
-          }}
+          onPress={onAllow}
           variant="primary"
         />
         <ActionButton
@@ -32,9 +31,7 @@ export function PermissionOnboardingScreen({ onAllow, onSkip }: PermissionOnboar
           onPress={onSkip}
           variant="secondary"
         />
-        <Text style={styles.note}>
-          허용 여부는 기기 팝업에서 선택할 수 있고, 이후 알림설정에서 다시 확인할 수 있습니다.
-        </Text>
+        <Text style={styles.note}>{AuthOnboardingMessages.permissionNote}</Text>
       </View>
     </View>
   );
@@ -49,17 +46,11 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   card: {
+    ...SurfaceCardStyle,
     gap: 10,
-    borderWidth: 1,
-    borderColor: AppColors.border,
-    borderRadius: 24,
-    backgroundColor: AppColors.surface,
-    padding: 16,
   },
   note: {
-    color: AppColors.mutedText,
-    fontSize: 12,
-    lineHeight: 18,
+    ...NoteTextStyle,
     textAlign: "center",
   },
 });

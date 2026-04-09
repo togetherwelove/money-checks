@@ -30,12 +30,12 @@ export function LedgerBookJoinRequests({
             <View style={styles.actions}>
               <ActionButton
                 label={AppMessages.accountJoinRejectAction}
-                onPress={() => void onRejectRequest(request.id)}
+                onPress={() => onRejectRequest(request.id)}
                 variant="secondary"
               />
               <ActionButton
                 label={AppMessages.accountJoinApproveAction}
-                onPress={() => void onApproveRequest(request.id)}
+                onPress={() => onApproveRequest(request.id)}
                 variant="primary"
               />
             </View>

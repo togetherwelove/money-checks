@@ -15,6 +15,12 @@ const selectedDateFormatter = new Intl.DateTimeFormat("ko-KR", {
   day: "numeric",
   weekday: "short",
 });
+const selectedDateWithYearFormatter = new Intl.DateTimeFormat("ko-KR", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+  weekday: "short",
+});
 
 type DayAggregate = {
   income: number;
@@ -30,12 +36,24 @@ export function formatSelectedDate(isoDate: string): string {
   return selectedDateFormatter.format(parseIsoDate(isoDate));
 }
 
+export function formatSelectedDateWithYear(isoDate: string): string {
+  return selectedDateWithYearFormatter.format(parseIsoDate(isoDate));
+}
+
 export function startOfMonth(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), 1);
 }
 
 export function addMonths(date: Date, monthOffset: number): Date {
   return new Date(date.getFullYear(), date.getMonth() + monthOffset, 1);
+}
+
+export function replaceMonthAndYear(date: Date, year: number, monthIndex: number): Date {
+  return new Date(year, monthIndex, 1);
+}
+
+export function replaceYearPreservingMonth(date: Date, year: number): Date {
+  return replaceMonthAndYear(date, year, date.getMonth());
 }
 
 export function addDays(date: Date, dayOffset: number): Date {

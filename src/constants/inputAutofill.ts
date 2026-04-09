@@ -6,6 +6,15 @@ export const DisabledAutofillProps = {
   textContentType: "none" as const,
 };
 
+export const OnboardingNicknameInputProps = {
+  autoCapitalize: "words" as const,
+  autoComplete: "off" as const,
+  autoCorrect: false,
+  importantForAutofill: "no" as const,
+  spellCheck: false,
+  textContentType: "none" as const,
+};
+
 export const NicknameAutofillProps = {
   autoCapitalize: "words" as const,
   autoComplete: "nickname" as const,

@@ -1,8 +1,8 @@
 export const AccountDeletionMessages = {
   action: "계정 삭제",
   blockedOwnerError:
-    "다른 멤버가 있는 공유 가계부 소유자는 먼저 멤버를 정리하거나 공유를 종료해야 합니다.",
-  confirmHint: "'삭제'를 입력하면 계정을 완전히 삭제할 수 있습니다.",
+    "다른 멤버가 남아 있는 공유 가계부 소유자는 먼저 멤버를 정리하거나 공유를 종료해야 합니다.",
+  confirmHint: "'삭제'를 입력하면 계정이 완전히 삭제됩니다.",
   confirmLabel: "확인 문구",
   confirmPlaceholder: "삭제",
   deleting: "계정을 삭제하고 있습니다.",

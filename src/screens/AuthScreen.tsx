@@ -2,23 +2,23 @@ import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
-import { EmailAuthCard } from "../components/authScreen/EmailAuthCard";
+import { ScreenSlideTransition } from "../components/ScreenSlideTransition";
+import { EmailSignInCard } from "../components/authScreen/EmailSignInCard";
 import { AppColors } from "../constants/colors";
 import { EmailAuthCopy } from "../constants/emailAuth";
 import { AppLayout } from "../constants/layout";
 import { AppMessages } from "../constants/messages";
-import { signInWithEmailPassword, signUpWithEmailPassword } from "../lib/auth/emailPasswordAuth";
+import { signInWithEmailPassword } from "../lib/auth/emailPasswordAuth";
+import { SignUpScreen } from "./SignUpScreen";
 
 type AuthScreenProps = {
   initialErrorMessage?: string | null;
 };
 
 export function AuthScreen({ initialErrorMessage = null }: AuthScreenProps) {
-  const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-up");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [screen, setScreen] = useState<"sign-in" | "sign-up">("sign-in");
 
   useEffect(() => {
     if (!initialErrorMessage) {
@@ -30,74 +30,51 @@ export function AuthScreen({ initialErrorMessage = null }: AuthScreenProps) {
 
   const handleSubmit = async () => {
     try {
-      if (mode === "sign-up") {
-        const result = await signUpWithEmailPassword(email, password);
-        if (result === "confirmation-required") {
-          setPassword("");
-          setConfirmPassword("");
-          setMode("sign-in");
-          setStatusMessage(EmailAuthCopy.confirmationStatus);
-        }
-        return;
-      }
-
       await signInWithEmailPassword(email, password);
     } catch (error) {
-      console.error("[AuthScreen] Email password auth failed", error);
+      console.error("[AuthScreen] Email password sign-in failed", error);
     }
   };
 
   return (
-    <KeyboardAwareScrollView
-      centerContent
-      contentContainerStyle={styles.content}
-      style={styles.screen}
-    >
-      <View style={styles.heroSection}>
-        <Text style={styles.brand}>{AppMessages.brand}</Text>
-        <Text style={styles.title}>{EmailAuthCopy.title}</Text>
-        <Text style={styles.subtitle}>{EmailAuthCopy.subtitle}</Text>
-      </View>
+    <ScreenSlideTransition screenKey={screen}>
+      {screen === "sign-up" ? (
+        <SignUpScreen
+          onBackToSignIn={() => {
+            setPassword("");
+            setScreen("sign-in");
+          }}
+        />
+      ) : (
+        <KeyboardAwareScrollView
+          centerContent
+          contentContainerStyle={styles.content}
+          style={styles.screen}
+        >
+          <View style={styles.heroSection}>
+            <Text style={styles.brand}>{AppMessages.brand}</Text>
+            <Text style={styles.title}>{EmailAuthCopy.signIn.title}</Text>
+            <Text style={styles.subtitle}>{EmailAuthCopy.signIn.subtitle}</Text>
+          </View>
 
-      <EmailAuthCard
-        confirmPassword={confirmPassword}
-        email={email}
-        mode={mode}
-        onChangeConfirmPassword={(value) => {
-          setConfirmPassword(value);
-          if (statusMessage) {
-            setStatusMessage(null);
-          }
-        }}
-        onChangeEmail={(value) => {
-          setEmail(value);
-          if (statusMessage) {
-            setStatusMessage(null);
-          }
-        }}
-        onChangeMode={(value) => {
-          setMode(value);
-          setPassword("");
-          setConfirmPassword("");
-          setStatusMessage(null);
-        }}
-        onChangePassword={(value) => {
-          setPassword(value);
-          if (statusMessage) {
-            setStatusMessage(null);
-          }
-        }}
-        onSubmit={() => {
-          void handleSubmit();
-        }}
-        password={password}
-        statusMessage={statusMessage}
-      />
+          <EmailSignInCard
+            email={email}
+            onChangeEmail={setEmail}
+            onChangePassword={setPassword}
+            onOpenSignUp={() => {
+              setPassword("");
+              setScreen("sign-up");
+            }}
+            onSubmit={handleSubmit}
+            password={password}
+          />
 
-      <View style={styles.supportCard}>
-        <Text style={styles.supportLabel}>{EmailAuthCopy.supportLabel}</Text>
-      </View>
-    </KeyboardAwareScrollView>
+          <View style={styles.supportCard}>
+            <Text style={styles.supportLabel}>{EmailAuthCopy.supportLabel}</Text>
+          </View>
+        </KeyboardAwareScrollView>
+      )}
+    </ScreenSlideTransition>
   );
 }
 
@@ -108,12 +85,13 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: AppLayout.screenPadding,
-    gap: 12,
+    gap: 16,
+    justifyContent: "center",
   },
   heroSection: {
     gap: 8,
     paddingHorizontal: 8,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   brand: {
     color: AppColors.primary,

@@ -1,9 +1,8 @@
-import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import { useState } from "react";
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { CalendarToolbar } from "../components/CalendarToolbar";
-import { EntryDatePickerModal } from "../components/EntryDatePickerModal";
+import { CollapsibleSection } from "../components/CollapsibleSection";
 import { IconActionButton } from "../components/IconActionButton";
 import { LedgerEntryList } from "../components/LedgerEntryList";
 import { MonthCalendarPager } from "../components/MonthCalendarPager";
@@ -11,20 +10,14 @@ import { MonthlySummary } from "../components/MonthlySummary";
 import { WeekdayHeader } from "../components/WeekdayHeader";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
-import { AppMessages } from "../constants/messages";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
-import { appPlatform } from "../lib/appPlatform";
 import type { LedgerEntry } from "../types/ledger";
 import {
   addMonths,
   formatCurrency,
-  formatSelectedDate,
-  parseIsoDate,
+  formatSelectedDateWithYear,
   toIsoDate,
 } from "../utils/calendar";
-
-const PREVIOUS_MONTH_OFFSET = -1;
-const NEXT_MONTH_OFFSET = 1;
 
 type HomeScreenProps = {
   onEditSelectedEntry: (entry: LedgerEntry) => void;
@@ -41,13 +34,10 @@ export function HomeScreen({
   onSelectCalendarDate,
   state,
 }: HomeScreenProps) {
-  const actualToday = new Date();
   const [isCalendarCollapsed, setIsCalendarCollapsed] = useState(false);
-  const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
   const {
     errorMessage,
     handleDeleteEntry,
-    entries,
     isRefreshing,
     monthlyLedger,
     refreshLedger,
@@ -55,110 +45,70 @@ export function HomeScreen({
     selectedEntries,
     setVisibleMonth,
     visibleMonth,
-    resetEditor,
   } = state;
-  const pickerMode = appPlatform.entryDatePickerMode;
-
-  const handleOpenMonthPicker = () => {
-    if (pickerMode === "native" && appPlatform.usesAndroidDatePickerDialog) {
-      DateTimePickerAndroid.open({
-        mode: "date",
-        value: parseIsoDate(selectedDate),
-        onChange: (_event, nextDate) => {
-          if (!nextDate) {
-            return;
-          }
-
-          onSelectCalendarDate(toIsoDate(nextDate));
-        },
-      });
-      return;
-    }
-
-    setIsMonthPickerOpen(true);
-  };
 
   return (
-    <>
-      <View style={styles.screen}>
-        <View style={styles.fixedSection}>
-          {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
-          {!isCalendarCollapsed ? (
-            <>
-              <CalendarToolbar
-                monthLabel={monthlyLedger.monthLabel}
-                onMoveNextMonth={() =>
-                  moveMonth(visibleMonth, NEXT_MONTH_OFFSET, setVisibleMonth, resetEditor)
-                }
-                onMovePreviousMonth={() =>
-                  moveMonth(visibleMonth, PREVIOUS_MONTH_OFFSET, setVisibleMonth, resetEditor)
-                }
-                onMoveToCurrentMonth={() => {
-                  setVisibleMonth(actualToday);
-                  resetEditor(toIsoDate(actualToday));
-                }}
-                onPressMonthLabel={handleOpenMonthPicker}
-              />
-              <WeekdayHeader />
-              <MonthCalendarPager
-                entries={entries}
-                onMoveMonth={(monthOffset) =>
-                  moveMonth(visibleMonth, monthOffset, setVisibleMonth, resetEditor)
-                }
-                onSelectDate={onSelectCalendarDate}
-                selectedDate={selectedDate}
-                visibleMonth={visibleMonth}
-              />
-            </>
-          ) : null}
-          <View style={styles.selectionRow}>
-            <View style={styles.selectionInfo}>
-              <Text style={styles.selectedDate}>{formatSelectedDate(selectedDate)}</Text>
-              <IconActionButton
-                icon={isCalendarCollapsed ? "chevron-down" : "chevron-up"}
-                onPress={() => setIsCalendarCollapsed((currentValue) => !currentValue)}
-              />
-              <IconActionButton icon="pie-chart" onPress={onOpenCharts} />
-            </View>
-            <IconActionButton icon="plus" onPress={onOpenEntry} />
+    <View style={styles.screen}>
+      <View style={styles.fixedSection}>
+        {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
+        <CollapsibleSection isCollapsed={isCalendarCollapsed}>
+          <>
+            <CalendarToolbar
+              monthLabel={monthlyLedger.monthLabel}
+              onSelectToday={() => {
+                onSelectCalendarDate(toIsoDate(new Date()));
+              }}
+            />
+            <WeekdayHeader />
+            <MonthCalendarPager
+              currentPage={state.currentMonthPage}
+              nextPage={state.nextMonthPage}
+              onMoveMonth={(monthOffset) => moveMonth(visibleMonth, monthOffset, setVisibleMonth)}
+              onSelectDate={onSelectCalendarDate}
+              previousPage={state.previousMonthPage}
+              selectedDate={selectedDate}
+            />
+          </>
+        </CollapsibleSection>
+        <MonthlySummary
+          totalExpense={formatCurrency(monthlyLedger.totalExpense)}
+          totalIncome={formatCurrency(monthlyLedger.totalIncome)}
+        />
+        <View style={styles.selectionRow}>
+          <View style={styles.selectionInfo}>
+            <Text style={styles.selectedDate}>{formatSelectedDateWithYear(selectedDate)}</Text>
+            <IconActionButton
+              icon={isCalendarCollapsed ? "chevron-down" : "chevron-up"}
+              onPress={() => setIsCalendarCollapsed((currentValue) => !currentValue)}
+            />
+            <IconActionButton icon="pie-chart" onPress={onOpenCharts} />
           </View>
-        </View>
-        <View style={styles.listSection}>
-          <ScrollView
-            contentContainerStyle={styles.listContent}
-            refreshControl={
-              <RefreshControl
-                onRefresh={() => {
-                  void refreshLedger();
-                }}
-                refreshing={isRefreshing}
-                tintColor={AppColors.primary}
-              />
-            }
-            showsVerticalScrollIndicator={false}
-            style={styles.listScroll}
-          >
-            <MonthlySummary
-              totalExpense={formatCurrency(monthlyLedger.totalExpense)}
-              totalIncome={formatCurrency(monthlyLedger.totalIncome)}
-            />
-            <LedgerEntryList
-              entries={selectedEntries}
-              onDeleteEntry={handleDeleteEntry}
-              onEditEntry={onEditSelectedEntry}
-            />
-          </ScrollView>
+          <IconActionButton icon="plus" onPress={onOpenEntry} />
         </View>
       </View>
-      <EntryDatePickerModal
-        entries={entries}
-        isOpen={isMonthPickerOpen}
-        mode={pickerMode}
-        onClose={() => setIsMonthPickerOpen(false)}
-        onSelectDate={onSelectCalendarDate}
-        selectedDate={selectedDate}
-      />
-    </>
+      <View style={styles.listSection}>
+        <ScrollView
+          contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl
+              onRefresh={() => {
+                void refreshLedger();
+              }}
+              refreshing={isRefreshing}
+              tintColor={AppColors.primary}
+            />
+          }
+          showsVerticalScrollIndicator={false}
+          style={styles.listScroll}
+        >
+          <LedgerEntryList
+            entries={selectedEntries}
+            onDeleteEntry={handleDeleteEntry}
+            onEditEntry={onEditSelectedEntry}
+          />
+        </ScrollView>
+      </View>
+    </View>
   );
 }
 
@@ -166,11 +116,8 @@ function moveMonth(
   visibleMonth: Date,
   monthOffset: number,
   setVisibleMonth: (nextMonth: Date) => void,
-  resetEditor: (isoDate: string) => void,
 ) {
-  const nextMonth = addMonths(visibleMonth, monthOffset);
-  setVisibleMonth(nextMonth);
-  resetEditor(toIsoDate(nextMonth));
+  setVisibleMonth(addMonths(visibleMonth, monthOffset));
 }
 
 const styles = StyleSheet.create({

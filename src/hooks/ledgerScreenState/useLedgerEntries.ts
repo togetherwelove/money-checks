@@ -1,6 +1,6 @@
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import type { Dispatch, SetStateAction } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { DEFAULT_MEMBER_DISPLAY_NAME } from "../../constants/ledgerDisplay";
 import { AppMessages } from "../../constants/messages";
@@ -9,16 +9,22 @@ import { fetchProfileDisplayName } from "../../lib/profiles";
 import { supabase } from "../../lib/supabase";
 import type { LedgerEntry } from "../../types/ledger";
 import type { LedgerEntryRow } from "../../types/supabase";
+import { getMonthKey } from "../../utils/calendar";
 import { mapLedgerEntryRow } from "../../utils/ledgerMapper";
-import { getLedgerWindowEnd, getLedgerWindowStart } from "../../utils/ledgerMonthWindow";
-import { loadBookEntries } from "./helpers";
+import { loadLedgerMonthEntries } from "./helpers";
 import {
-  isLedgerEntryRowInWindow,
-  removeRealtimeLedgerEntry,
-  upsertRealtimeLedgerEntry,
-} from "./realtimeEntryUpdates";
+  type LedgerEntryCache,
+  getCalendarPreloadMonths,
+  getVisibleWindowEntries,
+  hasCachedMonth,
+  removeEntryFromCache,
+  replaceVisibleWindowEntries,
+  setMonthEntriesInCache,
+  upsertEntryInCache,
+} from "./ledgerEntryCache";
 
 type LedgerEntriesState = {
+  entryCache: LedgerEntryCache;
   entries: LedgerEntry[];
   entriesError: string | null;
   isLoadingEntries: boolean;
@@ -31,30 +37,71 @@ export function useLedgerEntries(
   activeBookId: string | null,
   visibleMonth: Date,
 ): LedgerEntriesState {
-  const [entries, setEntries] = useState<LedgerEntry[]>([]);
+  const [entryCache, setEntryCache] = useState<LedgerEntryCache>({});
   const [entriesError, setEntriesError] = useState<string | null>(null);
   const [isLoadingEntries, setIsLoadingEntries] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const cachedBookIdRef = useRef<string | null>(activeBookId);
+  const preloadMonths = useMemo(() => getCalendarPreloadMonths(visibleMonth), [visibleMonth]);
+  const entries = useMemo(
+    () => getVisibleWindowEntries(entryCache, visibleMonth),
+    [entryCache, visibleMonth],
+  );
 
   useEffect(() => {
     let isMounted = true;
+    const activeBookChanged = cachedBookIdRef.current !== activeBookId;
+    const baseCache = activeBookChanged ? {} : entryCache;
+    const hasCachedEntries = Object.keys(entryCache).length > 0;
 
-    const loadEntries = async () => {
-      if (!activeBookId) {
-        setEntries([]);
-        setIsLoadingEntries(false);
-        return;
+    if (activeBookChanged) {
+      cachedBookIdRef.current = activeBookId;
+      if (hasCachedEntries) {
+        setEntryCache({});
       }
-
-      setIsLoadingEntries(true);
       setEntriesError(null);
+      setIsLoadingEntries(false);
+    }
 
-      try {
-        const nextEntries = await loadBookEntries(activeBookId, visibleMonth);
-        if (isMounted) {
-          setEntries(nextEntries);
+    if (!activeBookId) {
+      if (hasCachedEntries) {
+        setEntryCache({});
+      }
+      setIsLoadingEntries(false);
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    const missingMonths = preloadMonths.filter((month) => !hasCachedMonth(baseCache, month));
+    if (missingMonths.length === 0) {
+      setIsLoadingEntries(false);
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    const shouldBlockOnLoad = activeBookChanged || !hasCachedMonth(baseCache, visibleMonth);
+    if (shouldBlockOnLoad) {
+      setIsLoadingEntries(true);
+    }
+    setEntriesError(null);
+
+    void Promise.all(missingMonths.map((month) => loadLedgerMonthEntries(activeBookId, month)))
+      .then((nextEntriesByMonth) => {
+        if (!isMounted) {
+          return;
         }
-      } catch (error) {
+
+        setEntryCache((currentCache) =>
+          missingMonths.reduce(
+            (nextCache, month, index) =>
+              setMonthEntriesInCache(nextCache, month, nextEntriesByMonth[index] ?? []),
+            currentCache,
+          ),
+        );
+      })
+      .catch((error) => {
         logAppError("LedgerEntries", error, {
           activeBookId,
           step: "load_entries",
@@ -63,27 +110,22 @@ export function useLedgerEntries(
         if (isMounted) {
           setEntriesError(AppMessages.ledgerError);
         }
-      } finally {
+      })
+      .finally(() => {
         if (isMounted) {
           setIsLoadingEntries(false);
         }
-      }
-    };
-
-    void loadEntries();
+      });
 
     return () => {
       isMounted = false;
     };
-  }, [activeBookId, visibleMonth]);
+  }, [activeBookId, entryCache, preloadMonths, visibleMonth]);
 
   useEffect(() => {
     if (!activeBookId) {
       return;
     }
-
-    const windowStart = getLedgerWindowStart(visibleMonth);
-    const windowEnd = getLedgerWindowEnd(visibleMonth);
 
     const handleLedgerEntryChange = async (
       payload: RealtimePostgresChangesPayload<Record<string, unknown>>,
@@ -94,16 +136,11 @@ export function useLedgerEntries(
           return;
         }
 
-        setEntries((currentEntries) => removeRealtimeLedgerEntry(currentEntries, deletedEntryId));
+        setEntryCache((currentCache) => removeEntryFromCache(currentCache, deletedEntryId));
         return;
       }
 
       const changedRow = payload.new as LedgerEntryRow;
-      if (!isLedgerEntryRowInWindow(changedRow, windowStart, windowEnd)) {
-        setEntries((currentEntries) => removeRealtimeLedgerEntry(currentEntries, changedRow.id));
-        return;
-      }
-
       let authorName = DEFAULT_MEMBER_DISPLAY_NAME;
       try {
         authorName =
@@ -114,18 +151,19 @@ export function useLedgerEntries(
           entryId: changedRow.id,
           step: "load_entry_author_name",
         });
-        authorName = DEFAULT_MEMBER_DISPLAY_NAME;
       }
 
-      setEntries((currentEntries) => {
-        const currentEntry = currentEntries.find((entry) => entry.id === changedRow.id);
+      setEntryCache((currentCache) => {
+        const currentEntry = Object.values(currentCache)
+          .flat()
+          .find((entry) => entry.id === changedRow.id);
         const nextEntry = mapLedgerEntryRow(
           changedRow,
           currentEntry?.authorId === changedRow.user_id
             ? (currentEntry.authorName ?? authorName)
             : authorName,
         );
-        return upsertRealtimeLedgerEntry(currentEntries, nextEntry);
+        return upsertEntryInCache(currentCache, nextEntry);
       });
     };
 
@@ -150,7 +188,7 @@ export function useLedgerEntries(
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [activeBookId, visibleMonth]);
+  }, [activeBookId]);
 
   const refreshLedger = async () => {
     if (!activeBookId) {
@@ -161,8 +199,20 @@ export function useLedgerEntries(
     setEntriesError(null);
 
     try {
-      const nextEntries = await loadBookEntries(activeBookId, visibleMonth);
-      setEntries(nextEntries);
+      const nextEntriesByMonth = await Promise.all(
+        preloadMonths.map((month) => loadLedgerMonthEntries(activeBookId, month)),
+      );
+      setEntryCache((currentCache) => {
+        const nextCache = { ...currentCache };
+        for (const month of preloadMonths) {
+          delete nextCache[getMonthKey(month)];
+        }
+        return preloadMonths.reduce(
+          (updatedCache, month, index) =>
+            setMonthEntriesInCache(updatedCache, month, nextEntriesByMonth[index] ?? []),
+          nextCache,
+        );
+      });
     } catch (error) {
       logAppError("LedgerEntries", error, {
         activeBookId,
@@ -176,11 +226,17 @@ export function useLedgerEntries(
   };
 
   return {
+    entryCache,
     entries,
     entriesError,
     isLoadingEntries,
     isRefreshing,
     refreshLedger,
-    setEntries,
+    setEntries: (updater) =>
+      setEntryCache((currentCache) => {
+        const currentEntries = getVisibleWindowEntries(currentCache, visibleMonth);
+        const nextEntries = typeof updater === "function" ? updater(currentEntries) : updater;
+        return replaceVisibleWindowEntries(currentCache, visibleMonth, nextEntries);
+      }),
   };
 }
