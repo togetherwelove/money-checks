@@ -33,11 +33,15 @@ export function formatCurrency(amount: number): string {
 }
 
 export function formatSelectedDate(isoDate: string): string {
-  return selectedDateFormatter.format(parseIsoDate(isoDate));
+  return formatDateWithOptionalYear(parseIsoDate(isoDate), false);
 }
 
 export function formatSelectedDateWithYear(isoDate: string): string {
-  return selectedDateWithYearFormatter.format(parseIsoDate(isoDate));
+  return formatDateWithOptionalYear(parseIsoDate(isoDate), true);
+}
+
+export function formatLedgerListHeaderDate(isoDate: string): string {
+  return formatDateWithOptionalYear(parseIsoDate(isoDate), true);
 }
 
 export function startOfMonth(date: Date): Date {
@@ -208,4 +212,21 @@ function createCalendarDay(
 function parseMonthKey(monthKey: string): Date {
   const [yearText, monthText] = monthKey.split("-");
   return new Date(Number(yearText), Number(monthText) - 1, 1);
+}
+
+function formatDateWithOptionalYear(date: Date, includeYear: boolean): string {
+  const formatter = includeYear ? selectedDateWithYearFormatter : selectedDateFormatter;
+  const formatted = formatter.formatToParts(date);
+  const year = formatted.find((part) => part.type === "year")?.value;
+  const month = formatted.find((part) => part.type === "month")?.value;
+  const day = formatted.find((part) => part.type === "day")?.value;
+  const weekday = formatted.find((part) => part.type === "weekday")?.value;
+
+  if (!month || !day || !weekday || (includeYear && !year)) {
+    return formatter.format(date);
+  }
+
+  return includeYear
+    ? `${year}년 ${month} ${day}일 (${weekday})`
+    : `${month} ${day}일 (${weekday})`;
 }

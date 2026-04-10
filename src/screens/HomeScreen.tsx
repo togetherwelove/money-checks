@@ -15,7 +15,7 @@ import type { LedgerEntry } from "../types/ledger";
 import {
   addMonths,
   formatCurrency,
-  formatSelectedDateWithYear,
+  formatLedgerListHeaderDate,
   toIsoDate,
 } from "../utils/calendar";
 
@@ -48,6 +48,10 @@ export function HomeScreen({
     visibleMonth,
   } = state;
 
+  const toggleCalendarCollapsed = () => {
+    setIsCalendarCollapsed((currentValue) => !currentValue);
+  };
+
   return (
     <View style={styles.screen}>
       <View style={styles.fixedSection}>
@@ -78,10 +82,10 @@ export function HomeScreen({
         />
         <View style={styles.selectionRow}>
           <View style={styles.selectionInfo}>
-            <Text style={styles.selectedDate}>{formatSelectedDateWithYear(selectedDate)}</Text>
+            <Text style={styles.selectedDate}>{formatLedgerListHeaderDate(selectedDate)}</Text>
             <IconActionButton
               icon={isCalendarCollapsed ? "chevron-down" : "chevron-up"}
-              onPress={() => setIsCalendarCollapsed((currentValue) => !currentValue)}
+              onPress={toggleCalendarCollapsed}
             />
             <IconActionButton icon="pie-chart" onPress={onOpenCharts} />
           </View>

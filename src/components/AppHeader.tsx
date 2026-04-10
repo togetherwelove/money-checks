@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     minHeight: 60,
     paddingHorizontal: 8,
-    paddingVertical: 6,
+    paddingBottom: 6,
   },
   sideSlot: {
     width: 104,

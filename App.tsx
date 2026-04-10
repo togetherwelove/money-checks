@@ -182,74 +182,78 @@ function SignedInApp({ session }: { session: Session }) {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={AppColors.background} />
-      <View style={styles.headerShell}>
-        <AppHeader
-          isMenuOpen={isMenuOpen}
-          leadingAction={
-            showsCalendarReturnAction(activeScreen) ? (
-              <BackToCalendarAction onPress={handleBackToCalendar} />
-            ) : null
-          }
-          onPressCenterLabel={activeScreen === "calendar" ? handleOpenYearPicker : null}
-          showsCenterLabelIndicator={activeScreen === "calendar"}
-          titleLabel={getAppHeaderTitle(activeScreen)}
-          yearLabel={
-            activeScreen === "calendar" ? String(ledgerState.visibleMonth.getFullYear()) : null
-          }
-          onOpenMenu={() => setIsMenuOpen((currentValue) => !currentValue)}
-        />
-      </View>
-      <View style={styles.body}>
-        <ScreenSlideTransition screenKey={activeScreen}>
-          <AppScreenRouter
-            activeScreen={activeScreen}
-            email={session.user.email ?? ""}
-            fallbackDisplayName={fallbackDisplayName}
-            ledgerState={ledgerState}
-            notificationPreferenceGroups={notifications.preferenceGroups}
-            notificationPermissionLabel={notifications.permissionLabel}
-            notificationStatusMessage={notifications.statusMessage}
-            onChangeNotificationThresholdPeriod={notifications.updateThresholdPeriod}
-            onChangeNotificationThreshold={notifications.updateThresholdValue}
-            onEditSelectedEntry={handleEditEntryFromCalendar}
-            onOpenCharts={handleToggleCharts}
-            onOpenEntry={handleOpenEntry}
-            onSaveEntry={handleSaveEntry}
-            onToggleNotificationPreference={notifications.updatePreference}
-            onSelectCalendarDate={(isoDate) => {
-              ledgerState.handleSelectDate(isoDate);
-              handleOpenCalendar();
-            }}
-            showNotificationSettings={notifications.showNotificationSettings}
-            userId={session.user.id}
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={AppColors.surface} />
+      <SafeAreaView edges={["top"]} style={styles.headerSafeArea}>
+        <View style={styles.headerShell}>
+          <AppHeader
+            isMenuOpen={isMenuOpen}
+            leadingAction={
+              showsCalendarReturnAction(activeScreen) ? (
+                <BackToCalendarAction onPress={handleBackToCalendar} />
+              ) : null
+            }
+            onPressCenterLabel={activeScreen === "calendar" ? handleOpenYearPicker : null}
+            showsCenterLabelIndicator={activeScreen === "calendar"}
+            titleLabel={getAppHeaderTitle(activeScreen)}
+            yearLabel={
+              activeScreen === "calendar" ? String(ledgerState.visibleMonth.getFullYear()) : null
+            }
+            onOpenMenu={() => setIsMenuOpen((currentValue) => !currentValue)}
           />
-        </ScreenSlideTransition>
-      </View>
-      <AppMenuDrawer
-        isOpen={isMenuOpen}
-        items={menuItems}
-        onClose={() => setIsMenuOpen(false)}
-        onSelectItem={(targetScreen) => {
-          setIsMenuOpen(false);
-          if (targetScreen === "calendar") {
-            ledgerState.resetEditor(ledgerState.selectedDate);
-          }
-          if (targetScreen === "share" && ledgerState.activeBook?.ownerId === session.user.id) {
-            void ledgerState.refreshSharedLedgerBook();
-          }
-          setActiveScreen(targetScreen);
-        }}
-      />
-      <NativeYearPickerModal
-        isOpen={activeScreen === "calendar" && appPlatform.isIOS && isYearPickerOpen}
-        onClose={() => setIsYearPickerOpen(false)}
-        onSelectDate={ledgerState.handleSelectDate}
-        selectedDate={ledgerState.selectedDate}
-      />
-      {ledgerState.isBusy ? <BlockingOverlay /> : null}
-    </SafeAreaView>
+        </View>
+      </SafeAreaView>
+      <SafeAreaView edges={["left", "right", "bottom"]} style={styles.bodySafeArea}>
+        <View style={styles.body}>
+          <ScreenSlideTransition screenKey={activeScreen}>
+            <AppScreenRouter
+              activeScreen={activeScreen}
+              email={session.user.email ?? ""}
+              fallbackDisplayName={fallbackDisplayName}
+              ledgerState={ledgerState}
+              notificationPreferenceGroups={notifications.preferenceGroups}
+              notificationPermissionLabel={notifications.permissionLabel}
+              notificationStatusMessage={notifications.statusMessage}
+              onChangeNotificationThresholdPeriod={notifications.updateThresholdPeriod}
+              onChangeNotificationThreshold={notifications.updateThresholdValue}
+              onEditSelectedEntry={handleEditEntryFromCalendar}
+              onOpenCharts={handleToggleCharts}
+              onOpenEntry={handleOpenEntry}
+              onSaveEntry={handleSaveEntry}
+              onToggleNotificationPreference={notifications.updatePreference}
+              onSelectCalendarDate={(isoDate) => {
+                ledgerState.handleSelectDate(isoDate);
+                handleOpenCalendar();
+              }}
+              showNotificationSettings={notifications.showNotificationSettings}
+              userId={session.user.id}
+            />
+          </ScreenSlideTransition>
+        </View>
+        <AppMenuDrawer
+          isOpen={isMenuOpen}
+          items={menuItems}
+          onClose={() => setIsMenuOpen(false)}
+          onSelectItem={(targetScreen) => {
+            setIsMenuOpen(false);
+            if (targetScreen === "calendar") {
+              ledgerState.resetEditor(ledgerState.selectedDate);
+            }
+            if (targetScreen === "share" && ledgerState.activeBook?.ownerId === session.user.id) {
+              void ledgerState.refreshSharedLedgerBook();
+            }
+            setActiveScreen(targetScreen);
+          }}
+        />
+        <NativeYearPickerModal
+          isOpen={activeScreen === "calendar" && appPlatform.isIOS && isYearPickerOpen}
+          onClose={() => setIsYearPickerOpen(false)}
+          onSelectDate={ledgerState.handleSelectDate}
+          selectedDate={ledgerState.selectedDate}
+        />
+        {ledgerState.isBusy ? <BlockingOverlay /> : null}
+      </SafeAreaView>
+    </View>
   );
 }
 
@@ -259,12 +263,19 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: AppColors.background,
+    backgroundColor: AppColors.surface,
+  },
+  headerSafeArea: {
+    backgroundColor: AppColors.surface,
   },
   headerShell: {
     backgroundColor: AppColors.surface,
     borderBottomWidth: 1,
     borderBottomColor: AppColors.border,
+  },
+  bodySafeArea: {
+    flex: 1,
+    backgroundColor: AppColors.background,
   },
   body: {
     flex: 1,
