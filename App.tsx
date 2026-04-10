@@ -1,7 +1,7 @@
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import type { Session } from "@supabase/supabase-js";
-import { useState } from "react";
-import { StatusBar, StyleSheet, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import { InteractionManager, StatusBar, StyleSheet, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { RootSiblingParent } from "react-native-root-siblings";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
@@ -11,6 +11,7 @@ import { AppHeader } from "./src/components/AppHeader";
 import { AppMenuDrawer } from "./src/components/AppMenuDrawer";
 import { BackToCalendarAction } from "./src/components/BackToCalendarAction";
 import { BlockingOverlay } from "./src/components/BlockingOverlay";
+import { OnboardingTransitionScreen } from "./src/components/OnboardingTransitionScreen";
 import { ScreenSlideTransition } from "./src/components/ScreenSlideTransition";
 import { NativeYearPickerModal } from "./src/components/calendarPicker/NativeYearPickerModal";
 import { AppColors } from "./src/constants/colors";
@@ -61,6 +62,7 @@ export default function App() {
 function SignedInApp({ session }: { session: Session }) {
   const [activeScreen, setActiveScreen] = useState<LedgerAppScreen>("calendar");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isNicknameScreenReady, setIsNicknameScreenReady] = useState(false);
   const [isYearPickerOpen, setIsYearPickerOpen] = useState(false);
   const fallbackDisplayName = resolveFallbackDisplayName(
     session.user.user_metadata,
@@ -148,6 +150,27 @@ function SignedInApp({ session }: { session: Session }) {
     handleOpenEntry();
   };
 
+  useEffect(() => {
+    if (authOnboarding.step !== "nickname") {
+      setIsNicknameScreenReady(false);
+      return;
+    }
+
+    let timerId: ReturnType<typeof setTimeout> | null = null;
+    const interactionTask = InteractionManager.runAfterInteractions(() => {
+      timerId = setTimeout(() => {
+        setIsNicknameScreenReady(true);
+      }, 220);
+    });
+
+    return () => {
+      interactionTask.cancel();
+      if (timerId) {
+        clearTimeout(timerId);
+      }
+    };
+  }, [authOnboarding.step]);
+
   if (authOnboarding.isLoading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -161,7 +184,11 @@ function SignedInApp({ session }: { session: Session }) {
     return (
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor={AppColors.background} />
-        <NicknameSetupScreen onSubmit={handleCompleteNicknameOnboarding} />
+        {isNicknameScreenReady ? (
+          <NicknameSetupScreen onSubmit={handleCompleteNicknameOnboarding} />
+        ) : (
+          <OnboardingTransitionScreen />
+        )}
       </SafeAreaView>
     );
   }

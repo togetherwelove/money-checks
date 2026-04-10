@@ -4,7 +4,7 @@ export const CalendarPickerCopy = {
   closeAction: CommonActionCopy.close,
   yearPickerTitle: "날짜 선택",
   yearPickerConfirmAction: CommonActionCopy.apply,
-  yearPickerNote: "선택한 연월일이 달력에 바로 반영됩니다.",
+  yearPickerNote: "선택한 연월일이 달력에 바로 반영돼요.",
 } as const;
 
 export const CalendarPickerLayout = {

@@ -8,7 +8,7 @@ export const MONTHLY_INSIGHT_CHART_COLORS = [
 ] as const;
 
 export const MonthlyInsightCopy = {
-  categoryEmpty: "이번 달 지출이 없어 카테고리 차트를 표시하지 않습니다.",
+  categoryEmpty: "이번 달 지출이 없어 카테고리 차트를 표시하지 않을게요.",
   categoryTitle: "카테고리 지출",
   chartCenterLabel: "총지출",
   comparisonSame: "전월과 같아요",

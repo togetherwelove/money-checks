@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { InteractionManager, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { ActionButton } from "../components/ActionButton";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
@@ -22,6 +22,34 @@ type NicknameSetupScreenProps = {
 export function NicknameSetupScreen({ onSubmit }: NicknameSetupScreenProps) {
   const [displayName, setDisplayName] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [inputInstanceKey, setInputInstanceKey] = useState(0);
+  const [isInputReady, setIsInputReady] = useState(false);
+  const inputRef = useRef<TextInput | null>(null);
+
+  useEffect(() => {
+    const interactionTask = InteractionManager.runAfterInteractions(() => {
+      setInputInstanceKey(1);
+      setIsInputReady(true);
+    });
+
+    return () => {
+      interactionTask.cancel();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isInputReady) {
+      return;
+    }
+
+    const focusTimer = setTimeout(() => {
+      inputRef.current?.focus();
+    }, 60);
+
+    return () => {
+      clearTimeout(focusTimer);
+    };
+  }, [isInputReady]);
 
   const handleSubmit = async () => {
     const trimmedDisplayName = displayName.trim();
@@ -49,16 +77,22 @@ export function NicknameSetupScreen({ onSubmit }: NicknameSetupScreenProps) {
       />
       <View style={styles.card}>
         <TextInput
+          ref={inputRef}
           onChangeText={(value) => {
             setDisplayName(value);
             if (errorMessage) {
               setErrorMessage(null);
             }
           }}
+          autoComplete="nickname"
+          autoCorrect={false}
+          editable={isInputReady}
+          importantForAutofill="no"
+          key={`nickname-input-${inputInstanceKey}`}
           placeholder={AuthOnboardingMessages.nicknamePlaceholder}
           style={styles.input}
+          textContentType="none"
           value={displayName}
-          autoComplete="off"
         />
         {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
         <ActionButton

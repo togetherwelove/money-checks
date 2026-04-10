@@ -3,7 +3,7 @@ export const EmailAuthCopy = {
   supportLabel: "지출 기록, 공유 가계부, 월간 차트를 안전하게 이어서 관리",
   signIn: {
     title: "이메일로 안전하게 로그인",
-    subtitle: "등록한 이메일과 비밀번호로 바로 로그인할 수 있습니다.",
+    subtitle: "이메일로 즉시 로그인할 수 있어요.",
     emailLabel: "이메일",
     emailPlaceholder: "이메일을 입력해 주세요",
     passwordLabel: "비밀번호",
@@ -14,7 +14,7 @@ export const EmailAuthCopy = {
   signUp: {
     backAction: "로그인으로 돌아가기",
     title: "이메일로 가입하기",
-    subtitle: "비밀번호를 만든 뒤, 이메일로 받은 인증 코드를\n입력해야 가입이 완료됩니다.",
+    subtitle: "비밀번호를 만든 뒤, 이메일로 받은 인증 코드를 입력해야 가입이 완료돼요.",
     emailLabel: "이메일",
     emailPlaceholder: "이메일을 입력해 주세요",
     passwordLabel: "비밀번호",
@@ -31,6 +31,6 @@ export const EmailAuthCopy = {
     editCredentialsAction: "가입 정보 수정",
     otpRequestedStatus: "인증 코드를 보냈습니다. 메일함을 확인해 주세요.",
     otpResentStatus: "인증 코드를 다시 보냈습니다.",
-    otpResendCooldownStatus: "보안을 위해 인증 코드는 잠시 후 다시 요청할 수 있습니다.",
+    otpResendCooldownStatus: "보안을 위해 인증 코드는 잠시 후 다시 요청할 수 있어요.",
   },
 } as const;

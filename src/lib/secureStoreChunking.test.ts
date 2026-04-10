@@ -20,6 +20,6 @@ describe("secureStoreChunking", () => {
   it("parses and formats chunk manifests", () => {
     expect(parseChunkManifest(buildChunkManifest(3))).toBe(3);
     expect(parseChunkManifest("plain-value")).toBeNull();
-    expect(resolveChunkStorageKey("session", 2)).toBe("session::chunk::2");
+    expect(resolveChunkStorageKey("session", 2)).toBe("session__chunk__2");
   });
 });

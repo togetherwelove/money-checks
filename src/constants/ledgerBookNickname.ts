@@ -6,6 +6,6 @@ export const LedgerBookNicknameCopy = {
   editActionAccessibilityLabel: "가계부 이름 수정",
   saveAction: CommonActionCopy.save,
   cancelAction: CommonActionCopy.cancel,
-  saveSuccess: "가계부 이름을 저장했습니다.",
+  saveSuccess: "가계부 이름을 저장했어요.",
   actionMinWidth: 72,
 } as const;
