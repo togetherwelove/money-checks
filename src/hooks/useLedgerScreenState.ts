@@ -7,6 +7,7 @@ import type { LedgerEntry, LedgerEntryDraft } from "../types/ledger";
 import { addMonths, getMonthKey, parseIsoDate, startOfMonth, toIsoDate } from "../utils/calendar";
 import { createDraft, sanitizeAmountInput } from "../utils/ledgerEntries";
 import {
+  getChartMonthDataFromCache,
   getMonthPageFromCache,
   getMonthlyInsightsFromCache,
   getMonthlyLedgerFromCache,
@@ -70,6 +71,18 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
   );
   const nextMonthPage = useMemo<MonthPage>(
     () => getMonthPageFromCache(entryCache, addMonths(visibleMonth, 1)),
+    [entryCache, visibleMonth],
+  );
+  const previousChartMonth = useMemo(
+    () => getChartMonthDataFromCache(entryCache, addMonths(visibleMonth, -1)),
+    [entryCache, visibleMonth],
+  );
+  const currentChartMonth = useMemo(
+    () => getChartMonthDataFromCache(entryCache, visibleMonth),
+    [entryCache, visibleMonth],
+  );
+  const nextChartMonth = useMemo(
+    () => getChartMonthDataFromCache(entryCache, addMonths(visibleMonth, 1)),
     [entryCache, visibleMonth],
   );
 
@@ -148,6 +161,7 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
 
   return {
     activeBook,
+    currentChartMonth,
     draft,
     editingEntryId,
     errorMessage,
@@ -161,8 +175,10 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
     monthlyLedger,
     monthlyInsights,
     nextMonthPage,
+    nextChartMonth,
     pendingJoinRequests,
     previousMonthPage,
+    previousChartMonth,
     approveLedgerJoinRequest,
     rejectLedgerJoinRequest,
     removeSharedLedgerMember,

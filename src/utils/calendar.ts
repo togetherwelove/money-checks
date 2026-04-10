@@ -21,6 +21,10 @@ const selectedDateWithYearFormatter = new Intl.DateTimeFormat("ko-KR", {
   day: "numeric",
   weekday: "short",
 });
+const monthYearFormatter = new Intl.DateTimeFormat("ko-KR", {
+  year: "numeric",
+  month: "long",
+});
 
 type DayAggregate = {
   income: number;
@@ -42,6 +46,18 @@ export function formatSelectedDateWithYear(isoDate: string): string {
 
 export function formatLedgerListHeaderDate(isoDate: string): string {
   return formatDateWithOptionalYear(parseIsoDate(isoDate), true);
+}
+
+export function formatMonthYear(date: Date): string {
+  const formatted = monthYearFormatter.formatToParts(date);
+  const year = formatted.find((part) => part.type === "year")?.value;
+  const month = formatted.find((part) => part.type === "month")?.value;
+
+  if (!year || !month) {
+    return monthYearFormatter.format(date);
+  }
+
+  return `${year}년 ${month}`;
 }
 
 export function startOfMonth(date: Date): Date {

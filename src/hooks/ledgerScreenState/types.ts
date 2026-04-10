@@ -14,8 +14,16 @@ import type {
 
 export type BusyTaskTracker = <T>(task: () => Promise<T>) => Promise<T>;
 
+export type ChartMonthData = {
+  key: string;
+  monthlyInsights: MonthlyInsights;
+  monthlyLedger: MonthlyLedgerSummary;
+  title: string;
+};
+
 export type LedgerScreenState = {
   activeBook: LedgerBook | null;
+  currentChartMonth: ChartMonthData;
   draft: LedgerEntryDraft;
   editingEntryId: string | null;
   errorMessage: string | null;
@@ -29,8 +37,10 @@ export type LedgerScreenState = {
   monthlyLedger: MonthlyLedgerSummary;
   monthlyInsights: MonthlyInsights;
   nextMonthPage: MonthPage;
+  nextChartMonth: ChartMonthData;
   pendingJoinRequests: LedgerBookJoinRequest[];
   previousMonthPage: MonthPage;
+  previousChartMonth: ChartMonthData;
   approveLedgerJoinRequest: (requestId: string) => Promise<boolean>;
   rejectLedgerJoinRequest: (requestId: string) => Promise<boolean>;
   removeSharedLedgerMember: (targetUserId: string) => Promise<boolean>;

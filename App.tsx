@@ -275,8 +275,8 @@ function SignedInApp({ session }: { session: Session }) {
           onSelectDate={ledgerState.handleSelectDate}
           selectedDate={ledgerState.selectedDate}
         />
-        {ledgerState.isBusy ? <BlockingOverlay /> : null}
       </SafeAreaView>
+      {ledgerState.isBusy ? <BlockingOverlay /> : null}
     </View>
   );
 }
