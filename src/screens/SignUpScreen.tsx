@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { EmailSignUpFormCard } from "../components/authScreen/EmailSignUpFormCard";
 import { EmailSignUpOtpCard } from "../components/authScreen/EmailSignUpOtpCard";
+import { AuthRateLimit } from "../constants/authRateLimit";
 import { AuthTiming } from "../constants/authTiming";
 import { AppColors } from "../constants/colors";
 import { EmailAuthCopy } from "../constants/emailAuth";
@@ -17,6 +18,7 @@ import {
 import {
   formatSignUpOtpCooldownLabel,
   parseSignUpOtpRetrySeconds,
+  resolveSignUpRetrySeconds,
 } from "../lib/auth/signUpOtpError";
 
 type SignUpScreenProps = {
@@ -56,9 +58,13 @@ export function SignUpScreen({ onBackToSignIn }: SignUpScreenProps) {
   }, [now, resendAvailableAt]);
 
   const resendDisabled = remainingResendSeconds > 0;
+  const requestOtpDisabled = step === "credentials" && remainingResendSeconds > 0;
   const resendLabel = resendDisabled
     ? `${EmailAuthCopy.signUp.resendOtpAction} (${formatSignUpOtpCooldownLabel(remainingResendSeconds)})`
     : EmailAuthCopy.signUp.resendOtpAction;
+  const requestOtpLabel = requestOtpDisabled
+    ? `${EmailAuthCopy.signUp.requestOtpAction} (${formatSignUpOtpCooldownLabel(remainingResendSeconds)})`
+    : EmailAuthCopy.signUp.requestOtpAction;
 
   const startResendCooldown = (durationMs = AuthTiming.signUpOtpResendCooldownMs) => {
     setNow(Date.now());
@@ -77,6 +83,13 @@ export function SignUpScreen({ onBackToSignIn }: SignUpScreenProps) {
       startResendCooldown();
       setStatusMessage(EmailAuthCopy.signUp.otpRequestedStatus);
     } catch (error) {
+      const retryAfterSeconds = resolveSignUpRetrySeconds(error);
+      if (retryAfterSeconds !== null) {
+        startResendCooldown(retryAfterSeconds * 1000);
+        setStatusMessage(AuthRateLimit.signUpCooldownMessage);
+        return;
+      }
+
       console.error("[SignUpScreen] Sign-up failed", error);
     }
   };
@@ -149,6 +162,8 @@ export function SignUpScreen({ onBackToSignIn }: SignUpScreenProps) {
           onSubmit={handleRequestOtp}
           password={password}
           statusMessage={statusMessage}
+          submitDisabled={requestOtpDisabled}
+          submitLabel={requestOtpLabel}
         />
       ) : (
         <EmailSignUpOtpCard

@@ -9,7 +9,6 @@ import { DeleteAccountModal } from "../components/accountScreen/DeleteAccountMod
 import { AccountDeletionMessages } from "../constants/accountDeletionMessages";
 import { AppColors } from "../constants/colors";
 import { EmailAuthCopy } from "../constants/emailAuth";
-import { NicknameAutofillProps } from "../constants/inputAutofill";
 import { AppLayout } from "../constants/layout";
 import { LedgerBookNicknameCopy } from "../constants/ledgerBookNickname";
 import { AppMessages } from "../constants/messages";
@@ -89,7 +88,6 @@ export function AccountScreen({ email, fallbackDisplayName, userId }: AccountScr
         <Text style={styles.cardTitle}>{AppMessages.accountNicknameTitle}</Text>
         <View style={styles.inlineEditRow}>
           <TextInput
-            {...NicknameAutofillProps}
             onChangeText={(value) => {
               setDisplayName(value);
               if (statusMessage) {

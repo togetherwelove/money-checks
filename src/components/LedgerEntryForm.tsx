@@ -3,7 +3,6 @@ import { StyleSheet, Text, TextInput, View } from "react-native";
 import { CategorySelector } from "../components/CategorySelector";
 import { CATEGORY_OPTIONS } from "../constants/categories";
 import { AppColors } from "../constants/colors";
-import { DisabledAutofillProps } from "../constants/inputAutofill";
 import { AppLayout } from "../constants/layout";
 import { AppMessages } from "../constants/messages";
 import { FormInputTextStyle, FormLabelTextStyle, SurfaceCardStyle } from "../constants/uiStyles";
@@ -37,7 +36,6 @@ export function LedgerEntryForm({
       <View style={styles.fieldGroup}>
         <Text style={styles.label}>{AppMessages.editorAmount}</Text>
         <TextInput
-          {...DisabledAutofillProps}
           keyboardType="number-pad"
           onChangeText={(value) => onChangeDraft("amount", value)}
           placeholder={AppMessages.editorAmount}

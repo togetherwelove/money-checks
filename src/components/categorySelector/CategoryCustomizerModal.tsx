@@ -1,5 +1,5 @@
 import { Feather } from "@expo/vector-icons";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import DraggableFlatList, {
   ScaleDecorator,
@@ -11,6 +11,7 @@ import {
   CATEGORY_CUSTOMIZER_AUTO_SCROLL_EDGE_THRESHOLD,
   CATEGORY_CUSTOMIZER_AUTO_SCROLL_STEP,
   CATEGORY_CUSTOMIZER_ICON_PICKER_GAP,
+  CATEGORY_CUSTOMIZER_LIST_BOTTOM_PADDING,
   CATEGORY_CUSTOMIZER_LIST_MAX_HEIGHT,
   CATEGORY_CUSTOMIZER_ROW_GAP,
   CATEGORY_CUSTOMIZER_SECTION_GAP,
@@ -39,6 +40,10 @@ type CategoryCustomizerModalProps = {
   onSaveCategories: (nextCategories: CategoryDefinition[]) => void;
 };
 
+type CategoryListHandle = {
+  scrollToEnd?: (params?: { animated?: boolean }) => void;
+};
+
 export function CategoryCustomizerModal({
   categories,
   baseCategories,
@@ -50,6 +55,8 @@ export function CategoryCustomizerModal({
   const [draftCategories, setDraftCategories] = useState<CategoryDefinition[]>(categories);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [activeIconCategoryId, setActiveIconCategoryId] = useState<string | null>(null);
+  const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false);
+  const listRef = useRef<CategoryListHandle | null>(null);
 
   useEffect(() => {
     if (!isOpen) {
@@ -59,6 +66,7 @@ export function CategoryCustomizerModal({
     setDraftCategories(categories);
     setStatusMessage(null);
     setActiveIconCategoryId(null);
+    setShouldScrollToBottom(false);
   }, [categories, isOpen]);
 
   const activeIconCategory = useMemo(
@@ -84,8 +92,21 @@ export function CategoryCustomizerModal({
           ItemSeparatorComponent={ListSeparator}
           keyExtractor={(category) => category.id}
           keyboardShouldPersistTaps="handled"
+          onContentSizeChange={() => {
+            if (!shouldScrollToBottom) {
+              return;
+            }
+
+            requestAnimationFrame(() => {
+              listRef.current?.scrollToEnd?.({ animated: true });
+              setShouldScrollToBottom(false);
+            });
+          }}
           onDragBegin={() => setStatusMessage(null)}
           onDragEnd={({ data }) => setDraftCategories(data)}
+          ref={(value) => {
+            listRef.current = value as CategoryListHandle | null;
+          }}
           renderItem={renderCategoryRow}
           showsVerticalScrollIndicator={false}
           style={styles.list}
@@ -107,6 +128,7 @@ export function CategoryCustomizerModal({
           label={CategoryCustomizerCopy.addButton}
           onPress={() => {
             setStatusMessage(null);
+            setShouldScrollToBottom(true);
             setDraftCategories((currentCategories) => [
               ...currentCategories,
               createCustomCategory(entryType, currentCategories.length + 1),
@@ -225,7 +247,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingTop: 2,
-    paddingBottom: 2,
+    paddingBottom: CATEGORY_CUSTOMIZER_LIST_BOTTOM_PADDING,
   },
   separator: {
     height: CATEGORY_CUSTOMIZER_ROW_GAP,

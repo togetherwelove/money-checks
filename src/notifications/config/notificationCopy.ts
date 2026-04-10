@@ -28,7 +28,6 @@ export const NotificationUiCopy = {
   fallbackDateLabel: "오늘",
   fallbackEntryTypeLabel: "내역",
   fallbackTargetName: "멤버",
-  headerEyebrow: "메뉴",
   iconPath: "/logo192.png",
   menuDescription: "권한과 알림 기준을 관리합니다.",
   menuTitle: "알림설정",

@@ -161,10 +161,7 @@ function SignedInApp({ session }: { session: Session }) {
     return (
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor={AppColors.background} />
-        <NicknameSetupScreen
-          initialDisplayName={authOnboarding.suggestedDisplayName}
-          onSubmit={handleCompleteNicknameOnboarding}
-        />
+        <NicknameSetupScreen onSubmit={handleCompleteNicknameOnboarding} />
       </SafeAreaView>
     );
   }

@@ -33,10 +33,19 @@ export function CategorySelector({
 }: CategorySelectorProps) {
   const optionsRef = useRef<View>(null);
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
-  const { customCategories, saveCustomCategories } = useCustomCategories(entryType);
+  const {
+    customCategories,
+    hiddenSystemCategoryIds,
+    saveCustomCategories,
+    saveHiddenSystemCategoryIds,
+  } = useCustomCategories(entryType);
+  const visibleBaseCategories = useMemo(
+    () => categories.filter((category) => !hiddenSystemCategoryIds.includes(category.id)),
+    [categories, hiddenSystemCategoryIds],
+  );
   const mergedCategories = useMemo(
-    () => mergeCustomCategories(categories, customCategories),
-    [categories, customCategories],
+    () => mergeCustomCategories(visibleBaseCategories, customCategories),
+    [customCategories, visibleBaseCategories],
   );
   const { commitOrderedCategories, orderedCategories, replaceOrderedCategories, saveCurrentOrder } =
     useCategoryOrder(entryType, mergedCategories);
@@ -103,15 +112,20 @@ export function CategorySelector({
         isOpen={isCustomizerOpen}
         onClose={() => setIsCustomizerOpen(false)}
         onSaveCategories={(nextCategories) => {
-          const previousSelectedCustomCategory = customCategories.find(
-            (category) => category.label === selectedCategory,
-          );
           const nextCustomCategories = nextCategories.filter(
             (category) => category.source === "custom",
+          );
+          const nextHiddenSystemCategoryIds = categories
+            .filter((category) => category.source === "system")
+            .map((category) => category.id)
+            .filter((categoryId) => !nextCategories.some((category) => category.id === categoryId));
+          const previousSelectedCustomCategory = customCategories.find(
+            (category) => category.label === selectedCategory,
           );
           saveCustomCategories(
             sortCustomCategoriesByVisibleOrder(nextCustomCategories, nextCategories),
           );
+          saveHiddenSystemCategoryIds(nextHiddenSystemCategoryIds);
           commitOrderedCategories(nextCategories);
 
           if (previousSelectedCustomCategory) {

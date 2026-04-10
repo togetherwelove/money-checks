@@ -6,7 +6,6 @@ import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { ScreenHeaderBlock } from "../components/ScreenHeaderBlock";
 import { AuthOnboardingMessages } from "../constants/authOnboarding";
 import { AppColors } from "../constants/colors";
-import { OnboardingNicknameInputProps } from "../constants/inputAutofill";
 import { AppLayout } from "../constants/layout";
 import {
   FormInputTextStyle,
@@ -17,12 +16,11 @@ import {
 import { isValidDisplayName } from "../utils/displayName";
 
 type NicknameSetupScreenProps = {
-  initialDisplayName: string;
   onSubmit: (displayName: string) => Promise<boolean>;
 };
 
-export function NicknameSetupScreen({ initialDisplayName, onSubmit }: NicknameSetupScreenProps) {
-  const [displayName, setDisplayName] = useState(initialDisplayName);
+export function NicknameSetupScreen({ onSubmit }: NicknameSetupScreenProps) {
+  const [displayName, setDisplayName] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSubmit = async () => {
@@ -50,9 +48,7 @@ export function NicknameSetupScreen({ initialDisplayName, onSubmit }: NicknameSe
         title={AuthOnboardingMessages.nicknameTitle}
       />
       <View style={styles.card}>
-        <Text style={styles.label}>{AuthOnboardingMessages.nicknameLabel}</Text>
         <TextInput
-          {...OnboardingNicknameInputProps}
           onChangeText={(value) => {
             setDisplayName(value);
             if (errorMessage) {
@@ -62,6 +58,7 @@ export function NicknameSetupScreen({ initialDisplayName, onSubmit }: NicknameSe
           placeholder={AuthOnboardingMessages.nicknamePlaceholder}
           style={styles.input}
           value={displayName}
+          autoComplete="off"
         />
         {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
         <ActionButton

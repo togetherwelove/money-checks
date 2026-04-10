@@ -54,15 +54,13 @@ export function CategoryCustomizerRow({
           <Text style={styles.labelText}>{category.label}</Text>
         </View>
       )}
-      {category.source === "custom" ? (
-        <Pressable
-          accessibilityLabel={CategoryCustomizerCopy.deleteAccessibilityLabel}
-          onPress={() => onDeleteCategory(category.id)}
-          style={styles.deleteButton}
-        >
-          <Feather color={AppColors.expense} name="trash-2" size={16} />
-        </Pressable>
-      ) : null}
+      <Pressable
+        accessibilityLabel={CategoryCustomizerCopy.deleteAccessibilityLabel}
+        onPress={() => onDeleteCategory(category.id)}
+        style={styles.deleteButton}
+      >
+        <Feather color={AppColors.expense} name="trash-2" size={16} />
+      </Pressable>
       <Pressable
         accessibilityLabel={CategoryCustomizerCopy.reorderHandleAccessibilityLabel}
         delayLongPress={CATEGORY_DRAG_LONG_PRESS_MS}

@@ -49,7 +49,6 @@ export function AppMenuDrawer({ isOpen, items, onClose, onSelectItem }: AppMenuD
         <Pressable onPress={onClose} style={StyleSheet.absoluteFillObject} />
       </Animated.View>
       <Animated.View style={[styles.drawer, drawerStyle]}>
-        <Text style={styles.title}>메뉴</Text>
         <View style={styles.items}>
           {items.map((item) => (
             <Pressable
@@ -83,7 +82,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: MenuDrawerTokens.drawerWidth,
     backgroundColor: AppColors.surface,
-    paddingTop: 72,
     paddingHorizontal: AppLayout.screenPadding * 2,
     gap: 20,
     borderLeftWidth: 1,
@@ -95,11 +93,6 @@ const styles = StyleSheet.create({
       width: -4,
       height: 0,
     },
-  },
-  title: {
-    color: AppColors.text,
-    fontSize: 22,
-    fontWeight: "800",
   },
   items: {
     gap: 6,

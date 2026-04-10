@@ -8,6 +8,7 @@ type StoredCategoryCustomization = Partial<
     LedgerEntryType,
     {
       customCategories: StoredCustomCategory[];
+      hiddenSystemCategoryIds: string[];
       orderIds: string[];
     }
   >
@@ -24,6 +25,24 @@ export function saveStoredCustomCategories(
   const currentValue = loadStoredCategoryCustomization();
   currentValue[type] = {
     customCategories,
+    hiddenSystemCategoryIds: currentValue[type]?.hiddenSystemCategoryIds ?? [],
+    orderIds: currentValue[type]?.orderIds ?? [],
+  };
+  appStorage.setItem(CATEGORY_CUSTOMIZATION_STORAGE_KEY, JSON.stringify(currentValue));
+}
+
+export function loadStoredHiddenSystemCategoryIds(type: LedgerEntryType): string[] {
+  return loadStoredCategoryCustomization()[type]?.hiddenSystemCategoryIds ?? [];
+}
+
+export function saveStoredHiddenSystemCategoryIds(
+  type: LedgerEntryType,
+  hiddenSystemCategoryIds: string[],
+): void {
+  const currentValue = loadStoredCategoryCustomization();
+  currentValue[type] = {
+    customCategories: currentValue[type]?.customCategories ?? [],
+    hiddenSystemCategoryIds,
     orderIds: currentValue[type]?.orderIds ?? [],
   };
   appStorage.setItem(CATEGORY_CUSTOMIZATION_STORAGE_KEY, JSON.stringify(currentValue));
@@ -37,6 +56,7 @@ export function saveStoredCategoryOrderIds(type: LedgerEntryType, orderIds: stri
   const currentValue = loadStoredCategoryCustomization();
   currentValue[type] = {
     customCategories: currentValue[type]?.customCategories ?? [],
+    hiddenSystemCategoryIds: currentValue[type]?.hiddenSystemCategoryIds ?? [],
     orderIds,
   };
   appStorage.setItem(CATEGORY_CUSTOMIZATION_STORAGE_KEY, JSON.stringify(currentValue));

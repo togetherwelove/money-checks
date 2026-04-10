@@ -1,7 +1,6 @@
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { AppColors } from "../../constants/colors";
-import { DisabledAutofillProps } from "../../constants/inputAutofill";
 import { FormInputTextStyle, InsetPanelStyle } from "../../constants/uiStyles";
 import type { NotificationThresholdField as NotificationThresholdFieldState } from "../../notifications/preferences/notificationPreferences";
 import { formatAmountInput } from "../../utils/amount";
@@ -45,7 +44,6 @@ export function NotificationThresholdField({
         </View>
       </View>
       <TextInput
-        {...DisabledAutofillProps}
         inputMode="numeric"
         keyboardType="numeric"
         onChangeText={onChangeValue}

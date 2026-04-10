@@ -21,6 +21,8 @@ type EmailSignUpFormCardProps = {
   onSubmit: () => void | Promise<void>;
   password: string;
   statusMessage: string | null;
+  submitDisabled?: boolean;
+  submitLabel?: string;
 };
 
 export function EmailSignUpFormCard({
@@ -33,6 +35,8 @@ export function EmailSignUpFormCard({
   onSubmit,
   password,
   statusMessage,
+  submitDisabled = false,
+  submitLabel,
 }: EmailSignUpFormCardProps) {
   const canSubmit = Boolean(
     email.trim() && password && confirmPassword && password === confirmPassword,
@@ -59,7 +63,7 @@ export function EmailSignUpFormCard({
         <TextInput
           autoCapitalize="none"
           autoComplete="new-password"
-          importantForAutofill="yes"
+          importantForAutofill="no"
           onChangeText={onChangePassword}
           placeholder={EmailAuthCopy.signUp.passwordPlaceholder}
           secureTextEntry
@@ -73,7 +77,7 @@ export function EmailSignUpFormCard({
         <TextInput
           autoCapitalize="none"
           autoComplete="new-password"
-          importantForAutofill="yes"
+          importantForAutofill="no"
           onChangeText={onChangeConfirmPassword}
           placeholder={EmailAuthCopy.signUp.passwordConfirmPlaceholder}
           secureTextEntry
@@ -84,9 +88,9 @@ export function EmailSignUpFormCard({
       </View>
       <View style={styles.actionGroup}>
         <ActionButton
-          disabled={!canSubmit}
+          disabled={!canSubmit || submitDisabled}
           fullWidth
-          label={EmailAuthCopy.signUp.requestOtpAction}
+          label={submitLabel ?? EmailAuthCopy.signUp.requestOtpAction}
           onPress={onSubmit}
           size="large"
           variant="primary"

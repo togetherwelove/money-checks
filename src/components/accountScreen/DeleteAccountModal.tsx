@@ -4,7 +4,6 @@ import { Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-nativ
 import { AccountDeletionMessages } from "../../constants/accountDeletionMessages";
 import { AppColors } from "../../constants/colors";
 import { CommonActionCopy } from "../../constants/commonActions";
-import { DisabledAutofillProps } from "../../constants/inputAutofill";
 import { AppLayout } from "../../constants/layout";
 import {
   CompactLabelTextStyle,
@@ -72,7 +71,6 @@ export function DeleteAccountModal({ isOpen, onClose }: DeleteAccountModalProps)
           <Text style={styles.warning}>{AccountDeletionMessages.instruction}</Text>
           <Text style={styles.label}>{AccountDeletionMessages.confirmLabel}</Text>
           <TextInput
-            {...DisabledAutofillProps}
             editable={!isDeleting}
             onChangeText={(value) => {
               setConfirmText(value);

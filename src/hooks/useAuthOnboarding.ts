@@ -17,7 +17,6 @@ type AuthOnboardingState = {
   completePermissionOnboarding: () => void;
   isLoading: boolean;
   step: AuthOnboardingStep;
-  suggestedDisplayName: string;
 };
 
 type UseAuthOnboardingOptions = {
@@ -105,6 +104,5 @@ export function useAuthOnboarding({
     completePermissionOnboarding,
     isLoading,
     step,
-    suggestedDisplayName: profileDisplayName,
   };
 }
