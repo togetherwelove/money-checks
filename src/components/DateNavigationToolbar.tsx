@@ -1,12 +1,14 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
+import { DateNavigationToolbarLayout } from "../constants/dateNavigationToolbar";
 import { ICON_ACTION_BUTTON_SIZE, IconActionButton } from "./IconActionButton";
 
 type DateNavigationToolbarProps = {
   label: string;
   onMoveToCurrent: () => void;
   onPressLabel?: (() => void) | null;
+  spacing?: "compactBottom" | "default";
   showMoveToCurrent?: boolean;
 };
 
@@ -14,6 +16,7 @@ export function DateNavigationToolbar({
   label,
   onMoveToCurrent,
   onPressLabel = null,
+  spacing = "default",
   showMoveToCurrent = true,
 }: DateNavigationToolbarProps) {
   const labelNode = onPressLabel ? (
@@ -30,7 +33,9 @@ export function DateNavigationToolbar({
   );
 
   return (
-    <View style={styles.container}>
+    <View
+      style={[styles.container, spacing === "compactBottom" ? styles.compactBottomContainer : null]}
+    >
       {labelNode}
       {showMoveToCurrent ? (
         <View style={styles.trailingButton}>
@@ -47,9 +52,12 @@ export function DateNavigationToolbar({
 
 const styles = StyleSheet.create({
   container: {
-    minHeight: ICON_ACTION_BUTTON_SIZE,
-    paddingVertical: 8,
+    paddingBottom: DateNavigationToolbarLayout.defaultBottomPadding,
+    paddingTop: DateNavigationToolbarLayout.defaultTopPadding,
     position: "relative",
+  },
+  compactBottomContainer: {
+    paddingBottom: DateNavigationToolbarLayout.compactBottomPadding,
   },
   labelButton: {
     alignItems: "center",
@@ -57,19 +65,19 @@ const styles = StyleSheet.create({
   },
   labelContent: {
     alignItems: "center",
-    columnGap: 6,
+    columnGap: DateNavigationToolbarLayout.labelGap,
     flexDirection: "row",
     justifyContent: "center",
   },
   labelIndicator: {
     borderLeftColor: "transparent",
-    borderLeftWidth: 4,
+    borderLeftWidth: DateNavigationToolbarLayout.indicatorSize,
     borderRightColor: "transparent",
-    borderRightWidth: 4,
+    borderRightWidth: DateNavigationToolbarLayout.indicatorSize,
     borderTopColor: AppColors.accent,
     borderTopWidth: 5,
     height: 0,
-    marginTop: 1,
+    marginTop: DateNavigationToolbarLayout.indicatorTopMargin,
     width: 0,
   },
   labelText: {
@@ -80,7 +88,7 @@ const styles = StyleSheet.create({
   trailingButton: {
     position: "absolute",
     right: 0,
-    top: "50%",
+    top: "100%",
     transform: [{ translateY: -ICON_ACTION_BUTTON_SIZE / 2 }],
   },
 });

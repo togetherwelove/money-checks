@@ -30,7 +30,6 @@ export function LedgerEntryForm({
   onSelectType,
 }: LedgerEntryFormProps) {
   const categories = CATEGORY_OPTIONS[draft.type];
-  const submitVariant = draft.type === "income" ? "primary" : "destructive";
 
   return (
     <View style={styles.form}>
@@ -69,7 +68,7 @@ export function LedgerEntryForm({
         <ActionButton
           label={editingEntryId ? AppMessages.editorUpdate : AppMessages.editorNewEntry}
           onPress={onSaveEntry}
-          variant={submitVariant}
+          variant="primary"
         />
       </View>
     </View>
