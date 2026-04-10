@@ -95,6 +95,11 @@ export function AccountScreen({ email, fallbackDisplayName, userId }: AccountScr
               }
             }}
             placeholder={fallbackDisplayName || AppMessages.accountNicknamePlaceholder}
+            autoComplete="nickname"
+            autoCapitalize="words"
+            autoCorrect={false}
+            importantForAutofill="no"
+            textContentType="none"
             style={styles.inlineInput}
             value={displayName}
           />

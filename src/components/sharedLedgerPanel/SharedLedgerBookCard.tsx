@@ -83,15 +83,15 @@ export function SharedLedgerBookCard({
             isEditingBookName ? (
               <View style={styles.bookNameEditRow}>
                 <TextInput
-                  autoCapitalize="words"
                   autoComplete="off"
+                  autoCapitalize="words"
                   autoCorrect={false}
                   importantForAutofill="no"
+                  textContentType="none"
                   onChangeText={onChangeBookName}
                   placeholder={LedgerBookNicknameCopy.inputPlaceholder}
                   spellCheck={false}
                   style={styles.bookNameHeaderInput}
-                  textContentType="none"
                   value={bookNameInput}
                 />
                 <View style={styles.bookNameActionSlot}>
