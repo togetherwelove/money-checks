@@ -11,11 +11,13 @@ import { AppHeader } from "./src/components/AppHeader";
 import { AppMenuDrawer } from "./src/components/AppMenuDrawer";
 import { BackToCalendarAction } from "./src/components/BackToCalendarAction";
 import { BlockingOverlay } from "./src/components/BlockingOverlay";
+import { LedgerBookHeaderAction } from "./src/components/LedgerBookHeaderAction";
 import { OnboardingTransitionScreen } from "./src/components/OnboardingTransitionScreen";
 import { ScreenSlideTransition } from "./src/components/ScreenSlideTransition";
 import { NativeYearPickerModal } from "./src/components/calendarPicker/NativeYearPickerModal";
 import { AppColors } from "./src/constants/colors";
 import { AppMessages } from "./src/constants/messages";
+import { useAnnualLedgerReportAction } from "./src/hooks/useAnnualLedgerReportAction";
 import { useAuthOnboarding } from "./src/hooks/useAuthOnboarding";
 import { useLedgerNotifications } from "./src/hooks/useLedgerNotifications";
 import { useLedgerScreenState } from "./src/hooks/useLedgerScreenState";
@@ -70,6 +72,11 @@ function SignedInApp({ session }: { session: Session }) {
   );
   const notifications = useLedgerNotifications(session.user.id);
   const ledgerState = useLedgerScreenState(session);
+  const annualReport = useAnnualLedgerReportAction({
+    activeBook: ledgerState.activeBook,
+    currentUserId: session.user.id,
+    visibleMonth: ledgerState.visibleMonth,
+  });
   const authOnboarding = useAuthOnboarding({
     fallbackDisplayName,
     isNotificationSupported: notifications.isSupported,
@@ -215,6 +222,13 @@ function SignedInApp({ session }: { session: Session }) {
             leadingAction={
               showsCalendarReturnAction(activeScreen) ? (
                 <BackToCalendarAction onPress={handleBackToCalendar} />
+              ) : annualReport.bookName ? (
+                <LedgerBookHeaderAction
+                  label={annualReport.bookName}
+                  onPress={() => {
+                    void annualReport.handleDownloadReport();
+                  }}
+                />
               ) : null
             }
             onPressCenterLabel={activeScreen === "calendar" ? handleOpenYearPicker : null}
@@ -276,7 +290,7 @@ function SignedInApp({ session }: { session: Session }) {
           selectedDate={ledgerState.selectedDate}
         />
       </SafeAreaView>
-      {ledgerState.isBusy ? <BlockingOverlay /> : null}
+      {ledgerState.isBusy || annualReport.isDownloading ? <BlockingOverlay /> : null}
     </View>
   );
 }

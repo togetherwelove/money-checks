@@ -13,10 +13,14 @@ export function MonthlySummary({ totalExpense, totalIncome }: MonthlySummaryProp
   return (
     <View style={styles.row}>
       <View style={styles.item}>
-        <SummaryCard title={AppMessages.summaryIncome} value={totalIncome} tone="income" />
+        <SummaryCard title={AppMessages.summaryIncome} value={`+ ${totalIncome}`} tone="income" />
       </View>
       <View style={[styles.item, styles.trailingItem]}>
-        <SummaryCard title={AppMessages.summaryExpense} value={totalExpense} tone="expense" />
+        <SummaryCard
+          title={AppMessages.summaryExpense}
+          value={`- ${totalExpense}`}
+          tone="expense"
+        />
       </View>
     </View>
   );

@@ -3,15 +3,21 @@ import { StyleSheet, Text, View } from "react-native";
 import { AppColors } from "../../constants/colors";
 import { AppLayout } from "../../constants/layout";
 import { MonthlyInsightCopy } from "../../constants/monthlyInsights";
-import type {
-  MonthlyChangeDirection,
-  MonthlyComparisonMetric,
-  MonthlyInsights,
-} from "../../types/ledger";
+import type { MonthlyChangeDirection, MonthlyInsights } from "../../types/ledger";
 import { formatCurrency } from "../../utils/calendar";
 
 type MonthlyComparisonSectionProps = {
   insights: MonthlyInsights;
+};
+
+type ComparisonCardProps = {
+  currentAmount: number;
+  deltaAmount: number;
+  direction: MonthlyChangeDirection;
+  previousAmount: number;
+  previousMonthLabel: string;
+  title: string;
+  variant: "expense" | "income";
 };
 
 export function MonthlyComparisonSection({ insights }: MonthlyComparisonSectionProps) {
@@ -42,16 +48,6 @@ export function MonthlyComparisonSection({ insights }: MonthlyComparisonSectionP
   );
 }
 
-type ComparisonCardProps = {
-  currentAmount: number;
-  deltaAmount: number;
-  direction: MonthlyChangeDirection;
-  previousAmount: number;
-  previousMonthLabel: string;
-  title: string;
-  variant: "expense" | "income";
-};
-
 function ComparisonCard({
   currentAmount,
   deltaAmount,
@@ -70,11 +66,11 @@ function ComparisonCard({
           variant === "income" ? styles.incomeText : styles.expenseText,
         ]}
       >
-        {formatCurrency(currentAmount)}
+        {formatComparisonAmount(currentAmount, variant)}
       </Text>
       <Text style={styles.previousAmount}>
         {MonthlyInsightCopy.previousMonthPrefix} {previousMonthLabel}{" "}
-        {formatCurrency(previousAmount)}
+        {formatComparisonAmount(previousAmount, variant)}
       </Text>
       <Text style={[styles.deltaLabel, resolveDeltaTone(direction, variant)]}>
         {formatDeltaLabel(deltaAmount, direction, variant)}
@@ -102,6 +98,11 @@ function formatDeltaLabel(
   return direction === "increase"
     ? `전월보다 ${amountLabel} 더 벌었어요`
     : `전월보다 ${amountLabel} 덜 벌었어요`;
+}
+
+function formatComparisonAmount(amount: number, variant: "expense" | "income"): string {
+  const prefix = variant === "income" ? "+" : "-";
+  return `${prefix} ${formatCurrency(amount)}`;
 }
 
 function resolveDeltaTone(direction: MonthlyChangeDirection, variant: "expense" | "income") {
