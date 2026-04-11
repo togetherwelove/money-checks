@@ -43,58 +43,63 @@ export function useLedgerEntries(
   const [isRefreshing, setIsRefreshing] = useState(false);
   const cachedBookIdRef = useRef<string | null>(activeBookId);
   const preloadMonths = useMemo(() => getCalendarPreloadMonths(visibleMonth), [visibleMonth]);
+  const missingPreloadMonths = useMemo(
+    () => preloadMonths.filter((month) => !hasCachedMonth(entryCache, month)),
+    [entryCache, preloadMonths],
+  );
+  const hasVisibleMonthCached = useMemo(
+    () => hasCachedMonth(entryCache, visibleMonth),
+    [entryCache, visibleMonth],
+  );
   const entries = useMemo(
     () => getVisibleWindowEntries(entryCache, visibleMonth),
     [entryCache, visibleMonth],
   );
 
   useEffect(() => {
-    let isMounted = true;
     const activeBookChanged = cachedBookIdRef.current !== activeBookId;
-    const baseCache = activeBookChanged ? {} : entryCache;
-    const hasCachedEntries = Object.keys(entryCache).length > 0;
-
-    if (activeBookChanged) {
-      cachedBookIdRef.current = activeBookId;
-      if (hasCachedEntries) {
-        setEntryCache({});
-      }
-      setEntriesError(null);
-      setIsLoadingEntries(false);
+    if (!activeBookChanged) {
+      return;
     }
 
+    cachedBookIdRef.current = activeBookId;
+    setEntryCache({});
+    setEntriesError(null);
+    setIsLoadingEntries(false);
+  }, [activeBookId]);
+
+  useEffect(() => {
+    let isMounted = true;
     if (!activeBookId) {
-      if (hasCachedEntries) {
-        setEntryCache({});
-      }
       setIsLoadingEntries(false);
       return () => {
         isMounted = false;
       };
     }
 
-    const missingMonths = preloadMonths.filter((month) => !hasCachedMonth(baseCache, month));
-    if (missingMonths.length === 0) {
+    if (missingPreloadMonths.length === 0) {
       setIsLoadingEntries(false);
       return () => {
         isMounted = false;
       };
     }
 
-    const shouldBlockOnLoad = activeBookChanged || !hasCachedMonth(baseCache, visibleMonth);
+    const shouldBlockOnLoad = !hasVisibleMonthCached;
     if (shouldBlockOnLoad) {
       setIsLoadingEntries(true);
     }
     setEntriesError(null);
 
-    void Promise.all(missingMonths.map((month) => loadLedgerMonthEntries(activeBookId, month)))
+    void Promise.all(
+      missingPreloadMonths.map((month) => loadLedgerMonthEntries(activeBookId, month)),
+    )
       .then((nextEntriesByMonth) => {
         if (!isMounted) {
           return;
         }
 
         setEntryCache((currentCache) =>
-          missingMonths.reduce(
+          missingPreloadMonths.reduce(
             (nextCache, month, index) =>
               setMonthEntriesInCache(nextCache, month, nextEntriesByMonth[index] ?? []),
             currentCache,
@@ -120,7 +125,7 @@ export function useLedgerEntries(
     return () => {
       isMounted = false;
     };
-  }, [activeBookId, entryCache, preloadMonths, visibleMonth]);
+  }, [activeBookId, hasVisibleMonthCached, missingPreloadMonths, visibleMonth]);
 
   useEffect(() => {
     if (!activeBookId) {

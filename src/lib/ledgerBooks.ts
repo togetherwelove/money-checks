@@ -15,13 +15,8 @@ import { logAppError, logAppWarning } from "./logAppError";
 import { supabase } from "./supabase";
 
 const GET_ACCESSIBLE_LEDGER_BOOK_FUNCTION = "get_accessible_ledger_book";
+const GET_ACTIVE_LEDGER_BOOK_FUNCTION = "get_active_ledger_book";
 const ENSURE_OWN_PERSONAL_LEDGER_BOOK_FUNCTION = "ensure_own_personal_ledger_book";
-const PROFILES_TABLE = "profiles";
-
-type ActiveBookProfileRow = {
-  active_book_id: string | null;
-  id: string;
-};
 
 export async function fetchLedgerBookById(bookId: string): Promise<LedgerBook> {
   const { data, error: bookError } = await supabase
@@ -38,32 +33,20 @@ export async function fetchLedgerBookById(bookId: string): Promise<LedgerBook> {
 }
 
 export async function fetchActiveLedgerBook(userId: string): Promise<LedgerBook | null> {
-  const { data: profile, error: profileError } = await supabase
-    .from(PROFILES_TABLE)
-    .select("id, active_book_id")
-    .eq("id", userId)
-    .maybeSingle<ActiveBookProfileRow>();
+  const { data, error } = await supabase
+    .rpc(GET_ACTIVE_LEDGER_BOOK_FUNCTION)
+    .returns<LedgerBookRow[]>();
 
-  if (profileError) {
-    throw profileError;
+  const activeBook = Array.isArray(data) ? data[0] : null;
+  if (error) {
+    logAppError("LedgerBooks", error, {
+      step: "get_active_ledger_book",
+      userId,
+    });
+    throw error;
   }
 
-  if (!profile) {
-    logAppWarning("LedgerBooks", "Profile row missing. Recreating own profile.", { userId });
-    const { error: insertProfileError } = await supabase
-      .from(PROFILES_TABLE)
-      .insert({ id: userId });
-
-    if (insertProfileError) {
-      logAppError("LedgerBooks", insertProfileError, {
-        step: "insert_missing_profile",
-        userId,
-      });
-      throw insertProfileError;
-    }
-  }
-
-  if (!profile?.active_book_id) {
+  if (!activeBook) {
     const { data: ensuredBookId, error: ensureBookError } = await supabase.rpc(
       ENSURE_OWN_PERSONAL_LEDGER_BOOK_FUNCTION,
     );
@@ -75,7 +58,7 @@ export async function fetchActiveLedgerBook(userId: string): Promise<LedgerBook 
     return fetchLedgerBookById(ensuredBookId);
   }
 
-  return fetchLedgerBookById(profile.active_book_id);
+  return mapLedgerBookRow(activeBook);
 }
 
 export async function requestLedgerBookJoinByCode(

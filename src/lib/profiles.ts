@@ -1,11 +1,20 @@
 import type { ProfileDisplayRow } from "../types/supabase";
 import { isValidDisplayName } from "../utils/displayName";
+import {
+  getCachedProfileDisplayName,
+  setCachedProfileDisplayName,
+} from "./profileDisplayNameCache";
 import { supabase } from "./supabase";
 
 const PROFILE_TABLE = "profiles";
 const INVALID_DISPLAY_NAME_ERROR = "Display name is required.";
 
 export async function fetchProfileDisplayName(userId: string): Promise<string> {
+  const cachedDisplayName = getCachedProfileDisplayName(userId);
+  if (cachedDisplayName !== null) {
+    return cachedDisplayName;
+  }
+
   const { data, error } = await supabase
     .from(PROFILE_TABLE)
     .select("id, display_name")
@@ -16,7 +25,9 @@ export async function fetchProfileDisplayName(userId: string): Promise<string> {
     throw error;
   }
 
-  return data.display_name ?? "";
+  const displayName = data.display_name ?? "";
+  setCachedProfileDisplayName(userId, displayName);
+  return displayName;
 }
 
 export async function fetchOwnProfileDisplayName(userId: string): Promise<string> {
@@ -42,5 +53,7 @@ export async function updateOwnProfileDisplayName(
     throw error ?? new Error("Failed to update profile display name.");
   }
 
-  return data.display_name ?? "";
+  const nextDisplayName = data.display_name ?? "";
+  setCachedProfileDisplayName(userId, nextDisplayName);
+  return nextDisplayName;
 }

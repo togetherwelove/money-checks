@@ -16,6 +16,10 @@ export function getCalendarPreloadMonths(visibleMonth: Date): Date[] {
   return CALENDAR_PRELOAD_MONTH_OFFSETS.map((monthOffset) => addMonths(visibleMonth, monthOffset));
 }
 
+export function getMonthKeysSignature(months: Date[]): string {
+  return months.map((month) => getMonthKey(month)).join("|");
+}
+
 export function getMonthEntries(entryCache: LedgerEntryCache, month: Date): LedgerEntry[] {
   return entryCache[getMonthKey(month)] ?? [];
 }

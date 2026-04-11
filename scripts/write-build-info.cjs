@@ -35,4 +35,8 @@ const fileContent = `export const AppBuildInfo = {
 `;
 
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-fs.writeFileSync(outputPath, fileContent, "utf8");
+const existingFileContent = fs.existsSync(outputPath) ? fs.readFileSync(outputPath, "utf8") : null;
+
+if (existingFileContent !== fileContent) {
+  fs.writeFileSync(outputPath, fileContent, "utf8");
+}
