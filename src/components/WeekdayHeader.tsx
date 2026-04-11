@@ -19,13 +19,11 @@ export function WeekdayHeader() {
 
 const styles = StyleSheet.create({
   weekdays: {
-    paddingTop: 12,
     flexDirection: "row",
   },
   weekdayCell: {
     width: CELL_WIDTH,
     alignItems: "center",
-    paddingVertical: 2,
   },
   weekdayText: {
     color: AppColors.mutedText,

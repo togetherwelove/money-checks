@@ -1,8 +1,6 @@
-import { useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { CalendarToolbar } from "../components/CalendarToolbar";
-import { CollapsibleSection } from "../components/CollapsibleSection";
 import { IconActionButton } from "../components/IconActionButton";
 import { LedgerEntryList } from "../components/LedgerEntryList";
 import { MonthCalendarPager } from "../components/MonthCalendarPager";
@@ -35,7 +33,6 @@ export function HomeScreen({
   state,
 }: HomeScreenProps) {
   const todayIsoDate = toIsoDate(new Date());
-  const [isCalendarCollapsed, setIsCalendarCollapsed] = useState(false);
   const {
     errorMessage,
     handleDeleteEntry,
@@ -48,34 +45,26 @@ export function HomeScreen({
     visibleMonth,
   } = state;
 
-  const toggleCalendarCollapsed = () => {
-    setIsCalendarCollapsed((currentValue) => !currentValue);
-  };
-
   return (
     <View style={styles.screen}>
       <View style={styles.fixedSection}>
         {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
-        <CollapsibleSection isCollapsed={isCalendarCollapsed}>
-          <>
-            <CalendarToolbar
-              monthLabel={monthlyLedger.monthLabel}
-              onSelectToday={() => {
-                onSelectCalendarDate(todayIsoDate);
-              }}
-              showMoveToCurrent={selectedDate !== todayIsoDate}
-            />
-            <WeekdayHeader />
-            <MonthCalendarPager
-              currentPage={state.currentMonthPage}
-              nextPage={state.nextMonthPage}
-              onMoveMonth={(monthOffset) => moveMonth(visibleMonth, monthOffset, setVisibleMonth)}
-              onSelectDate={onSelectCalendarDate}
-              previousPage={state.previousMonthPage}
-              selectedDate={selectedDate}
-            />
-          </>
-        </CollapsibleSection>
+        <CalendarToolbar
+          monthLabel={monthlyLedger.monthLabel}
+          onSelectToday={() => {
+            onSelectCalendarDate(todayIsoDate);
+          }}
+          showMoveToCurrent={selectedDate !== todayIsoDate}
+        />
+        <WeekdayHeader />
+        <MonthCalendarPager
+          currentPage={state.currentMonthPage}
+          nextPage={state.nextMonthPage}
+          onMoveMonth={(monthOffset) => moveMonth(visibleMonth, monthOffset, setVisibleMonth)}
+          onSelectDate={onSelectCalendarDate}
+          previousPage={state.previousMonthPage}
+          selectedDate={selectedDate}
+        />
         <MonthlySummary
           totalExpense={formatCurrency(monthlyLedger.totalExpense)}
           totalIncome={formatCurrency(monthlyLedger.totalIncome)}
@@ -83,13 +72,11 @@ export function HomeScreen({
         <View style={styles.selectionRow}>
           <View style={styles.selectionInfo}>
             <Text style={styles.selectedDate}>{formatLedgerListHeaderDate(selectedDate)}</Text>
-            <IconActionButton
-              icon={isCalendarCollapsed ? "chevron-down" : "chevron-up"}
-              onPress={toggleCalendarCollapsed}
-            />
-            <IconActionButton icon="pie-chart" onPress={onOpenCharts} />
           </View>
-          <IconActionButton icon="plus" onPress={onOpenEntry} />
+          <View style={styles.selectionInfo}>
+            <IconActionButton icon="pie-chart" onPress={onOpenCharts} />
+            <IconActionButton icon="plus" onPress={onOpenEntry} />
+          </View>
         </View>
       </View>
       <View style={styles.listSection}>

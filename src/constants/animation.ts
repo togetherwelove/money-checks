@@ -1,1 +1,0 @@
-export const COLLAPSIBLE_DURATION_MS = 220;
