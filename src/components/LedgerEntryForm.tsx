@@ -1,9 +1,11 @@
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { useEffect, useRef } from "react";
+import { InteractionManager, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { CategorySelector } from "../components/CategorySelector";
 import { CATEGORY_OPTIONS } from "../constants/categories";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
+import { LedgerEntryFormUi } from "../constants/ledgerEntryForm";
 import { AppMessages } from "../constants/messages";
 import { FormInputTextStyle, FormLabelTextStyle, SurfaceCardStyle } from "../constants/uiStyles";
 import type { LedgerEntryDraft, LedgerEntryType } from "../types/ledger";
@@ -29,6 +31,27 @@ export function LedgerEntryForm({
   onSelectType,
 }: LedgerEntryFormProps) {
   const categories = CATEGORY_OPTIONS[draft.type];
+  const amountInputRef = useRef<TextInput>(null);
+  const amountFocusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    let isCancelled = false;
+    const interactionTask = InteractionManager.runAfterInteractions(() => {
+      amountFocusTimeoutRef.current = setTimeout(() => {
+        if (!isCancelled) {
+          amountInputRef.current?.focus();
+        }
+      }, LedgerEntryFormUi.amountFocusDelayMs);
+    });
+
+    return () => {
+      isCancelled = true;
+      if (amountFocusTimeoutRef.current) {
+        clearTimeout(amountFocusTimeoutRef.current);
+      }
+      interactionTask.cancel();
+    };
+  }, []);
 
   return (
     <View style={styles.form}>
@@ -36,9 +59,12 @@ export function LedgerEntryForm({
       <View style={styles.fieldGroup}>
         <Text style={styles.label}>{AppMessages.editorAmount}</Text>
         <TextInput
+          ref={amountInputRef}
+          blurOnSubmit
           keyboardType="number-pad"
           onChangeText={(value) => onChangeDraft("amount", value)}
           placeholder={AppMessages.editorAmount}
+          returnKeyType="done"
           style={[styles.input, styles.amountInput]}
           value={formatAmountInput(draft.amount)}
         />

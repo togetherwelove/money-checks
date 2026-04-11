@@ -10,6 +10,7 @@ import { EntryScreen } from "../screens/EntryScreen";
 import { HomeScreen } from "../screens/HomeScreen";
 import { NotificationSettingsScreen } from "../screens/NotificationSettingsScreen";
 import { ShareLedgerScreen } from "../screens/ShareLedgerScreen";
+import { SupportContactScreen } from "../screens/SupportContactScreen";
 import type { LedgerAppScreen } from "../types/app";
 import type { LedgerEntry } from "../types/ledger";
 
@@ -100,6 +101,10 @@ export function AppScreenRouter({
 
   if (activeScreen === "charts") {
     return <ChartScreen state={ledgerState} />;
+  }
+
+  if (activeScreen === "contact-support") {
+    return <SupportContactScreen email={email} />;
   }
 
   if (activeScreen === "entry") {

@@ -25,6 +25,7 @@ export const AppMessages = {
   menuNotificationSettingsTitle: "알림 설정",
   menuShareTitle: "가계부 공유",
   menuAccountTitle: "계정",
+  menuContactSupportTitle: "개발자 문의",
   shareTitle: "가계부 공유",
   accountSessionTitle: "로그인 정보",
   accountNicknameTitle: "별명",

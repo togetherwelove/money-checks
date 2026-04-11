@@ -2,7 +2,7 @@ import { AppMessages } from "../constants/messages";
 import type { LedgerAppScreen } from "../types/app";
 
 export type AppMenuItem = {
-  icon: "bell" | "calendar" | "edit-3" | "user" | "users";
+  icon: "bell" | "calendar" | "edit-3" | "mail" | "user" | "users";
   label: string;
   targetScreen: Exclude<LedgerAppScreen, "charts">;
 };
@@ -38,6 +38,12 @@ export function buildAppMenuItems(showNotificationSettings: boolean): AppMenuIte
       targetScreen: "notification-settings",
     });
   }
+
+  items.push({
+    icon: "mail",
+    label: AppMessages.menuContactSupportTitle,
+    targetScreen: "contact-support",
+  });
 
   return items;
 }
