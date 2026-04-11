@@ -16,34 +16,42 @@ export function buildAnnualReportWorkbook(report: AnnualReportData): XLSX.WorkBo
   appendSheet(
     workbook,
     AnnualReportCopy.monthlyDetailSheetName,
-    buildMonthlyDetailRows(report.bookName, report.entries, report.year),
-    [8, 13, 10, 14, 14, 24, 14],
+    buildMonthlyDetailRows(report),
+    [14, 14, 10, 14, 14, 24, 14],
   );
   appendSheet(
     workbook,
     AnnualReportCopy.monthlyChartSheetName,
     buildMonthlyChartRows(report.monthlyRows),
-    [8, 14, 16, 14, 16, 14],
+    [14, 14, 16, 14, 16, 14],
   );
   appendSheet(
     workbook,
     AnnualReportCopy.yearlySummarySheetName,
-    buildYearlySummaryRows(report),
+    buildPeriodSummaryRows(report),
     [18, 18, 18],
   );
   appendSheet(
     workbook,
     AnnualReportCopy.yearlyChartSheetName,
-    buildYearlyChartRows(report),
+    buildPeriodChartRows(report),
     [16, 14, 12, 18],
   );
 
   return workbook;
 }
 
-export function buildAnnualReportFileName(bookName: string, year: number): string {
-  const normalizedBookName = bookName.replace(/[^\w가-힣.-]+/g, "-");
-  return `${AnnualReportUi.fileNamePrefix}-${normalizedBookName}-${year}.xlsx`;
+export function buildAnnualReportFileName(
+  bookName: string,
+  dateFrom: string,
+  dateTo: string,
+  fileNameSuffix: string,
+): string {
+  const normalizedBookName = bookName.replace(/[^\w가-힣-]+/g, "-");
+  const normalizedDateFrom = dateFrom.replaceAll("-", "");
+  const normalizedDateTo = dateTo.replaceAll("-", "");
+
+  return `${AnnualReportUi.fileNamePrefix}-${normalizedBookName}-${normalizedDateFrom}-${normalizedDateTo}-${fileNameSuffix}.xlsx`;
 }
 
 function appendSheet(
@@ -57,21 +65,23 @@ function appendSheet(
   XLSX.utils.book_append_sheet(workbook, sheet, name);
 }
 
-function buildMonthlyDetailRows(bookName: string, entries: LedgerEntry[], year: number) {
+function buildMonthlyDetailRows(report: AnnualReportData) {
   const rows: Array<Array<string | number>> = [
-    [`${year}년 ${bookName} 월별 내역`],
+    [`${report.bookName} 월별 내역`],
+    [],
+    ["기간", report.periodLabel],
     [],
     ["월", "날짜", "구분", "분류", "금액", "메모", "작성자"],
   ];
 
-  if (entries.length === 0) {
-    rows.push(["-", "-", "-", "-", "-", "내역이 없습니다.", "-"]);
+  if (report.entries.length === 0) {
+    rows.push(["-", "-", "-", "-", "-", "-", "내역이 없습니다."]);
     return rows;
   }
 
-  for (const entry of entries) {
+  for (const entry of report.entries) {
     rows.push([
-      `${Number(entry.date.slice(5, 7))}월`,
+      entry.date.slice(0, 7),
       entry.date,
       entry.type === "income" ? "수입" : "지출",
       entry.category,
@@ -101,35 +111,34 @@ function buildMonthlyChartRows(monthlyRows: AnnualReportMonthRow[]) {
   ];
 }
 
-function buildYearlySummaryRows(report: AnnualReportData) {
+function buildPeriodSummaryRows(report: AnnualReportData) {
   const topExpenseCategory = report.expenseCategories[0]?.category ?? "-";
   const topIncomeCategory = report.incomeCategories[0]?.category ?? "-";
 
   return [
-    [`${report.year}년 ${report.bookName} 연간 종합`],
+    [`${report.bookName} 기간 종합`],
     [],
+    ["기간", report.periodLabel],
     ["생성일", report.generatedAtLabel],
     ["총수입", formatSignedReportAmount(report.totalIncome, "income")],
     ["총지출", formatSignedReportAmount(report.totalExpense, "expense")],
-    ["연간 수지", formatCurrency(report.totalIncome - report.totalExpense)],
+    ["기간 수지", formatCurrency(report.totalIncome - report.totalExpense)],
     ["기록 건수", report.entries.length],
     ["주요 수입 분류", topIncomeCategory],
     ["주요 지출 분류", topExpenseCategory],
   ];
 }
 
-function buildYearlyChartRows(report: AnnualReportData) {
-  const rows: Array<Array<string | number>> = [
-    [`${report.year}년 ${report.bookName} 연간 차트`],
+function buildPeriodChartRows(report: AnnualReportData) {
+  return [
+    [`${report.bookName} 기간 차트`],
     [],
-    ["지출 분류", "금액", "비율", "막대"],
+    ["지출 분류", "금액", "비중", "막대"],
     ...buildCategoryChartRows(report.expenseCategories),
     [],
-    ["수입 분류", "금액", "비율", "막대"],
+    ["수입 분류", "금액", "비중", "막대"],
     ...buildCategoryChartRows(report.incomeCategories),
   ];
-
-  return rows;
 }
 
 function buildCategoryChartRows(rows: AnnualReportCategoryRow[]) {

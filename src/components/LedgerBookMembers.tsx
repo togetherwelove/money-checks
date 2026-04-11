@@ -1,6 +1,7 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
+import { LedgerBookMembersLayout, LedgerBookMembersUi } from "../constants/ledgerBookMembers";
 import { AppMessages } from "../constants/messages";
 import type { LedgerBookMember, LedgerBookMemberRole } from "../types/ledgerBookMember";
 
@@ -17,6 +18,27 @@ export function LedgerBookMembers({
 }: LedgerBookMembersProps) {
   const currentMember = members.find((member) => member.userId === currentUserId);
   const canManageMembers = currentMember?.role === "owner";
+  const shouldScrollMembers = members.length > LedgerBookMembersUi.maxVisibleMembers;
+  const memberListContent = (
+    <View style={styles.memberList}>
+      {members.map((member) => (
+        <View key={member.userId} style={styles.memberRow}>
+          <Text style={styles.memberName}>
+            {member.displayName}
+            {member.userId === currentUserId ? ` ${AppMessages.accountMemberSelfSuffix}` : ""}
+          </Text>
+          <View style={styles.memberActions}>
+            <Text style={styles.memberRole}>{getRoleLabel(member.role)}</Text>
+            {canManageMembers && member.role !== "owner" && member.userId !== currentUserId ? (
+              <Pressable onPress={() => void onKickMember(member.userId)}>
+                <Text style={styles.kickAction}>{AppMessages.accountKickAction}</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        </View>
+      ))}
+    </View>
+  );
 
   return (
     <View style={styles.section}>
@@ -27,25 +49,19 @@ export function LedgerBookMembers({
         />
         <InfoBlock label={AppMessages.accountRoleLabel} value={getRoleLabel(currentMember?.role)} />
       </View>
+
       <Text style={styles.memberTitle}>{AppMessages.accountMembersTitle}</Text>
-      <View style={styles.memberList}>
-        {members.map((member) => (
-          <View key={member.userId} style={styles.memberRow}>
-            <Text style={styles.memberName}>
-              {member.displayName}
-              {member.userId === currentUserId ? ` ${AppMessages.accountMemberSelfSuffix}` : ""}
-            </Text>
-            <View style={styles.memberActions}>
-              <Text style={styles.memberRole}>{getRoleLabel(member.role)}</Text>
-              {canManageMembers && member.role !== "owner" && member.userId !== currentUserId ? (
-                <Pressable onPress={() => void onKickMember(member.userId)}>
-                  <Text style={styles.kickAction}>{AppMessages.accountKickAction}</Text>
-                </Pressable>
-              ) : null}
-            </View>
-          </View>
-        ))}
-      </View>
+      {shouldScrollMembers ? (
+        <ScrollView
+          nestedScrollEnabled
+          showsVerticalScrollIndicator={false}
+          style={styles.memberListScroll}
+        >
+          {memberListContent}
+        </ScrollView>
+      ) : (
+        memberListContent
+      )}
     </View>
   );
 }
@@ -94,18 +110,24 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   memberList: {
-    gap: 6,
+    gap: LedgerBookMembersUi.listGap,
+  },
+  memberListScroll: {
+    maxHeight: LedgerBookMembersLayout.listMaxHeight,
   },
   memberTitle: {
     color: AppColors.text,
-    fontSize: 12,
+    fontSize: 18,
     fontWeight: "700",
-    paddingTop: 2,
+    borderTopWidth: 1,
+    borderTopColor: AppColors.border,
+    paddingTop: 10,
   },
   memberRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     gap: 8,
+    minHeight: LedgerBookMembersUi.rowHeight,
     paddingVertical: 2,
   },
   memberName: {

@@ -1,9 +1,11 @@
 import { memo, useCallback, useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { CalendarDayUi } from "../constants/calendarDay";
 import { AppColors } from "../constants/colors";
 import type { CalendarDay } from "../types/ledger";
-import { formatCurrency } from "../utils/calendar";
+import { formatAmountNumber } from "../utils/amount";
+import { parseIsoDate } from "../utils/calendar";
 import {
   CALENDAR_DAY_CELL_MIN_HEIGHT,
   CALENDAR_ROW_HEIGHT,
@@ -51,6 +53,10 @@ function MonthCalendarComponent({ days, onSelectDate, selectedDate }: MonthCalen
 
 export const MonthCalendar = memo(MonthCalendarComponent);
 
+function formatCalendarDayAmount(amount: number): string {
+  return formatAmountNumber(amount);
+}
+
 const DayCell = memo(function DayCell({
   day,
   isSelected,
@@ -62,6 +68,10 @@ const DayCell = memo(function DayCell({
 }) {
   const hasEntry = day.income > 0 || day.expense > 0;
   const isAdjacentMonth = !day.isCurrentMonth;
+  const dayOfWeek = parseIsoDate(day.isoDate).getDay();
+  const isSunday = dayOfWeek === 0;
+  const isSaturday = dayOfWeek === 6;
+  const shouldApplyWeekendTint = !isSelected && !day.isToday;
   const handlePress = useCallback(() => {
     onSelectDate(day.isoDate);
   }, [day.isoDate, onSelectDate]);
@@ -75,6 +85,8 @@ const DayCell = memo(function DayCell({
         <Text
           style={[
             styles.dayNumber,
+            shouldApplyWeekendTint && isSunday && styles.sundayNumber,
+            shouldApplyWeekendTint && isSaturday && styles.saturdayNumber,
             day.isToday && styles.todayNumber,
             isSelected && styles.selectedNumber,
             isAdjacentMonth && styles.adjacentMonthText,
@@ -87,7 +99,7 @@ const DayCell = memo(function DayCell({
             {day.income > 0 ? (
               <Text
                 adjustsFontSizeToFit
-                minimumFontScale={0.45}
+                minimumFontScale={CalendarDayUi.amountMinimumScale}
                 numberOfLines={1}
                 style={[
                   styles.amountText,
@@ -95,13 +107,13 @@ const DayCell = memo(function DayCell({
                   isAdjacentMonth && styles.mutedAmount,
                 ]}
               >
-                +{formatCurrency(day.income)}
+                +{formatCalendarDayAmount(day.income)}
               </Text>
             ) : null}
             {day.expense > 0 ? (
               <Text
                 adjustsFontSizeToFit
-                minimumFontScale={0.45}
+                minimumFontScale={CalendarDayUi.amountMinimumScale}
                 numberOfLines={1}
                 style={[
                   styles.amountText,
@@ -109,7 +121,7 @@ const DayCell = memo(function DayCell({
                   isAdjacentMonth && styles.mutedAmount,
                 ]}
               >
-                -{formatCurrency(day.expense)}
+                -{formatCalendarDayAmount(day.expense)}
               </Text>
             ) : null}
           </View>
@@ -170,6 +182,14 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.primary,
     color: AppColors.inverseText,
   },
+  sundayNumber: {
+    color: CalendarDayUi.sundayTextColor,
+    opacity: CalendarDayUi.weekendTextOpacity,
+  },
+  saturdayNumber: {
+    color: CalendarDayUi.saturdayTextColor,
+    opacity: CalendarDayUi.weekendTextOpacity,
+  },
   adjacentMonthText: {
     color: AppColors.mutedStrongText,
   },
@@ -180,8 +200,8 @@ const styles = StyleSheet.create({
   },
   amountText: {
     maxWidth: "100%",
-    fontSize: 8,
-    lineHeight: 10,
+    fontSize: CalendarDayUi.amountFontSize,
+    lineHeight: CalendarDayUi.amountLineHeight,
     letterSpacing: -0.2,
     fontWeight: "600",
     textAlign: "center",

@@ -37,6 +37,61 @@ export async function fetchLedgerEntries(
   return mapLedgerEntries(data ?? []);
 }
 
+export async function fetchFirstLedgerEntryDate(bookId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from(LEDGER_TABLE)
+    .select("occurred_on")
+    .eq("book_id", bookId)
+    .order("occurred_on", { ascending: true })
+    .limit(1)
+    .maybeSingle<{ occurred_on: string }>();
+
+  if (error) {
+    throw error;
+  }
+
+  return data?.occurred_on ?? null;
+}
+
+export async function fetchLedgerEntryDateBounds(bookId: string): Promise<{
+  firstDate: string;
+  lastDate: string;
+} | null> {
+  const [firstResult, lastResult] = await Promise.all([
+    supabase
+      .from(LEDGER_TABLE)
+      .select("occurred_on")
+      .eq("book_id", bookId)
+      .order("occurred_on", { ascending: true })
+      .limit(1)
+      .maybeSingle<{ occurred_on: string }>(),
+    supabase
+      .from(LEDGER_TABLE)
+      .select("occurred_on")
+      .eq("book_id", bookId)
+      .order("occurred_on", { ascending: false })
+      .limit(1)
+      .maybeSingle<{ occurred_on: string }>(),
+  ]);
+
+  if (firstResult.error) {
+    throw firstResult.error;
+  }
+
+  if (lastResult.error) {
+    throw lastResult.error;
+  }
+
+  if (!firstResult.data?.occurred_on || !lastResult.data?.occurred_on) {
+    return null;
+  }
+
+  return {
+    firstDate: firstResult.data.occurred_on,
+    lastDate: lastResult.data.occurred_on,
+  };
+}
+
 export async function insertLedgerEntry(
   bookId: string,
   userId: string,

@@ -14,6 +14,7 @@ import { BlockingOverlay } from "./src/components/BlockingOverlay";
 import { LedgerBookHeaderAction } from "./src/components/LedgerBookHeaderAction";
 import { OnboardingTransitionScreen } from "./src/components/OnboardingTransitionScreen";
 import { ScreenSlideTransition } from "./src/components/ScreenSlideTransition";
+import { AnnualReportRangePickerModal } from "./src/components/annualReport/AnnualReportRangePickerModal";
 import { NativeYearPickerModal } from "./src/components/calendarPicker/NativeYearPickerModal";
 import { AppColors } from "./src/constants/colors";
 import { AppMessages } from "./src/constants/messages";
@@ -289,8 +290,17 @@ function SignedInApp({ session }: { session: Session }) {
           onSelectDate={ledgerState.handleSelectDate}
           selectedDate={ledgerState.selectedDate}
         />
+        <AnnualReportRangePickerModal
+          endDate={annualReport.customRangeDraft?.endDate ?? ledgerState.selectedDate}
+          isOpen={annualReport.customRangeDraft?.isOpen ?? false}
+          onClose={annualReport.handleCloseCustomRangePicker}
+          onConfirm={annualReport.handleConfirmCustomRange}
+          startDate={annualReport.customRangeDraft?.startDate ?? ledgerState.selectedDate}
+        />
       </SafeAreaView>
-      {ledgerState.isBusy || annualReport.isDownloading ? <BlockingOverlay /> : null}
+      {ledgerState.isBusy || ledgerState.isLoading || annualReport.isDownloading ? (
+        <BlockingOverlay />
+      ) : null}
     </View>
   );
 }

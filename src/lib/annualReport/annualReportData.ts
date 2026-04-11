@@ -1,11 +1,17 @@
 import type { LedgerEntry, LedgerEntryType } from "../../types/ledger";
-import { formatCurrency } from "../../utils/calendar";
+import {
+  formatCurrency,
+  formatMonthYear,
+  getMonthKey,
+  parseIsoDate,
+  startOfMonth,
+} from "../../utils/calendar";
 
 export type AnnualReportMonthRow = {
   balance: number;
   expense: number;
   income: number;
-  month: number;
+  monthKey: string;
   monthLabel: string;
 };
 
@@ -23,19 +29,19 @@ export type AnnualReportData = {
   generatedAtLabel: string;
   incomeCategories: AnnualReportCategoryRow[];
   monthlyRows: AnnualReportMonthRow[];
+  periodLabel: string;
   totalExpense: number;
   totalIncome: number;
-  year: number;
 };
 
 export function buildAnnualReportData(
   bookName: string,
   entries: LedgerEntry[],
-  year: number,
+  dateFrom: string,
+  dateTo: string,
 ): AnnualReportData {
-  const monthlyRows = Array.from({ length: 12 }, (_value, monthIndex) =>
-    buildMonthRow(entries, monthIndex + 1),
-  );
+  const periodLabel = `${dateFrom} ~ ${dateTo}`;
+  const monthlyRows = buildMonthRows(entries, dateFrom, dateTo);
   const totalIncome = monthlyRows.reduce((sum, row) => sum + row.income, 0);
   const totalExpense = monthlyRows.reduce((sum, row) => sum + row.expense, 0);
 
@@ -46,9 +52,9 @@ export function buildAnnualReportData(
     generatedAtLabel: new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium" }).format(new Date()),
     incomeCategories: buildCategoryRows(entries, "income"),
     monthlyRows,
+    periodLabel,
     totalExpense,
     totalIncome,
-    year,
   };
 }
 
@@ -57,19 +63,30 @@ export function formatSignedReportAmount(amount: number, type: LedgerEntryType):
   return `${prefix} ${formatCurrency(amount)}`;
 }
 
-function buildMonthRow(entries: LedgerEntry[], month: number): AnnualReportMonthRow {
-  const monthPrefix = `${String(month).padStart(2, "0")}-`;
-  const monthEntries = entries.filter((entry) => entry.date.slice(5).startsWith(monthPrefix));
-  const income = sumAmountByType(monthEntries, "income");
-  const expense = sumAmountByType(monthEntries, "expense");
+function buildMonthRows(entries: LedgerEntry[], dateFrom: string, dateTo: string) {
+  const startMonth = startOfMonth(parseIsoDate(dateFrom));
+  const endMonth = startOfMonth(parseIsoDate(dateTo));
+  const rows: AnnualReportMonthRow[] = [];
+  const cursor = new Date(startMonth);
 
-  return {
-    balance: income - expense,
-    expense,
-    income,
-    month,
-    monthLabel: `${month}월`,
-  };
+  while (cursor.getTime() <= endMonth.getTime()) {
+    const monthKey = getMonthKey(cursor);
+    const monthEntries = entries.filter((entry) => entry.date.startsWith(`${monthKey}-`));
+    const income = sumAmountByType(monthEntries, "income");
+    const expense = sumAmountByType(monthEntries, "expense");
+
+    rows.push({
+      balance: income - expense,
+      expense,
+      income,
+      monthKey,
+      monthLabel: formatMonthYear(cursor),
+    });
+
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+
+  return rows;
 }
 
 function buildCategoryRows(

@@ -1,28 +1,34 @@
 import { Alert } from "react-native";
 
-import { AnnualReportCopy, buildAnnualReportConfirmMessage } from "../../constants/annualReport";
+import { buildAnnualReportConfirmMessage } from "../../constants/annualReport";
 import { CommonActionCopy } from "../../constants/commonActions";
 import { appPlatform } from "../appPlatform";
 import { showNativeToast } from "../nativeToast";
 import { buildAnnualReportData } from "./annualReportData";
+import type { AnnualReportPeriod } from "./annualReportPeriods";
 import { buildAnnualReportFileName, buildAnnualReportWorkbook } from "./annualReportWorkbook";
 
 type DownloadAnnualReportParams = {
   bookName: string;
   entries: Parameters<typeof buildAnnualReportData>[1];
-  year: number;
+  period: AnnualReportPeriod;
 };
 
 export async function confirmAndDownloadAnnualReport(params: DownloadAnnualReportParams) {
-  const { bookName, entries, year } = params;
-  const shouldDownload = await confirmAnnualReportDownload(year, bookName);
+  const { bookName, entries, period } = params;
+  const shouldDownload = await confirmAnnualReportDownload(bookName, period.periodLabel);
   if (!shouldDownload) {
     return false;
   }
 
-  const report = buildAnnualReportData(bookName, entries, year);
+  const report = buildAnnualReportData(bookName, entries, period.dateFrom, period.dateTo);
   const workbook = buildAnnualReportWorkbook(report);
-  const fileName = buildAnnualReportFileName(bookName, year);
+  const fileName = buildAnnualReportFileName(
+    bookName,
+    period.dateFrom,
+    period.dateTo,
+    period.fileNameSuffix,
+  );
 
   if (appPlatform.isWeb) {
     const XLSX = await import("xlsx");
@@ -35,7 +41,7 @@ export async function confirmAndDownloadAnnualReport(params: DownloadAnnualRepor
   const Sharing = await import("expo-sharing");
   const cacheDirectory = FileSystem.cacheDirectory;
   if (!cacheDirectory) {
-    throw new Error(AnnualReportCopy.errorMessage);
+    throw new Error("보고서를 만들지 못했습니다.");
   }
   const fileUri = `${cacheDirectory}${fileName}`;
   const base64 = XLSX.write(workbook, { bookType: "xlsx", type: "base64" });
@@ -52,25 +58,25 @@ export async function confirmAndDownloadAnnualReport(params: DownloadAnnualRepor
     });
   }
 
-  showNativeToast(AnnualReportCopy.successMessage);
+  showNativeToast("보고서를 준비했습니다.");
   return true;
 }
 
-async function confirmAnnualReportDownload(year: number, bookName: string) {
-  const message = buildAnnualReportConfirmMessage(year, bookName);
+async function confirmAnnualReportDownload(bookName: string, periodLabel: string) {
+  const message = `${buildAnnualReportConfirmMessage(bookName)}\n\n${periodLabel}`;
   if (appPlatform.isWeb) {
     return window.confirm(message);
   }
 
   return new Promise<boolean>((resolve) => {
-    Alert.alert(AnnualReportCopy.confirmTitle, message, [
+    Alert.alert("보고서를 다운로드할까요?", message, [
       {
         style: "cancel",
         text: CommonActionCopy.cancel,
         onPress: () => resolve(false),
       },
       {
-        text: AnnualReportCopy.downloadAction,
+        text: "다운로드",
         onPress: () => resolve(true),
       },
     ]);
