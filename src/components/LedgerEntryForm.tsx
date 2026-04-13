@@ -1,38 +1,47 @@
 import { useEffect, useRef } from "react";
-import { InteractionManager, StyleSheet, Text, TextInput, View } from "react-native";
+import { InteractionManager, Keyboard, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { CategorySelector } from "../components/CategorySelector";
 import { CATEGORY_OPTIONS } from "../constants/categories";
 import { AppColors } from "../constants/colors";
+import { EntryRegistrationCopy } from "../constants/entryRegistration";
 import { AppLayout } from "../constants/layout";
 import { LedgerEntryFormUi } from "../constants/ledgerEntryForm";
 import { AppMessages } from "../constants/messages";
 import { FormInputTextStyle, FormLabelTextStyle, SurfaceCardStyle } from "../constants/uiStyles";
 import type { LedgerEntryDraft, LedgerEntryType } from "../types/ledger";
 import { formatAmountInput } from "../utils/amount";
+import { canSubmitDraft } from "../utils/ledgerEntries";
 import { ActionButton } from "./ActionButton";
 import { EntryDirectionSelector } from "./EntryDirectionSelector";
 
 type LedgerEntryFormProps = {
+  canQueueEntry?: boolean;
   draft: LedgerEntryDraft;
   editingEntryId: string | null;
   onChangeDraft: (field: keyof LedgerEntryDraft, value: string) => void;
   onCategoryDraggingChange?: (isDragging: boolean) => void;
+  onQueueEntry?: (() => void | Promise<void>) | null;
   onSaveEntry: () => void | Promise<void>;
   onSelectType: (type: LedgerEntryType) => void;
 };
 
 export function LedgerEntryForm({
+  canQueueEntry = false,
   draft,
   editingEntryId,
   onChangeDraft,
   onCategoryDraggingChange,
+  onQueueEntry = null,
   onSaveEntry,
   onSelectType,
 }: LedgerEntryFormProps) {
   const categories = CATEGORY_OPTIONS[draft.type];
   const amountInputRef = useRef<TextInput>(null);
+  const contentInputRef = useRef<TextInput>(null);
+  const noteInputRef = useRef<TextInput>(null);
   const amountFocusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const canSubmit = canSubmitDraft(draft);
 
   useEffect(() => {
     let isCancelled = false;
@@ -60,36 +69,67 @@ export function LedgerEntryForm({
         <Text style={styles.label}>{AppMessages.editorAmount}</Text>
         <TextInput
           ref={amountInputRef}
-          blurOnSubmit
+          submitBehavior="blurAndSubmit"
           keyboardType="number-pad"
           onChangeText={(value) => onChangeDraft("amount", value)}
+          onSubmitEditing={() => contentInputRef.current?.focus()}
           placeholder={AppMessages.editorAmount}
-          returnKeyType="done"
-          style={[styles.input, styles.amountInput]}
+          returnKeyType="next"
+          style={styles.input}
           value={formatAmountInput(draft.amount)}
+        />
+      </View>
+      <View style={styles.fieldGroup}>
+        <Text style={styles.label}>{EntryRegistrationCopy.contentLabel}</Text>
+        <TextInput
+          ref={contentInputRef}
+          submitBehavior="blurAndSubmit"
+          onChangeText={(value) => onChangeDraft("content", value)}
+          onSubmitEditing={() => Keyboard.dismiss()}
+          placeholder={EntryRegistrationCopy.contentPlaceholder}
+          returnKeyType="done"
+          style={styles.input}
+          value={draft.content}
         />
       </View>
       <CategorySelector
         categories={categories}
         entryType={draft.type}
         onDraggingChange={onCategoryDraggingChange}
-        onSelectCategory={(category) => onChangeDraft("category", category)}
+        onSelectCategory={(category) => {
+          onChangeDraft("category", category);
+          setTimeout(() => {
+            noteInputRef.current?.focus();
+          }, LedgerEntryFormUi.noteFocusDelayMs);
+        }}
         selectedCategory={draft.category}
-        title={AppMessages.editorCategory}
+        title={EntryRegistrationCopy.categoryLabel}
       />
       <View style={styles.fieldGroup}>
-        <Text style={styles.label}>{AppMessages.editorNote}</Text>
+        <Text style={styles.label}>{EntryRegistrationCopy.noteLabel}</Text>
         <TextInput
+          ref={noteInputRef}
+          submitBehavior="blurAndSubmit"
           multiline
           onChangeText={(value) => onChangeDraft("note", value)}
-          placeholder={AppMessages.editorNote}
-          style={[styles.input, styles.noteInput]}
+          placeholder={EntryRegistrationCopy.noteLabel}
+          returnKeyType="done"
+          style={styles.input}
           textAlignVertical="top"
           value={draft.note}
         />
       </View>
       <View style={styles.formActions}>
+        {!editingEntryId && onQueueEntry ? (
+          <ActionButton
+            disabled={!canQueueEntry}
+            label={EntryRegistrationCopy.addEntryAction}
+            onPress={onQueueEntry}
+            variant="secondary"
+          />
+        ) : null}
         <ActionButton
+          disabled={!canSubmit}
           label={editingEntryId ? AppMessages.editorUpdate : AppMessages.editorNewEntry}
           onPress={onSaveEntry}
           variant="primary"
@@ -109,15 +149,8 @@ const styles = StyleSheet.create({
   },
   label: FormLabelTextStyle,
   input: FormInputTextStyle,
-  amountInput: {
-    color: AppColors.text,
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  noteInput: {
-    minHeight: 88,
-  },
   formActions: {
     paddingTop: 4,
+    gap: 8,
   },
 });

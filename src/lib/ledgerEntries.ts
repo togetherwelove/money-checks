@@ -106,6 +106,7 @@ export async function insertLedgerEntry(
       entry_type: entry.type,
       occurred_on: entry.date,
       amount: entry.amount,
+      content: entry.content,
       currency: DEFAULT_CURRENCY,
       category: entry.category,
       note: entry.note,
@@ -127,6 +128,7 @@ export async function updateLedgerEntry(entry: LedgerEntry): Promise<LedgerEntry
       entry_type: entry.type,
       occurred_on: entry.date,
       amount: entry.amount,
+      content: entry.content,
       category: entry.category,
       note: entry.note,
     })

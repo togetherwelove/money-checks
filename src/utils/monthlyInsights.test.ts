@@ -10,6 +10,7 @@ function createEntry(
   return {
     amount,
     category,
+    content: category,
     date,
     id: `${date}-${type}-${amount}-${category}`,
     note: "",

@@ -3,12 +3,14 @@ import { sanitizeAmountDigits } from "./amount";
 
 const EMPTY_AMOUNT = "";
 const MANUAL_ENTRY_PREFIX = "manual";
+const QUEUED_ENTRY_PREFIX = "queued";
 
 export function createDraft(isoDate: string): LedgerEntryDraft {
   return {
     date: isoDate,
     type: "expense",
     amount: EMPTY_AMOUNT,
+    content: "",
     category: "",
     note: "",
   };
@@ -39,6 +41,14 @@ export function sanitizeAmountInput(value: string): string {
   return sanitizeAmountDigits(value);
 }
 
+export function canSubmitDraft(draft: LedgerEntryDraft): boolean {
+  return Boolean(Number(draft.amount) && draft.content.trim() && draft.category.trim());
+}
+
 export function createManualEntryId(): string {
   return `${MANUAL_ENTRY_PREFIX}-${Date.now()}`;
+}
+
+export function createQueuedEntryId(): string {
+  return `${QUEUED_ENTRY_PREFIX}-${Date.now()}`;
 }

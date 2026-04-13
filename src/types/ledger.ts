@@ -7,6 +7,7 @@ export type LedgerEntry = {
   date: string;
   type: LedgerEntryType;
   amount: number;
+  content: string;
   category: string;
   note: string;
   sourceType?: string;
@@ -16,8 +17,14 @@ export type LedgerEntryDraft = {
   date: string;
   type: LedgerEntryType;
   amount: string;
+  content: string;
   category: string;
   note: string;
+};
+
+export type QueuedLedgerEntryDraft = {
+  draft: LedgerEntryDraft;
+  id: string;
 };
 
 export type CalendarDay = {

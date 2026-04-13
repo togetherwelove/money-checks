@@ -13,6 +13,7 @@ import {
 const aprilEntry: LedgerEntry = {
   amount: 1000,
   category: "식비",
+  content: "점심",
   date: "2026-04-09",
   id: "april-1",
   note: "",
@@ -22,6 +23,7 @@ const aprilEntry: LedgerEntry = {
 const mayEntry: LedgerEntry = {
   amount: 2000,
   category: "교통",
+  content: "버스",
   date: "2026-05-11",
   id: "may-1",
   note: "",
@@ -31,6 +33,7 @@ const mayEntry: LedgerEntry = {
 const juneEntry: LedgerEntry = {
   amount: 3000,
   category: "급여",
+  content: "월급",
   date: "2026-06-01",
   id: "june-1",
   note: "",

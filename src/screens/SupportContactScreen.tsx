@@ -11,10 +11,10 @@ import { SupportContactCopy } from "../constants/supportContact";
 import {
   CompactLabelTextStyle,
   FormInputTextStyle,
-  StatusMessageTextStyle,
   SupportingTextStyle,
   SurfaceCardStyle,
 } from "../constants/uiStyles";
+import { showNativeToast } from "../lib/nativeToast";
 import {
   type SupportAttachment,
   composeSupportMail,
@@ -28,7 +28,6 @@ type SupportContactScreenProps = {
 export function SupportContactScreen({ email }: SupportContactScreenProps) {
   const [attachments, setAttachments] = useState<SupportAttachment[]>([]);
   const [messageBody, setMessageBody] = useState("");
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [subject, setSubject] = useState("");
 
   const handlePickAttachments = async () => {
@@ -38,18 +37,18 @@ export function SupportContactScreen({ email }: SupportContactScreenProps) {
         setAttachments((currentAttachments) => [...currentAttachments, ...nextAttachments]);
       }
     } catch {
-      setStatusMessage(SupportContactCopy.imagePickerError);
+      showNativeToast(SupportContactCopy.imagePickerError);
     }
   };
 
   const handleSendSupportMail = async () => {
     if (!subject.trim()) {
-      setStatusMessage(SupportContactCopy.emptySubjectError);
+      showNativeToast(SupportContactCopy.emptySubjectError);
       return;
     }
 
     if (!messageBody.trim()) {
-      setStatusMessage(SupportContactCopy.emptyBodyError);
+      showNativeToast(SupportContactCopy.emptyBodyError);
       return;
     }
 
@@ -60,11 +59,8 @@ export function SupportContactScreen({ email }: SupportContactScreenProps) {
         subject: subject.trim(),
         userEmail: email,
       });
-      setStatusMessage(null);
     } catch (error) {
-      setStatusMessage(
-        error instanceof Error ? error.message : SupportContactCopy.mailComposeError,
-      );
+      showNativeToast(error instanceof Error ? error.message : SupportContactCopy.mailComposeError);
     }
   };
 
@@ -78,12 +74,7 @@ export function SupportContactScreen({ email }: SupportContactScreenProps) {
         <View style={styles.fieldGroup}>
           <Text style={styles.label}>{SupportContactCopy.subjectLabel}</Text>
           <TextInput
-            onChangeText={(value) => {
-              setSubject(value);
-              if (statusMessage) {
-                setStatusMessage(null);
-              }
-            }}
+            onChangeText={setSubject}
             placeholder={SupportContactCopy.subjectPlaceholder}
             style={styles.input}
             value={subject}
@@ -93,12 +84,7 @@ export function SupportContactScreen({ email }: SupportContactScreenProps) {
           <Text style={styles.label}>{SupportContactCopy.bodyLabel}</Text>
           <TextInput
             multiline
-            onChangeText={(value) => {
-              setMessageBody(value);
-              if (statusMessage) {
-                setStatusMessage(null);
-              }
-            }}
+            onChangeText={setMessageBody}
             placeholder={SupportContactCopy.bodyPlaceholder}
             style={[styles.input, styles.bodyInput]}
             textAlignVertical="top"
@@ -146,7 +132,6 @@ export function SupportContactScreen({ email }: SupportContactScreenProps) {
             </ScrollView>
           ) : null}
         </View>
-        {statusMessage ? <Text style={styles.statusText}>{statusMessage}</Text> : null}
         <ActionButton
           label={SupportContactCopy.sendAction}
           onPress={handleSendSupportMail}
@@ -216,9 +201,5 @@ const styles = StyleSheet.create({
     color: AppColors.text,
     fontSize: 11,
     fontWeight: "600",
-  },
-  statusText: {
-    ...StatusMessageTextStyle,
-    color: AppColors.expense,
   },
 });

@@ -9,6 +9,7 @@ export function mapLedgerEntryRow(row: LedgerEntryRow, authorName?: string): Led
     date: row.occurred_on,
     type: row.entry_type,
     amount: Number(row.amount),
+    content: row.content,
     category: row.category,
     note: row.note,
     sourceType: row.source_type,

@@ -53,6 +53,7 @@ export type LedgerScreenState = {
   handleDeleteEntry: (entryId: string) => Promise<void>;
   handleEditEntry: (entry: LedgerEntry) => void;
   handleSaveEntry: () => Promise<LedgerEntry | null>;
+  handleSaveEntryDrafts: (drafts: LedgerEntryDraft[]) => Promise<LedgerEntry[]>;
   handleSelectDate: (isoDate: string) => void;
   resetEditor: (isoDate: string) => void;
   updateDraftField: (field: keyof LedgerEntryDraft, value: string) => void;

@@ -17,7 +17,7 @@ export function buildAnnualReportWorkbook(report: AnnualReportData): XLSX.WorkBo
     workbook,
     AnnualReportCopy.monthlyDetailSheetName,
     buildMonthlyDetailRows(report),
-    [14, 14, 10, 14, 14, 24, 14],
+    [14, 14, 10, 18, 14, 14, 24, 14],
   );
   appendSheet(
     workbook,
@@ -71,7 +71,7 @@ function buildMonthlyDetailRows(report: AnnualReportData) {
     [],
     ["기간", report.periodLabel],
     [],
-    ["월", "날짜", "구분", "분류", "금액", "메모", "작성자"],
+    ["월", "날짜", "구분", "내용", "분류", "금액", "메모", "작성자"],
   ];
 
   if (report.entries.length === 0) {
@@ -84,6 +84,7 @@ function buildMonthlyDetailRows(report: AnnualReportData) {
       entry.date.slice(0, 7),
       entry.date,
       entry.type === "income" ? "수입" : "지출",
+      entry.content || "-",
       entry.category,
       formatSignedReportAmount(entry.amount, entry.type),
       entry.note || "-",

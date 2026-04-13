@@ -12,10 +12,11 @@ import { NotificationSettingsScreen } from "../screens/NotificationSettingsScree
 import { ShareLedgerScreen } from "../screens/ShareLedgerScreen";
 import { SupportContactScreen } from "../screens/SupportContactScreen";
 import type { LedgerAppScreen } from "../types/app";
-import type { LedgerEntry } from "../types/ledger";
+import type { LedgerEntry, LedgerEntryDraft } from "../types/ledger";
 
 type AppScreenRouterProps = {
   activeScreen: LedgerAppScreen;
+  accountProviderLabel: string;
   email: string;
   fallbackDisplayName: string;
   ledgerState: LedgerScreenState;
@@ -31,6 +32,7 @@ type AppScreenRouterProps = {
   onOpenCharts: () => void;
   onOpenEntry: () => void;
   onSaveEntry: () => Promise<void>;
+  onSaveEntryDrafts: (drafts: LedgerEntryDraft[]) => Promise<void>;
   onToggleNotificationPreference: (
     eventType: NotificationPreferenceGroup["items"][number]["type"],
     enabled: boolean,
@@ -42,6 +44,7 @@ type AppScreenRouterProps = {
 
 export function AppScreenRouter({
   activeScreen,
+  accountProviderLabel,
   email,
   fallbackDisplayName,
   ledgerState,
@@ -54,6 +57,7 @@ export function AppScreenRouter({
   onOpenCharts,
   onOpenEntry,
   onSaveEntry,
+  onSaveEntryDrafts,
   onToggleNotificationPreference,
   onSelectCalendarDate,
   showNotificationSettings,
@@ -61,14 +65,24 @@ export function AppScreenRouter({
 }: AppScreenRouterProps) {
   if (activeScreen === "account") {
     return (
-      <AccountScreen email={email} fallbackDisplayName={fallbackDisplayName} userId={userId} />
+      <AccountScreen
+        accountProviderLabel={accountProviderLabel}
+        email={email}
+        fallbackDisplayName={fallbackDisplayName}
+        userId={userId}
+      />
     );
   }
 
   if (activeScreen === "notification-settings") {
     if (!showNotificationSettings) {
       return (
-        <AccountScreen email={email} fallbackDisplayName={fallbackDisplayName} userId={userId} />
+        <AccountScreen
+          accountProviderLabel={accountProviderLabel}
+          email={email}
+          fallbackDisplayName={fallbackDisplayName}
+          userId={userId}
+        />
       );
     }
 
@@ -108,7 +122,13 @@ export function AppScreenRouter({
   }
 
   if (activeScreen === "entry") {
-    return <EntryScreen onSaveEntry={onSaveEntry} state={ledgerState} />;
+    return (
+      <EntryScreen
+        onSaveEntries={onSaveEntryDrafts}
+        onSaveEntry={onSaveEntry}
+        state={ledgerState}
+      />
+    );
   }
 
   return (

@@ -72,7 +72,6 @@ export function NicknameSetupScreen({ onSubmit }: NicknameSetupScreenProps) {
     >
       <ScreenHeaderBlock
         eyebrow={AuthOnboardingMessages.nicknameEyebrow}
-        subtitle={AuthOnboardingMessages.nicknameSubtitle}
         title={AuthOnboardingMessages.nicknameTitle}
       />
       <View style={styles.card}>

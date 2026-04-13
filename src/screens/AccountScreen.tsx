@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { Keyboard, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { ActionButton } from "../components/ActionButton";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
@@ -8,9 +8,7 @@ import { AccountVersionFooter } from "../components/accountScreen/AccountVersion
 import { DeleteAccountModal } from "../components/accountScreen/DeleteAccountModal";
 import { AccountDeletionMessages } from "../constants/accountDeletionMessages";
 import { AppColors } from "../constants/colors";
-import { EmailAuthCopy } from "../constants/emailAuth";
 import { AppLayout } from "../constants/layout";
-import { LedgerBookNicknameCopy } from "../constants/ledgerBookNickname";
 import { AppMessages } from "../constants/messages";
 import {
   CardTitleTextStyle,
@@ -24,16 +22,23 @@ import { fetchOwnProfileDisplayName, updateOwnProfileDisplayName } from "../lib/
 import { isValidDisplayName, normalizeDisplayNameCandidate } from "../utils/displayName";
 
 type AccountScreenProps = {
+  accountProviderLabel: string;
   email: string;
   fallbackDisplayName: string;
   userId: string;
 };
 
-export function AccountScreen({ email, fallbackDisplayName, userId }: AccountScreenProps) {
+export function AccountScreen({
+  accountProviderLabel,
+  email,
+  fallbackDisplayName,
+  userId,
+}: AccountScreenProps) {
   const [displayName, setDisplayName] = useState(fallbackDisplayName);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [hasError, setHasError] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isSavingDisplayName, setIsSavingDisplayName] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -60,21 +65,34 @@ export function AccountScreen({ email, fallbackDisplayName, userId }: AccountScr
   }, [fallbackDisplayName, userId]);
 
   const handleSaveDisplayName = async () => {
+    if (isSavingDisplayName) {
+      return;
+    }
+
     if (!isValidDisplayName(displayName)) {
       setHasError(true);
       setStatusMessage(AppMessages.accountNicknameRequiredError);
       return;
     }
 
+    setIsSavingDisplayName(true);
+
     try {
       const savedDisplayName = await updateOwnProfileDisplayName(userId, displayName);
       setDisplayName(savedDisplayName || fallbackDisplayName);
       setHasError(false);
       setStatusMessage(AppMessages.accountNicknameSuccess);
+      Keyboard.dismiss();
     } catch {
       setHasError(true);
       setStatusMessage(AppMessages.accountNicknameError);
+    } finally {
+      setIsSavingDisplayName(false);
     }
+  };
+
+  const handlePressSaveDisplayName = () => {
+    void handleSaveDisplayName();
   };
 
   return (
@@ -82,35 +100,30 @@ export function AccountScreen({ email, fallbackDisplayName, userId }: AccountScr
       <View style={[styles.card, styles.primaryCard]}>
         <Text style={styles.cardTitle}>{AppMessages.accountSessionTitle}</Text>
         <InfoRow label={AppMessages.accountEmail} value={email} />
-        <InfoRow label={AppMessages.accountProvider} value={EmailAuthCopy.accountProviderValue} />
+        <InfoRow label={AppMessages.accountProvider} value={accountProviderLabel} />
       </View>
       <View style={styles.card}>
         <Text style={styles.cardTitle}>{AppMessages.accountNicknameTitle}</Text>
-        <View style={styles.inlineEditRow}>
-          <TextInput
-            onChangeText={(value) => {
-              setDisplayName(value);
-              if (statusMessage) {
-                setStatusMessage(null);
-              }
-            }}
-            placeholder={fallbackDisplayName || AppMessages.accountNicknamePlaceholder}
-            autoComplete="nickname"
-            autoCapitalize="words"
-            autoCorrect={false}
-            importantForAutofill="no"
-            textContentType="none"
-            style={styles.inlineInput}
-            value={displayName}
-          />
-          <View style={styles.nicknameActionSlot}>
-            <ActionButton
-              label={AppMessages.accountNicknameSave}
-              onPress={handleSaveDisplayName}
-              variant="primary"
-            />
-          </View>
-        </View>
+        <TextInput
+          onChangeText={(value) => {
+            setDisplayName(value);
+            if (statusMessage) {
+              setStatusMessage(null);
+            }
+          }}
+          placeholder={fallbackDisplayName || AppMessages.accountNicknamePlaceholder}
+          autoCapitalize="words"
+          autoComplete="nickname"
+          autoCorrect={false}
+          submitBehavior="blurAndSubmit"
+          importantForAutofill="no"
+          onSubmitEditing={handlePressSaveDisplayName}
+          placeholderTextColor={AppColors.mutedText}
+          returnKeyType="done"
+          style={styles.inlineInput}
+          textContentType="none"
+          value={displayName}
+        />
         {statusMessage ? (
           <Text style={[styles.statusText, hasError ? styles.errorText : styles.successText]}>
             {statusMessage}
@@ -173,18 +186,8 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   label: CompactLabelTextStyle,
-  input: FormInputTextStyle,
-  inlineEditRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
   inlineInput: {
     ...FormInputTextStyle,
-    flex: 1,
-  },
-  nicknameActionSlot: {
-    minWidth: LedgerBookNicknameCopy.actionMinWidth,
   },
   value: {
     color: AppColors.text,

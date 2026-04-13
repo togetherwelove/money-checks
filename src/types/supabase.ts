@@ -7,6 +7,7 @@ export type LedgerEntryRow = {
   occurred_on: string;
   amount: number;
   currency: string;
+  content: string;
   category: string;
   note: string;
   metadata: Record<string, unknown>;

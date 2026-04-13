@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import type { MonthPage } from "../components/monthCalendarPager/monthCalendarPagerUtils";
 import type { LedgerEntry, LedgerEntryDraft } from "../types/ledger";
 import { addMonths, getMonthKey, parseIsoDate, startOfMonth, toIsoDate } from "../utils/calendar";
-import { createDraft, sanitizeAmountInput } from "../utils/ledgerEntries";
+import { canSubmitDraft, createDraft, sanitizeAmountInput } from "../utils/ledgerEntries";
 import {
   getChartMonthDataFromCache,
   getMonthPageFromCache,
@@ -101,39 +101,69 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
   };
 
   const handleSaveEntry = async () => {
+    const savedEntry = await persistDraftEntry(draft, editingEntryId);
+    if (!savedEntry) {
+      return null;
+    }
+
+    resetEditor(draft.date);
+    return savedEntry;
+  };
+
+  const handleSaveEntryDrafts = async (drafts: LedgerEntryDraft[]) => {
+    const savedEntries: LedgerEntry[] = [];
+
+    for (const queuedDraft of drafts) {
+      const savedEntry = await persistDraftEntry(queuedDraft, null);
+      if (savedEntry) {
+        savedEntries.push(savedEntry);
+      }
+    }
+
+    if (savedEntries.length > 0) {
+      resetEditor(selectedDate);
+    }
+
+    return savedEntries;
+  };
+
+  const persistDraftEntry = async (
+    draftToSave: LedgerEntryDraft,
+    targetEditingEntryId: string | null,
+  ) => {
     if (!activeBook) {
       return null;
     }
 
-    const amount = Number(draft.amount);
-    if (!amount || !draft.category.trim()) {
+    if (!canSubmitDraft(draftToSave)) {
       return null;
     }
 
+    const amount = Number(draftToSave.amount);
     const nextEntry: LedgerEntry = {
-      id: editingEntryId ?? "",
-      date: selectedDate,
-      type: draft.type,
+      id: targetEditingEntryId ?? "",
+      date: draftToSave.date,
+      type: draftToSave.type,
       amount,
-      category: draft.category.trim(),
-      note: draft.note.trim(),
+      content: draftToSave.content.trim(),
+      category: draftToSave.category.trim(),
+      note: draftToSave.note.trim(),
       sourceType: "manual",
     };
 
     const savedEntry = await saveLedgerEntry({
       activeBookId: activeBook.id,
-      editingEntryId,
+      editingEntryId: targetEditingEntryId,
       entry: nextEntry,
       trackBusyTask,
       userId: session.user.id,
     });
     setEntries((currentEntries) =>
-      editingEntryId
+      targetEditingEntryId
         ? currentEntries.map((entry) => (entry.id === savedEntry.id ? savedEntry : entry))
         : [...currentEntries, savedEntry],
     );
 
-    resetEditor(selectedDate);
     return savedEntry;
   };
 
@@ -152,6 +182,7 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
       date: entry.date,
       type: entry.type,
       amount: String(entry.amount),
+      content: entry.content,
       category: entry.category,
       note: entry.note,
     });
@@ -191,6 +222,7 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
     handleDeleteEntry,
     handleEditEntry,
     handleSaveEntry,
+    handleSaveEntryDrafts,
     handleSelectDate,
     resetEditor,
     updateDraftField: (field, value) =>

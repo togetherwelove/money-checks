@@ -1,6 +1,6 @@
 import { Alert } from "react-native";
 
-import { buildAnnualReportConfirmMessage } from "../../constants/annualReport";
+import { AnnualReportCopy, buildAnnualReportConfirmMessage } from "../../constants/annualReport";
 import { CommonActionCopy } from "../../constants/commonActions";
 import { appPlatform } from "../appPlatform";
 import { showNativeToast } from "../nativeToast";
@@ -37,28 +37,34 @@ export async function confirmAndDownloadAnnualReport(params: DownloadAnnualRepor
   }
 
   const XLSX = await import("xlsx");
-  const FileSystem = await import("expo-file-system/legacy");
+  const fileSystem = (await import("expo-file-system")) as unknown as {
+    File: new (
+      ...segments: string[]
+    ) => {
+      create: (options?: { overwrite?: boolean }) => void;
+      uri: string;
+      write: (content: Uint8Array) => void;
+    };
+    Paths: {
+      cache: string;
+    };
+  };
   const Sharing = await import("expo-sharing");
-  const cacheDirectory = FileSystem.cacheDirectory;
-  if (!cacheDirectory) {
-    throw new Error("보고서를 만들지 못했습니다.");
-  }
-  const fileUri = `${cacheDirectory}${fileName}`;
-  const base64 = XLSX.write(workbook, { bookType: "xlsx", type: "base64" });
+  const reportFile = new fileSystem.File(fileSystem.Paths.cache, fileName);
+  const workbookBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
 
-  await FileSystem.writeAsStringAsync(fileUri, base64, {
-    encoding: FileSystem.EncodingType.Base64,
-  });
+  reportFile.create({ overwrite: true });
+  reportFile.write(new Uint8Array(workbookBuffer));
 
   if (await Sharing.isAvailableAsync()) {
-    await Sharing.shareAsync(fileUri, {
+    await Sharing.shareAsync(reportFile.uri, {
       dialogTitle: fileName,
       mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       UTI: "org.openxmlformats.spreadsheetml.sheet",
     });
   }
 
-  showNativeToast("보고서를 준비했습니다.");
+  showNativeToast(AnnualReportCopy.successMessage);
   return true;
 }
 
@@ -69,14 +75,14 @@ async function confirmAnnualReportDownload(bookName: string, periodLabel: string
   }
 
   return new Promise<boolean>((resolve) => {
-    Alert.alert("보고서를 다운로드할까요?", message, [
+    Alert.alert(AnnualReportCopy.confirmTitle, message, [
       {
         style: "cancel",
         text: CommonActionCopy.cancel,
         onPress: () => resolve(false),
       },
       {
-        text: "다운로드",
+        text: AnnualReportCopy.downloadAction,
         onPress: () => resolve(true),
       },
     ]);

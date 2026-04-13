@@ -26,13 +26,14 @@ import { useSharedLedgerRealtimeNotifications } from "./src/hooks/useSharedLedge
 import { useSupabaseSession } from "./src/hooks/useSupabaseSession";
 import { getAppHeaderTitle, showsCalendarReturnAction } from "./src/lib/appHeaderTitle";
 import { appPlatform } from "./src/lib/appPlatform";
+import { resolveSessionAuthProviderLabel } from "./src/lib/authProvider";
 import { buildAppMenuItems } from "./src/lib/menuItems";
 import { updateOwnProfileDisplayName } from "./src/lib/profiles";
 import { AuthScreen } from "./src/screens/AuthScreen";
 import { NicknameSetupScreen } from "./src/screens/NicknameSetupScreen";
 import { PermissionOnboardingScreen } from "./src/screens/PermissionOnboardingScreen";
 import type { LedgerAppScreen } from "./src/types/app";
-import type { LedgerEntry } from "./src/types/ledger";
+import type { LedgerEntry, LedgerEntryDraft } from "./src/types/ledger";
 import { parseIsoDate, toIsoDate } from "./src/utils/calendar";
 import { resolveFallbackDisplayName } from "./src/utils/sessionDisplayName";
 
@@ -71,6 +72,7 @@ function SignedInApp({ session }: { session: Session }) {
     session.user.user_metadata,
     session.user.email,
   );
+  const accountProviderLabel = resolveSessionAuthProviderLabel(session);
   const notifications = useLedgerNotifications(session.user.id);
   const ledgerState = useLedgerScreenState(session);
   const annualReport = useAnnualLedgerReportAction({
@@ -150,6 +152,18 @@ function SignedInApp({ session }: { session: Session }) {
     }
 
     await notifications.notifySavedEntry(savedEntry, currentEntries);
+    handleOpenCalendar();
+  };
+
+  const handleSaveEntryDrafts = async (drafts: LedgerEntryDraft[]) => {
+    const currentEntries = ledgerState.entries;
+    const savedEntries = await ledgerState.handleSaveEntryDrafts(drafts);
+
+    if (savedEntries.length === 0) {
+      return;
+    }
+
+    await notifications.notifySavedEntry(savedEntries[savedEntries.length - 1], currentEntries);
     handleOpenCalendar();
   };
 
@@ -247,6 +261,7 @@ function SignedInApp({ session }: { session: Session }) {
           <ScreenSlideTransition screenKey={activeScreen}>
             <AppScreenRouter
               activeScreen={activeScreen}
+              accountProviderLabel={accountProviderLabel}
               email={session.user.email ?? ""}
               fallbackDisplayName={fallbackDisplayName}
               ledgerState={ledgerState}
@@ -259,6 +274,7 @@ function SignedInApp({ session }: { session: Session }) {
               onOpenCharts={handleToggleCharts}
               onOpenEntry={handleOpenEntry}
               onSaveEntry={handleSaveEntry}
+              onSaveEntryDrafts={handleSaveEntryDrafts}
               onToggleNotificationPreference={notifications.updatePreference}
               onSelectCalendarDate={(isoDate) => {
                 ledgerState.handleSelectDate(isoDate);

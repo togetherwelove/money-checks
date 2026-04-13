@@ -105,7 +105,13 @@ const styles = StyleSheet.create({
 });
 
 function buildEntryMeta(entry: LedgerEntry): string {
-  const parts = [entry.category];
+  const parts = [];
+
+  if (entry.content.trim()) {
+    parts.push(entry.content.trim());
+  }
+
+  parts.push(entry.category);
 
   if (entry.note) {
     parts.push(entry.note);

@@ -49,7 +49,6 @@ export const CompactLabelTextStyle: TextStyle = {
 };
 
 export const FormInputTextStyle: TextStyle = {
-  minHeight: AuthControls.controlHeight,
   paddingHorizontal: AuthControls.horizontalPadding,
   paddingVertical: AuthControls.verticalPadding,
   borderWidth: 1,
@@ -58,6 +57,7 @@ export const FormInputTextStyle: TextStyle = {
   backgroundColor: AppColors.background,
   color: AppColors.text,
   fontSize: 16,
+  height: 40,
 };
 
 export const StatusMessageTextStyle: TextStyle = {

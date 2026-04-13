@@ -3,7 +3,6 @@ export const AuthOnboardingMessages = {
   nicknameError: "이름을 저장하지 못했어요. 다시 시도해 주세요.",
   nicknamePlaceholder: "내 이름",
   nicknamePrimaryAction: "다음",
-  nicknameSubtitle: "나중에 계정 설정에서 변경할 수 있어요.",
   nicknameTitle: "이름을 설정해 주세요",
   permissionNote:
     "알림 허용 여부는 기기 팝업에서 선택할 수 있고, 이후 알림설정에서 다시 확인할 수 있어요.",

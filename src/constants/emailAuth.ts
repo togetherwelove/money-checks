@@ -3,7 +3,6 @@ export const EmailAuthCopy = {
   supportLabel: "지출 기록, 공유 가계부, 월간 차트를 안전하게 이어서 관리",
   signIn: {
     title: "이메일로 안전하게 로그인",
-    subtitle: "이메일로 즉시 로그인할 수 있어요.",
     emailLabel: "이메일",
     emailPlaceholder: "이메일을 입력해 주세요",
     passwordLabel: "비밀번호",

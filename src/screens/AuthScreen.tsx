@@ -9,6 +9,7 @@ import { EmailAuthCopy } from "../constants/emailAuth";
 import { AppLayout } from "../constants/layout";
 import { AppMessages } from "../constants/messages";
 import { signInWithEmailPassword } from "../lib/auth/emailPasswordAuth";
+import { canUseGoogleSignIn, signInWithGoogle } from "../lib/auth/googleSignIn";
 import { SignUpScreen } from "./SignUpScreen";
 
 type AuthScreenProps = {
@@ -19,6 +20,7 @@ export function AuthScreen({ initialErrorMessage = null }: AuthScreenProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [screen, setScreen] = useState<"sign-in" | "sign-up">("sign-in");
+  const showGoogleSignIn = canUseGoogleSignIn();
 
   useEffect(() => {
     if (!initialErrorMessage) {
@@ -33,6 +35,14 @@ export function AuthScreen({ initialErrorMessage = null }: AuthScreenProps) {
       await signInWithEmailPassword(email, password);
     } catch (error) {
       console.error("[AuthScreen] Email password sign-in failed", error);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      console.error("[AuthScreen] Google sign-in failed", error);
     }
   };
 
@@ -54,11 +64,11 @@ export function AuthScreen({ initialErrorMessage = null }: AuthScreenProps) {
           <View style={styles.heroSection}>
             <Text style={styles.brand}>{AppMessages.brand}</Text>
             <Text style={styles.title}>{EmailAuthCopy.signIn.title}</Text>
-            <Text style={styles.subtitle}>{EmailAuthCopy.signIn.subtitle}</Text>
           </View>
 
           <EmailSignInCard
             email={email}
+            onGoogleSignIn={showGoogleSignIn ? handleGoogleSignIn : null}
             onChangeEmail={setEmail}
             onChangePassword={setPassword}
             onOpenSignUp={() => {

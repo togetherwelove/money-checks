@@ -1,88 +1,68 @@
 # Social Login Plan
 
 ## 목표
-- 현재 이메일 로그인 유지
-- Google 로그인 먼저 도입
-- Apple 로그인은 iOS 배포 준비 단계에서 추가
-- Supabase 세션은 `signInWithIdToken`으로 통일
+- 이메일 로그인 흐름은 유지한다.
+- Google 로그인은 Supabase OAuth 기준으로 통일한다.
+- Apple 로그인은 iOS 배포 준비 단계에서 같은 OAuth 기준으로 추가한다.
 
-## 현재 판단
-- 현재 프로젝트는 Expo SDK 54 기반이다.
-- 소셜 로그인은 `Expo Go`보다 `development build` 기준으로 준비하는 것이 맞다.
-- Windows 환경에서는 Google 로그인 구현과 Android 검증을 먼저 진행하고, iOS는 EAS Build와 실기기로 확인한다.
+## 현재 결정
+- `@react-native-google-signin/google-signin` 기반 `signInWithIdToken` 구조는 사용하지 않는다.
+- 네이티브 Google 로그인은 `supabase.auth.signInWithOAuth(...)`와 `expo-web-browser`를 사용한다.
+- 웹도 같은 Google OAuth provider를 사용한다.
+- 앱 딥링크는 `moneychecks://auth/callback` 기준으로 맞춘다.
 
-## 권장 라이브러리
-- Google: `@react-native-google-signin/google-signin`
-- Apple: `expo-apple-authentication`
+## 이유
+- iOS에서 Google native SDK + `signInWithIdToken` 조합은 URL scheme, audience, nonce 검증까지 맞춰야 해서 유지 비용이 크다.
+- Supabase OAuth 경로는 provider 설정과 redirect allow-list만 맞으면 플랫폼별 동작이 단순하다.
+- 현재 앱은 Expo development build와 EAS Build를 같이 쓰므로, 브라우저 세션 기반 OAuth가 가장 일관적이다.
 
-## Supabase 연동 방식
-- Google 로그인 성공 후 `idToken`을 Supabase에 전달한다.
-- Apple 로그인 성공 후 `identityToken`을 Supabase에 전달한다.
-- 공통 세션화 경로:
-  - `supabase.auth.signInWithIdToken({ provider: "google", token })`
-  - `supabase.auth.signInWithIdToken({ provider: "apple", token })`
+## 현재 구현 상태
+- 로그인 화면에 Google 로그인 버튼 표시
+- 네이티브
+  - `supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo, skipBrowserRedirect: true } })`
+  - `WebBrowser.openAuthSessionAsync(...)`
+  - 리다이렉트 URL에서 `access_token`, `refresh_token` 추출 후 `supabase.auth.setSession(...)`
+- 웹
+  - `supabase.auth.signInWithOAuth({ provider: "google" })`
+- 앱 scheme
+  - `moneychecks`
 
-## 구현 순서
-1. 현재 이메일 로그인 유지
-2. `development build` 전환 준비
-3. Google 로그인 버튼과 인증 모듈 추가
-4. Android에서 Google 로그인 검증
-5. EAS Build로 iOS development build 검증
-6. Apple 로그인 추가
-7. App Store 배포 전 Apple 심사 요건 확인
+## 환경변수
+- 현재 구조에서 필요한 값
+  - `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`
+- 현재 구조에서 불필요한 값
+  - `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`
 
-## Google 도입 체크리스트
-- 패키지 설치
-  - `@react-native-google-signin/google-signin`
-- 환경 변수 추가
-  - Android client id
-  - iOS client id
-  - Web client id 또는 server client id
-- Google Cloud Console 설정
-  - Android 앱 등록
-  - iOS 앱 등록
-  - 필요 시 SHA fingerprint 등록
-- Supabase Dashboard
-  - Google provider 활성화
-- 앱 코드
-  - 로그인 버튼 추가
-  - Google 로그인 성공 후 `idToken` 추출
-  - Supabase `signInWithIdToken` 호출
+## 변경된 파일
+- `C:/git/money-checks/src/lib/auth/googleSignIn.native.ts`
+- `C:/git/money-checks/src/lib/auth/googleSignIn.web.ts`
+- `C:/git/money-checks/src/lib/auth/googleAuthSession.ts`
+- `C:/git/money-checks/src/constants/authRedirect.ts`
+- `C:/git/money-checks/src/constants/googleAuth.ts`
+- `C:/git/money-checks/app.config.ts`
 
-## Apple 도입 체크리스트
-- Apple Developer Program 준비
-- 패키지 설치
-  - `expo-apple-authentication`
-- Apple Developer 설정
-  - App ID
-  - Sign in with Apple 활성화
-  - 필요 시 Service ID / Key / Team ID
-- Supabase Dashboard
-  - Apple provider 활성화
-- 앱 코드
-  - iOS에서만 버튼 노출
-  - `identityToken` 추출
-  - Supabase `signInWithIdToken` 호출
+## 외부 설정 체크리스트
+### Supabase
+- Authentication > Providers > Google 활성화
+- Google client ID 목록 입력
+- Google client secret 입력
+- Redirect URL allow-list에 아래 값 추가
+  - `moneychecks://auth/callback`
+  - 필요하면 `moneychecks://**`
 
-## 현재 프로젝트에서 바뀔 파일 후보
-- `C:/git/money-checks/src/screens/AuthScreen.tsx`
-- `C:/git/money-checks/src/components/authScreen/*`
-- `C:/git/money-checks/src/lib/auth/*`
-- `C:/git/money-checks/src/lib/supabase.ts`
-- `C:/git/money-checks/app.json`
-- `C:/git/money-checks/package.json`
+### Google Cloud
+- Google provider용 OAuth client 생성
+- Supabase Dashboard에 web client ID / secret 반영
+- iOS native SDK용 client ID는 현재 구조에서 필요 없다
 
-## Windows 기준 운영 방식
-- 구현: Windows에서 진행
-- Android 검증: 로컬
-- iOS 검증: EAS Build + 실기기
-- 로컬 Xcode 디버깅은 포기하고, iOS 네이티브 이슈는 빌드 로그와 실기기 테스트로 확인
+## 실행 체크리스트
+1. 의존성 설치
+2. Expo 서버 재시작
+3. iOS development build 재설치
+4. 로그인 화면에서 Google 로그인 실행
+5. 브라우저 인증 후 앱 복귀 확인
+6. Supabase 세션 생성 확인
 
-## 우선순위
-- 1순위: Google 로그인
-- 2순위: iOS development build 확인
-- 3순위: Apple 로그인
-
-## 비고
-- Google 같은 서드파티 로그인을 App Store 제출 버전에 포함하면 Apple 로그인도 같이 준비하는 편이 안전하다.
-- 실제 도입 턴에서는 먼저 Google만 붙이고, Apple은 별도 작업으로 분리한다.
+## 주의사항
+- 이 구조는 Expo Go가 아니라 development build 기준으로 검증한다.
+- 네이티브 설정 변경이 포함되면 JS 새로고침이 아니라 EAS iOS build 재설치가 필요할 수 있다.
