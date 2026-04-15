@@ -36,12 +36,23 @@ export function CategorySelector({
   const {
     customCategories,
     hiddenSystemCategoryIds,
+    systemCategoryIconOverrides,
     saveCustomCategories,
     saveHiddenSystemCategoryIds,
+    saveSystemCategoryIconOverrides,
   } = useCustomCategories(entryType);
+  const overriddenBaseCategories = useMemo(
+    () =>
+      categories.map((category) => ({
+        ...category,
+        iconName: systemCategoryIconOverrides[category.id] ?? category.iconName,
+      })),
+    [categories, systemCategoryIconOverrides],
+  );
   const visibleBaseCategories = useMemo(
-    () => categories.filter((category) => !hiddenSystemCategoryIds.includes(category.id)),
-    [categories, hiddenSystemCategoryIds],
+    () =>
+      overriddenBaseCategories.filter((category) => !hiddenSystemCategoryIds.includes(category.id)),
+    [hiddenSystemCategoryIds, overriddenBaseCategories],
   );
   const mergedCategories = useMemo(
     () => mergeCustomCategories(visibleBaseCategories, customCategories),
@@ -115,6 +126,21 @@ export function CategorySelector({
           const nextCustomCategories = nextCategories.filter(
             (category) => category.source === "custom",
           );
+          const nextSystemCategoryIconOverrides = Object.fromEntries(
+            nextCategories
+              .filter((category) => category.source === "system")
+              .map((category) => {
+                const baseCategory = categories.find(
+                  (currentCategory) => currentCategory.id === category.id,
+                );
+                return baseCategory && baseCategory.iconName !== category.iconName
+                  ? [category.id, category.iconName]
+                  : null;
+              })
+              .filter((entry): entry is [string, (typeof nextCategories)[number]["iconName"]] =>
+                Boolean(entry),
+              ),
+          );
           const nextHiddenSystemCategoryIds = categories
             .filter((category) => category.source === "system")
             .map((category) => category.id)
@@ -126,6 +152,7 @@ export function CategorySelector({
             sortCustomCategoriesByVisibleOrder(nextCustomCategories, nextCategories),
           );
           saveHiddenSystemCategoryIds(nextHiddenSystemCategoryIds);
+          saveSystemCategoryIconOverrides(nextSystemCategoryIconOverrides);
           commitOrderedCategories(nextCategories);
 
           if (previousSelectedCustomCategory) {

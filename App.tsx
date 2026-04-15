@@ -17,18 +17,25 @@ import { ScreenSlideTransition } from "./src/components/ScreenSlideTransition";
 import { AnnualReportRangePickerModal } from "./src/components/annualReport/AnnualReportRangePickerModal";
 import { NativeYearPickerModal } from "./src/components/calendarPicker/NativeYearPickerModal";
 import { AppColors } from "./src/constants/colors";
+import { EntryRegistrationCopy } from "./src/constants/entryRegistration";
 import { AppMessages } from "./src/constants/messages";
 import { useAnnualLedgerReportAction } from "./src/hooks/useAnnualLedgerReportAction";
 import { useAuthOnboarding } from "./src/hooks/useAuthOnboarding";
 import { useLedgerNotifications } from "./src/hooks/useLedgerNotifications";
 import { useLedgerScreenState } from "./src/hooks/useLedgerScreenState";
-import { useSharedLedgerRealtimeNotifications } from "./src/hooks/useSharedLedgerRealtimeNotifications";
 import { useSupabaseSession } from "./src/hooks/useSupabaseSession";
 import { getAppHeaderTitle, showsCalendarReturnAction } from "./src/lib/appHeaderTitle";
 import { appPlatform } from "./src/lib/appPlatform";
 import { resolveSessionAuthProviderLabel } from "./src/lib/authProvider";
+import { logAppError } from "./src/lib/logAppError";
 import { buildAppMenuItems } from "./src/lib/menuItems";
-import { updateOwnProfileDisplayName } from "./src/lib/profiles";
+import { showNativeToast } from "./src/lib/nativeToast";
+import { fetchOwnProfileDisplayName, updateOwnProfileDisplayName } from "./src/lib/profiles";
+import {
+  createOtherMemberCreatedEntryEvent,
+  createOtherMemberDeletedEntryEvent,
+  createOtherMemberUpdatedEntryEvent,
+} from "./src/notifications/domain/notificationEventFactories";
 import { AuthScreen } from "./src/screens/AuthScreen";
 import { NicknameSetupScreen } from "./src/screens/NicknameSetupScreen";
 import { PermissionOnboardingScreen } from "./src/screens/PermissionOnboardingScreen";
@@ -68,6 +75,7 @@ function SignedInApp({ session }: { session: Session }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNicknameScreenReady, setIsNicknameScreenReady] = useState(false);
   const [isYearPickerOpen, setIsYearPickerOpen] = useState(false);
+  const [blockingTaskCount, setBlockingTaskCount] = useState(0);
   const fallbackDisplayName = resolveFallbackDisplayName(
     session.user.user_metadata,
     session.user.email,
@@ -80,18 +88,19 @@ function SignedInApp({ session }: { session: Session }) {
     currentUserId: session.user.id,
     visibleMonth: ledgerState.visibleMonth,
   });
+  const trackBlockingTask = async <T,>(task: () => Promise<T>) => {
+    setBlockingTaskCount((currentCount) => currentCount + 1);
+    try {
+      return await task();
+    } finally {
+      setBlockingTaskCount((currentCount) => Math.max(0, currentCount - 1));
+    }
+  };
   const authOnboarding = useAuthOnboarding({
     fallbackDisplayName,
     isNotificationSupported: notifications.isSupported,
     permissionState: notifications.permissionState,
     userId: session.user.id,
-  });
-
-  useSharedLedgerRealtimeNotifications({
-    activeBook: ledgerState.activeBook,
-    currentUserId: session.user.id,
-    entries: ledgerState.entries,
-    notifyLedgerEvent: notifications.notifyLedgerEvent,
   });
 
   const handleOpenCalendar = () => setActiveScreen("calendar");
@@ -146,30 +155,92 @@ function SignedInApp({ session }: { session: Session }) {
 
   const handleSaveEntry = async () => {
     const currentEntries = ledgerState.entries;
-    const savedEntry = await ledgerState.handleSaveEntry();
-    if (!savedEntry) {
+    const wasEditingEntry = Boolean(ledgerState.editingEntryId);
+    let savedEntries: LedgerEntry[] = [];
+    try {
+      savedEntries = await ledgerState.handleSaveEntry();
+    } catch (error) {
+      logAppError("App", error, {
+        step: "save_entry",
+      });
+      showNativeToast(resolveLedgerSaveErrorMessage(error));
+      return;
+    }
+    if (savedEntries.length === 0) {
       return;
     }
 
-    await notifications.notifySavedEntry(savedEntry, currentEntries);
     handleOpenCalendar();
+    void runEntrySaveSideEffects(
+      savedEntries,
+      currentEntries,
+      wasEditingEntry ? "update" : "create",
+    );
   };
 
   const handleSaveEntryDrafts = async (drafts: LedgerEntryDraft[]) => {
     const currentEntries = ledgerState.entries;
-    const savedEntries = await ledgerState.handleSaveEntryDrafts(drafts);
+    let savedEntries: LedgerEntry[] = [];
+    try {
+      savedEntries = await ledgerState.handleSaveEntryDrafts(drafts);
+    } catch (error) {
+      logAppError("App", error, {
+        entryCount: drafts.length,
+        step: "save_entry_drafts",
+      });
+      showNativeToast(resolveLedgerSaveErrorMessage(error));
+      return;
+    }
 
     if (savedEntries.length === 0) {
       return;
     }
 
-    await notifications.notifySavedEntry(savedEntries[savedEntries.length - 1], currentEntries);
     handleOpenCalendar();
+    void runQueuedEntrySaveSideEffects(savedEntries, currentEntries);
   };
 
   const handleEditEntryFromCalendar = (entry: LedgerEntry) => {
     ledgerState.handleEditEntry(entry);
     handleOpenEntry();
+  };
+
+  const handleSettleInstallmentEntry = async (entry: LedgerEntry) => {
+    try {
+      const savedSettlementEntry = await ledgerState.handleSettleInstallmentEntry(entry);
+      if (!savedSettlementEntry) {
+        showNativeToast(EntryRegistrationCopy.installmentSettleUnavailable);
+        return;
+      }
+
+      handleOpenCalendar();
+      showNativeToast(EntryRegistrationCopy.installmentSettleSuccess);
+    } catch (error) {
+      logAppError("App", error, {
+        entryId: entry.id,
+        installmentGroupId: entry.installmentGroupId,
+        step: "settle_installment_entry",
+      });
+      showNativeToast(resolveLedgerSaveErrorMessage(error));
+    }
+  };
+
+  const handleDeleteEntryFromCalendar = async (entry: LedgerEntry) => {
+    await ledgerState.handleDeleteEntry(entry.id);
+
+    if (!ledgerState.activeBook) {
+      return;
+    }
+
+    const actorName = await resolveCurrentActorName();
+    await notifications.sendPushNotificationToBookMembers(
+      ledgerState.activeBook.id,
+      createOtherMemberDeletedEntryEvent(
+        { actorName, bookName: ledgerState.activeBook.name },
+        { ...entry, authorId: session.user.id, authorName: actorName },
+      ),
+      [session.user.id],
+    );
   };
 
   useEffect(() => {
@@ -268,19 +339,27 @@ function SignedInApp({ session }: { session: Session }) {
               notificationPreferenceGroups={notifications.preferenceGroups}
               notificationPermissionLabel={notifications.permissionLabel}
               notificationStatusMessage={notifications.statusMessage}
-              onChangeNotificationThresholdPeriod={notifications.updateThresholdPeriod}
+              onChangeNotificationThresholdEnabled={notifications.updateThresholdEnabled}
               onChangeNotificationThreshold={notifications.updateThresholdValue}
+              onDeleteSelectedEntry={handleDeleteEntryFromCalendar}
               onEditSelectedEntry={handleEditEntryFromCalendar}
               onOpenCharts={handleToggleCharts}
               onOpenEntry={handleOpenEntry}
               onSaveEntry={handleSaveEntry}
               onSaveEntryDrafts={handleSaveEntryDrafts}
+              onSettleInstallmentEntry={handleSettleInstallmentEntry}
+              onSendPendingJoinRequestNotification={
+                notifications.sendPendingJoinRequestNotification
+              }
+              onSendPushNotificationToBookMembers={notifications.sendPushNotificationToBookMembers}
+              onSendPushNotificationToUsers={notifications.sendPushNotificationToUsers}
               onToggleNotificationPreference={notifications.updatePreference}
               onSelectCalendarDate={(isoDate) => {
                 ledgerState.handleSelectDate(isoDate);
                 handleOpenCalendar();
               }}
               showNotificationSettings={notifications.showNotificationSettings}
+              trackBlockingTask={trackBlockingTask}
               userId={session.user.id}
             />
           </ScreenSlideTransition>
@@ -314,11 +393,130 @@ function SignedInApp({ session }: { session: Session }) {
           startDate={annualReport.customRangeDraft?.startDate ?? ledgerState.selectedDate}
         />
       </SafeAreaView>
-      {ledgerState.isBusy || ledgerState.isLoading || annualReport.isDownloading ? (
+      {blockingTaskCount > 0 ||
+      ledgerState.isBusy ||
+      ledgerState.isLoading ||
+      annualReport.isDownloading ? (
         <BlockingOverlay />
       ) : null}
     </View>
   );
+
+  async function notifySharedLedgerEntryChange(
+    savedEntry: LedgerEntry,
+    changeType: "create" | "update",
+  ) {
+    if (!ledgerState.activeBook) {
+      return;
+    }
+
+    const actorName = await resolveCurrentActorName();
+    const event =
+      changeType === "create"
+        ? createOtherMemberCreatedEntryEvent(
+            { actorName, bookName: ledgerState.activeBook.name },
+            { ...savedEntry, authorId: session.user.id, authorName: actorName },
+          )
+        : createOtherMemberUpdatedEntryEvent(
+            { actorName, bookName: ledgerState.activeBook.name },
+            { ...savedEntry, authorId: session.user.id, authorName: actorName },
+          );
+
+    await notifications.sendPushNotificationToBookMembers(ledgerState.activeBook.id, event, [
+      session.user.id,
+    ]);
+  }
+
+  async function resolveCurrentActorName() {
+    try {
+      const displayName = (await fetchOwnProfileDisplayName(session.user.id)).trim();
+      return displayName || fallbackDisplayName;
+    } catch {
+      return fallbackDisplayName;
+    }
+  }
+
+  async function runEntrySaveSideEffects(
+    savedEntries: LedgerEntry[],
+    currentEntries: LedgerEntry[],
+    changeType: "create" | "update",
+  ) {
+    try {
+      const currentMonthEntries = savedEntries.filter(
+        (entry) => entry.date === ledgerState.selectedDate,
+      );
+      const lastCurrentMonthEntry = currentMonthEntries[currentMonthEntries.length - 1];
+
+      if (lastCurrentMonthEntry) {
+        await notifications.notifySavedEntry(lastCurrentMonthEntry, currentEntries);
+      }
+
+      for (const savedEntry of currentMonthEntries) {
+        await notifySharedLedgerEntryChange(savedEntry, changeType);
+      }
+    } catch (error) {
+      logAppError("App", error, {
+        changeType,
+        entryCount: savedEntries.length,
+        step: "run_entry_save_side_effects",
+      });
+    }
+  }
+
+  async function runQueuedEntrySaveSideEffects(
+    savedEntries: LedgerEntry[],
+    currentEntries: LedgerEntry[],
+  ) {
+    try {
+      const visibleSavedEntries = savedEntries.filter(
+        (entry) => !entry.installmentOrder || entry.installmentOrder === 1,
+      );
+      const lastSavedEntry = visibleSavedEntries[visibleSavedEntries.length - 1];
+      if (lastSavedEntry) {
+        await notifications.notifySavedEntry(lastSavedEntry, currentEntries);
+      }
+
+      for (const savedEntry of visibleSavedEntries) {
+        await notifySharedLedgerEntryChange(savedEntry, "create");
+      }
+    } catch (error) {
+      logAppError("App", error, {
+        entryCount: savedEntries.length,
+        step: "run_queued_entry_save_side_effects",
+      });
+    }
+  }
+}
+
+function resolveLedgerSaveErrorMessage(error: unknown): string {
+  const errorText = extractLedgerSaveErrorText(error);
+
+  if (
+    errorText.includes("column") &&
+    (errorText.includes("content") ||
+      errorText.includes("installment_group_id") ||
+      errorText.includes("installment_months") ||
+      errorText.includes("installment_order")) &&
+    errorText.includes("does not exist")
+  ) {
+    return EntryRegistrationCopy.saveMigrationError;
+  }
+
+  return EntryRegistrationCopy.saveError;
+}
+
+function extractLedgerSaveErrorText(error: unknown): string {
+  if (!error || typeof error !== "object") {
+    return "";
+  }
+
+  const candidate = error as {
+    details?: string | null;
+    hint?: string | null;
+    message?: string | null;
+  };
+
+  return [candidate.message, candidate.details, candidate.hint].filter(Boolean).join(" ");
 }
 
 const styles = StyleSheet.create({

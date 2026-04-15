@@ -4,21 +4,15 @@ import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { NotificationSettingsCard } from "../components/accountScreen/NotificationSettingsCard";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
-import type {
-  NotificationThresholdKey,
-  NotificationThresholdPeriod,
-} from "../notifications/domain/notificationEvents";
+import type { NotificationThresholdKey } from "../notifications/domain/notificationEvents";
 import type { NotificationPreferenceGroup } from "../notifications/preferences/notificationPreferences";
 
 type NotificationSettingsScreenProps = {
   notificationPermissionLabel: string;
   notificationPreferenceGroups: NotificationPreferenceGroup[];
   notificationStatusMessage: string;
+  onChangeNotificationThresholdEnabled: (key: NotificationThresholdKey, enabled: boolean) => void;
   onChangeNotificationThreshold: (key: NotificationThresholdKey, value: string) => void;
-  onChangeNotificationThresholdPeriod: (
-    key: NotificationThresholdKey,
-    period: NotificationThresholdPeriod,
-  ) => void;
   onToggleNotificationPreference: (
     eventType: NotificationPreferenceGroup["items"][number]["type"],
     enabled: boolean,
@@ -29,14 +23,14 @@ export function NotificationSettingsScreen({
   notificationPermissionLabel,
   notificationPreferenceGroups,
   notificationStatusMessage,
+  onChangeNotificationThresholdEnabled,
   onChangeNotificationThreshold,
-  onChangeNotificationThresholdPeriod,
   onToggleNotificationPreference,
 }: NotificationSettingsScreenProps) {
   return (
     <KeyboardAwareScrollView contentContainerStyle={styles.content} style={styles.screen}>
       <NotificationSettingsCard
-        onChangeThresholdPeriod={onChangeNotificationThresholdPeriod}
+        onChangeThresholdEnabled={onChangeNotificationThresholdEnabled}
         onChangeThresholdValue={onChangeNotificationThreshold}
         onTogglePreference={onToggleNotificationPreference}
         permissionLabel={notificationPermissionLabel}

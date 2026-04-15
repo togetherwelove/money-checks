@@ -52,10 +52,12 @@ export type LedgerScreenState = {
   visibleMonth: Date;
   handleDeleteEntry: (entryId: string) => Promise<void>;
   handleEditEntry: (entry: LedgerEntry) => void;
-  handleSaveEntry: () => Promise<LedgerEntry | null>;
+  handleSaveEntry: () => Promise<LedgerEntry[]>;
   handleSaveEntryDrafts: (drafts: LedgerEntryDraft[]) => Promise<LedgerEntry[]>;
+  handleSettleInstallmentEntry: (entry: LedgerEntry) => Promise<LedgerEntry | null>;
   handleSelectDate: (isoDate: string) => void;
   resetEditor: (isoDate: string) => void;
   updateDraftField: (field: keyof LedgerEntryDraft, value: string) => void;
+  updateDraftInstallmentMonths: (installmentMonths: number) => void;
   updateDraftType: (type: LedgerEntryType) => void;
 };

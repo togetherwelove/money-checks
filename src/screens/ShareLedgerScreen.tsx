@@ -10,6 +10,7 @@ import { DEFAULT_MEMBER_DISPLAY_NAME } from "../constants/ledgerDisplay";
 import { fetchLedgerBookMembers } from "../lib/ledgerBooks";
 import { fetchProfileDisplayName } from "../lib/profiles";
 import { supabase } from "../lib/supabase";
+import type { NotificationEvent } from "../notifications/domain/notificationEvents";
 import type { LedgerBook } from "../types/ledgerBook";
 import type {
   JoinSharedLedgerBookAttempt,
@@ -25,6 +26,17 @@ type ShareLedgerScreenProps = {
   onLeaveSharedLedgerBook: () => Promise<boolean>;
   onRemoveSharedLedgerMember: (targetUserId: string) => Promise<boolean>;
   onRejectJoinRequest: (requestId: string) => Promise<boolean>;
+  onSendPendingJoinRequestNotification: (requesterName: string) => Promise<void>;
+  onSendPushNotificationToBookMembers: (
+    bookId: string,
+    event: NotificationEvent,
+    excludeUserIds: string[],
+  ) => Promise<void>;
+  onSendPushNotificationToUsers: (
+    event: NotificationEvent,
+    targetUserIds: string[],
+    bookId?: string,
+  ) => Promise<void>;
   pendingJoinRequests: LedgerBookJoinRequest[];
   userId: string;
 };
@@ -36,6 +48,9 @@ export function ShareLedgerScreen({
   onJoinSharedLedgerBook,
   onRemoveSharedLedgerMember,
   onRejectJoinRequest,
+  onSendPendingJoinRequestNotification,
+  onSendPushNotificationToBookMembers,
+  onSendPushNotificationToUsers,
   pendingJoinRequests,
   userId,
 }: ShareLedgerScreenProps) {
@@ -115,6 +130,9 @@ export function ShareLedgerScreen({
         onLeaveSharedLedgerBook={onLeaveSharedLedgerBook}
         onJoinSharedLedgerBook={onJoinSharedLedgerBook}
         onRejectJoinRequest={onRejectJoinRequest}
+        onSendPendingJoinRequestNotification={onSendPendingJoinRequestNotification}
+        onSendPushNotificationToBookMembers={onSendPushNotificationToBookMembers}
+        onSendPushNotificationToUsers={onSendPushNotificationToUsers}
         pendingJoinRequests={pendingJoinRequests}
       />
     </KeyboardAwareScrollView>

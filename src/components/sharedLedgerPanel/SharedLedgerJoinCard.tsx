@@ -10,24 +10,20 @@ const JOIN_REQUEST_BLOCKED_MESSAGE =
 
 type SharedLedgerJoinCardProps = {
   canLeaveSharedBook: boolean;
-  hasJoinError: boolean;
   isJoinBlocked: boolean;
   onChangeShareCodeInput: (value: string) => void;
   onJoin: () => unknown;
   onLeave: () => unknown;
   shareCodeInput: string;
-  statusMessage: string | null;
 };
 
 export function SharedLedgerJoinCard({
   canLeaveSharedBook,
-  hasJoinError,
   isJoinBlocked,
   onChangeShareCodeInput,
   onJoin,
   onLeave,
   shareCodeInput,
-  statusMessage,
 }: SharedLedgerJoinCardProps) {
   return (
     <View style={styles.section}>
@@ -45,13 +41,8 @@ export function SharedLedgerJoinCard({
       {isJoinBlocked ? (
         <Text style={[styles.hintText, styles.errorText]}>{JOIN_REQUEST_BLOCKED_MESSAGE}</Text>
       ) : null}
-      {!statusMessage ? (
+      {!isJoinBlocked ? (
         <Text style={styles.hintText}>{AppMessages.accountJoinEmptyHint}</Text>
-      ) : null}
-      {statusMessage ? (
-        <Text style={[styles.statusText, hasJoinError ? styles.errorText : styles.successText]}>
-          {statusMessage}
-        </Text>
       ) : null}
       <View style={styles.actionRow}>
         <ActionButton

@@ -16,7 +16,7 @@ type NotificationEventDefinition = {
 
 export const NotificationUiCopy = {
   badgePath: "/apple-touch-icon.png",
-  defaultStatus: "이 기기의 알림 권한을 아직 선택하지 않았습니다.",
+  defaultStatus: "이 기기에서 알림 권한을 아직 선택하지 않았습니다.",
   enabledStatus: "이 기기에서 알림을 받을 수 있습니다.",
   entryTypeLabels: {
     expense: "지출",
@@ -26,21 +26,21 @@ export const NotificationUiCopy = {
   fallbackBookName: "공유 가계부",
   fallbackCategory: "미분류",
   fallbackDateLabel: "오늘",
-  fallbackEntryTypeLabel: "내역",
+  fallbackEntryTypeLabel: "기록",
   fallbackTargetName: "멤버",
   iconPath: "/logo192.png",
   menuDescription: "권한과 알림 기준을 관리합니다.",
-  menuTitle: "알림설정",
+  menuTitle: "알림 설정",
   permissionBlocked:
     "알림 권한이 차단되어 있습니다. iPhone 설정 또는 Safari 설정에서 다시 허용해 주세요.",
   permissionGranted: "허용됨",
   permissionPrompt: "아직 선택 안 함",
   permissionSectionTitle: "기기 알림",
-  permissionUnsupported: "이 환경에서는 웹 알림을 지원하지 않습니다.",
+  permissionUnsupported: "이 환경에서는 알림을 지원하지 않습니다.",
   periodFieldLabel: "기간",
   screenSubtitle: "알림 종류를 기능별로 나누어 켜고 끌 수 있습니다.",
-  screenTitle: "알림설정",
-  unsupportedStatus: "홈 화면에 추가된 웹앱과 지원 브라우저에서만 기기 알림을 사용할 수 있습니다.",
+  screenTitle: "알림 설정",
+  unsupportedStatus: "현재는 추가 설정 없이 지원 브라우저에서만 기기 알림을 사용할 수 있습니다.",
   zeroAmountLabel: "0원",
 } as const;
 
@@ -53,7 +53,7 @@ export const NotificationGroupCopy: Record<
     title: "공유 가계부 활동",
   },
   threshold: {
-    description: "금액 기준을 넘는 지출이 생기면 알립니다.",
+    description: "하루, 한 주, 한 달 지출 기준을 각각 설정할 수 있습니다.",
     title: "금액 기준 알림",
   },
 };
@@ -67,14 +67,30 @@ export const NotificationThresholdCopy: Record<
   NotificationThresholdKey,
   { description: string; label: string }
 > = {
-  expenseAmount: {
-    description: "선택한 기간의 지출 합계가 이 금액을 넘으면 알림을 보냅니다.",
-    label: "지출 기준",
+  expenseAmountDay: {
+    description: "하루 지출 합계가 설정한 금액을 넘으면 알림을 보냅니다.",
+    label: "하루 지출 기준",
+  },
+  expenseAmountWeek: {
+    description: "한 주 지출 합계가 설정한 금액을 넘으면 알림을 보냅니다.",
+    label: "한 주 지출 기준",
+  },
+  expenseAmountMonth: {
+    description: "한 달 지출 합계가 설정한 금액을 넘으면 알림을 보냅니다.",
+    label: "한 달 지출 기준",
   },
 };
 
 export const NotificationDefaultThresholds: Record<NotificationThresholdKey, number> = {
-  expenseAmount: 200000,
+  expenseAmountDay: 200000,
+  expenseAmountWeek: 0,
+  expenseAmountMonth: 0,
+};
+
+export const NotificationDefaultThresholdEnabled: Record<NotificationThresholdKey, boolean> = {
+  expenseAmountDay: true,
+  expenseAmountWeek: false,
+  expenseAmountMonth: false,
 };
 
 export const NotificationThresholdPeriodCopy: Record<NotificationThresholdPeriod, string> = {
@@ -93,21 +109,23 @@ export const NotificationDefaultThresholdPeriods: Record<
   NotificationThresholdKey,
   NotificationThresholdPeriod
 > = {
-  expenseAmount: "day",
+  expenseAmountDay: "day",
+  expenseAmountWeek: "week",
+  expenseAmountMonth: "month",
 };
 
 export const NotificationEventCopy: Record<NotificationEventType, NotificationEventDefinition> = {
   expense_limit_exceeded: {
     bodyTemplate:
-      "{periodLabel} 지출 합계가 {totalAmountLabel}이 되어 기준 {thresholdAmountLabel}을 넘었습니다.",
+      "{periodLabel} 지출 합계 기준을 넘었어요.\n현재 총 {totalAmountLabel} 지출했어요.",
     defaultEnabled: true,
-    description: "선택한 기간의 지출 합계가 설정한 지출 기준을 넘을 때 알립니다.",
+    description: "설정한 지출 기준을 넘을 때 알림을 보냅니다.",
     groupId: "threshold",
     label: "지출 기준 초과",
     title: "지출 기준 초과",
   },
   member_left_book: {
-    bodyTemplate: "{actorName}님이 {bookName}에서 나갔습니다.",
+    bodyTemplate: "{actorName}님이 {bookName}에서 나갔어요.",
     defaultEnabled: true,
     description: "다른 멤버가 공유 가계부에서 나가면 알립니다.",
     groupId: "sharedLedger",
@@ -115,7 +133,7 @@ export const NotificationEventCopy: Record<NotificationEventType, NotificationEv
     title: "공유 멤버 나감",
   },
   member_joined_book: {
-    bodyTemplate: "{actorName}님이 {bookName}에 참여했습니다.",
+    bodyTemplate: "{actorName}님이 {bookName}에 참여했어요.",
     defaultEnabled: true,
     description: "공유 가계부에 새로운 멤버가 참여하면 알립니다.",
     groupId: "sharedLedger",
@@ -123,7 +141,7 @@ export const NotificationEventCopy: Record<NotificationEventType, NotificationEv
     title: "공유 멤버 참여",
   },
   member_removed_from_book: {
-    bodyTemplate: "{actorName}님이 나를 {bookName}에서 제외했습니다.",
+    bodyTemplate: "{actorName}님이 나를 {bookName}에서 제외했어요.",
     defaultEnabled: true,
     description: "내가 공유 가계부에서 제외되면 알립니다.",
     groupId: "sharedLedger",
@@ -132,30 +150,30 @@ export const NotificationEventCopy: Record<NotificationEventType, NotificationEv
   },
   other_member_created_entry: {
     bodyTemplate:
-      "{actorName}님이 {bookName}에 {entryTypeLabel} {amountLabel} 내역을 추가했습니다. 분류: {category}.{noteSentence}",
+      "{actorName}님이 {bookName}에 {entryTypeLabel} {amountLabel} 기록을 추가했어요. 분류: {category}.{noteSentence}",
     defaultEnabled: true,
-    description: "다른 멤버가 내역을 새로 추가하면 알립니다.",
+    description: "다른 멤버가 기록을 새로 추가하면 알립니다.",
     groupId: "sharedLedger",
-    label: "다른 멤버가 내역 추가",
-    title: "공유 내역 추가",
+    label: "다른 멤버가 추가했을 때",
+    title: "공유 기록 추가",
   },
   other_member_deleted_entry: {
     bodyTemplate:
-      "{actorName}님이 {bookName}에서 {entryTypeLabel} {amountLabel} 내역을 삭제했습니다. 분류: {category}.",
+      "{actorName}님이 {bookName}에서 {entryTypeLabel} {amountLabel} 기록을 삭제했어요. 분류: {category}.",
     defaultEnabled: true,
-    description: "다른 멤버가 내역을 삭제하면 알립니다.",
+    description: "다른 멤버가 기록을 삭제하면 알립니다.",
     groupId: "sharedLedger",
-    label: "다른 멤버가 내역 삭제",
-    title: "공유 내역 삭제",
+    label: "다른 멤버가 삭제했을 때",
+    title: "공유 기록 삭제",
   },
   other_member_updated_entry: {
     bodyTemplate:
-      "{actorName}님이 {bookName}의 {entryTypeLabel} {amountLabel} 내역을 수정했습니다. 분류: {category}.{noteSentence}",
+      "{actorName}님이 {bookName}의 {entryTypeLabel} {amountLabel} 기록을 수정했어요. 분류: {category}.{noteSentence}",
     defaultEnabled: true,
-    description: "다른 멤버가 내역을 수정하면 알립니다.",
+    description: "다른 멤버가 기록을 수정하면 알립니다.",
     groupId: "sharedLedger",
-    label: "다른 멤버가 내역 수정",
-    title: "공유 내역 수정",
+    label: "다른 멤버가 수정했을 때",
+    title: "공유 기록 수정",
   },
 };
 
@@ -180,3 +198,14 @@ export const NotificationEventOrder = [
   "member_removed_from_book",
   "expense_limit_exceeded",
 ] as const satisfies readonly NotificationEventType[];
+
+export const NotificationThresholdFieldLabels: Record<NotificationThresholdKey, string> = {
+  expenseAmountDay: "하루에",
+  expenseAmountWeek: "한 주에",
+  expenseAmountMonth: "한 달에",
+};
+
+export const NotificationThresholdAmountCopy = {
+  currencyLabel: "원",
+  placeholder: "금액",
+} as const;

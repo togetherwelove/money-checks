@@ -2,20 +2,15 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../../constants/colors";
 import { InsetPanelStyle } from "../../constants/uiStyles";
-import type {
-  NotificationPreferenceGroup as NotificationPreferenceGroupState,
-  NotificationThresholdField as NotificationThresholdFieldState,
-} from "../../notifications/preferences/notificationPreferences";
+import type { NotificationThresholdKey } from "../../notifications/domain/notificationEvents";
+import type { NotificationPreferenceGroup as NotificationPreferenceGroupState } from "../../notifications/preferences/notificationPreferences";
 import { NotificationPreferenceRow } from "./NotificationPreferenceRow";
 import { NotificationThresholdField } from "./NotificationThresholdField";
 
 type NotificationPreferenceGroupProps = {
   group: NotificationPreferenceGroupState;
-  onChangeThresholdPeriod: (
-    key: NotificationThresholdFieldState["key"],
-    period: NotificationThresholdFieldState["selectedPeriod"],
-  ) => void;
-  onChangeThresholdValue: (key: NotificationThresholdFieldState["key"], value: string) => void;
+  onChangeThresholdEnabled: (key: NotificationThresholdKey, enabled: boolean) => void;
+  onChangeThresholdValue: (key: NotificationThresholdKey, value: string) => void;
   onToggle: (
     eventType: NotificationPreferenceGroupState["items"][number]["type"],
     enabled: boolean,
@@ -24,7 +19,7 @@ type NotificationPreferenceGroupProps = {
 
 export function NotificationPreferenceGroup({
   group,
-  onChangeThresholdPeriod,
+  onChangeThresholdEnabled,
   onChangeThresholdValue,
   onToggle,
 }: NotificationPreferenceGroupProps) {
@@ -33,25 +28,29 @@ export function NotificationPreferenceGroup({
       <Text style={styles.title}>{group.title}</Text>
       {group.thresholdFields?.length ? (
         <View style={styles.thresholdBlock}>
-          {group.thresholdFields.map((field) => (
+          {group.thresholdFields.map((field, index) => (
             <NotificationThresholdField
               field={field}
+              isFirst={index === 0}
               key={field.key}
-              onChangePeriod={(period) => onChangeThresholdPeriod(field.key, period)}
+              onChangeEnabled={(enabled) => onChangeThresholdEnabled(field.key, enabled)}
               onChangeValue={(value) => onChangeThresholdValue(field.key, value)}
             />
           ))}
         </View>
       ) : null}
-      <View style={styles.list}>
-        {group.items.map((item) => (
-          <NotificationPreferenceRow
-            item={item}
-            key={item.type}
-            onToggle={(enabled) => onToggle(item.type, enabled)}
-          />
-        ))}
-      </View>
+      {group.items.length ? (
+        <View style={styles.list}>
+          {group.items.map((item, index) => (
+            <NotificationPreferenceRow
+              isFirst={index === 0}
+              item={item}
+              key={item.type}
+              onToggle={(enabled) => onToggle(item.type, enabled)}
+            />
+          ))}
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -67,7 +66,8 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   thresholdBlock: {
-    gap: 10,
+    ...InsetPanelStyle,
+    paddingHorizontal: 12,
   },
   list: {
     ...InsetPanelStyle,

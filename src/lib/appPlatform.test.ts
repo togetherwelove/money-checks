@@ -6,8 +6,8 @@ describe("createAppPlatform", () => {
 
     expect(platform.isWeb).toBe(true);
     expect(platform.isNative).toBe(false);
-    expect(platform.supportsBrowserNotifications).toBe(true);
-    expect(platform.showsNotificationSettings).toBe(true);
+    expect(platform.supportsPushNotifications).toBe(false);
+    expect(platform.showsNotificationSettings).toBe(false);
     expect(platform.entryDatePickerMode).toBe("web-calendar");
   });
 
@@ -17,9 +17,10 @@ describe("createAppPlatform", () => {
 
     expect(iosPlatform.isIOS).toBe(true);
     expect(iosPlatform.entryDatePickerMode).toBe("native");
-    expect(iosPlatform.supportsBrowserNotifications).toBe(false);
+    expect(iosPlatform.supportsPushNotifications).toBe(true);
 
     expect(androidPlatform.isAndroid).toBe(true);
     expect(androidPlatform.usesAndroidDatePickerDialog).toBe(true);
+    expect(androidPlatform.showsNotificationSettings).toBe(true);
   });
 });

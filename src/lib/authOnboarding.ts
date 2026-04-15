@@ -1,4 +1,4 @@
-import type { BrowserNotificationPermissionState } from "./notifications/browserNotifications";
+import type { NotificationPermissionState } from "./notifications/pushNotifications";
 
 const NICKNAME_ONBOARDING_KEY_PREFIX = "moneychecks.auth-onboarding.nickname.v1";
 const PERMISSION_ONBOARDING_KEY_PREFIX = "moneychecks.auth-onboarding.permission.v1";
@@ -17,7 +17,7 @@ type ResolveAuthOnboardingStepOptions = {
   hasCompletedNicknameOnboarding: boolean;
   hasCompletedPermissionOnboarding: boolean;
   isNotificationSupported: boolean;
-  permissionState: BrowserNotificationPermissionState;
+  permissionState: NotificationPermissionState;
 };
 
 export function resolveAuthOnboardingStep(

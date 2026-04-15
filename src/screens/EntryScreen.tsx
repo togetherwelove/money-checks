@@ -1,6 +1,7 @@
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
-import { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { useRef, useState } from "react";
+import { InteractionManager, StyleSheet, Text, View } from "react-native";
+import type { ScrollView } from "react-native";
 
 import { EntryDatePickerModal } from "../components/EntryDatePickerModal";
 import { EntryDateToolbar } from "../components/EntryDateToolbar";
@@ -11,7 +12,7 @@ import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
 import { appPlatform } from "../lib/appPlatform";
-import type { LedgerEntryDraft, QueuedLedgerEntryDraft } from "../types/ledger";
+import type { LedgerEntry, LedgerEntryDraft, QueuedLedgerEntryDraft } from "../types/ledger";
 import { formatSelectedDate, parseIsoDate, toIsoDate } from "../utils/calendar";
 import { canSubmitDraft, createQueuedEntryId } from "../utils/ledgerEntries";
 
@@ -25,12 +26,21 @@ type EntryDatePickerTarget =
 type EntryScreenProps = {
   onSaveEntry: () => Promise<void>;
   onSaveEntries: (drafts: LedgerEntryDraft[]) => Promise<void>;
+  onSettleInstallmentEntry: (entry: LedgerEntry) => Promise<void>;
   state: LedgerScreenState;
 };
 
-export function EntryScreen({ onSaveEntry, onSaveEntries, state }: EntryScreenProps) {
+const CATEGORY_SELECTION_SCROLL_DELAY_MS = 120;
+
+export function EntryScreen({
+  onSaveEntry,
+  onSaveEntries,
+  onSettleInstallmentEntry,
+  state,
+}: EntryScreenProps) {
   const actualToday = new Date();
   const todayIsoDate = toIsoDate(actualToday);
+  const scrollViewRef = useRef<ScrollView>(null);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isCategoryDragging, setIsCategoryDragging] = useState(false);
   const [queuedEntries, setQueuedEntries] = useState<QueuedLedgerEntryDraft[]>([]);
@@ -46,8 +56,10 @@ export function EntryScreen({ onSaveEntry, onSaveEntries, state }: EntryScreenPr
     handleSelectDate,
     resetEditor,
     updateDraftField,
+    updateDraftInstallmentMonths,
     updateDraftType,
   } = state;
+  const editingEntry = entries.find((entry) => entry.id === editingEntryId) ?? null;
   const pickerMode = appPlatform.entryDatePickerMode;
   const canQueueEntry = canSubmitDraft(draft);
   const resolvePickerDate = () => {
@@ -139,9 +151,18 @@ export function EntryScreen({ onSaveEntry, onSaveEntries, state }: EntryScreenPr
     setQueuedEntries([]);
   };
 
+  const handleCategorySelected = () => {
+    InteractionManager.runAfterInteractions(() => {
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, CATEGORY_SELECTION_SCROLL_DELAY_MS);
+    });
+  };
+
   return (
     <>
       <KeyboardAwareScrollView
+        ref={scrollViewRef}
         contentContainerStyle={styles.content}
         scrollEnabled={!isCategoryDragging}
         style={styles.screen}
@@ -169,10 +190,20 @@ export function EntryScreen({ onSaveEntry, onSaveEntries, state }: EntryScreenPr
           draft={draft}
           editingEntryId={editingEntryId}
           onChangeDraft={updateDraftField}
+          onChangeInstallmentMonths={updateDraftInstallmentMonths}
+          onCategorySelected={handleCategorySelected}
           onCategoryDraggingChange={setIsCategoryDragging}
           onQueueEntry={!editingEntryId ? handleQueueEntry : null}
           onSaveEntry={handleSaveEntries}
           onSelectType={updateDraftType}
+          onSettleInstallmentEntry={
+            editingEntry ? () => onSettleInstallmentEntry(editingEntry) : null
+          }
+          showInstallmentSettleAction={Boolean(
+            editingEntry?.installmentMonths &&
+              editingEntry.installmentOrder &&
+              editingEntry.installmentOrder < editingEntry.installmentMonths,
+          )}
         />
       </KeyboardAwareScrollView>
       <EntryDatePickerModal

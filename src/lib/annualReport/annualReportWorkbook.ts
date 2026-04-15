@@ -67,7 +67,7 @@ function appendSheet(
 
 function buildMonthlyDetailRows(report: AnnualReportData) {
   const rows: Array<Array<string | number>> = [
-    [`${report.bookName} 월별 내역`],
+    [`${report.bookName} 월별 기록`],
     [],
     ["기간", report.periodLabel],
     [],
@@ -75,7 +75,7 @@ function buildMonthlyDetailRows(report: AnnualReportData) {
   ];
 
   if (report.entries.length === 0) {
-    rows.push(["-", "-", "-", "-", "-", "-", "내역이 없습니다."]);
+    rows.push(["-", "-", "-", "-", "-", "-", "기록이 없습니다."]);
     return rows;
   }
 

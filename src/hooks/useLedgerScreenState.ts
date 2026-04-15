@@ -3,16 +3,28 @@ import type { Dispatch, SetStateAction } from "react";
 import { useMemo, useState } from "react";
 
 import type { MonthPage } from "../components/monthCalendarPager/monthCalendarPagerUtils";
+import { buildInstallmentSettlementEntry, buildLedgerEntriesFromDraft } from "../lib/installments";
 import type { LedgerEntry, LedgerEntryDraft } from "../types/ledger";
 import { addMonths, getMonthKey, parseIsoDate, startOfMonth, toIsoDate } from "../utils/calendar";
-import { canSubmitDraft, createDraft, sanitizeAmountInput } from "../utils/ledgerEntries";
+import {
+  canSubmitDraft,
+  createDraft,
+  mergeEntries,
+  sanitizeAmountInput,
+} from "../utils/ledgerEntries";
 import {
   getChartMonthDataFromCache,
   getMonthPageFromCache,
   getMonthlyInsightsFromCache,
   getMonthlyLedgerFromCache,
 } from "./ledgerScreenState/calendarMonthData";
-import { removeLedgerEntry, saveLedgerEntry } from "./ledgerScreenState/helpers";
+import {
+  loadInstallmentEntries,
+  removeLedgerEntries,
+  removeLedgerEntry,
+  saveLedgerEntries,
+  saveLedgerEntry,
+} from "./ledgerScreenState/helpers";
 import type { BusyTaskTracker, LedgerScreenState } from "./ledgerScreenState/types";
 import { useActiveLedgerBook } from "./ledgerScreenState/useActiveLedgerBook";
 import { useLedgerEntries } from "./ledgerScreenState/useLedgerEntries";
@@ -101,23 +113,21 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
   };
 
   const handleSaveEntry = async () => {
-    const savedEntry = await persistDraftEntry(draft, editingEntryId);
-    if (!savedEntry) {
-      return null;
+    const savedEntries = await persistDraftEntry(draft, editingEntryId);
+    if (savedEntries.length === 0) {
+      return [];
     }
 
     resetEditor(draft.date);
-    return savedEntry;
+    return savedEntries;
   };
 
   const handleSaveEntryDrafts = async (drafts: LedgerEntryDraft[]) => {
     const savedEntries: LedgerEntry[] = [];
 
     for (const queuedDraft of drafts) {
-      const savedEntry = await persistDraftEntry(queuedDraft, null);
-      if (savedEntry) {
-        savedEntries.push(savedEntry);
-      }
+      const nextSavedEntries = await persistDraftEntry(queuedDraft, null);
+      savedEntries.push(...nextSavedEntries);
     }
 
     if (savedEntries.length > 0) {
@@ -130,41 +140,50 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
   const persistDraftEntry = async (
     draftToSave: LedgerEntryDraft,
     targetEditingEntryId: string | null,
-  ) => {
+  ): Promise<LedgerEntry[]> => {
     if (!activeBook) {
-      return null;
+      return [];
     }
 
     if (!canSubmitDraft(draftToSave)) {
-      return null;
+      return [];
     }
 
-    const amount = Number(draftToSave.amount);
-    const nextEntry: LedgerEntry = {
-      id: targetEditingEntryId ?? "",
-      date: draftToSave.date,
-      type: draftToSave.type,
-      amount,
-      content: draftToSave.content.trim(),
-      category: draftToSave.category.trim(),
-      note: draftToSave.note.trim(),
-      sourceType: "manual",
-    };
+    if (targetEditingEntryId) {
+      const nextEntry: LedgerEntry = {
+        id: targetEditingEntryId,
+        date: draftToSave.date,
+        type: draftToSave.type,
+        amount: Number(draftToSave.amount),
+        content: draftToSave.content.trim(),
+        category: draftToSave.category.trim(),
+        note: draftToSave.note.trim(),
+        sourceType: "manual",
+      };
 
-    const savedEntry = await saveLedgerEntry({
+      const savedEntry = await saveLedgerEntry({
+        activeBookId: activeBook.id,
+        editingEntryId: targetEditingEntryId,
+        entry: nextEntry,
+        trackBusyTask,
+        userId: session.user.id,
+      });
+      setEntries((currentEntries) =>
+        currentEntries.map((entry) => (entry.id === savedEntry.id ? savedEntry : entry)),
+      );
+      return [savedEntry];
+    }
+
+    const entriesToSave = buildLedgerEntriesFromDraft(draftToSave);
+    const savedEntries = await saveLedgerEntries({
       activeBookId: activeBook.id,
-      editingEntryId: targetEditingEntryId,
-      entry: nextEntry,
+      entries: entriesToSave,
       trackBusyTask,
       userId: session.user.id,
     });
-    setEntries((currentEntries) =>
-      targetEditingEntryId
-        ? currentEntries.map((entry) => (entry.id === savedEntry.id ? savedEntry : entry))
-        : [...currentEntries, savedEntry],
-    );
+    setEntries((currentEntries) => mergeEntries(currentEntries, savedEntries));
 
-    return savedEntry;
+    return savedEntries;
   };
 
   const handleDeleteEntry = async (entryId: string) => {
@@ -173,6 +192,67 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
     if (editingEntryId === entryId) {
       resetEditor(selectedDate);
     }
+  };
+
+  const handleSettleInstallmentEntry = async (entry: LedgerEntry) => {
+    const currentInstallmentOrder = entry.installmentOrder;
+    if (
+      !activeBook ||
+      !entry.installmentGroupId ||
+      !entry.installmentMonths ||
+      !currentInstallmentOrder ||
+      currentInstallmentOrder >= entry.installmentMonths
+    ) {
+      return null;
+    }
+
+    const installmentEntries = await loadInstallmentEntries(
+      activeBook.id,
+      entry.installmentGroupId,
+      trackBusyTask,
+    );
+    const futureEntries = installmentEntries.filter(
+      (installmentEntry) =>
+        installmentEntry.installmentOrder &&
+        installmentEntry.installmentOrder > currentInstallmentOrder,
+    );
+
+    if (futureEntries.length === 0) {
+      return null;
+    }
+
+    const remainingAmount = futureEntries.reduce(
+      (totalAmount, futureEntry) => totalAmount + futureEntry.amount,
+      0,
+    );
+    const settlementEntry = buildInstallmentSettlementEntry(entry, remainingAmount);
+
+    await removeLedgerEntries(
+      futureEntries.map((futureEntry) => futureEntry.id),
+      trackBusyTask,
+    );
+    const [savedSettlementEntry] = await saveLedgerEntries({
+      activeBookId: activeBook.id,
+      entries: [settlementEntry],
+      trackBusyTask,
+      userId: session.user.id,
+    });
+
+    if (!savedSettlementEntry) {
+      return null;
+    }
+
+    setEntries((currentEntries) =>
+      mergeEntries(
+        currentEntries.filter(
+          (currentEntry) =>
+            !futureEntries.some((futureEntry) => futureEntry.id === currentEntry.id),
+        ),
+        [savedSettlementEntry],
+      ),
+    );
+
+    return savedSettlementEntry;
   };
 
   const handleEditEntry = (entry: LedgerEntry) => {
@@ -184,6 +264,7 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
       amount: String(entry.amount),
       content: entry.content,
       category: entry.category,
+      installmentMonths: entry.installmentMonths ?? 1,
       note: entry.note,
     });
   };
@@ -223,6 +304,7 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
     handleEditEntry,
     handleSaveEntry,
     handleSaveEntryDrafts,
+    handleSettleInstallmentEntry,
     handleSelectDate,
     resetEditor,
     updateDraftField: (field, value) =>
@@ -230,6 +312,8 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
         ...currentDraft,
         [field]: field === "amount" ? sanitizeAmountInput(value) : value,
       })),
+    updateDraftInstallmentMonths: (installmentMonths) =>
+      setDraft((currentDraft) => ({ ...currentDraft, installmentMonths })),
     updateDraftType: (type) =>
       setDraft((currentDraft) => ({ ...currentDraft, category: "", type })),
   };

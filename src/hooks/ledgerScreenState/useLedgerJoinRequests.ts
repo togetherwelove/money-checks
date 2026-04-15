@@ -2,16 +2,13 @@ import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import { useEffect, useRef, useState } from "react";
 
 import { DEFAULT_MEMBER_DISPLAY_NAME } from "../../constants/ledgerDisplay";
-import { AppMessages } from "../../constants/messages";
 import {
   approveLedgerBookJoinRequest,
   fetchPendingLedgerBookJoinRequests,
   rejectLedgerBookJoinRequest,
 } from "../../lib/ledgerBooks";
-import { showBrowserNotification } from "../../lib/notifications/browserNotifications";
 import { fetchProfileDisplayName } from "../../lib/profiles";
 import { supabase } from "../../lib/supabase";
-import { NotificationUiCopy } from "../../notifications/config/notificationCopy";
 import type { LedgerBook } from "../../types/ledgerBook";
 import type { LedgerBookJoinRequest } from "../../types/ledgerBookJoinRequest";
 import type { LedgerBookJoinRequestRow } from "../../types/supabase";
@@ -22,11 +19,6 @@ type LedgerJoinRequestsState = {
   pendingJoinRequests: LedgerBookJoinRequest[];
   rejectLedgerJoinRequest: (requestId: string) => Promise<boolean>;
 };
-
-const JOIN_REQUEST_NOTIFICATION_ASSETS = {
-  badge: NotificationUiCopy.badgePath,
-  icon: NotificationUiCopy.iconPath,
-} as const;
 
 export function useLedgerJoinRequests(
   activeBook: LedgerBook | null,
@@ -172,25 +164,8 @@ export function useLedgerJoinRequests(
     };
 
     setPendingJoinRequests((currentRequests) => upsertJoinRequest(currentRequests, nextRequest));
-
-    if (!seenRequestIdsRef.current.has(changedRequest.id)) {
-      seenRequestIdsRef.current.add(changedRequest.id);
-      await showBrowserNotification(
-        {
-          body: buildJoinRequestNotificationBody(requesterDisplayName, activeBook.name),
-          tag: `${AppMessages.brand}-join-request-${activeBook.id}-${changedRequest.id}`,
-          title: AppMessages.accountJoinRequestNotificationTitle,
-        },
-        JOIN_REQUEST_NOTIFICATION_ASSETS,
-      );
-    }
+    seenRequestIdsRef.current.add(changedRequest.id);
   }
-}
-
-function buildJoinRequestNotificationBody(requesterName: string, bookName: string): string {
-  return AppMessages.accountJoinRequestNotificationBody
-    .replace("{requesterName}", requesterName)
-    .replace("{bookName}", bookName);
 }
 
 function upsertJoinRequest(

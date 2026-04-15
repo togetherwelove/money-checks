@@ -1,9 +1,18 @@
-import { useEffect, useRef } from "react";
-import { InteractionManager, Keyboard, StyleSheet, Text, TextInput, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import {
+  Alert,
+  InteractionManager,
+  Keyboard,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 
 import { CategorySelector } from "../components/CategorySelector";
 import { CATEGORY_OPTIONS } from "../constants/categories";
 import { AppColors } from "../constants/colors";
+import { CommonActionCopy } from "../constants/commonActions";
 import { EntryRegistrationCopy } from "../constants/entryRegistration";
 import { AppLayout } from "../constants/layout";
 import { AppMessages } from "../constants/messages";
@@ -13,24 +22,30 @@ import {
   FormMultilineInputTextStyle,
   SurfaceCardStyle,
 } from "../constants/uiStyles";
+import { formatInstallmentLabel } from "../lib/installments";
+import { showNativeToast } from "../lib/nativeToast";
 import type { LedgerEntryDraft, LedgerEntryType } from "../types/ledger";
 import { formatAmountInput } from "../utils/amount";
-import { canSubmitDraft } from "../utils/ledgerEntries";
 import { ActionButton } from "./ActionButton";
 import { EntryDirectionSelector } from "./EntryDirectionSelector";
+import { InstallmentPickerModal } from "./InstallmentPickerModal";
 
 const AMOUNT_INPUT_FOCUS_DELAY_MS = 120;
-const NOTE_INPUT_FOCUS_DELAY_MS = 80;
+const CONTENT_INPUT_FOCUS_DELAY_MS = 80;
 
 type LedgerEntryFormProps = {
   canQueueEntry?: boolean;
   draft: LedgerEntryDraft;
   editingEntryId: string | null;
   onChangeDraft: (field: keyof LedgerEntryDraft, value: string) => void;
+  onChangeInstallmentMonths: (installmentMonths: number) => void;
+  onCategorySelected?: (() => void) | null;
   onCategoryDraggingChange?: (isDragging: boolean) => void;
   onQueueEntry?: (() => void | Promise<void>) | null;
   onSaveEntry: () => void | Promise<void>;
   onSelectType: (type: LedgerEntryType) => void;
+  onSettleInstallmentEntry?: (() => void | Promise<void>) | null;
+  showInstallmentSettleAction?: boolean;
 };
 
 export function LedgerEntryForm({
@@ -38,17 +53,41 @@ export function LedgerEntryForm({
   draft,
   editingEntryId,
   onChangeDraft,
+  onChangeInstallmentMonths,
+  onCategorySelected = null,
   onCategoryDraggingChange,
   onQueueEntry = null,
   onSaveEntry,
   onSelectType,
+  onSettleInstallmentEntry = null,
+  showInstallmentSettleAction = false,
 }: LedgerEntryFormProps) {
   const categories = CATEGORY_OPTIONS[draft.type];
   const amountInputRef = useRef<TextInput>(null);
   const contentInputRef = useRef<TextInput>(null);
   const noteInputRef = useRef<TextInput>(null);
   const amountFocusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const canSubmit = canSubmitDraft(draft);
+  const [isInstallmentPickerOpen, setIsInstallmentPickerOpen] = useState(false);
+
+  const handlePressQueueEntry = () => {
+    const validationMessage = resolveDraftValidationMessage(draft);
+    if (validationMessage) {
+      showNativeToast(validationMessage);
+      return;
+    }
+
+    return onQueueEntry?.();
+  };
+
+  const handlePressSaveEntry = () => {
+    const validationMessage = resolveDraftValidationMessage(draft);
+    if (validationMessage) {
+      showNativeToast(validationMessage);
+      return;
+    }
+
+    return onSaveEntry();
+  };
 
   useEffect(() => {
     let isCancelled = false;
@@ -79,24 +118,10 @@ export function LedgerEntryForm({
           submitBehavior="blurAndSubmit"
           keyboardType="number-pad"
           onChangeText={(value) => onChangeDraft("amount", value)}
-          onSubmitEditing={() => contentInputRef.current?.focus()}
+          onSubmitEditing={() => Keyboard.dismiss()}
           placeholder={AppMessages.editorAmount}
-          returnKeyType="next"
           style={styles.input}
           value={formatAmountInput(draft.amount)}
-        />
-      </View>
-      <View style={styles.fieldGroup}>
-        <Text style={styles.label}>{EntryRegistrationCopy.contentLabel}</Text>
-        <TextInput
-          ref={contentInputRef}
-          submitBehavior="blurAndSubmit"
-          onChangeText={(value) => onChangeDraft("content", value)}
-          onSubmitEditing={() => Keyboard.dismiss()}
-          placeholder={EntryRegistrationCopy.contentPlaceholder}
-          returnKeyType="done"
-          style={styles.input}
-          value={draft.content}
         />
       </View>
       <CategorySelector
@@ -105,13 +130,40 @@ export function LedgerEntryForm({
         onDraggingChange={onCategoryDraggingChange}
         onSelectCategory={(category) => {
           onChangeDraft("category", category);
+          onCategorySelected?.();
           setTimeout(() => {
-            noteInputRef.current?.focus();
-          }, NOTE_INPUT_FOCUS_DELAY_MS);
+            contentInputRef.current?.focus();
+          }, CONTENT_INPUT_FOCUS_DELAY_MS);
         }}
         selectedCategory={draft.category}
         title={EntryRegistrationCopy.categoryLabel}
       />
+      <View style={styles.fieldGroup}>
+        <View style={styles.fieldHeaderRow}>
+          <Text style={styles.label}>{EntryRegistrationCopy.contentLabel}</Text>
+          {!editingEntryId ? (
+            <ActionButton
+              label={formatInstallmentLabel(draft.installmentMonths)}
+              onPress={() => setIsInstallmentPickerOpen(true)}
+              size="inline"
+              variant="secondary"
+            />
+          ) : null}
+        </View>
+        <TextInput
+          ref={contentInputRef}
+          submitBehavior="blurAndSubmit"
+          onChangeText={(value) => onChangeDraft("content", value)}
+          onSubmitEditing={() => {
+            Keyboard.dismiss();
+            void handlePressSaveEntry();
+          }}
+          placeholder={EntryRegistrationCopy.contentPlaceholder}
+          returnKeyType="done"
+          style={styles.input}
+          value={draft.content}
+        />
+      </View>
       <View style={styles.fieldGroup}>
         <Text style={styles.label}>{EntryRegistrationCopy.noteLabel}</Text>
         <TextInput
@@ -129,19 +181,47 @@ export function LedgerEntryForm({
       <View style={styles.formActions}>
         {!editingEntryId && onQueueEntry ? (
           <ActionButton
-            disabled={!canQueueEntry}
             label={EntryRegistrationCopy.addEntryAction}
-            onPress={onQueueEntry}
+            onPress={handlePressQueueEntry}
             variant="secondary"
           />
         ) : null}
         <ActionButton
-          disabled={!canSubmit}
           label={editingEntryId ? AppMessages.editorUpdate : AppMessages.editorNewEntry}
-          onPress={onSaveEntry}
+          onPress={handlePressSaveEntry}
           variant="primary"
         />
+        {showInstallmentSettleAction && onSettleInstallmentEntry ? (
+          <ActionButton
+            label={EntryRegistrationCopy.installmentSettleAction}
+            onPress={() => {
+              Alert.alert(
+                EntryRegistrationCopy.installmentSettleAction,
+                EntryRegistrationCopy.installmentSettleConfirmMessage,
+                [
+                  {
+                    style: "cancel",
+                    text: CommonActionCopy.cancel,
+                  },
+                  {
+                    onPress: () => {
+                      void onSettleInstallmentEntry();
+                    },
+                    text: CommonActionCopy.confirm,
+                  },
+                ],
+              );
+            }}
+            variant="secondary"
+          />
+        ) : null}
       </View>
+      <InstallmentPickerModal
+        installmentMonths={draft.installmentMonths}
+        isOpen={isInstallmentPickerOpen}
+        onClose={() => setIsInstallmentPickerOpen(false)}
+        onSelectInstallmentMonths={onChangeInstallmentMonths}
+      />
     </View>
   );
 }
@@ -154,6 +234,12 @@ const styles = StyleSheet.create({
   fieldGroup: {
     gap: 6,
   },
+  fieldHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
   label: FormLabelTextStyle,
   input: FormInputTextStyle,
   multilineInput: FormMultilineInputTextStyle,
@@ -162,3 +248,19 @@ const styles = StyleSheet.create({
     gap: 8,
   },
 });
+
+function resolveDraftValidationMessage(draft: LedgerEntryDraft): string | null {
+  if (!Number(draft.amount)) {
+    return EntryRegistrationCopy.amountRequiredError;
+  }
+
+  if (!draft.content.trim()) {
+    return EntryRegistrationCopy.contentRequiredError;
+  }
+
+  if (!draft.category.trim()) {
+    return EntryRegistrationCopy.categoryRequiredError;
+  }
+
+  return null;
+}

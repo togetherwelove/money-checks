@@ -1,27 +1,29 @@
 import { useEffect, useState } from "react";
 
 import { appPlatform } from "../lib/appPlatform";
+import { logAppError } from "../lib/logAppError";
 import {
-  type BrowserNotificationPermissionState,
-  readBrowserNotificationPermission,
-  requestBrowserNotificationPermission,
-  showBrowserNotification,
-} from "../lib/notifications/browserNotifications";
+  sendPendingJoinRequestNotification,
+  sendPushNotificationToBookMembers,
+  sendPushNotificationToUsers,
+} from "../lib/notifications/pushNotificationDispatch";
+import {
+  type NotificationPermissionState,
+  readPushNotificationPermission,
+  requestPushNotificationPermission,
+  syncPushRegistration,
+} from "../lib/notifications/pushNotifications";
 import {
   getExpenseTotalForPeriod,
   shouldNotifyExpenseLimit,
 } from "../notifications/application/expenseThresholds";
-import {
-  NotificationUiCopy,
-  isRequiredNotificationEvent,
-} from "../notifications/config/notificationCopy";
-import { buildNotificationContent } from "../notifications/content/buildNotificationContent";
+import { NotificationDefaultThresholdPeriods } from "../notifications/config/notificationCopy";
+import { PushNotificationCopy } from "../notifications/config/pushNotificationCopy";
 import { createExpenseLimitExceededEvent } from "../notifications/domain/notificationEventFactories";
 import type {
   NotificationEvent,
   NotificationEventType,
   NotificationThresholdKey,
-  NotificationThresholdPeriod,
 } from "../notifications/domain/notificationEvents";
 import type { NotificationPreferenceGroup } from "../notifications/preferences/notificationPreferences";
 import type { LedgerEntry } from "../types/ledger";
@@ -30,138 +32,219 @@ import { useNotificationPreferences } from "./useNotificationPreferences";
 
 type LedgerNotificationsState = {
   isSupported: boolean;
-  notifyLedgerEvent: (event: NotificationEvent) => Promise<void>;
   notifySavedEntry: (savedEntry: LedgerEntry, currentEntries: LedgerEntry[]) => Promise<void>;
   permissionLabel: string;
-  permissionState: BrowserNotificationPermissionState;
+  permissionState: NotificationPermissionState;
   preferenceGroups: NotificationPreferenceGroup[];
   requestNotifications: () => Promise<boolean>;
+  sendPendingJoinRequestNotification: (requesterName: string) => Promise<void>;
+  sendPushNotificationToBookMembers: (
+    bookId: string,
+    event: NotificationEvent,
+    excludeUserIds: string[],
+  ) => Promise<void>;
+  sendPushNotificationToUsers: (
+    event: NotificationEvent,
+    targetUserIds: string[],
+    bookId?: string,
+  ) => Promise<void>;
   showNotificationSettings: boolean;
   statusMessage: string;
   updatePreference: (eventType: NotificationEventType, enabled: boolean) => void;
-  updateThresholdPeriod: (
-    key: NotificationThresholdKey,
-    period: NotificationThresholdPeriod,
-  ) => void;
+  updateThresholdEnabled: (key: NotificationThresholdKey, enabled: boolean) => void;
   updateThresholdValue: (key: NotificationThresholdKey, value: string) => void;
 };
 
-const NOTIFICATION_ASSETS = {
-  badge: NotificationUiCopy.badgePath,
-  icon: NotificationUiCopy.iconPath,
-} as const;
-
 export function useLedgerNotifications(userId: string): LedgerNotificationsState {
-  const [permission, setPermission] = useState<BrowserNotificationPermissionState>(() =>
-    appPlatform.supportsBrowserNotifications ? readBrowserNotificationPermission() : "unsupported",
+  const [permission, setPermission] = useState<NotificationPermissionState>(
+    appPlatform.supportsPushNotifications ? "default" : "unsupported",
   );
   const {
     preferenceGroups,
     preferences,
     updateEventPreference,
-    updateThresholdPeriod,
+    updateThresholdEnabled,
     updateThresholdValue,
   } = useNotificationPreferences(userId);
 
   useEffect(() => {
-    if (!appPlatform.supportsBrowserNotifications) {
-      return;
-    }
+    let isMounted = true;
 
-    setPermission(readBrowserNotificationPermission());
+    void readPushNotificationPermission()
+      .then((nextPermission) => {
+        if (isMounted) {
+          setPermission(nextPermission);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setPermission("unsupported");
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const isSupported = appPlatform.supportsBrowserNotifications && permission !== "unsupported";
-
-  const requestNotifications = async () => {
-    const nextPermission = await requestBrowserNotificationPermission();
-    setPermission(nextPermission);
-    return nextPermission === "granted";
-  };
-
-  const notifyEvent = async (event: NotificationEvent) => {
-    if (!isRequiredNotificationEvent(event.type) && !preferences.enabledByEvent[event.type]) {
+  useEffect(() => {
+    if (permission !== "granted") {
       return;
     }
 
-    await showBrowserNotification(buildNotificationContent(event), NOTIFICATION_ASSETS);
+    void syncPushRegistration(userId).catch((error) => {
+      logAppError("LedgerNotifications", error, {
+        step: "sync_push_registration",
+        userId,
+      });
+    });
+  }, [permission, userId]);
+
+  const isSupported = appPlatform.supportsPushNotifications && permission !== "unsupported";
+
+  const requestNotifications = async () => {
+    try {
+      const nextPermission = await requestPushNotificationPermission(userId);
+      setPermission(nextPermission);
+      return nextPermission === "granted";
+    } catch (error) {
+      logAppError("LedgerNotifications", error, {
+        step: "request_push_notification_permission",
+        userId,
+      });
+      setPermission("granted");
+      return true;
+    }
   };
 
   const notifySavedEntry = async (savedEntry: LedgerEntry, currentEntries: LedgerEntry[]) => {
     const nextEntries = upsertEntry(currentEntries, savedEntry);
-    const nextEvents = [] as NotificationEvent[];
 
-    if (savedEntry.type === "expense") {
-      const { expenseAmount } = preferences.thresholds;
-      const expensePeriod = preferences.thresholdPeriods.expenseAmount;
+    if (savedEntry.type !== "expense") {
+      return;
+    }
+
+    for (const thresholdKey of Object.keys(preferences.thresholds) as NotificationThresholdKey[]) {
+      const thresholdAmount = preferences.thresholds[thresholdKey];
+      const thresholdPeriod = NotificationDefaultThresholdPeriods[thresholdKey];
+
+      if (!preferences.enabledThresholds[thresholdKey]) {
+        continue;
+      }
+
       if (
-        shouldNotifyExpenseLimit({
+        !shouldNotifyExpenseLimit({
           currentEntries,
           entryDate: savedEntry.date,
           nextEntries,
-          period: expensePeriod,
-          thresholdAmount: expenseAmount,
+          period: thresholdPeriod,
+          thresholdAmount,
         })
       ) {
-        nextEvents.push(
-          createExpenseLimitExceededEvent(
-            expensePeriod,
-            getExpenseTotalForPeriod(nextEntries, savedEntry.date, expensePeriod),
-            expenseAmount,
-          ),
-        );
+        continue;
       }
-    }
 
-    for (const event of nextEvents) {
-      await notifyEvent(event);
+      await sendPushNotificationToUsersInternal(
+        createExpenseLimitExceededEvent(
+          thresholdPeriod,
+          getExpenseTotalForPeriod(nextEntries, savedEntry.date, thresholdPeriod),
+          thresholdAmount,
+        ),
+        [userId],
+      );
+    }
+  };
+
+  const sendPushNotificationToBookMembersInternal = async (
+    bookId: string,
+    event: NotificationEvent,
+    excludeUserIds: string[],
+  ) => {
+    try {
+      await sendPushNotificationToBookMembers(bookId, event, excludeUserIds);
+    } catch (error) {
+      logAppError("LedgerNotifications", error, {
+        bookId,
+        eventType: event.type,
+        step: "send_push_notification_to_book_members",
+      });
+    }
+  };
+
+  const sendPushNotificationToUsersInternal = async (
+    event: NotificationEvent,
+    targetUserIds: string[],
+    bookId?: string,
+  ) => {
+    try {
+      await sendPushNotificationToUsers(event, targetUserIds, bookId);
+    } catch (error) {
+      logAppError("LedgerNotifications", error, {
+        bookId: bookId ?? null,
+        eventType: event.type,
+        step: "send_push_notification_to_users",
+        targetUserIds,
+      });
+    }
+  };
+
+  const sendPendingJoinRequestNotificationInternal = async (requesterName: string) => {
+    try {
+      await sendPendingJoinRequestNotification(requesterName);
+    } catch (error) {
+      logAppError("LedgerNotifications", error, {
+        requesterName,
+        step: "send_pending_join_request_notification",
+      });
     }
   };
 
   return {
     isSupported,
-    notifyLedgerEvent: notifyEvent,
     notifySavedEntry,
     permissionLabel: getPermissionLabel(permission),
     permissionState: permission,
     preferenceGroups,
     requestNotifications,
-    showNotificationSettings: appPlatform.showsNotificationSettings,
+    sendPendingJoinRequestNotification: sendPendingJoinRequestNotificationInternal,
+    sendPushNotificationToBookMembers: sendPushNotificationToBookMembersInternal,
+    sendPushNotificationToUsers: sendPushNotificationToUsersInternal,
+    showNotificationSettings: appPlatform.showsNotificationSettings && permission !== "unsupported",
     statusMessage: getStatusMessage(permission),
     updatePreference: updateEventPreference,
-    updateThresholdPeriod,
+    updateThresholdEnabled,
     updateThresholdValue,
   };
 }
 
-function getPermissionLabel(permission: BrowserNotificationPermissionState): string {
+function getPermissionLabel(permission: NotificationPermissionState): string {
   if (permission === "granted") {
-    return NotificationUiCopy.permissionGranted;
+    return PushNotificationCopy.permissionGranted;
   }
 
   if (permission === "denied") {
-    return NotificationUiCopy.permissionBlocked;
+    return PushNotificationCopy.permissionBlocked;
   }
 
   if (permission === "default") {
-    return NotificationUiCopy.permissionPrompt;
+    return PushNotificationCopy.permissionPrompt;
   }
 
-  return NotificationUiCopy.permissionUnsupported;
+  return PushNotificationCopy.permissionUnsupported;
 }
 
-function getStatusMessage(permission: BrowserNotificationPermissionState): string {
+function getStatusMessage(permission: NotificationPermissionState): string {
   if (permission === "granted") {
-    return NotificationUiCopy.enabledStatus;
+    return PushNotificationCopy.statusEnabled;
   }
 
   if (permission === "denied") {
-    return NotificationUiCopy.permissionBlocked;
+    return PushNotificationCopy.permissionBlocked;
   }
 
   if (permission === "default") {
-    return NotificationUiCopy.defaultStatus;
+    return PushNotificationCopy.statusDefault;
   }
 
-  return NotificationUiCopy.unsupportedStatus;
+  return PushNotificationCopy.statusUnsupported;
 }

@@ -1,55 +1,44 @@
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { StyleSheet, Switch, Text, TextInput, View } from "react-native";
 
 import { AppColors } from "../../constants/colors";
-import { FormInputTextStyle, InsetPanelStyle } from "../../constants/uiStyles";
+import { NotificationThresholdAmountCopy } from "../../notifications/config/notificationCopy";
 import type { NotificationThresholdField as NotificationThresholdFieldState } from "../../notifications/preferences/notificationPreferences";
 import { formatAmountInput } from "../../utils/amount";
 
 type NotificationThresholdFieldProps = {
   field: NotificationThresholdFieldState;
-  onChangePeriod: (period: NotificationThresholdFieldState["selectedPeriod"]) => void;
+  isFirst?: boolean;
+  onChangeEnabled: (enabled: boolean) => void;
   onChangeValue: (value: string) => void;
 };
 
 export function NotificationThresholdField({
   field,
-  onChangePeriod,
+  isFirst = false,
+  onChangeEnabled,
   onChangeValue,
 }: NotificationThresholdFieldProps) {
   return (
-    <View style={styles.field}>
-      <Text style={styles.label}>{field.label}</Text>
-      <View style={styles.periodBlock}>
-        <Text style={styles.periodLabel}>{field.periodLabel}</Text>
-        <View style={styles.periodOptions}>
-          {field.periodOptions.map((option) => (
-            <Pressable
-              key={option.value}
-              onPress={() => onChangePeriod(option.value)}
-              style={[
-                styles.periodOption,
-                field.selectedPeriod === option.value && styles.activePeriodOption,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.periodOptionText,
-                  field.selectedPeriod === option.value && styles.activePeriodOptionText,
-                ]}
-              >
-                {option.label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+    <View style={[styles.field, isFirst && styles.firstField]}>
+      <View style={styles.inputWrap}>
+        <Text style={styles.label}>{field.label}</Text>
+        <TextInput
+          editable={field.enabled}
+          inputMode="numeric"
+          keyboardType="numeric"
+          onChangeText={onChangeValue}
+          placeholder={NotificationThresholdAmountCopy.placeholder}
+          style={[styles.input, !field.enabled && styles.disabledInput]}
+          value={formatAmountInput(field.value)}
+        />
+        <Text style={styles.currency}>{NotificationThresholdAmountCopy.currencyLabel}</Text>
+        <Text style={styles.label}>초과 시</Text>
       </View>
-      <TextInput
-        inputMode="numeric"
-        keyboardType="numeric"
-        onChangeText={onChangeValue}
-        placeholder="0"
-        style={styles.input}
-        value={formatAmountInput(field.value)}
+      <Switch
+        onValueChange={onChangeEnabled}
+        thumbColor={field.enabled ? AppColors.inverseText : AppColors.surface}
+        trackColor={{ false: AppColors.border, true: AppColors.primary }}
+        value={field.enabled}
       />
     </View>
   );
@@ -57,48 +46,49 @@ export function NotificationThresholdField({
 
 const styles = StyleSheet.create({
   field: {
-    gap: 6,
+    alignItems: "center",
+    borderTopColor: AppColors.border,
+    borderTopWidth: 1,
+    flexDirection: "row",
+    gap: 12,
+    justifyContent: "space-between",
+    paddingVertical: 8,
+  },
+  firstField: {
+    borderTopWidth: 0,
   },
   label: {
     color: AppColors.text,
     fontSize: 13,
     fontWeight: "700",
+    width: 36,
   },
-  periodBlock: {
-    gap: 6,
+  inputWrap: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 4,
   },
-  periodLabel: {
+  currency: {
     color: AppColors.mutedText,
     fontSize: 12,
     fontWeight: "600",
-  },
-  periodOptions: {
-    flexDirection: "row",
-    gap: 6,
-  },
-  periodOption: {
-    ...InsetPanelStyle,
-    flex: 1,
-    alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 12,
-  },
-  periodOptionText: {
-    color: AppColors.text,
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  activePeriodOption: {
-    borderColor: AppColors.primary,
-    backgroundColor: AppColors.surfaceStrong,
-  },
-  activePeriodOptionText: {
-    color: AppColors.primary,
-    fontWeight: "700",
+    paddingEnd: 4,
   },
   input: {
-    ...FormInputTextStyle,
-    textAlign: "right",
+    backgroundColor: "transparent",
+    borderBottomColor: AppColors.border,
+    borderBottomWidth: 1,
+    borderCurve: "continuous",
+    borderRadius: 0,
+    color: AppColors.text,
+    fontSize: 14,
+    fontWeight: "600",
+    height: 36,
+    minWidth: 75,
+    paddingHorizontal: 4,
+    paddingVertical: 0,
+  },
+  disabledInput: {
+    color: AppColors.mutedText,
   },
 });

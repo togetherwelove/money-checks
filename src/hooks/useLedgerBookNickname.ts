@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { LedgerBookNicknameCopy } from "../constants/ledgerBookNickname";
 import { resolveOwnedLedgerBookName } from "../lib/ledgerBookNickname";
 import { loadLedgerBookNickname, saveLedgerBookNickname } from "../lib/ledgerBookNicknameStorage";
+import { showNativeToast } from "../lib/nativeToast";
 import type { LedgerBook } from "../types/ledgerBook";
 
 type UseLedgerBookNicknameParams = {
@@ -12,25 +13,21 @@ type UseLedgerBookNicknameParams = {
 
 export function useLedgerBookNickname({ activeBook, currentUserId }: UseLedgerBookNicknameParams) {
   const [bookNameInput, setBookNameInput] = useState("");
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   const isOwner = Boolean(activeBook && activeBook.ownerId === currentUserId);
 
   useEffect(() => {
     if (!activeBook) {
       setBookNameInput("");
-      setStatusMessage(null);
       return;
     }
 
     if (!isOwner) {
       setBookNameInput(activeBook.name);
-      setStatusMessage(null);
       return;
     }
 
     setBookNameInput(resolveOwnedLedgerBookName(loadLedgerBookNickname(activeBook.id)));
-    setStatusMessage(null);
   }, [activeBook, isOwner]);
 
   const displayedBookName = useMemo(() => {
@@ -47,9 +44,6 @@ export function useLedgerBookNickname({ activeBook, currentUserId }: UseLedgerBo
 
   const handleChangeBookName = (value: string) => {
     setBookNameInput(value);
-    if (statusMessage) {
-      setStatusMessage(null);
-    }
   };
 
   const handleSaveBookName = () => {
@@ -59,14 +53,13 @@ export function useLedgerBookNickname({ activeBook, currentUserId }: UseLedgerBo
 
     const savedBookName = saveLedgerBookNickname(activeBook.id, bookNameInput);
     setBookNameInput(savedBookName);
-    setStatusMessage(LedgerBookNicknameCopy.saveSuccess);
+    showNativeToast(LedgerBookNicknameCopy.saveSuccess);
   };
 
   return {
     bookNameInput,
     displayedBookName,
     isOwner,
-    statusMessage,
     handleChangeBookName,
     handleSaveBookName,
   };

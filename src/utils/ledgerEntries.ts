@@ -4,6 +4,7 @@ import { sanitizeAmountDigits } from "./amount";
 const EMPTY_AMOUNT = "";
 const MANUAL_ENTRY_PREFIX = "manual";
 const QUEUED_ENTRY_PREFIX = "queued";
+export const ONE_TIME_INSTALLMENT_MONTHS = 1;
 
 export function createDraft(isoDate: string): LedgerEntryDraft {
   return {
@@ -12,6 +13,7 @@ export function createDraft(isoDate: string): LedgerEntryDraft {
     amount: EMPTY_AMOUNT,
     content: "",
     category: "",
+    installmentMonths: ONE_TIME_INSTALLMENT_MONTHS,
     note: "",
   };
 }

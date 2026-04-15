@@ -19,12 +19,13 @@ import {
 } from "../../constants/categoryCustomizer";
 import { AppColors } from "../../constants/colors";
 import { CommonActionCopy } from "../../constants/commonActions";
-import { NoteTextStyle, StatusMessageTextStyle } from "../../constants/uiStyles";
+import { NoteTextStyle } from "../../constants/uiStyles";
 import {
   createCustomCategory,
   normalizeCustomCategoryLabel,
   resolveCustomCategoryError,
 } from "../../lib/customCategories";
+import { showNativeToast } from "../../lib/nativeToast";
 import type { CategoryDefinition, CategoryIconName } from "../../types/category";
 import type { LedgerEntryType } from "../../types/ledger";
 import { ActionButton } from "../ActionButton";
@@ -53,7 +54,6 @@ export function CategoryCustomizerModal({
   onSaveCategories,
 }: CategoryCustomizerModalProps) {
   const [draftCategories, setDraftCategories] = useState<CategoryDefinition[]>(categories);
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [activeIconCategoryId, setActiveIconCategoryId] = useState<string | null>(null);
   const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false);
   const listRef = useRef<CategoryListHandle | null>(null);
@@ -64,7 +64,6 @@ export function CategoryCustomizerModal({
     }
 
     setDraftCategories(categories);
-    setStatusMessage(null);
     setActiveIconCategoryId(null);
     setShouldScrollToBottom(false);
   }, [categories, isOpen]);
@@ -102,7 +101,6 @@ export function CategoryCustomizerModal({
               setShouldScrollToBottom(false);
             });
           }}
-          onDragBegin={() => setStatusMessage(null)}
           onDragEnd={({ data }) => setDraftCategories(data)}
           ref={(value) => {
             listRef.current = value as CategoryListHandle | null;
@@ -127,7 +125,6 @@ export function CategoryCustomizerModal({
         <ActionButton
           label={CategoryCustomizerCopy.addButton}
           onPress={() => {
-            setStatusMessage(null);
             setShouldScrollToBottom(true);
             setDraftCategories((currentCategories) => [
               ...currentCategories,
@@ -139,7 +136,6 @@ export function CategoryCustomizerModal({
         />
         <ActionButton label={CommonActionCopy.save} onPress={handleSave} size="inline" />
       </View>
-      {statusMessage ? <Text style={styles.status}>{statusMessage}</Text> : null}
     </CalendarPickerModalShell>
   );
 
@@ -150,14 +146,13 @@ export function CategoryCustomizerModal({
           category={item}
           isDragging={isActive}
           isIconPickerActive={activeIconCategoryId === item.id}
-          onChangeLabel={(categoryId, label) => {
-            setStatusMessage(null);
+          onChangeLabel={(categoryId, label) =>
             setDraftCategories((currentCategories) =>
               currentCategories.map((currentCategory) =>
                 currentCategory.id === categoryId ? { ...currentCategory, label } : currentCategory,
               ),
-            );
-          }}
+            )
+          }
           onDeleteCategory={handleDeleteCategory}
           onDrag={drag}
           onOpenIconPicker={(categoryId) =>
@@ -169,7 +164,6 @@ export function CategoryCustomizerModal({
   }
 
   function handleDeleteCategory(categoryId: string) {
-    setStatusMessage(null);
     setDraftCategories((currentCategories) =>
       currentCategories.filter((category) => category.id !== categoryId),
     );
@@ -199,7 +193,7 @@ export function CategoryCustomizerModal({
     );
     const nextError = resolveCustomCategoryError(baseCategories, nextCustomCategories);
     if (nextError) {
-      setStatusMessage(nextError);
+      showNativeToast(nextError);
       return;
     }
 
@@ -285,9 +279,5 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     gap: CATEGORY_CUSTOMIZER_ROW_GAP,
-  },
-  status: {
-    color: AppColors.expense,
-    ...StatusMessageTextStyle,
   },
 });

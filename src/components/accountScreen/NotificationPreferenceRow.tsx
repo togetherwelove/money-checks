@@ -4,13 +4,18 @@ import { AppColors } from "../../constants/colors";
 import type { NotificationPreferenceItem } from "../../notifications/preferences/notificationPreferences";
 
 type NotificationPreferenceRowProps = {
+  isFirst?: boolean;
   item: NotificationPreferenceItem;
   onToggle: (enabled: boolean) => void;
 };
 
-export function NotificationPreferenceRow({ item, onToggle }: NotificationPreferenceRowProps) {
+export function NotificationPreferenceRow({
+  isFirst = false,
+  item,
+  onToggle,
+}: NotificationPreferenceRowProps) {
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, isFirst && styles.firstRow]}>
       <View style={styles.textBlock}>
         <Text style={styles.label}>{item.label}</Text>
       </View>
@@ -33,6 +38,9 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderTopWidth: 1,
     borderTopColor: AppColors.border,
+  },
+  firstRow: {
+    borderTopWidth: 0,
   },
   textBlock: {
     flex: 1,

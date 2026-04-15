@@ -3,18 +3,13 @@ import { StyleSheet, Text, View } from "react-native";
 import { AppColors } from "../../constants/colors";
 import { InsetPanelStyle, SupportingTextStyle, SurfaceCardStyle } from "../../constants/uiStyles";
 import { NotificationUiCopy } from "../../notifications/config/notificationCopy";
-import type {
-  NotificationPreferenceGroup as NotificationPreferenceGroupState,
-  NotificationThresholdField as NotificationThresholdFieldState,
-} from "../../notifications/preferences/notificationPreferences";
+import type { NotificationThresholdKey } from "../../notifications/domain/notificationEvents";
+import type { NotificationPreferenceGroup as NotificationPreferenceGroupState } from "../../notifications/preferences/notificationPreferences";
 import { NotificationPreferenceGroup } from "./NotificationPreferenceGroup";
 
 type NotificationSettingsCardProps = {
-  onChangeThresholdPeriod: (
-    key: NotificationThresholdFieldState["key"],
-    period: NotificationThresholdFieldState["selectedPeriod"],
-  ) => void;
-  onChangeThresholdValue: (key: NotificationThresholdFieldState["key"], value: string) => void;
+  onChangeThresholdEnabled: (key: NotificationThresholdKey, enabled: boolean) => void;
+  onChangeThresholdValue: (key: NotificationThresholdKey, value: string) => void;
   permissionLabel: string;
   preferenceGroups: NotificationPreferenceGroupState[];
   statusMessage: string;
@@ -25,7 +20,7 @@ type NotificationSettingsCardProps = {
 };
 
 export function NotificationSettingsCard({
-  onChangeThresholdPeriod,
+  onChangeThresholdEnabled,
   onChangeThresholdValue,
   permissionLabel,
   preferenceGroups,
@@ -48,7 +43,7 @@ export function NotificationSettingsCard({
           <NotificationPreferenceGroup
             group={group}
             key={group.id}
-            onChangeThresholdPeriod={onChangeThresholdPeriod}
+            onChangeThresholdEnabled={onChangeThresholdEnabled}
             onChangeThresholdValue={onChangeThresholdValue}
             onToggle={onTogglePreference}
           />

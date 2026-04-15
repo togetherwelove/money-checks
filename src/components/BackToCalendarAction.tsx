@@ -21,10 +21,10 @@ const styles = StyleSheet.create({
   button: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 2,
     alignSelf: "flex-start",
     paddingHorizontal: 4,
-    paddingVertical: 8,
+    paddingVertical: 6,
   },
   label: {
     color: AppColors.primary,

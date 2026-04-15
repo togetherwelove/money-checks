@@ -153,6 +153,7 @@ export function useActiveLedgerBook(
     const normalizedCode = shareCode.trim();
     if (!normalizedCode) {
       return {
+        book: null,
         errorMessage: resolveSharedLedgerJoinErrorMessage({
           message: "Ledger book not found for code",
         }),
@@ -164,12 +165,14 @@ export function useActiveLedgerBook(
 
     try {
       const joinResult = await trackBusyTask(() => requestLedgerBookJoinByCode(normalizedCode));
+      let joinedBook: LedgerBook | null = null;
       if (joinResult === "joined") {
-        const nextBook = await fetchActiveLedgerBook(userId);
-        setActiveBook(nextBook);
+        joinedBook = await fetchActiveLedgerBook(userId);
+        setActiveBook(joinedBook);
       }
 
       return {
+        book: joinedBook,
         errorMessage: null,
         result: joinResult,
       };
@@ -182,6 +185,7 @@ export function useActiveLedgerBook(
       const errorMessage = resolveSharedLedgerJoinErrorMessage(error);
       setActiveBookError(errorMessage);
       return {
+        book: null,
         errorMessage,
         result: null,
       };

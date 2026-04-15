@@ -47,6 +47,7 @@ const config: ExpoConfig = {
     "expo-sqlite",
     "expo-font",
     "expo-secure-store",
+    "expo-notifications",
   ],
 };
 

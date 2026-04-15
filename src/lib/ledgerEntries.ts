@@ -97,28 +97,46 @@ export async function insertLedgerEntry(
   userId: string,
   entry: LedgerEntry,
 ): Promise<LedgerEntry> {
-  const { data, error } = await supabase
-    .from(LEDGER_TABLE)
-    .insert({
-      book_id: bookId,
-      user_id: userId,
-      source_type: DEFAULT_SOURCE_TYPE,
-      entry_type: entry.type,
-      occurred_on: entry.date,
-      amount: entry.amount,
-      content: entry.content,
-      currency: DEFAULT_CURRENCY,
-      category: entry.category,
-      note: entry.note,
-    })
-    .select("*")
-    .single<LedgerEntryRow>();
-
-  if (error || !data) {
-    throw error ?? new Error("Failed to create ledger entry.");
+  const [savedEntry] = await insertLedgerEntries(bookId, userId, [entry]);
+  if (!savedEntry) {
+    throw new Error("Failed to create ledger entry.");
   }
 
-  return (await mapLedgerEntries([data]))[0];
+  return savedEntry;
+}
+
+export async function insertLedgerEntries(
+  bookId: string,
+  userId: string,
+  entries: LedgerEntry[],
+): Promise<LedgerEntry[]> {
+  const { data, error } = await supabase
+    .from(LEDGER_TABLE)
+    .insert(
+      entries.map((entry) => ({
+        book_id: bookId,
+        user_id: userId,
+        source_type: DEFAULT_SOURCE_TYPE,
+        entry_type: entry.type,
+        occurred_on: entry.date,
+        amount: entry.amount,
+        content: entry.content,
+        currency: DEFAULT_CURRENCY,
+        category: entry.category,
+        installment_group_id: entry.installmentGroupId ?? null,
+        installment_months: entry.installmentMonths ?? null,
+        installment_order: entry.installmentOrder ?? null,
+        note: entry.note,
+      })),
+    )
+    .select("*")
+    .returns<LedgerEntryRow[]>();
+
+  if (error || !data) {
+    throw error ?? new Error("Failed to create ledger entries.");
+  }
+
+  return mapLedgerEntries(data);
 }
 
 export async function updateLedgerEntry(entry: LedgerEntry): Promise<LedgerEntry> {
@@ -148,6 +166,36 @@ export async function deleteLedgerEntry(entryId: string): Promise<void> {
   if (error) {
     throw error;
   }
+}
+
+export async function deleteLedgerEntries(entryIds: string[]): Promise<void> {
+  if (entryIds.length === 0) {
+    return;
+  }
+
+  const { error } = await supabase.from(LEDGER_TABLE).delete().in("id", entryIds);
+  if (error) {
+    throw error;
+  }
+}
+
+export async function fetchLedgerEntriesByInstallmentGroup(
+  bookId: string,
+  installmentGroupId: string,
+): Promise<LedgerEntry[]> {
+  const { data, error } = await supabase
+    .from(LEDGER_TABLE)
+    .select("*")
+    .eq("book_id", bookId)
+    .eq("installment_group_id", installmentGroupId)
+    .order("occurred_on", { ascending: true })
+    .returns<LedgerEntryRow[]>();
+
+  if (error) {
+    throw error;
+  }
+
+  return mapLedgerEntries(data ?? []);
 }
 
 async function mapLedgerEntries(rows: LedgerEntryRow[]): Promise<LedgerEntry[]> {

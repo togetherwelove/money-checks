@@ -9,7 +9,7 @@ export type AppPlatformConfig = {
   isWeb: boolean;
   os: AppPlatformOs;
   showsNotificationSettings: boolean;
-  supportsBrowserNotifications: boolean;
+  supportsPushNotifications: boolean;
   usesAndroidDatePickerDialog: boolean;
 };
 
@@ -25,8 +25,8 @@ export function createAppPlatform(os: AppPlatformOs): AppPlatformConfig {
     isNative: !isWeb,
     isWeb,
     os,
-    showsNotificationSettings: isWeb,
-    supportsBrowserNotifications: isWeb,
+    showsNotificationSettings: !isWeb,
+    supportsPushNotifications: !isWeb,
     usesAndroidDatePickerDialog: isAndroid,
   };
 }

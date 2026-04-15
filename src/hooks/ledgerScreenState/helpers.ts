@@ -1,6 +1,9 @@
 import {
+  deleteLedgerEntries,
   deleteLedgerEntry,
   fetchLedgerEntries,
+  fetchLedgerEntriesByInstallmentGroup,
+  insertLedgerEntries,
   insertLedgerEntry,
   updateLedgerEntry,
 } from "../../lib/ledgerEntries";
@@ -34,9 +37,36 @@ export async function saveLedgerEntry(params: {
   return trackBusyTask(() => insertLedgerEntry(activeBookId, userId, entry));
 }
 
+export async function saveLedgerEntries(params: {
+  activeBookId: string;
+  entries: LedgerEntry[];
+  trackBusyTask: BusyTaskTracker;
+  userId: string;
+}): Promise<LedgerEntry[]> {
+  const { activeBookId, entries, trackBusyTask, userId } = params;
+  return trackBusyTask(() => insertLedgerEntries(activeBookId, userId, entries));
+}
+
 export async function removeLedgerEntry(
   entryId: string,
   trackBusyTask: BusyTaskTracker,
 ): Promise<void> {
   await trackBusyTask(() => deleteLedgerEntry(entryId));
+}
+
+export async function removeLedgerEntries(
+  entryIds: string[],
+  trackBusyTask: BusyTaskTracker,
+): Promise<void> {
+  await trackBusyTask(() => deleteLedgerEntries(entryIds));
+}
+
+export async function loadInstallmentEntries(
+  activeBookId: string,
+  installmentGroupId: string,
+  trackBusyTask: BusyTaskTracker,
+): Promise<LedgerEntry[]> {
+  return trackBusyTask(() =>
+    fetchLedgerEntriesByInstallmentGroup(activeBookId, installmentGroupId),
+  );
 }

@@ -1,4 +1,4 @@
-import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { CalendarToolbar } from "../components/CalendarToolbar";
 import { IconActionButton } from "../components/IconActionButton";
@@ -7,7 +7,9 @@ import { MonthCalendarPager } from "../components/MonthCalendarPager";
 import { MonthlySummary } from "../components/MonthlySummary";
 import { WeekdayHeader } from "../components/WeekdayHeader";
 import { AppColors } from "../constants/colors";
+import { CommonActionCopy } from "../constants/commonActions";
 import { AppLayout } from "../constants/layout";
+import { AppMessages } from "../constants/messages";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
 import type { LedgerEntry } from "../types/ledger";
 import {
@@ -18,6 +20,7 @@ import {
 } from "../utils/calendar";
 
 type HomeScreenProps = {
+  onDeleteSelectedEntry: (entry: LedgerEntry) => Promise<void>;
   onEditSelectedEntry: (entry: LedgerEntry) => void;
   onOpenCharts: () => void;
   onOpenEntry: () => void;
@@ -26,6 +29,7 @@ type HomeScreenProps = {
 };
 
 export function HomeScreen({
+  onDeleteSelectedEntry,
   onEditSelectedEntry,
   onOpenCharts,
   onOpenEntry,
@@ -35,7 +39,6 @@ export function HomeScreen({
   const todayIsoDate = toIsoDate(new Date());
   const {
     errorMessage,
-    handleDeleteEntry,
     isRefreshing,
     monthlyLedger,
     refreshLedger,
@@ -96,7 +99,25 @@ export function HomeScreen({
         >
           <LedgerEntryList
             entries={selectedEntries}
-            onDeleteEntry={handleDeleteEntry}
+            onDeleteEntry={(entry) => {
+              Alert.alert(
+                AppMessages.editorDeleteConfirmTitle,
+                AppMessages.editorDeleteConfirmMessage,
+                [
+                  {
+                    style: "cancel",
+                    text: CommonActionCopy.cancel,
+                  },
+                  {
+                    onPress: () => {
+                      void onDeleteSelectedEntry(entry);
+                    },
+                    style: "destructive",
+                    text: AppMessages.editorDeleteConfirmAction,
+                  },
+                ],
+              );
+            }}
             onEditEntry={onEditSelectedEntry}
           />
         </ScrollView>

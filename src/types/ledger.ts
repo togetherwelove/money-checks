@@ -9,6 +9,9 @@ export type LedgerEntry = {
   amount: number;
   content: string;
   category: string;
+  installmentGroupId?: string | null;
+  installmentMonths?: number | null;
+  installmentOrder?: number | null;
   note: string;
   sourceType?: string;
 };
@@ -19,6 +22,7 @@ export type LedgerEntryDraft = {
   amount: string;
   content: string;
   category: string;
+  installmentMonths: number;
   note: string;
 };
 

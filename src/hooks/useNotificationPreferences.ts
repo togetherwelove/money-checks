@@ -1,27 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
 
 import {
-  NotificationDefaultThresholdPeriods,
+  NotificationDefaultThresholdEnabled,
   NotificationEventCopy,
   NotificationEventOrder,
   NotificationGroupCopy,
   NotificationGroupOrder,
   NotificationThresholdCopy,
-  NotificationThresholdPeriodCopy,
-  NotificationThresholdPeriodOrder,
-  NotificationUiCopy,
+  NotificationThresholdFieldLabels,
   isRequiredNotificationEvent,
 } from "../notifications/config/notificationCopy";
 import type {
   NotificationEventType,
   NotificationThresholdKey,
-  NotificationThresholdPeriod,
 } from "../notifications/domain/notificationEvents";
 import type {
   NotificationPreferenceGroup,
   NotificationPreferences,
 } from "../notifications/preferences/notificationPreferences";
 import {
+  createDefaultNotificationPreferences,
   loadNotificationPreferences,
   saveNotificationPreferences,
 } from "../notifications/preferences/notificationPreferencesStorage";
@@ -31,20 +29,33 @@ type NotificationPreferencesState = {
   preferenceGroups: NotificationPreferenceGroup[];
   preferences: NotificationPreferences;
   updateEventPreference: (eventType: NotificationEventType, enabled: boolean) => void;
-  updateThresholdPeriod: (
-    key: NotificationThresholdKey,
-    period: NotificationThresholdPeriod,
-  ) => void;
+  updateThresholdEnabled: (key: NotificationThresholdKey, enabled: boolean) => void;
   updateThresholdValue: (key: NotificationThresholdKey, value: string) => void;
 };
 
 export function useNotificationPreferences(userId: string): NotificationPreferencesState {
-  const [preferences, setPreferences] = useState<NotificationPreferences>(() =>
-    loadNotificationPreferences(userId),
+  const [preferences, setPreferences] = useState<NotificationPreferences>(
+    createDefaultNotificationPreferences,
   );
 
   useEffect(() => {
-    setPreferences(loadNotificationPreferences(userId));
+    let isMounted = true;
+
+    void loadNotificationPreferences(userId)
+      .then((nextPreferences) => {
+        if (isMounted) {
+          setPreferences(nextPreferences);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setPreferences(createDefaultNotificationPreferences());
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [userId]);
 
   const preferenceGroups = useMemo(() => buildPreferenceGroups(preferences), [preferences]);
@@ -64,20 +75,20 @@ export function useNotificationPreferences(userId: string): NotificationPreferen
             [eventType]: enabled,
           },
         };
-        saveNotificationPreferences(userId, nextPreferences);
+        void saveNotificationPreferences(userId, nextPreferences);
         return nextPreferences;
       });
     },
-    updateThresholdPeriod: (key, period) => {
+    updateThresholdEnabled: (key, enabled) => {
       setPreferences((currentPreferences) => {
         const nextPreferences = {
           ...currentPreferences,
-          thresholdPeriods: {
-            ...currentPreferences.thresholdPeriods,
-            [key]: period,
+          enabledThresholds: {
+            ...currentPreferences.enabledThresholds,
+            [key]: enabled,
           },
         };
-        saveNotificationPreferences(userId, nextPreferences);
+        void saveNotificationPreferences(userId, nextPreferences);
         return nextPreferences;
       });
     },
@@ -93,7 +104,7 @@ export function useNotificationPreferences(userId: string): NotificationPreferen
             [key]: nextThreshold,
           },
         };
-        saveNotificationPreferences(userId, nextPreferences);
+        void saveNotificationPreferences(userId, nextPreferences);
         return nextPreferences;
       });
     },
@@ -103,36 +114,33 @@ export function useNotificationPreferences(userId: string): NotificationPreferen
 function buildPreferenceGroups(
   preferences: NotificationPreferences,
 ): NotificationPreferenceGroup[] {
+  const thresholdFields = Object.entries(NotificationThresholdCopy).map(([key, fieldCopy]) => ({
+    description: fieldCopy.description,
+    enabled:
+      preferences.enabledThresholds[key as NotificationThresholdKey] ??
+      NotificationDefaultThresholdEnabled[key as NotificationThresholdKey],
+    key: key as NotificationThresholdKey,
+    label: NotificationThresholdFieldLabels[key as NotificationThresholdKey],
+    value: formatThresholdValue(preferences.thresholds[key as NotificationThresholdKey]),
+  })) as NotificationPreferenceGroup["thresholdFields"];
+
   return NotificationGroupOrder.map((groupId) => ({
     description: NotificationGroupCopy[groupId].description,
     id: groupId,
-    items: NotificationEventOrder.filter(
-      (eventType) =>
-        NotificationEventCopy[eventType].groupId === groupId &&
-        !isRequiredNotificationEvent(eventType),
-    ).map((eventType) => ({
-      description: NotificationEventCopy[eventType].description,
-      enabled: preferences.enabledByEvent[eventType],
-      label: NotificationEventCopy[eventType].label,
-      type: eventType,
-    })),
-    thresholdFields:
+    items:
       groupId === "threshold"
-        ? (Object.entries(NotificationThresholdCopy).map(([key, fieldCopy]) => ({
-            description: fieldCopy.description,
-            key: key as NotificationThresholdKey,
-            label: fieldCopy.label,
-            periodLabel: NotificationUiCopy.periodFieldLabel,
-            periodOptions: NotificationThresholdPeriodOrder.map((period) => ({
-              label: NotificationThresholdPeriodCopy[period],
-              value: period,
-            })),
-            selectedPeriod:
-              preferences.thresholdPeriods[key as NotificationThresholdKey] ??
-              NotificationDefaultThresholdPeriods[key as NotificationThresholdKey],
-            value: formatThresholdValue(preferences.thresholds[key as NotificationThresholdKey]),
-          })) as NotificationPreferenceGroup["thresholdFields"])
-        : undefined,
+        ? []
+        : NotificationEventOrder.filter(
+            (eventType) =>
+              NotificationEventCopy[eventType].groupId === groupId &&
+              !isRequiredNotificationEvent(eventType),
+          ).map((eventType) => ({
+            description: NotificationEventCopy[eventType].description,
+            enabled: preferences.enabledByEvent[eventType],
+            label: NotificationEventCopy[eventType].label,
+            type: eventType,
+          })),
+    thresholdFields: groupId === "threshold" ? thresholdFields : undefined,
     title: NotificationGroupCopy[groupId].title,
   })) as NotificationPreferenceGroup[];
 }

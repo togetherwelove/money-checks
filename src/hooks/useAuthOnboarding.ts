@@ -8,7 +8,7 @@ import {
   readStoredAuthOnboardingState,
   resolveAuthOnboardingStep,
 } from "../lib/authOnboarding";
-import type { BrowserNotificationPermissionState } from "../lib/notifications/browserNotifications";
+import type { NotificationPermissionState } from "../lib/notifications/pushNotifications";
 import { fetchOwnProfileDisplayName } from "../lib/profiles";
 import { normalizeDisplayNameCandidate } from "../utils/displayName";
 
@@ -22,7 +22,7 @@ type AuthOnboardingState = {
 type UseAuthOnboardingOptions = {
   fallbackDisplayName: string;
   isNotificationSupported: boolean;
-  permissionState: BrowserNotificationPermissionState;
+  permissionState: NotificationPermissionState;
   userId: string;
 };
 

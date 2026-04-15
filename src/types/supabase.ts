@@ -9,6 +9,9 @@ export type LedgerEntryRow = {
   currency: string;
   content: string;
   category: string;
+  installment_group_id: string | null;
+  installment_months: number | null;
+  installment_order: number | null;
   note: string;
   metadata: Record<string, unknown>;
   created_at: string;
@@ -51,6 +54,14 @@ export type LedgerBookJoinRequestProfileRow = {
   requester_user_id: string;
 };
 
+export type NotificationPreferencesRow = {
+  enabled_by_event: Record<string, boolean> | null;
+  enabled_thresholds: Record<string, boolean> | null;
+  threshold_periods: Record<string, string> | null;
+  thresholds: Record<string, number> | null;
+  user_id: string;
+};
+
 export type ProfileRow = {
   active_book_id: string | null;
 };
@@ -58,4 +69,11 @@ export type ProfileRow = {
 export type ProfileDisplayRow = {
   display_name: string;
   id: string;
+};
+
+export type PushDeviceTokenRow = {
+  expo_push_token: string;
+  platform: "android" | "ios";
+  updated_at: string;
+  user_id: string;
 };

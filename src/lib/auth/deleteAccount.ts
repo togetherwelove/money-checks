@@ -1,4 +1,5 @@
 import { AccountDeletionMessages } from "../../constants/accountDeletionMessages";
+import { clearStoredPushDeviceToken } from "../notifications/pushDeviceTokens";
 import { supabase } from "../supabase";
 import { supabasePublishableKey, supabaseUrl } from "../supabase";
 import { deleteAccountRequest } from "./deleteAccountRequest";
@@ -15,6 +16,7 @@ export async function deleteOwnAccount(): Promise<void> {
     functionUrl: `${supabaseUrl}${DELETE_ACCOUNT_FUNCTION_PATH}`,
     publishableKey: supabasePublishableKey,
     onDeleted: async () => {
+      clearStoredPushDeviceToken();
       await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
     },
   }).catch((error) => {

@@ -1,8 +1,7 @@
+import type { BusyTaskTracker } from "../hooks/ledgerScreenState/types";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
-import type {
-  NotificationThresholdKey,
-  NotificationThresholdPeriod,
-} from "../notifications/domain/notificationEvents";
+import type { NotificationEvent } from "../notifications/domain/notificationEvents";
+import type { NotificationThresholdKey } from "../notifications/domain/notificationEvents";
 import type { NotificationPreferenceGroup } from "../notifications/preferences/notificationPreferences";
 import { AccountScreen } from "../screens/AccountScreen";
 import { ChartScreen } from "../screens/ChartScreen";
@@ -23,22 +22,33 @@ type AppScreenRouterProps = {
   notificationPreferenceGroups: NotificationPreferenceGroup[];
   notificationPermissionLabel: string;
   notificationStatusMessage: string;
+  onChangeNotificationThresholdEnabled: (key: NotificationThresholdKey, enabled: boolean) => void;
   onChangeNotificationThreshold: (key: NotificationThresholdKey, value: string) => void;
-  onChangeNotificationThresholdPeriod: (
-    key: NotificationThresholdKey,
-    period: NotificationThresholdPeriod,
-  ) => void;
+  onDeleteSelectedEntry: (entry: LedgerEntry) => Promise<void>;
   onEditSelectedEntry: (entry: LedgerEntry) => void;
   onOpenCharts: () => void;
   onOpenEntry: () => void;
   onSaveEntry: () => Promise<void>;
   onSaveEntryDrafts: (drafts: LedgerEntryDraft[]) => Promise<void>;
+  onSettleInstallmentEntry: (entry: LedgerEntry) => Promise<void>;
+  onSendPendingJoinRequestNotification: (requesterName: string) => Promise<void>;
+  onSendPushNotificationToBookMembers: (
+    bookId: string,
+    event: NotificationEvent,
+    excludeUserIds: string[],
+  ) => Promise<void>;
+  onSendPushNotificationToUsers: (
+    event: NotificationEvent,
+    targetUserIds: string[],
+    bookId?: string,
+  ) => Promise<void>;
   onToggleNotificationPreference: (
     eventType: NotificationPreferenceGroup["items"][number]["type"],
     enabled: boolean,
   ) => void;
   onSelectCalendarDate: (isoDate: string) => void;
   showNotificationSettings: boolean;
+  trackBlockingTask: BusyTaskTracker;
   userId: string;
 };
 
@@ -51,16 +61,22 @@ export function AppScreenRouter({
   notificationPreferenceGroups,
   notificationPermissionLabel,
   notificationStatusMessage,
+  onChangeNotificationThresholdEnabled,
   onChangeNotificationThreshold,
-  onChangeNotificationThresholdPeriod,
+  onDeleteSelectedEntry,
   onEditSelectedEntry,
   onOpenCharts,
   onOpenEntry,
   onSaveEntry,
   onSaveEntryDrafts,
+  onSettleInstallmentEntry,
+  onSendPendingJoinRequestNotification,
+  onSendPushNotificationToBookMembers,
+  onSendPushNotificationToUsers,
   onToggleNotificationPreference,
   onSelectCalendarDate,
   showNotificationSettings,
+  trackBlockingTask,
   userId,
 }: AppScreenRouterProps) {
   if (activeScreen === "account") {
@@ -69,6 +85,7 @@ export function AppScreenRouter({
         accountProviderLabel={accountProviderLabel}
         email={email}
         fallbackDisplayName={fallbackDisplayName}
+        trackBlockingTask={trackBlockingTask}
         userId={userId}
       />
     );
@@ -81,6 +98,7 @@ export function AppScreenRouter({
           accountProviderLabel={accountProviderLabel}
           email={email}
           fallbackDisplayName={fallbackDisplayName}
+          trackBlockingTask={trackBlockingTask}
           userId={userId}
         />
       );
@@ -91,8 +109,8 @@ export function AppScreenRouter({
         notificationPermissionLabel={notificationPermissionLabel}
         notificationPreferenceGroups={notificationPreferenceGroups}
         notificationStatusMessage={notificationStatusMessage}
+        onChangeNotificationThresholdEnabled={onChangeNotificationThresholdEnabled}
         onChangeNotificationThreshold={onChangeNotificationThreshold}
-        onChangeNotificationThresholdPeriod={onChangeNotificationThresholdPeriod}
         onToggleNotificationPreference={onToggleNotificationPreference}
       />
     );
@@ -107,6 +125,9 @@ export function AppScreenRouter({
         onLeaveSharedLedgerBook={ledgerState.leaveSharedLedgerBook}
         onRemoveSharedLedgerMember={ledgerState.removeSharedLedgerMember}
         onRejectJoinRequest={ledgerState.rejectLedgerJoinRequest}
+        onSendPendingJoinRequestNotification={onSendPendingJoinRequestNotification}
+        onSendPushNotificationToBookMembers={onSendPushNotificationToBookMembers}
+        onSendPushNotificationToUsers={onSendPushNotificationToUsers}
         pendingJoinRequests={ledgerState.pendingJoinRequests}
         userId={userId}
       />
@@ -126,6 +147,7 @@ export function AppScreenRouter({
       <EntryScreen
         onSaveEntries={onSaveEntryDrafts}
         onSaveEntry={onSaveEntry}
+        onSettleInstallmentEntry={onSettleInstallmentEntry}
         state={ledgerState}
       />
     );
@@ -133,6 +155,7 @@ export function AppScreenRouter({
 
   return (
     <HomeScreen
+      onDeleteSelectedEntry={onDeleteSelectedEntry}
       onEditSelectedEntry={onEditSelectedEntry}
       onOpenCharts={onOpenCharts}
       onOpenEntry={onOpenEntry}

@@ -22,7 +22,6 @@ type SharedLedgerBookCardProps = {
   activeBook: LedgerBook | null;
   bookName: string | null;
   bookNameInput: string;
-  bookNameStatusMessage: string | null;
   currentUserId: string;
   isOwner: boolean;
   members: LedgerBookMember[];
@@ -38,7 +37,6 @@ export function SharedLedgerBookCard({
   activeBook,
   bookName,
   bookNameInput,
-  bookNameStatusMessage,
   currentUserId,
   isOwner,
   members,
@@ -128,9 +126,6 @@ export function SharedLedgerBookCard({
               {bookName ?? AppMessages.accountBookFallback}
             </Text>
           )}
-          {bookNameStatusMessage ? (
-            <Text style={styles.successText}>{bookNameStatusMessage}</Text>
-          ) : null}
         </View>
         {isSharedBook ? (
           <View style={[styles.stateBadge, styles.sharedBadge]}>

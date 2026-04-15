@@ -11,6 +11,9 @@ export function mapLedgerEntryRow(row: LedgerEntryRow, authorName?: string): Led
     amount: Number(row.amount),
     content: row.content,
     category: row.category,
+    installmentGroupId: row.installment_group_id,
+    installmentMonths: row.installment_months,
+    installmentOrder: row.installment_order,
     note: row.note,
     sourceType: row.source_type,
   };

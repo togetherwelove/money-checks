@@ -1,6 +1,6 @@
 export const EmailAuthCopy = {
   accountProviderValue: "이메일",
-  supportLabel: "지출 기록, 공유 가계부, 월간 차트를 안전하게 이어서 관리",
+  supportLabel: "입출금 기록, 공유 가계부, 차트를 안전하게 이어서 관리",
   signIn: {
     title: "이메일로 안전하게 로그인",
     emailLabel: "이메일",

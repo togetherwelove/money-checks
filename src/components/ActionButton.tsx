@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text } from "react-native";
+import { Pressable, StyleSheet, Text } from "react-native";
 
 import { AuthControls } from "../constants/authControls";
 import { AppColors } from "../constants/colors";
@@ -62,11 +62,7 @@ export function ActionButton({
         disabled || isLoading ? styles.disabledButton : null,
       ]}
     >
-      {isLoading ? (
-        <ActivityIndicator color={styles[`${variant}Text`].color} size="small" />
-      ) : (
-        <Text style={[styles.text, styles[`${size}Text`], styles[`${variant}Text`]]}>{label}</Text>
-      )}
+      <Text style={[styles.text, styles[`${size}Text`], styles[`${variant}Text`]]}>{label}</Text>
     </Pressable>
   );
 }

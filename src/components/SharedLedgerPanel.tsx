@@ -1,8 +1,17 @@
 import { useState } from "react";
 import { View } from "react-native";
 
+import { DEFAULT_MEMBER_DISPLAY_NAME } from "../constants/ledgerDisplay";
 import { AppMessages } from "../constants/messages";
 import { useLedgerBookNickname } from "../hooks/useLedgerBookNickname";
+import { showNativeToast } from "../lib/nativeToast";
+import { fetchOwnProfileDisplayName } from "../lib/profiles";
+import {
+  createMemberJoinedBookEvent,
+  createMemberLeftBookEvent,
+  createMemberRemovedFromBookEvent,
+} from "../notifications/domain/notificationEventFactories";
+import type { NotificationEvent } from "../notifications/domain/notificationEvents";
 import type { LedgerBook } from "../types/ledgerBook";
 import type {
   JoinSharedLedgerBookAttempt,
@@ -23,6 +32,17 @@ type SharedLedgerPanelProps = {
   onRejectJoinRequest: (requestId: string) => Promise<boolean>;
   onLeaveSharedLedgerBook: () => Promise<boolean>;
   onJoinSharedLedgerBook: (shareCode: string) => Promise<JoinSharedLedgerBookAttempt>;
+  onSendPendingJoinRequestNotification: (requesterName: string) => Promise<void>;
+  onSendPushNotificationToBookMembers: (
+    bookId: string,
+    event: NotificationEvent,
+    excludeUserIds: string[],
+  ) => Promise<void>;
+  onSendPushNotificationToUsers: (
+    event: NotificationEvent,
+    targetUserIds: string[],
+    bookId?: string,
+  ) => Promise<void>;
   pendingJoinRequests: LedgerBookJoinRequest[];
 };
 
@@ -35,22 +55,17 @@ export function SharedLedgerPanel({
   onRejectJoinRequest,
   onLeaveSharedLedgerBook,
   onJoinSharedLedgerBook,
+  onSendPendingJoinRequestNotification,
+  onSendPushNotificationToBookMembers,
+  onSendPushNotificationToUsers,
   pendingJoinRequests,
 }: SharedLedgerPanelProps) {
   const [shareCodeInput, setShareCodeInput] = useState("");
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [hasJoinError, setHasJoinError] = useState(false);
-  const {
-    bookNameInput,
-    displayedBookName,
-    handleChangeBookName,
-    handleSaveBookName,
-    isOwner,
-    statusMessage: bookNameStatusMessage,
-  } = useLedgerBookNickname({
-    activeBook,
-    currentUserId,
-  });
+  const { bookNameInput, displayedBookName, handleChangeBookName, handleSaveBookName, isOwner } =
+    useLedgerBookNickname({
+      activeBook,
+      currentUserId,
+    });
   const isJoinBlocked = isJoinRequestBlockedByActiveSharedLedger({
     activeBook,
     currentUserId,
@@ -69,8 +84,7 @@ export function SharedLedgerPanel({
 
     const joinAttempt = await onJoinSharedLedgerBook(nextShareCode);
     const didSucceed = Boolean(joinAttempt.result);
-    setHasJoinError(!didSucceed);
-    setStatusMessage(
+    showNativeToast(
       joinAttempt.result === "requested"
         ? AppMessages.accountJoinRequestSuccess
         : joinAttempt.result === "joined"
@@ -81,36 +95,77 @@ export function SharedLedgerPanel({
     if (didSucceed) {
       setShareCodeInput("");
     }
+
+    if (joinAttempt.result === "requested") {
+      await onSendPendingJoinRequestNotification(await resolveCurrentActorName());
+      return;
+    }
+
+    if (joinAttempt.result === "joined" && joinAttempt.book) {
+      const actorName = await resolveCurrentActorName();
+      await onSendPushNotificationToBookMembers(
+        joinAttempt.book.id,
+        createMemberJoinedBookEvent(actorName, joinAttempt.book.name),
+        [currentUserId],
+      );
+    }
   };
 
   const handleLeave = async () => {
     const didLeave = await onLeaveSharedLedgerBook();
-    setHasJoinError(!didLeave);
-    setStatusMessage(
+    showNativeToast(
       didLeave ? AppMessages.accountDisconnectSuccess : AppMessages.accountDisconnectError,
     );
+
+    if (didLeave && activeBook) {
+      const actorName = await resolveCurrentActorName();
+      await onSendPushNotificationToBookMembers(
+        activeBook.id,
+        createMemberLeftBookEvent(actorName, activeBook.name),
+        [currentUserId],
+      );
+    }
   };
 
   const handleKickMember = async (targetUserId: string) => {
     const didKick = await onKickMember(targetUserId);
-    setHasJoinError(!didKick);
-    setStatusMessage(didKick ? AppMessages.accountKickSuccess : AppMessages.accountKickError);
+    showNativeToast(didKick ? AppMessages.accountKickSuccess : AppMessages.accountKickError);
+
+    if (didKick && activeBook) {
+      const actorName = await resolveCurrentActorName();
+      await onSendPushNotificationToUsers(
+        createMemberRemovedFromBookEvent(actorName, activeBook.name),
+        [targetUserId],
+        activeBook.id,
+      );
+    }
+
     return didKick;
   };
 
   const handleApproveJoinRequest = async (requestId: string) => {
     const didApprove = await onApproveJoinRequest(requestId);
-    setHasJoinError(!didApprove);
-    setStatusMessage(
+    showNativeToast(
       didApprove ? AppMessages.accountJoinApproveSuccess : AppMessages.accountJoinApproveError,
     );
+
+    if (didApprove && activeBook) {
+      const approvedRequest = pendingJoinRequests.find((request) => request.id === requestId);
+      if (approvedRequest) {
+        await onSendPushNotificationToBookMembers(
+          activeBook.id,
+          createMemberJoinedBookEvent(approvedRequest.requesterDisplayName, activeBook.name),
+          [currentUserId, approvedRequest.requesterUserId],
+        );
+      }
+    }
+
     return didApprove;
   };
 
   const handleRejectJoinRequest = async (requestId: string) => {
     const didReject = await onRejectJoinRequest(requestId);
-    setHasJoinError(!didReject);
-    setStatusMessage(
+    showNativeToast(
       didReject ? AppMessages.accountJoinRejectSuccess : AppMessages.accountJoinRejectError,
     );
     return didReject;
@@ -124,7 +179,6 @@ export function SharedLedgerPanel({
         activeBook={activeBook}
         bookName={displayedBookName}
         bookNameInput={bookNameInput}
-        bookNameStatusMessage={bookNameStatusMessage}
         currentUserId={currentUserId}
         isOwner={isOwner}
         members={members}
@@ -137,19 +191,24 @@ export function SharedLedgerPanel({
       />
       <SharedLedgerJoinCard
         canLeaveSharedBook={canLeaveSharedBook}
-        hasJoinError={hasJoinError}
         isJoinBlocked={isJoinBlocked}
         onChangeShareCodeInput={(value) => {
           setShareCodeInput(value.toUpperCase());
-          if (statusMessage) {
-            setStatusMessage(null);
-          }
         }}
         onJoin={handleJoin}
         onLeave={handleLeave}
         shareCodeInput={shareCodeInput}
-        statusMessage={statusMessage}
       />
     </View>
   );
+
+  async function resolveCurrentActorName() {
+    try {
+      return (
+        (await fetchOwnProfileDisplayName(currentUserId)).trim() || DEFAULT_MEMBER_DISPLAY_NAME
+      );
+    } catch {
+      return DEFAULT_MEMBER_DISPLAY_NAME;
+    }
+  }
 }

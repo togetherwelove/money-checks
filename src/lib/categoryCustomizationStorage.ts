@@ -1,4 +1,5 @@
 import { CATEGORY_CUSTOMIZATION_STORAGE_KEY } from "../constants/categoryCustomizer";
+import type { CategoryIconName } from "../types/category";
 import type { StoredCustomCategory } from "../types/category";
 import type { LedgerEntryType } from "../types/ledger";
 import { appStorage } from "./appStorage";
@@ -10,6 +11,7 @@ type StoredCategoryCustomization = Partial<
       customCategories: StoredCustomCategory[];
       hiddenSystemCategoryIds: string[];
       orderIds: string[];
+      systemCategoryIconOverrides: Record<string, CategoryIconName>;
     }
   >
 >;
@@ -27,6 +29,7 @@ export function saveStoredCustomCategories(
     customCategories,
     hiddenSystemCategoryIds: currentValue[type]?.hiddenSystemCategoryIds ?? [],
     orderIds: currentValue[type]?.orderIds ?? [],
+    systemCategoryIconOverrides: currentValue[type]?.systemCategoryIconOverrides ?? {},
   };
   appStorage.setItem(CATEGORY_CUSTOMIZATION_STORAGE_KEY, JSON.stringify(currentValue));
 }
@@ -44,6 +47,7 @@ export function saveStoredHiddenSystemCategoryIds(
     customCategories: currentValue[type]?.customCategories ?? [],
     hiddenSystemCategoryIds,
     orderIds: currentValue[type]?.orderIds ?? [],
+    systemCategoryIconOverrides: currentValue[type]?.systemCategoryIconOverrides ?? {},
   };
   appStorage.setItem(CATEGORY_CUSTOMIZATION_STORAGE_KEY, JSON.stringify(currentValue));
 }
@@ -58,6 +62,27 @@ export function saveStoredCategoryOrderIds(type: LedgerEntryType, orderIds: stri
     customCategories: currentValue[type]?.customCategories ?? [],
     hiddenSystemCategoryIds: currentValue[type]?.hiddenSystemCategoryIds ?? [],
     orderIds,
+    systemCategoryIconOverrides: currentValue[type]?.systemCategoryIconOverrides ?? {},
+  };
+  appStorage.setItem(CATEGORY_CUSTOMIZATION_STORAGE_KEY, JSON.stringify(currentValue));
+}
+
+export function loadStoredSystemCategoryIconOverrides(
+  type: LedgerEntryType,
+): Record<string, CategoryIconName> {
+  return loadStoredCategoryCustomization()[type]?.systemCategoryIconOverrides ?? {};
+}
+
+export function saveStoredSystemCategoryIconOverrides(
+  type: LedgerEntryType,
+  systemCategoryIconOverrides: Record<string, CategoryIconName>,
+): void {
+  const currentValue = loadStoredCategoryCustomization();
+  currentValue[type] = {
+    customCategories: currentValue[type]?.customCategories ?? [],
+    hiddenSystemCategoryIds: currentValue[type]?.hiddenSystemCategoryIds ?? [],
+    orderIds: currentValue[type]?.orderIds ?? [],
+    systemCategoryIconOverrides,
   };
   appStorage.setItem(CATEGORY_CUSTOMIZATION_STORAGE_KEY, JSON.stringify(currentValue));
 }

@@ -14,10 +14,11 @@ import {
   CardTitleTextStyle,
   CompactLabelTextStyle,
   FormInputTextStyle,
-  StatusMessageTextStyle,
   SurfaceCardStyle,
 } from "../constants/uiStyles";
+import type { BusyTaskTracker } from "../hooks/ledgerScreenState/types";
 import { signOutFromApp } from "../lib/auth/signOut";
+import { showNativeToast } from "../lib/nativeToast";
 import { fetchOwnProfileDisplayName, updateOwnProfileDisplayName } from "../lib/profiles";
 import { isValidDisplayName, normalizeDisplayNameCandidate } from "../utils/displayName";
 
@@ -25,6 +26,7 @@ type AccountScreenProps = {
   accountProviderLabel: string;
   email: string;
   fallbackDisplayName: string;
+  trackBlockingTask: BusyTaskTracker;
   userId: string;
 };
 
@@ -32,11 +34,10 @@ export function AccountScreen({
   accountProviderLabel,
   email,
   fallbackDisplayName,
+  trackBlockingTask,
   userId,
 }: AccountScreenProps) {
   const [displayName, setDisplayName] = useState(fallbackDisplayName);
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [hasError, setHasError] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isSavingDisplayName, setIsSavingDisplayName] = useState(false);
 
@@ -70,22 +71,21 @@ export function AccountScreen({
     }
 
     if (!isValidDisplayName(displayName)) {
-      setHasError(true);
-      setStatusMessage(AppMessages.accountNicknameRequiredError);
+      showNativeToast(AppMessages.accountNicknameRequiredError);
       return;
     }
 
     setIsSavingDisplayName(true);
 
     try {
-      const savedDisplayName = await updateOwnProfileDisplayName(userId, displayName);
+      const savedDisplayName = await trackBlockingTask(() =>
+        updateOwnProfileDisplayName(userId, displayName),
+      );
       setDisplayName(savedDisplayName || fallbackDisplayName);
-      setHasError(false);
-      setStatusMessage(AppMessages.accountNicknameSuccess);
+      showNativeToast(AppMessages.accountNicknameSuccess);
       Keyboard.dismiss();
     } catch {
-      setHasError(true);
-      setStatusMessage(AppMessages.accountNicknameError);
+      showNativeToast(AppMessages.accountNicknameError);
     } finally {
       setIsSavingDisplayName(false);
     }
@@ -107,9 +107,6 @@ export function AccountScreen({
         <TextInput
           onChangeText={(value) => {
             setDisplayName(value);
-            if (statusMessage) {
-              setStatusMessage(null);
-            }
           }}
           placeholder={fallbackDisplayName || AppMessages.accountNicknamePlaceholder}
           autoCapitalize="words"
@@ -120,15 +117,11 @@ export function AccountScreen({
           onSubmitEditing={handlePressSaveDisplayName}
           placeholderTextColor={AppColors.mutedText}
           returnKeyType="done"
+          editable={!isSavingDisplayName}
           style={styles.inlineInput}
           textContentType="none"
           value={displayName}
         />
-        {statusMessage ? (
-          <Text style={[styles.statusText, hasError ? styles.errorText : styles.successText]}>
-            {statusMessage}
-          </Text>
-        ) : null}
       </View>
       <View style={styles.card}>
         <Text style={styles.cardTitle}>{AppMessages.accountActionTitle}</Text>
@@ -193,13 +186,6 @@ const styles = StyleSheet.create({
     color: AppColors.text,
     fontSize: 14,
     fontWeight: "700",
-  },
-  statusText: StatusMessageTextStyle,
-  successText: {
-    color: AppColors.income,
-  },
-  errorText: {
-    color: AppColors.expense,
   },
   actionRow: {
     paddingTop: 2,

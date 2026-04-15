@@ -2,7 +2,10 @@ import type { LedgerEntryType } from "../../types/ledger";
 
 export type NotificationPreferenceGroupId = "sharedLedger" | "threshold";
 
-export type NotificationThresholdKey = "expenseAmount";
+export type NotificationThresholdKey =
+  | "expenseAmountDay"
+  | "expenseAmountWeek"
+  | "expenseAmountMonth";
 export type NotificationThresholdPeriod = "day" | "week" | "month";
 
 export type NotificationEventType =
