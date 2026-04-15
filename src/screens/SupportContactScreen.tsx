@@ -11,6 +11,7 @@ import { SupportContactCopy } from "../constants/supportContact";
 import {
   CompactLabelTextStyle,
   FormInputTextStyle,
+  FormMultilineInputTextStyle,
   SupportingTextStyle,
   SurfaceCardStyle,
 } from "../constants/uiStyles";
@@ -161,7 +162,8 @@ const styles = StyleSheet.create({
   label: CompactLabelTextStyle,
   input: FormInputTextStyle,
   bodyInput: {
-    minHeight: 144,
+    ...FormMultilineInputTextStyle,
+    height: 144,
   },
   emailValue: {
     ...SupportingTextStyle,

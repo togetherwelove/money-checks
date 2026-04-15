@@ -6,14 +6,21 @@ import { CATEGORY_OPTIONS } from "../constants/categories";
 import { AppColors } from "../constants/colors";
 import { EntryRegistrationCopy } from "../constants/entryRegistration";
 import { AppLayout } from "../constants/layout";
-import { LedgerEntryFormUi } from "../constants/ledgerEntryForm";
 import { AppMessages } from "../constants/messages";
-import { FormInputTextStyle, FormLabelTextStyle, SurfaceCardStyle } from "../constants/uiStyles";
+import {
+  FormInputTextStyle,
+  FormLabelTextStyle,
+  FormMultilineInputTextStyle,
+  SurfaceCardStyle,
+} from "../constants/uiStyles";
 import type { LedgerEntryDraft, LedgerEntryType } from "../types/ledger";
 import { formatAmountInput } from "../utils/amount";
 import { canSubmitDraft } from "../utils/ledgerEntries";
 import { ActionButton } from "./ActionButton";
 import { EntryDirectionSelector } from "./EntryDirectionSelector";
+
+const AMOUNT_INPUT_FOCUS_DELAY_MS = 120;
+const NOTE_INPUT_FOCUS_DELAY_MS = 80;
 
 type LedgerEntryFormProps = {
   canQueueEntry?: boolean;
@@ -50,7 +57,7 @@ export function LedgerEntryForm({
         if (!isCancelled) {
           amountInputRef.current?.focus();
         }
-      }, LedgerEntryFormUi.amountFocusDelayMs);
+      }, AMOUNT_INPUT_FOCUS_DELAY_MS);
     });
 
     return () => {
@@ -100,7 +107,7 @@ export function LedgerEntryForm({
           onChangeDraft("category", category);
           setTimeout(() => {
             noteInputRef.current?.focus();
-          }, LedgerEntryFormUi.noteFocusDelayMs);
+          }, NOTE_INPUT_FOCUS_DELAY_MS);
         }}
         selectedCategory={draft.category}
         title={EntryRegistrationCopy.categoryLabel}
@@ -114,7 +121,7 @@ export function LedgerEntryForm({
           onChangeText={(value) => onChangeDraft("note", value)}
           placeholder={EntryRegistrationCopy.noteLabel}
           returnKeyType="done"
-          style={styles.input}
+          style={styles.multilineInput}
           textAlignVertical="top"
           value={draft.note}
         />
@@ -149,6 +156,7 @@ const styles = StyleSheet.create({
   },
   label: FormLabelTextStyle,
   input: FormInputTextStyle,
+  multilineInput: FormMultilineInputTextStyle,
   formActions: {
     paddingTop: 4,
     gap: 8,

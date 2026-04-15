@@ -4,8 +4,10 @@ import { Animated, Easing, Pressable, StyleSheet, Text, View, type ViewStyle } f
 
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
-import { MenuDrawerTokens } from "../constants/menuDrawer";
 import type { AppMenuItem } from "../lib/menuItems";
+
+const MENU_DRAWER_ANIMATION_DURATION_MS = 220;
+const MENU_DRAWER_WIDTH = 284;
 
 type AppMenuDrawerProps = {
   isOpen: boolean;
@@ -19,7 +21,7 @@ export function AppMenuDrawer({ isOpen, items, onClose, onSelectItem }: AppMenuD
 
   useEffect(() => {
     Animated.timing(progress, {
-      duration: MenuDrawerTokens.animationDurationMs,
+      duration: MENU_DRAWER_ANIMATION_DURATION_MS,
       easing: Easing.out(Easing.cubic),
       toValue: isOpen ? 1 : 0,
       useNativeDriver: true,
@@ -37,7 +39,7 @@ export function AppMenuDrawer({ isOpen, items, onClose, onSelectItem }: AppMenuD
       {
         translateX: progress.interpolate({
           inputRange: [0, 1],
-          outputRange: [MenuDrawerTokens.drawerWidth, 0],
+          outputRange: [MENU_DRAWER_WIDTH, 0],
         }),
       },
     ],
@@ -80,7 +82,7 @@ const styles = StyleSheet.create({
     top: 0,
     right: 0,
     bottom: 0,
-    width: MenuDrawerTokens.drawerWidth,
+    width: MENU_DRAWER_WIDTH,
     backgroundColor: AppColors.surface,
     paddingHorizontal: AppLayout.screenPadding * 2,
     gap: 20,

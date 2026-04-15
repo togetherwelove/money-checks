@@ -1,17 +1,21 @@
 import { makeRedirectUri } from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 
-import { AuthRedirectConfig } from "../../constants/authRedirect";
 import { GoogleAuthCopy } from "../../constants/googleAuth";
 import { supabase } from "../supabase";
+import {
+  GOOGLE_AUTH_APP_SCHEME,
+  GOOGLE_AUTH_CALLBACK_PATH,
+  GOOGLE_AUTH_PROVIDER,
+} from "./googleAuthConfig";
 import { resolveGoogleAuthSession } from "./googleAuthSession";
 
 WebBrowser.maybeCompleteAuthSession();
 
 function resolveGoogleRedirectUri() {
   return makeRedirectUri({
-    scheme: AuthRedirectConfig.appScheme,
-    path: AuthRedirectConfig.googleCallbackPath,
+    scheme: GOOGLE_AUTH_APP_SCHEME,
+    path: GOOGLE_AUTH_CALLBACK_PATH,
   });
 }
 
@@ -22,7 +26,7 @@ export function canUseGoogleSignIn(): boolean {
 export async function signInWithGoogle(): Promise<void> {
   const redirectUri = resolveGoogleRedirectUri();
   const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: AuthRedirectConfig.googleProvider,
+    provider: GOOGLE_AUTH_PROVIDER,
     options: {
       redirectTo: redirectUri,
       skipBrowserRedirect: true,

@@ -1,6 +1,11 @@
 import type { Session } from "@supabase/supabase-js";
 
-import { AuthProviderCopy } from "../constants/authProvider";
+const AUTH_PROVIDER_LABELS = {
+  apple: "Apple",
+  email: "이메일",
+  google: "Google",
+  unknown: "알 수 없음",
+} as const;
 
 function normalizeAuthProvider(provider: string | null | undefined) {
   if (provider === "apple" || provider === "email" || provider === "google") {
@@ -14,15 +19,15 @@ export function resolveSessionAuthProviderLabel(session: Session) {
   const appProvider = normalizeAuthProvider(session.user.app_metadata.provider);
 
   if (appProvider) {
-    return AuthProviderCopy[appProvider];
+    return AUTH_PROVIDER_LABELS[appProvider];
   }
 
   for (const identity of session.user.identities ?? []) {
     const identityProvider = normalizeAuthProvider(identity.provider);
     if (identityProvider) {
-      return AuthProviderCopy[identityProvider];
+      return AUTH_PROVIDER_LABELS[identityProvider];
     }
   }
 
-  return AuthProviderCopy.unknown;
+  return AUTH_PROVIDER_LABELS.unknown;
 }

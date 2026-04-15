@@ -2,13 +2,14 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../../constants/colors";
 import { AppLayout } from "../../constants/layout";
-import { VersionUiCopy } from "../../constants/versionCopy";
 import { AppBuildInfo } from "../../generated/buildInfo";
+
+const VERSION_TITLE = "Version";
 
 export function AccountVersionFooter() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{`${VersionUiCopy.title} ${AppBuildInfo.appVersion}`}</Text>
+      <Text style={styles.title}>{`${VERSION_TITLE} ${AppBuildInfo.appVersion}`}</Text>
     </View>
   );
 }

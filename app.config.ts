@@ -1,10 +1,17 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
 import type { ExpoConfig } from "expo/config";
+
+const packageJsonPath = path.join(__dirname, "package.json");
+const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8")) as { version?: string };
+const appVersion = packageJson.version ?? "0.0.0";
 
 const config: ExpoConfig = {
   name: "MoneyChecks",
   slug: "money-checks",
   scheme: "moneychecks",
-  version: "1.0.0",
+  version: appVersion,
   orientation: "portrait",
   userInterfaceStyle: "light",
   extra: {

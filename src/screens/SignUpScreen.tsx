@@ -4,8 +4,6 @@ import { StyleSheet, Text, View } from "react-native";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { EmailSignUpFormCard } from "../components/authScreen/EmailSignUpFormCard";
 import { EmailSignUpOtpCard } from "../components/authScreen/EmailSignUpOtpCard";
-import { AuthRateLimit } from "../constants/authRateLimit";
-import { AuthTiming } from "../constants/authTiming";
 import { AppColors } from "../constants/colors";
 import { EmailAuthCopy } from "../constants/emailAuth";
 import { AppLayout } from "../constants/layout";
@@ -16,10 +14,14 @@ import {
   verifyEmailSignUpOtp,
 } from "../lib/auth/emailPasswordAuth";
 import {
+  DEFAULT_SIGN_UP_RETRY_SECONDS,
+  SIGN_UP_COOLDOWN_MESSAGE,
   formatSignUpOtpCooldownLabel,
   parseSignUpOtpRetrySeconds,
   resolveSignUpRetrySeconds,
 } from "../lib/auth/signUpOtpError";
+
+const SIGN_UP_OTP_RESEND_COOLDOWN_MS = DEFAULT_SIGN_UP_RETRY_SECONDS * 1000;
 
 type SignUpScreenProps = {
   onBackToSignIn: () => void;
@@ -66,7 +68,7 @@ export function SignUpScreen({ onBackToSignIn }: SignUpScreenProps) {
     ? `${EmailAuthCopy.signUp.requestOtpAction} (${formatSignUpOtpCooldownLabel(remainingResendSeconds)})`
     : EmailAuthCopy.signUp.requestOtpAction;
 
-  const startResendCooldown = (durationMs = AuthTiming.signUpOtpResendCooldownMs) => {
+  const startResendCooldown = (durationMs = SIGN_UP_OTP_RESEND_COOLDOWN_MS) => {
     setNow(Date.now());
     setResendAvailableAt(Date.now() + durationMs);
   };
@@ -86,7 +88,7 @@ export function SignUpScreen({ onBackToSignIn }: SignUpScreenProps) {
       const retryAfterSeconds = resolveSignUpRetrySeconds(error);
       if (retryAfterSeconds !== null) {
         startResendCooldown(retryAfterSeconds * 1000);
-        setStatusMessage(AuthRateLimit.signUpCooldownMessage);
+        setStatusMessage(SIGN_UP_COOLDOWN_MESSAGE);
         return;
       }
 

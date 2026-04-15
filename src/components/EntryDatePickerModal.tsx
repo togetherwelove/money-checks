@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
-import { EntryDatePickerCopy } from "../constants/entryDatePickerCopy";
+import { CommonActionCopy } from "../constants/commonActions";
 import { AppLayout } from "../constants/layout";
 import { ModalActionRowStyle } from "../constants/uiStyles";
 import type { LedgerEntry } from "../types/ledger";
@@ -18,6 +18,8 @@ import { ActionButton } from "./ActionButton";
 import { IconActionButton } from "./IconActionButton";
 import { MonthCalendar } from "./MonthCalendar";
 import { WeekdayHeader } from "./WeekdayHeader";
+
+const ENTRY_DATE_PICKER_TITLE = "날짜 선택";
 
 type EntryDatePickerModalProps = {
   entries: LedgerEntry[];
@@ -64,17 +66,17 @@ export function EntryDatePickerModal({
         <Pressable onPress={onClose} style={styles.backdrop} />
         <View style={styles.sheet}>
           <View style={styles.header}>
-            <Text style={styles.title}>{EntryDatePickerCopy.title}</Text>
+            <Text style={styles.title}>{ENTRY_DATE_PICKER_TITLE}</Text>
             <Pressable onPress={onClose}>
-              <Text style={styles.closeText}>{EntryDatePickerCopy.closeAction}</Text>
+              <Text style={styles.closeText}>{CommonActionCopy.close}</Text>
             </Pressable>
           </View>
           {mode === "native" ? (
             <>
               <DateTimePicker
                 display="inline"
-                mode="date"
                 locale="ko-KR"
+                mode="date"
                 onChange={(_event, nextDate) => {
                   if (!nextDate) {
                     return;
@@ -85,7 +87,7 @@ export function EntryDatePickerModal({
               />
               <View style={styles.actionRow}>
                 <ActionButton
-                  label={EntryDatePickerCopy.confirmAction}
+                  label={CommonActionCopy.confirm}
                   onPress={() => {
                     onSelectDate(toIsoDate(draftDate));
                     onClose();

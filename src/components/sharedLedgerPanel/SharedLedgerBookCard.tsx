@@ -5,7 +5,6 @@ import { Text, TextInput, View } from "react-native";
 import { LedgerBookNicknameCopy } from "../../constants/ledgerBookNickname";
 import { EMPTY_VALUE_PLACEHOLDER } from "../../constants/ledgerDisplay";
 import { AppMessages } from "../../constants/messages";
-import { ShareLedgerCopy } from "../../constants/shareLedgerCopy";
 import { showNativeToast } from "../../lib/nativeToast";
 import type { LedgerBook } from "../../types/ledgerBook";
 import type { LedgerBookJoinRequest } from "../../types/ledgerBookJoinRequest";
@@ -15,6 +14,9 @@ import { IconActionButton } from "../IconActionButton";
 import { LedgerBookJoinRequests } from "../LedgerBookJoinRequests";
 import { LedgerBookMembers } from "../LedgerBookMembers";
 import { sharedLedgerPanelStyles as styles } from "./sharedLedgerPanelStyles";
+
+const SHARE_CODE_COPY_ACCESSIBILITY_LABEL = "공유 코드 복사";
+const SHARE_CODE_COPY_SUCCESS_TOAST = "공유 코드를 복사했어요.";
 
 type SharedLedgerBookCardProps = {
   activeBook: LedgerBook | null;
@@ -57,7 +59,7 @@ export function SharedLedgerBookCard({
     }
 
     void Clipboard.setStringAsync(shareCode).then(() => {
-      showNativeToast(ShareLedgerCopy.copySuccessToast);
+      showNativeToast(SHARE_CODE_COPY_SUCCESS_TOAST);
     });
   };
 
@@ -151,7 +153,7 @@ export function SharedLedgerBookCard({
           </Text>
           {shareCode ? (
             <IconActionButton
-              accessibilityLabel={ShareLedgerCopy.copyActionAccessibilityLabel}
+              accessibilityLabel={SHARE_CODE_COPY_ACCESSIBILITY_LABEL}
               icon="copy"
               onPress={handleCopyShareCode}
             />

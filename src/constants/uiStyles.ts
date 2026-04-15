@@ -5,6 +5,21 @@ import { AppColors } from "./colors";
 import { AppLayout } from "./layout";
 
 const CARD_PADDING = 16;
+const FORM_INPUT_FONT_SIZE = 16;
+const FORM_INPUT_LINE_HEIGHT = 20;
+const FORM_INPUT_HEIGHT = FORM_INPUT_LINE_HEIGHT + AuthControls.verticalPadding * 2 + 2;
+
+const FormInputBaseStyle: TextStyle = {
+  paddingHorizontal: AuthControls.horizontalPadding,
+  paddingVertical: AuthControls.verticalPadding,
+  borderWidth: 1,
+  borderColor: AppColors.border,
+  borderRadius: AuthControls.borderRadius,
+  backgroundColor: AppColors.background,
+  color: AppColors.text,
+  fontSize: FORM_INPUT_FONT_SIZE,
+  lineHeight: FORM_INPUT_LINE_HEIGHT,
+};
 
 export const SurfaceCardStyle: ViewStyle = {
   borderWidth: 1,
@@ -49,15 +64,13 @@ export const CompactLabelTextStyle: TextStyle = {
 };
 
 export const FormInputTextStyle: TextStyle = {
-  paddingHorizontal: AuthControls.horizontalPadding,
-  paddingVertical: AuthControls.verticalPadding,
-  borderWidth: 1,
-  borderColor: AppColors.border,
-  borderRadius: AuthControls.borderRadius,
-  backgroundColor: AppColors.background,
-  color: AppColors.text,
-  fontSize: 16,
-  height: 40,
+  ...FormInputBaseStyle,
+  height: FORM_INPUT_HEIGHT,
+};
+
+export const FormMultilineInputTextStyle: TextStyle = {
+  ...FormInputBaseStyle,
+  minHeight: AuthControls.multilineControlMinHeight,
 };
 
 export const StatusMessageTextStyle: TextStyle = {

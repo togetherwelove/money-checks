@@ -10,12 +10,19 @@ import {
 } from "react-native";
 
 import { AppColors } from "../constants/colors";
-import {
-  EntryDirectionCopy,
-  EntryDirectionLayout,
-  EntryDirectionOrder,
-} from "../constants/entryDirection";
 import type { LedgerEntryType } from "../types/ledger";
+
+const ENTRY_DIRECTION_LABELS: Record<LedgerEntryType, string> = {
+  expense: "지출",
+  income: "수입",
+};
+const ENTRY_DIRECTION_ORDER: LedgerEntryType[] = ["expense", "income"];
+const ENTRY_DIRECTION_OPTION_GAP = 4;
+const ENTRY_DIRECTION_CONTAINER_INSET = 4;
+const ENTRY_DIRECTION_CONTAINER_RADIUS = 18;
+const ENTRY_DIRECTION_OPTION_RADIUS = 14;
+const ENTRY_DIRECTION_OPTION_MIN_HEIGHT = 44;
+const ENTRY_DIRECTION_SLIDE_DURATION_MS = 180;
 
 type EntryDirectionSelectorProps = {
   onSelectType: (type: LedgerEntryType) => void;
@@ -30,7 +37,7 @@ export function EntryDirectionSelector({
   const slideValue = useRef(new Animated.Value(0)).current;
 
   const selectedIndex = useMemo(
-    () => Math.max(0, EntryDirectionOrder.indexOf(selectedType)),
+    () => Math.max(0, ENTRY_DIRECTION_ORDER.indexOf(selectedType)),
     [selectedType],
   );
 
@@ -39,8 +46,8 @@ export function EntryDirectionSelector({
       return 0;
     }
 
-    const totalGap = EntryDirectionLayout.optionGap * (EntryDirectionLayout.optionCount - 1);
-    return (rowWidth - totalGap) / EntryDirectionLayout.optionCount;
+    const totalGap = ENTRY_DIRECTION_OPTION_GAP * (ENTRY_DIRECTION_ORDER.length - 1);
+    return (rowWidth - totalGap) / ENTRY_DIRECTION_ORDER.length;
   }, [rowWidth]);
 
   useEffect(() => {
@@ -48,10 +55,10 @@ export function EntryDirectionSelector({
       return;
     }
 
-    const nextOffset = selectedIndex * (optionWidth + EntryDirectionLayout.optionGap);
+    const nextOffset = selectedIndex * (optionWidth + ENTRY_DIRECTION_OPTION_GAP);
     Animated.timing(slideValue, {
       toValue: nextOffset,
-      duration: EntryDirectionLayout.slideDurationMs,
+      duration: ENTRY_DIRECTION_SLIDE_DURATION_MS,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
     }).start();
@@ -84,13 +91,13 @@ export function EntryDirectionSelector({
             ]}
           />
         ) : null}
-        {EntryDirectionOrder.map((type) => {
+        {ENTRY_DIRECTION_ORDER.map((type) => {
           const isActive = selectedType === type;
 
           return (
             <Pressable key={type} onPress={() => onSelectType(type)} style={styles.option}>
               <Text style={[styles.optionLabel, isActive && styles.activeOptionLabel]}>
-                {EntryDirectionCopy[type].label}
+                {ENTRY_DIRECTION_LABELS[type]}
               </Text>
             </Pressable>
           );
@@ -102,28 +109,28 @@ export function EntryDirectionSelector({
 
 const styles = StyleSheet.create({
   segmentedControl: {
-    padding: EntryDirectionLayout.containerInset,
+    padding: ENTRY_DIRECTION_CONTAINER_INSET,
     borderWidth: 1,
     borderColor: AppColors.border,
-    borderRadius: EntryDirectionLayout.containerRadius,
+    borderRadius: ENTRY_DIRECTION_CONTAINER_RADIUS,
     backgroundColor: AppColors.surfaceMuted,
   },
   row: {
     position: "relative",
     flexDirection: "row",
-    gap: EntryDirectionLayout.optionGap,
+    gap: ENTRY_DIRECTION_OPTION_GAP,
   },
   sliderThumb: {
     position: "absolute",
     top: 0,
     bottom: 0,
     left: 0,
-    borderRadius: EntryDirectionLayout.optionRadius,
+    borderRadius: ENTRY_DIRECTION_OPTION_RADIUS,
     backgroundColor: AppColors.surfaceStrong,
   },
   option: {
     flex: 1,
-    minHeight: EntryDirectionLayout.optionMinHeight,
+    minHeight: ENTRY_DIRECTION_OPTION_MIN_HEIGHT,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 12,

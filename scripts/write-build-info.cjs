@@ -1,11 +1,11 @@
 const fs = require("node:fs");
 const path = require("node:path");
 
-const appConfigPath = path.join(__dirname, "..", "app.json");
+const packageJsonPath = path.join(__dirname, "..", "package.json");
 const outputPath = path.join(__dirname, "..", "src", "generated", "buildInfo.ts");
 
-const appConfig = JSON.parse(fs.readFileSync(appConfigPath, "utf8"));
-const appVersion = appConfig?.expo?.version ?? "0.0.0";
+const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
+const appVersion = packageJson?.version ?? "0.0.0";
 
 const fileContent = `export const AppBuildInfo = {
   appVersion: ${JSON.stringify(appVersion)},

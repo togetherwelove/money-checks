@@ -9,7 +9,6 @@ node_modules/
 .expo/
 .idea/
 .vscode/
-.codex-bin/
 *.pyc
 *.pyo
 *.pyd

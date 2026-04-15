@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 import Animated, { ReduceMotion, SlideInRight, SlideOutLeft } from "react-native-reanimated";
 
-import { ScreenTransition } from "../constants/screenTransition";
+const SCREEN_TRANSITION_DURATION_MS = 220;
 
 type ScreenSlideTransitionProps = {
   children: ReactNode;
@@ -13,10 +13,10 @@ export function ScreenSlideTransition({ children, screenKey }: ScreenSlideTransi
   return (
     <View style={styles.container}>
       <Animated.View
-        entering={SlideInRight.duration(ScreenTransition.durationMs).reduceMotion(
+        entering={SlideInRight.duration(SCREEN_TRANSITION_DURATION_MS).reduceMotion(
           ReduceMotion.System,
         )}
-        exiting={SlideOutLeft.duration(ScreenTransition.durationMs).reduceMotion(
+        exiting={SlideOutLeft.duration(SCREEN_TRANSITION_DURATION_MS).reduceMotion(
           ReduceMotion.System,
         )}
         key={screenKey}

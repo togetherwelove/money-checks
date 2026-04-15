@@ -1,9 +1,10 @@
 import { AccountDeletionMessages } from "../../constants/accountDeletionMessages";
-import { SupabaseFunctions } from "../../constants/supabaseFunctions";
 import { supabase } from "../supabase";
 import { supabasePublishableKey, supabaseUrl } from "../supabase";
 import { deleteAccountRequest } from "./deleteAccountRequest";
 import { resolveDeleteAccountAccessToken } from "./resolveDeleteAccountAccessToken";
+
+const DELETE_ACCOUNT_FUNCTION_PATH = "/functions/v1/delete-account";
 
 export async function deleteOwnAccount(): Promise<void> {
   const accessToken = await resolveDeleteAccountAccessToken(supabase.auth);
@@ -11,7 +12,7 @@ export async function deleteOwnAccount(): Promise<void> {
   await deleteAccountRequest({
     accessToken,
     fetchFn: fetch,
-    functionUrl: `${supabaseUrl}${SupabaseFunctions.deleteAccountPath}`,
+    functionUrl: `${supabaseUrl}${DELETE_ACCOUNT_FUNCTION_PATH}`,
     publishableKey: supabasePublishableKey,
     onDeleted: async () => {
       await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);

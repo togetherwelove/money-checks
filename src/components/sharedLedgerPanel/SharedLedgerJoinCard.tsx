@@ -2,9 +2,11 @@ import { Text, TextInput, View } from "react-native";
 
 import { SHARE_CODE_LENGTH } from "../../constants/ledgerDisplay";
 import { AppMessages } from "../../constants/messages";
-import { ShareLedgerSecurityCopy } from "../../constants/shareLedgerSecurityCopy";
 import { ActionButton } from "../ActionButton";
 import { sharedLedgerPanelStyles as styles } from "./sharedLedgerPanelStyles";
+
+const JOIN_REQUEST_BLOCKED_MESSAGE =
+  "이미 다른 공유 가계부를 사용 중이라 다른 가계부에는 참여 요청을 보낼 수 없어요.";
 
 type SharedLedgerJoinCardProps = {
   canLeaveSharedBook: boolean;
@@ -41,9 +43,7 @@ export function SharedLedgerJoinCard({
         value={shareCodeInput}
       />
       {isJoinBlocked ? (
-        <Text style={[styles.hintText, styles.errorText]}>
-          {ShareLedgerSecurityCopy.joinRequestBlockedForSharedMember}
-        </Text>
+        <Text style={[styles.hintText, styles.errorText]}>{JOIN_REQUEST_BLOCKED_MESSAGE}</Text>
       ) : null}
       {!statusMessage ? (
         <Text style={styles.hintText}>{AppMessages.accountJoinEmptyHint}</Text>
