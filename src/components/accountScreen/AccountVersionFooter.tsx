@@ -9,10 +9,6 @@ export function AccountVersionFooter() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{`${VersionUiCopy.title} ${AppBuildInfo.appVersion}`}</Text>
-      <Text style={styles.detail}>{`${VersionUiCopy.buildPrefix} ${AppBuildInfo.buildId}`}</Text>
-      <Text
-        style={styles.detail}
-      >{`${VersionUiCopy.updatedPrefix} ${AppBuildInfo.builtAtLabel}`}</Text>
     </View>
   );
 }
@@ -28,10 +24,5 @@ const styles = StyleSheet.create({
     color: AppColors.mutedText,
     fontSize: 11,
     fontWeight: "700",
-  },
-  detail: {
-    color: AppColors.mutedStrongText,
-    fontSize: 10,
-    fontWeight: "500",
   },
 });
