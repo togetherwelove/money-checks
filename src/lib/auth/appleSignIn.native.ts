@@ -1,0 +1,112 @@
+import * as AppleAuthentication from "expo-apple-authentication";
+import * as Crypto from "expo-crypto";
+
+import { AppleAuthCopy } from "../../constants/appleAuth";
+import { appPlatform } from "../appPlatform";
+import { supabase } from "../supabase";
+
+const APPLE_AUTH_PROVIDER = "apple";
+const APPLE_SIGN_IN_CANCELLED_CODE = "ERR_REQUEST_CANCELED";
+const APPLE_SIGN_IN_UNKNOWN_CODE = "ERR_REQUEST_UNKNOWN";
+const APPLE_SIGN_IN_UNKNOWN_MESSAGE = "The authorization attempt failed for an unknown reason";
+
+async function createAppleNoncePair() {
+  const rawNonce = Crypto.randomUUID();
+  const hashedNonce = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, rawNonce);
+
+  return {
+    hashedNonce,
+    rawNonce,
+  };
+}
+
+function resolveAppleDisplayName(credential: AppleAuthentication.AppleAuthenticationCredential) {
+  const nameParts = [
+    credential.fullName?.givenName,
+    credential.fullName?.middleName,
+    credential.fullName?.familyName,
+  ]
+    .filter((value): value is string => Boolean(value?.trim()))
+    .map((value) => value.trim());
+
+  if (nameParts.length === 0) {
+    return null;
+  }
+
+  return {
+    familyName: credential.fullName?.familyName?.trim() ?? null,
+    fullName: nameParts.join(" "),
+    givenName: credential.fullName?.givenName?.trim() ?? null,
+  };
+}
+
+async function persistAppleDisplayName(
+  credential: AppleAuthentication.AppleAuthenticationCredential,
+) {
+  const appleDisplayName = resolveAppleDisplayName(credential);
+  if (!appleDisplayName) {
+    return;
+  }
+
+  const { error } = await supabase.auth.updateUser({
+    data: {
+      family_name: appleDisplayName.familyName,
+      full_name: appleDisplayName.fullName,
+      given_name: appleDisplayName.givenName,
+      name: appleDisplayName.fullName,
+    },
+  });
+
+  if (error) {
+    console.error("[appleSignIn] Failed to persist Apple display name", error);
+  }
+}
+
+export function canUseAppleSignIn(): boolean {
+  return appPlatform.isIOS;
+}
+
+export function isAppleSignInCancelled(error: unknown): boolean {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const errorWithCode = error as { code?: unknown; message?: unknown };
+  return (
+    errorWithCode.code === APPLE_SIGN_IN_CANCELLED_CODE ||
+    errorWithCode.code === APPLE_SIGN_IN_UNKNOWN_CODE ||
+    errorWithCode.message === "The user canceled the authorization attempt" ||
+    errorWithCode.message === APPLE_SIGN_IN_UNKNOWN_MESSAGE
+  );
+}
+
+export async function signInWithApple(): Promise<void> {
+  if (!canUseAppleSignIn()) {
+    throw new Error(AppleAuthCopy.unavailableError);
+  }
+
+  const { hashedNonce, rawNonce } = await createAppleNoncePair();
+  const credential = await AppleAuthentication.signInAsync({
+    nonce: hashedNonce,
+    requestedScopes: [
+      AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+      AppleAuthentication.AppleAuthenticationScope.EMAIL,
+    ],
+  });
+
+  if (!credential.identityToken) {
+    throw new Error(AppleAuthCopy.missingTokenError);
+  }
+
+  const { error } = await supabase.auth.signInWithIdToken({
+    nonce: rawNonce,
+    provider: APPLE_AUTH_PROVIDER,
+    token: credential.identityToken,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  await persistAppleDisplayName(credential);
+}

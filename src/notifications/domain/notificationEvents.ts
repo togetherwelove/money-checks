@@ -1,6 +1,6 @@
 import type { LedgerEntryType } from "../../types/ledger";
 
-export type NotificationPreferenceGroupId = "sharedLedger" | "threshold";
+export type NotificationPreferenceGroupId = "sharedLedger" | "summary" | "threshold";
 
 export type NotificationThresholdKey =
   | "expenseAmountDay"
@@ -10,6 +10,7 @@ export type NotificationThresholdPeriod = "day" | "week" | "month";
 
 export type NotificationEventType =
   | "expense_limit_exceeded"
+  | "month_end_summary"
   | "member_left_book"
   | "member_joined_book"
   | "member_removed_from_book"
@@ -23,8 +24,11 @@ export type NotificationEvent = {
   amount?: number;
   bookName?: string;
   category?: string;
+  currentMonthLabel?: string;
   date?: string;
   entryType?: LedgerEntryType;
+  expenseSummary?: string;
+  incomeSummary?: string;
   note?: string;
   period?: NotificationThresholdPeriod;
   targetName?: string;

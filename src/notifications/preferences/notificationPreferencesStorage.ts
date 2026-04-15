@@ -36,7 +36,9 @@ export async function loadNotificationPreferences(
   const fallbackPreferences = createDefaultNotificationPreferences();
   const { data, error } = await supabase
     .from(NOTIFICATION_PREFERENCES_TABLE)
-    .select("user_id, enabled_by_event, enabled_thresholds, threshold_periods, thresholds")
+    .select(
+      "user_id, enabled_by_event, enabled_thresholds, summary_timezone, last_monthly_summary_sent_month, threshold_periods, thresholds",
+    )
     .eq("user_id", userId)
     .maybeSingle<NotificationPreferencesRow>();
 
@@ -51,12 +53,33 @@ export async function saveNotificationPreferences(
   userId: string,
   preferences: NotificationPreferences,
 ): Promise<void> {
+  const summaryTimeZone = resolveCurrentNotificationTimeZone();
   const { error } = await supabase.from(NOTIFICATION_PREFERENCES_TABLE).upsert(
     {
       enabled_by_event: preferences.enabledByEvent,
       enabled_thresholds: preferences.enabledThresholds,
+      summary_timezone: summaryTimeZone,
       threshold_periods: NotificationDefaultThresholdPeriods,
       thresholds: preferences.thresholds,
+      user_id: userId,
+    },
+    { onConflict: "user_id" },
+  );
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function syncNotificationSummaryTimeZone(userId: string): Promise<void> {
+  const summaryTimeZone = resolveCurrentNotificationTimeZone();
+  if (!summaryTimeZone) {
+    return;
+  }
+
+  const { error } = await supabase.from(NOTIFICATION_PREFERENCES_TABLE).upsert(
+    {
+      summary_timezone: summaryTimeZone,
       user_id: userId,
     },
     { onConflict: "user_id" },
@@ -128,4 +151,9 @@ function mergeThresholdState(row: NotificationPreferencesRow): {
     enabledThresholds: nextEnabledThresholds,
     thresholds: nextThresholds,
   };
+}
+
+function resolveCurrentNotificationTimeZone(): string | null {
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  return typeof timeZone === "string" && timeZone.trim() ? timeZone : null;
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Keyboard, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, Keyboard, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { ActionButton } from "../components/ActionButton";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
@@ -8,6 +8,7 @@ import { AccountVersionFooter } from "../components/accountScreen/AccountVersion
 import { DeleteAccountModal } from "../components/accountScreen/DeleteAccountModal";
 import { AccountDeletionMessages } from "../constants/accountDeletionMessages";
 import { AppColors } from "../constants/colors";
+import { CommonActionCopy } from "../constants/commonActions";
 import { AppLayout } from "../constants/layout";
 import { AppMessages } from "../constants/messages";
 import {
@@ -95,6 +96,22 @@ export function AccountScreen({
     void handleSaveDisplayName();
   };
 
+  const handleConfirmSignOut = () => {
+    Alert.alert(AppMessages.authSignOutConfirmTitle, AppMessages.authSignOutConfirmMessage, [
+      {
+        style: "cancel",
+        text: CommonActionCopy.cancel,
+      },
+      {
+        onPress: () => {
+          void signOutFromApp();
+        },
+        style: "destructive",
+        text: AppMessages.authSignOut,
+      },
+    ]);
+  };
+
   return (
     <KeyboardAwareScrollView contentContainerStyle={styles.content} style={styles.screen}>
       <View style={[styles.card, styles.primaryCard]}>
@@ -128,7 +145,7 @@ export function AccountScreen({
         <View style={styles.actionRow}>
           <ActionButton
             label={AppMessages.authSignOut}
-            onPress={signOutFromApp}
+            onPress={handleConfirmSignOut}
             size="inline"
             variant="secondary"
           />

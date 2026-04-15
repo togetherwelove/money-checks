@@ -57,6 +57,8 @@ export type LedgerBookJoinRequestProfileRow = {
 export type NotificationPreferencesRow = {
   enabled_by_event: Record<string, boolean> | null;
   enabled_thresholds: Record<string, boolean> | null;
+  last_monthly_summary_sent_month: string | null;
+  summary_timezone: string | null;
   threshold_periods: Record<string, string> | null;
   thresholds: Record<string, number> | null;
   user_id: string;

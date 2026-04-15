@@ -23,6 +23,15 @@ export function canUseGoogleSignIn(): boolean {
   return true;
 }
 
+export function isGoogleSignInCancelled(error: unknown): boolean {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const errorWithMessage = error as { message?: unknown };
+  return errorWithMessage.message === GoogleAuthCopy.cancelledError;
+}
+
 export async function signInWithGoogle(): Promise<void> {
   const redirectUri = resolveGoogleRedirectUri();
   const { data, error } = await supabase.auth.signInWithOAuth({

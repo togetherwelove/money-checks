@@ -1,3 +1,4 @@
+import { syncNotificationSummaryTimeZone } from "../../notifications/preferences/notificationPreferencesStorage";
 import { appStorage } from "../appStorage";
 import { supabase } from "../supabase";
 
@@ -32,6 +33,7 @@ export async function syncPushDeviceToken(
     throw error;
   }
 
+  await syncNotificationSummaryTimeZone(userId);
   appStorage.setItem(PUSH_DEVICE_TOKEN_STORAGE_KEY, expoPushToken);
 }
 

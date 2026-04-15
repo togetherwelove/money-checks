@@ -30,7 +30,7 @@ export const NotificationUiCopy = {
   fallbackTargetName: "멤버",
   iconPath: "/logo192.png",
   menuDescription: "권한과 알림 기준을 관리합니다.",
-  menuTitle: "알림 설정",
+  menuTitle: "푸시 알림 설정",
   permissionBlocked:
     "알림 권한이 차단되어 있습니다. iPhone 설정 또는 Safari 설정에서 다시 허용해 주세요.",
   permissionGranted: "허용됨",
@@ -39,7 +39,7 @@ export const NotificationUiCopy = {
   permissionUnsupported: "이 환경에서는 알림을 지원하지 않습니다.",
   periodFieldLabel: "기간",
   screenSubtitle: "알림 종류를 기능별로 나누어 켜고 끌 수 있습니다.",
-  screenTitle: "알림 설정",
+  screenTitle: "푸시 알림 설정",
   unsupportedStatus: "현재는 추가 설정 없이 지원 브라우저에서만 기기 알림을 사용할 수 있습니다.",
   zeroAmountLabel: "0원",
 } as const;
@@ -52,6 +52,10 @@ export const NotificationGroupCopy: Record<
     description: "공유 가계부에서 다른 멤버가 만든 변화를 알립니다.",
     title: "공유 가계부 활동",
   },
+  summary: {
+    description: "매월 1일 지난달 수입·지출과 전월 비교를 정리해서 알려드려요.",
+    title: "지난달 요약",
+  },
   threshold: {
     description: "하루, 한 주, 한 달 지출 기준을 각각 설정할 수 있습니다.",
     title: "금액 기준 알림",
@@ -61,6 +65,7 @@ export const NotificationGroupCopy: Record<
 export const NotificationGroupOrder = [
   "sharedLedger",
   "threshold",
+  "summary",
 ] as const satisfies readonly NotificationPreferenceGroupId[];
 
 export const NotificationThresholdCopy: Record<
@@ -123,6 +128,15 @@ export const NotificationEventCopy: Record<NotificationEventType, NotificationEv
     groupId: "threshold",
     label: "지출 기준 초과",
     title: "지출 기준 초과",
+  },
+  month_end_summary: {
+    bodyTemplate:
+      "{currentMonthLabel} 가계부 요약입니다.\n수입: {incomeSummary}\n지출: {expenseSummary}",
+    defaultEnabled: false,
+    description: "매월 1일 지난달 수입·지출과 전월 비교를 정리해서 알려드려요.",
+    groupId: "summary",
+    label: "매월 1일에 지난달 요약 알림 보내기",
+    title: "{currentMonthLabel} 입출금 돌아보기",
   },
   member_left_book: {
     bodyTemplate: "{actorName}님이 {bookName}에서 나갔어요.",
@@ -197,6 +211,7 @@ export const NotificationEventOrder = [
   "member_left_book",
   "member_removed_from_book",
   "expense_limit_exceeded",
+  "month_end_summary",
 ] as const satisfies readonly NotificationEventType[];
 
 export const NotificationThresholdFieldLabels: Record<NotificationThresholdKey, string> = {

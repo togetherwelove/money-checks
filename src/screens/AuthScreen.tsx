@@ -8,8 +8,17 @@ import { AppColors } from "../constants/colors";
 import { EmailAuthCopy } from "../constants/emailAuth";
 import { AppLayout } from "../constants/layout";
 import { AppMessages } from "../constants/messages";
+import {
+  canUseAppleSignIn,
+  isAppleSignInCancelled,
+  signInWithApple,
+} from "../lib/auth/appleSignIn";
 import { signInWithEmailPassword } from "../lib/auth/emailPasswordAuth";
-import { canUseGoogleSignIn, signInWithGoogle } from "../lib/auth/googleSignIn";
+import {
+  canUseGoogleSignIn,
+  isGoogleSignInCancelled,
+  signInWithGoogle,
+} from "../lib/auth/googleSignIn";
 import { SignUpScreen } from "./SignUpScreen";
 
 type AuthScreenProps = {
@@ -20,6 +29,7 @@ export function AuthScreen({ initialErrorMessage = null }: AuthScreenProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [screen, setScreen] = useState<"sign-in" | "sign-up">("sign-in");
+  const showAppleSignIn = canUseAppleSignIn();
   const showGoogleSignIn = canUseGoogleSignIn();
 
   useEffect(() => {
@@ -42,7 +52,23 @@ export function AuthScreen({ initialErrorMessage = null }: AuthScreenProps) {
     try {
       await signInWithGoogle();
     } catch (error) {
+      if (isGoogleSignInCancelled(error)) {
+        return;
+      }
+
       console.error("[AuthScreen] Google sign-in failed", error);
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    try {
+      await signInWithApple();
+    } catch (error) {
+      if (isAppleSignInCancelled(error)) {
+        return;
+      }
+
+      console.error("[AuthScreen] Apple sign-in failed", error);
     }
   };
 
@@ -68,6 +94,7 @@ export function AuthScreen({ initialErrorMessage = null }: AuthScreenProps) {
 
           <EmailSignInCard
             email={email}
+            onAppleSignIn={showAppleSignIn ? handleAppleSignIn : null}
             onGoogleSignIn={showGoogleSignIn ? handleGoogleSignIn : null}
             onChangeEmail={setEmail}
             onChangePassword={setPassword}

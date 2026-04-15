@@ -55,13 +55,29 @@ export async function sendPushNotificationToUsers(
   bookId?: string,
 ): Promise<void> {
   const notificationContent = buildNotificationContent(event);
-  await sendPushNotification({
-    body: notificationContent.body,
+  await sendPushNotificationContentToUsers(
+    notificationContent.title,
+    notificationContent.body,
+    targetUserIds,
+    event.type,
     bookId,
-    eventType: event.type,
+  );
+}
+
+export async function sendPushNotificationContentToUsers(
+  title: string,
+  body: string,
+  targetUserIds: string[],
+  eventType: NotificationEvent["type"],
+  bookId?: string,
+): Promise<void> {
+  await sendPushNotification({
+    body,
+    bookId,
+    eventType,
     route: "direct-targets",
     targetUserIds,
-    title: notificationContent.title,
+    title,
   });
 }
 

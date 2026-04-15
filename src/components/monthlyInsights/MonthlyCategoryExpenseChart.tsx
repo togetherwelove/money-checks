@@ -75,10 +75,9 @@ export function MonthlyCategoryExpenseChart({
                   <Text numberOfLines={1} style={styles.legendCategory}>
                     {item.category}
                   </Text>
-                  <Text style={styles.legendAmount}>{formatCurrency(item.amount)}</Text>
-                  <Text style={styles.legendShare}>
-                    {Math.round(item.share * 100)}
-                    {MonthlyInsightCopy.shareUnit}
+                  <Text style={styles.legendAmount}>
+                    {formatCurrency(item.amount)} ({Math.round(item.share * 100)}
+                    {MonthlyInsightCopy.shareUnit})
                   </Text>
                 </View>
               ))}
@@ -159,13 +158,6 @@ const styles = StyleSheet.create({
     color: AppColors.mutedText,
     fontSize: 12,
     fontWeight: "600",
-  },
-  legendShare: {
-    minWidth: 34,
-    textAlign: "right",
-    color: AppColors.mutedStrongText,
-    fontSize: 12,
-    fontWeight: "700",
   },
   emptyText: {
     color: AppColors.mutedText,

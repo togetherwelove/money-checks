@@ -5,6 +5,10 @@ export function canUseGoogleSignIn(): boolean {
   return true;
 }
 
+export function isGoogleSignInCancelled(_error: unknown): boolean {
+  return false;
+}
+
 export async function signInWithGoogle(): Promise<void> {
   const { error } = await supabase.auth.signInWithOAuth({
     provider: GOOGLE_AUTH_PROVIDER,

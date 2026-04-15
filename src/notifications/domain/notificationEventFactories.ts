@@ -1,4 +1,5 @@
-import type { LedgerEntry } from "../../types/ledger";
+import { buildPreviousMonthSummaryLines } from "../../lib/monthlyComparisonSummary";
+import type { LedgerEntry, MonthlyInsights } from "../../types/ledger";
 import type { NotificationEvent, NotificationThresholdPeriod } from "./notificationEvents";
 
 type SharedBookContext = {
@@ -55,6 +56,17 @@ export function createExpenseLimitExceededEvent(
     thresholdAmount,
     totalAmount,
     type: "expense_limit_exceeded",
+  };
+}
+
+export function createMonthEndSummaryEvent(insights: MonthlyInsights): NotificationEvent {
+  const summaryLines = buildPreviousMonthSummaryLines(insights);
+
+  return {
+    currentMonthLabel: insights.currentMonthLabel,
+    expenseSummary: summaryLines.expenseSummary,
+    incomeSummary: summaryLines.incomeSummary,
+    type: "month_end_summary",
   };
 }
 

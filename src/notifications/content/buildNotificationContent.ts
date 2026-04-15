@@ -6,12 +6,12 @@ import {
 } from "../config/notificationCopy";
 import type { NotificationEvent } from "../domain/notificationEvents";
 
-type BrowserNotificationContent = {
+type NotificationContent = {
   body: string;
   title: string;
 };
 
-export function buildNotificationContent(event: NotificationEvent): BrowserNotificationContent {
+export function buildNotificationContent(event: NotificationEvent): NotificationContent {
   const eventCopy = NotificationEventCopy[event.type];
   const tokenMap = buildTokenMap(event);
 
@@ -35,8 +35,11 @@ function buildTokenMap(event: NotificationEvent): Record<string, string> {
         : NotificationUiCopy.zeroAmountLabel,
     bookName: event.bookName ?? NotificationUiCopy.fallbackBookName,
     category: event.category?.trim() || NotificationUiCopy.fallbackCategory,
+    currentMonthLabel: event.currentMonthLabel ?? NotificationUiCopy.fallbackDateLabel,
     dateLabel: event.date ? formatSelectedDate(event.date) : NotificationUiCopy.fallbackDateLabel,
     entryTypeLabel,
+    expenseSummary: event.expenseSummary ?? NotificationUiCopy.fallbackDateLabel,
+    incomeSummary: event.incomeSummary ?? NotificationUiCopy.fallbackDateLabel,
     noteSegment: note ? ` / 메모 ${note}` : "",
     noteSentence: note ? ` 메모: ${note}` : "",
     periodLabel: event.period

@@ -1,20 +1,22 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Feather } from "@expo/vector-icons";
+import { useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../../constants/colors";
 import { AppLayout } from "../../constants/layout";
 import { MonthlyInsightCopy } from "../../constants/monthlyInsights";
-import type { MonthlyChangeDirection, MonthlyInsights } from "../../types/ledger";
-import { formatCurrency } from "../../utils/calendar";
+import {
+  type MonthlyComparisonTone,
+  buildMonthlyComparisonSummary,
+} from "../../lib/monthlyComparisonSummary";
+import type { MonthlyComparisonMetric, MonthlyInsights } from "../../types/ledger";
 
 type MonthlyComparisonSectionProps = {
   insights: MonthlyInsights;
 };
 
 type ComparisonCardProps = {
-  currentAmount: number;
-  deltaAmount: number;
-  direction: MonthlyChangeDirection;
-  previousAmount: number;
+  comparison: MonthlyComparisonMetric;
   previousMonthLabel: string;
   title: string;
   variant: "expense" | "income";
@@ -26,19 +28,13 @@ export function MonthlyComparisonSection({ insights }: MonthlyComparisonSectionP
       <Text style={styles.sectionTitle}>{MonthlyInsightCopy.comparisonTitle}</Text>
       <View style={styles.row}>
         <ComparisonCard
-          currentAmount={insights.incomeComparison.currentAmount}
-          deltaAmount={insights.incomeComparison.deltaAmount}
-          direction={insights.incomeComparison.direction}
-          previousAmount={insights.incomeComparison.previousAmount}
+          comparison={insights.incomeComparison}
           previousMonthLabel={insights.previousMonthLabel}
           title={MonthlyInsightCopy.incomeTitle}
           variant="income"
         />
         <ComparisonCard
-          currentAmount={insights.expenseComparison.currentAmount}
-          deltaAmount={insights.expenseComparison.deltaAmount}
-          direction={insights.expenseComparison.direction}
-          previousAmount={insights.expenseComparison.previousAmount}
+          comparison={insights.expenseComparison}
           previousMonthLabel={insights.previousMonthLabel}
           title={MonthlyInsightCopy.expenseTitle}
           variant="expense"
@@ -48,73 +44,44 @@ export function MonthlyComparisonSection({ insights }: MonthlyComparisonSectionP
   );
 }
 
-function ComparisonCard({
-  currentAmount,
-  deltaAmount,
-  direction,
-  previousAmount,
-  previousMonthLabel,
-  title,
-  variant,
-}: ComparisonCardProps) {
+function ComparisonCard({ comparison, previousMonthLabel, title, variant }: ComparisonCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const summary = buildMonthlyComparisonSummary(comparison, previousMonthLabel, variant);
+
   return (
-    <View style={styles.card}>
-      <Text style={styles.cardTitle}>{title}</Text>
-      <Text
-        style={[
-          styles.currentAmount,
-          variant === "income" ? styles.incomeText : styles.expenseText,
-        ]}
-      >
-        {formatComparisonAmount(currentAmount, variant)}
+    <Pressable onPress={() => setIsExpanded((current) => !current)} style={styles.card}>
+      <View style={styles.cardHeader}>
+        <Text style={styles.cardTitle}>{title}</Text>
+        <Feather
+          color={AppColors.mutedText}
+          name={isExpanded ? "chevron-up" : "chevron-down"}
+          size={14}
+        />
+      </View>
+      <Text style={[styles.currentAmount, resolveToneStyle(summary.tone)]}>
+        {summary.currentAmountLabel}
       </Text>
-      <Text style={styles.previousAmount}>
-        {MonthlyInsightCopy.previousMonthPrefix} {previousMonthLabel}{" "}
-        {formatComparisonAmount(previousAmount, variant)}
+      <Text style={[styles.deltaLabel, resolveToneStyle(summary.tone)]}>
+        {summary.summaryMessage}
       </Text>
-      <Text style={[styles.deltaLabel, resolveDeltaTone(direction, variant)]}>
-        {formatDeltaLabel(deltaAmount, direction, variant)}
-      </Text>
-    </View>
+      {isExpanded ? (
+        <View style={styles.expandedContent}>
+          <Text style={styles.previousAmount}>{summary.previousAmountLabel}</Text>
+          {summary.changeRateLabel ? (
+            <Text style={styles.changeRateLabel}>{summary.changeRateLabel}</Text>
+          ) : null}
+        </View>
+      ) : null}
+    </Pressable>
   );
 }
 
-function formatDeltaLabel(
-  deltaAmount: number,
-  direction: MonthlyChangeDirection,
-  variant: "expense" | "income",
-): string {
-  if (direction === "same") {
-    return MonthlyInsightCopy.comparisonSame;
-  }
-
-  const amountLabel = formatCurrency(deltaAmount);
-  if (variant === "expense") {
-    return direction === "increase"
-      ? `전월보다 ${amountLabel} 더 썼어요`
-      : `전월보다 ${amountLabel} 덜 썼어요`;
-  }
-
-  return direction === "increase"
-    ? `전월보다 ${amountLabel} 더 벌었어요`
-    : `전월보다 ${amountLabel} 덜 벌었어요`;
-}
-
-function formatComparisonAmount(amount: number, variant: "expense" | "income"): string {
-  const prefix = variant === "income" ? "+" : "-";
-  return `${prefix} ${formatCurrency(amount)}`;
-}
-
-function resolveDeltaTone(direction: MonthlyChangeDirection, variant: "expense" | "income") {
-  if (direction === "same") {
+function resolveToneStyle(tone: MonthlyComparisonTone) {
+  if (tone === "muted") {
     return styles.mutedText;
   }
 
-  if (variant === "expense") {
-    return direction === "increase" ? styles.expenseText : styles.incomeText;
-  }
-
-  return direction === "increase" ? styles.incomeText : styles.expenseText;
+  return tone === "income" ? styles.incomeText : styles.expenseText;
 }
 
 const styles = StyleSheet.create({
@@ -140,13 +107,22 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     gap: 4,
   },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  expandedContent: {
+    gap: 4,
+  },
   cardTitle: {
     color: AppColors.mutedText,
     fontSize: 11,
     fontWeight: "600",
   },
   currentAmount: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: "800",
   },
   previousAmount: {
@@ -157,6 +133,11 @@ const styles = StyleSheet.create({
   deltaLabel: {
     fontSize: 12,
     fontWeight: "700",
+  },
+  changeRateLabel: {
+    color: AppColors.mutedText,
+    fontSize: 11,
+    fontWeight: "600",
   },
   incomeText: {
     color: AppColors.income,

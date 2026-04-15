@@ -134,7 +134,12 @@ export function CategoryCustomizerModal({
           size="inline"
           variant="secondary"
         />
-        <ActionButton label={CommonActionCopy.save} onPress={handleSave} size="inline" />
+        <ActionButton
+          label={CommonActionCopy.save}
+          onPress={handleSave}
+          size="inline"
+          variant="primary"
+        />
       </View>
     </CalendarPickerModalShell>
   );

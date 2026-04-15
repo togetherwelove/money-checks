@@ -7,7 +7,7 @@ export const PushNotificationCopy = {
   permissionGranted: "허용됨",
   permissionPrompt: "아직 선택 안 함",
   permissionUnsupported: "현재 기기에서는 원격 푸시 알림을 사용할 수 없습니다.",
-  statusDefault: "이 기기에서 아직 원격 푸시 알림 권한을 선택하지 않았습니다.",
-  statusEnabled: "이 기기에서 테스트 푸시 알림을 받을 수 있습니다.",
+  statusDefault: "이 기기에서 아직 푸시 알림 권한을 선택하지 않았습니다.",
+  statusEnabled: "이 기기에서 푸시 알림을 받을 수 있습니다.",
   statusUnsupported: "현재 기기에서는 테스트 푸시 알림을 사용할 수 없습니다.",
 } as const;
