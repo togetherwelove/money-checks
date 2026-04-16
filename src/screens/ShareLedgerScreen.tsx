@@ -7,6 +7,7 @@ import { SharedLedgerPanel } from "../components/SharedLedgerPanel";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import { DEFAULT_MEMBER_DISPLAY_NAME } from "../constants/ledgerDisplay";
+import type { SubscriptionTier } from "../constants/subscription";
 import { fetchLedgerBookMembers } from "../lib/ledgerBooks";
 import { fetchProfileDisplayName } from "../lib/profiles";
 import { supabase } from "../lib/supabase";
@@ -21,6 +22,7 @@ import type { LedgerBookMemberRow } from "../types/supabase";
 
 type ShareLedgerScreenProps = {
   activeBook: LedgerBook | null;
+  onOpenSubscription: () => void;
   onApproveJoinRequest: (requestId: string) => Promise<boolean>;
   onJoinSharedLedgerBook: (shareCode: string) => Promise<JoinSharedLedgerBookAttempt>;
   onLeaveSharedLedgerBook: () => Promise<boolean>;
@@ -39,11 +41,13 @@ type ShareLedgerScreenProps = {
     bookId?: string,
   ) => Promise<void>;
   pendingJoinRequests: LedgerBookJoinRequest[];
+  subscriptionTier: SubscriptionTier;
   userId: string;
 };
 
 export function ShareLedgerScreen({
   activeBook,
+  onOpenSubscription,
   onApproveJoinRequest,
   onLeaveSharedLedgerBook,
   onJoinSharedLedgerBook,
@@ -54,6 +58,7 @@ export function ShareLedgerScreen({
   onSendPushNotificationToBookMembers,
   onSendPushNotificationToUsers,
   pendingJoinRequests,
+  subscriptionTier,
   userId,
 }: ShareLedgerScreenProps) {
   const [members, setMembers] = useState<LedgerBookMember[]>([]);
@@ -127,6 +132,7 @@ export function ShareLedgerScreen({
         activeBook={activeBook}
         currentUserId={userId}
         members={members}
+        onOpenSubscription={onOpenSubscription}
         onApproveJoinRequest={onApproveJoinRequest}
         onKickMember={handleKickMember}
         onLeaveSharedLedgerBook={onLeaveSharedLedgerBook}
@@ -137,6 +143,7 @@ export function ShareLedgerScreen({
         onSendPushNotificationToBookMembers={onSendPushNotificationToBookMembers}
         onSendPushNotificationToUsers={onSendPushNotificationToUsers}
         pendingJoinRequests={pendingJoinRequests}
+        subscriptionTier={subscriptionTier}
       />
     </KeyboardAwareScrollView>
   );

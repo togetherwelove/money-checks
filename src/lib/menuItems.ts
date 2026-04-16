@@ -1,8 +1,9 @@
 import { AppMessages } from "../constants/messages";
+import { SubscriptionMessages } from "../constants/subscription";
 import type { LedgerAppScreen } from "../types/app";
 
 export type AppMenuItem = {
-  icon: "bell" | "calendar" | "edit-3" | "mail" | "user" | "users";
+  icon: "bell" | "calendar" | "credit-card" | "edit-3" | "mail" | "user" | "users";
   label: string;
   targetScreen: Exclude<LedgerAppScreen, "charts">;
 };
@@ -28,6 +29,11 @@ export function buildAppMenuItems(showNotificationSettings: boolean): AppMenuIte
       icon: "user",
       label: AppMessages.menuAccountTitle,
       targetScreen: "account",
+    },
+    {
+      icon: "credit-card",
+      label: SubscriptionMessages.menuTitle,
+      targetScreen: "subscription",
     },
   ];
 

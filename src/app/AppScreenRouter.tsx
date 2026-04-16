@@ -1,3 +1,4 @@
+import type { SubscriptionTier } from "../constants/subscription";
 import type { BusyTaskTracker } from "../hooks/ledgerScreenState/types";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
 import type { NotificationEvent } from "../notifications/domain/notificationEvents";
@@ -10,6 +11,7 @@ import { EntryScreen } from "../screens/EntryScreen";
 import { HomeScreen } from "../screens/HomeScreen";
 import { NotificationSettingsScreen } from "../screens/NotificationSettingsScreen";
 import { ShareLedgerScreen } from "../screens/ShareLedgerScreen";
+import { SubscriptionScreen } from "../screens/SubscriptionScreen";
 import { SupportContactScreen } from "../screens/SupportContactScreen";
 import type { LedgerAppScreen } from "../types/app";
 import type { LedgerEntry, LedgerEntryDraft } from "../types/ledger";
@@ -19,6 +21,8 @@ type AppScreenRouterProps = {
   accountProviderLabel: string;
   email: string;
   fallbackDisplayName: string;
+  hasAvailablePlusPackage: boolean;
+  isPlusActive: boolean;
   ledgerState: LedgerScreenState;
   notificationPreferenceGroups: NotificationPreferenceGroup[];
   notificationPermissionLabel: string;
@@ -29,6 +33,9 @@ type AppScreenRouterProps = {
   onEditSelectedEntry: (entry: LedgerEntry) => void;
   onOpenCharts: () => void;
   onOpenEntry: () => void;
+  onOpenSubscription: () => void;
+  onPurchasePlus: () => Promise<void>;
+  onRestorePurchases: () => Promise<void>;
   onSaveEntry: () => Promise<void>;
   onSaveEntryDrafts: (drafts: LedgerEntryDraft[]) => Promise<void>;
   onSettleInstallmentEntry: (entry: LedgerEntry) => Promise<void>;
@@ -49,6 +56,7 @@ type AppScreenRouterProps = {
   ) => void;
   onSelectCalendarDate: (isoDate: string) => void;
   showNotificationSettings: boolean;
+  subscriptionTier: SubscriptionTier;
   trackBlockingTask: BusyTaskTracker;
   userId: string;
 };
@@ -58,6 +66,8 @@ export function AppScreenRouter({
   accountProviderLabel,
   email,
   fallbackDisplayName,
+  hasAvailablePlusPackage,
+  isPlusActive,
   ledgerState,
   notificationPreferenceGroups,
   notificationPermissionLabel,
@@ -68,6 +78,9 @@ export function AppScreenRouter({
   onEditSelectedEntry,
   onOpenCharts,
   onOpenEntry,
+  onOpenSubscription,
+  onPurchasePlus,
+  onRestorePurchases,
   onSaveEntry,
   onSaveEntryDrafts,
   onSettleInstallmentEntry,
@@ -77,6 +90,7 @@ export function AppScreenRouter({
   onToggleNotificationPreference,
   onSelectCalendarDate,
   showNotificationSettings,
+  subscriptionTier,
   trackBlockingTask,
   userId,
 }: AppScreenRouterProps) {
@@ -86,6 +100,7 @@ export function AppScreenRouter({
         accountProviderLabel={accountProviderLabel}
         email={email}
         fallbackDisplayName={fallbackDisplayName}
+        subscriptionTier={subscriptionTier}
         trackBlockingTask={trackBlockingTask}
         userId={userId}
       />
@@ -110,6 +125,7 @@ export function AppScreenRouter({
           accountProviderLabel={accountProviderLabel}
           email={email}
           fallbackDisplayName={fallbackDisplayName}
+          subscriptionTier={subscriptionTier}
           trackBlockingTask={trackBlockingTask}
           userId={userId}
         />
@@ -132,6 +148,7 @@ export function AppScreenRouter({
     return (
       <ShareLedgerScreen
         activeBook={ledgerState.activeBook}
+        onOpenSubscription={onOpenSubscription}
         onApproveJoinRequest={ledgerState.approveLedgerJoinRequest}
         onJoinSharedLedgerBook={ledgerState.joinSharedLedgerBookByCode}
         onLeaveSharedLedgerBook={ledgerState.leaveSharedLedgerBook}
@@ -142,6 +159,7 @@ export function AppScreenRouter({
         onSendPushNotificationToBookMembers={onSendPushNotificationToBookMembers}
         onSendPushNotificationToUsers={onSendPushNotificationToUsers}
         pendingJoinRequests={ledgerState.pendingJoinRequests}
+        subscriptionTier={subscriptionTier}
         userId={userId}
       />
     );
@@ -153,6 +171,18 @@ export function AppScreenRouter({
 
   if (activeScreen === "contact-support") {
     return <SupportContactScreen email={email} />;
+  }
+
+  if (activeScreen === "subscription") {
+    return (
+      <SubscriptionScreen
+        hasAvailablePlusPackage={hasAvailablePlusPackage}
+        isPlusActive={isPlusActive}
+        onPurchasePlus={onPurchasePlus}
+        onRestorePurchases={onRestorePurchases}
+        subscriptionTier={subscriptionTier}
+      />
+    );
   }
 
   if (activeScreen === "entry") {
@@ -173,6 +203,7 @@ export function AppScreenRouter({
       onOpenCharts={onOpenCharts}
       onOpenEntry={onOpenEntry}
       onSelectCalendarDate={onSelectCalendarDate}
+      showsBannerAd={subscriptionTier === "free"}
       state={ledgerState}
     />
   );

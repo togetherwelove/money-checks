@@ -12,6 +12,11 @@ import { CommonActionCopy } from "../constants/commonActions";
 import { AppLayout } from "../constants/layout";
 import { AppMessages } from "../constants/messages";
 import {
+  SubscriptionMessages,
+  type SubscriptionTier,
+  SubscriptionTiers,
+} from "../constants/subscription";
+import {
   CardTitleTextStyle,
   CompactLabelTextStyle,
   FormInputTextStyle,
@@ -27,6 +32,7 @@ type AccountScreenProps = {
   accountProviderLabel: string;
   email: string;
   fallbackDisplayName: string;
+  subscriptionTier: SubscriptionTier;
   trackBlockingTask: BusyTaskTracker;
   userId: string;
 };
@@ -35,6 +41,7 @@ export function AccountScreen({
   accountProviderLabel,
   email,
   fallbackDisplayName,
+  subscriptionTier,
   trackBlockingTask,
   userId,
 }: AccountScreenProps) {
@@ -118,6 +125,14 @@ export function AccountScreen({
         <Text style={styles.cardTitle}>{AppMessages.accountSessionTitle}</Text>
         <InfoRow label={AppMessages.accountEmail} value={email} />
         <InfoRow label={AppMessages.accountProvider} value={accountProviderLabel} />
+        <InfoRow
+          label={SubscriptionMessages.statusLabel}
+          value={
+            subscriptionTier === SubscriptionTiers.plus
+              ? SubscriptionMessages.plusPlanLabel
+              : SubscriptionMessages.freePlanLabel
+          }
+        />
       </View>
       <View style={styles.card}>
         <Text style={styles.cardTitle}>{AppMessages.accountNicknameTitle}</Text>
@@ -193,7 +208,7 @@ const styles = StyleSheet.create({
   cardTitle: CardTitleTextStyle,
   infoRow: {
     gap: 4,
-    paddingVertical: 6,
+    paddingVertical: 4,
   },
   label: CompactLabelTextStyle,
   inlineInput: {

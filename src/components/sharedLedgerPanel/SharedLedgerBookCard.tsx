@@ -25,12 +25,14 @@ type SharedLedgerBookCardProps = {
   currentUserId: string;
   isOwner: boolean;
   members: LedgerBookMember[];
+  onOpenSubscription: () => void;
   onApproveJoinRequest: (requestId: string) => Promise<boolean>;
   onChangeBookName: (value: string) => void;
   onKickMember: (targetUserId: string) => Promise<boolean>;
   onRejectJoinRequest: (requestId: string) => Promise<boolean>;
   onSaveBookName: () => Promise<boolean>;
   pendingJoinRequests: LedgerBookJoinRequest[];
+  shouldShowSharedMemberLimitNotice: boolean;
 };
 
 export function SharedLedgerBookCard({
@@ -41,12 +43,14 @@ export function SharedLedgerBookCard({
   currentUserId,
   isOwner,
   members,
+  onOpenSubscription,
   onApproveJoinRequest,
   onChangeBookName,
   onKickMember,
   onRejectJoinRequest,
   onSaveBookName,
   pendingJoinRequests,
+  shouldShowSharedMemberLimitNotice,
 }: SharedLedgerBookCardProps) {
   const [isEditingBookName, setIsEditingBookName] = useState(false);
   const isSharedBook = Boolean(activeBook && activeBook.ownerId !== currentUserId);
@@ -159,7 +163,9 @@ export function SharedLedgerBookCard({
         <LedgerBookMembers
           currentUserId={currentUserId}
           members={members}
+          onOpenSubscription={onOpenSubscription}
           onKickMember={onKickMember}
+          shouldShowSharedMemberLimitNotice={shouldShowSharedMemberLimitNotice}
         />
       ) : null}
       {isOwner ? (

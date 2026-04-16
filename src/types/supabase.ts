@@ -66,11 +66,17 @@ export type NotificationPreferencesRow = {
 
 export type ProfileRow = {
   active_book_id: string | null;
+  subscription_tier: "free" | "plus" | null;
 };
 
 export type ProfileDisplayRow = {
   display_name: string;
   id: string;
+};
+
+export type ProfileSubscriptionRow = {
+  id: string;
+  subscription_tier: "free" | "plus" | null;
 };
 
 export type PushDeviceTokenRow = {

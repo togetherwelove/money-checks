@@ -16,7 +16,6 @@ export function PermissionOnboardingScreen({ onAllow, onSkip }: PermissionOnboar
   return (
     <View style={styles.screen}>
       <ScreenHeaderBlock
-        eyebrow="알림"
         subtitle={AuthOnboardingMessages.permissionSubtitle}
         title={AuthOnboardingMessages.permissionTitle}
       />
@@ -51,6 +50,6 @@ const styles = StyleSheet.create({
   },
   note: {
     ...NoteTextStyle,
-    textAlign: "center",
+    textAlign: "left",
   },
 });

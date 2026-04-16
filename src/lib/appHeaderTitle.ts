@@ -1,5 +1,6 @@
 import { AllEntriesCopy } from "../constants/allEntries";
 import { AppMessages } from "../constants/messages";
+import { SubscriptionMessages } from "../constants/subscription";
 import { SupportContactCopy } from "../constants/supportContact";
 import { NotificationUiCopy } from "../notifications/config/notificationCopy";
 import type { LedgerAppScreen } from "../types/app";
@@ -20,6 +21,8 @@ export function getAppHeaderTitle(activeScreen: LedgerAppScreen): string | null 
       return NotificationUiCopy.screenTitle;
     case "share":
       return AppMessages.shareTitle;
+    case "subscription":
+      return SubscriptionMessages.screenTitle;
     default:
       return null;
   }

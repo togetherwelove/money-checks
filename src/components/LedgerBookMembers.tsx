@@ -3,18 +3,24 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { AppColors } from "../constants/colors";
 import { LedgerBookMembersLayout, LedgerBookMembersUi } from "../constants/ledgerBookMembers";
 import { AppMessages } from "../constants/messages";
+import { SubscriptionMessages } from "../constants/subscription";
 import type { LedgerBookMember, LedgerBookMemberRole } from "../types/ledgerBookMember";
+import { TextLinkButton } from "./TextLinkButton";
 
 type LedgerBookMembersProps = {
   currentUserId: string;
   members: LedgerBookMember[];
+  onOpenSubscription: () => void;
   onKickMember: (targetUserId: string) => Promise<boolean>;
+  shouldShowSharedMemberLimitNotice: boolean;
 };
 
 export function LedgerBookMembers({
   currentUserId,
   members,
+  onOpenSubscription,
   onKickMember,
+  shouldShowSharedMemberLimitNotice,
 }: LedgerBookMembersProps) {
   const currentMember = members.find((member) => member.userId === currentUserId);
   const canManageMembers = currentMember?.role === "owner";
@@ -62,6 +68,12 @@ export function LedgerBookMembers({
       ) : (
         memberListContent
       )}
+      {shouldShowSharedMemberLimitNotice ? (
+        <TextLinkButton
+          label={SubscriptionMessages.sharedLedgerLimitDescription}
+          onPress={onOpenSubscription}
+        />
+      ) : null}
     </View>
   );
 }

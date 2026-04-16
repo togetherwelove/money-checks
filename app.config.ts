@@ -6,9 +6,11 @@ import type { ExpoConfig } from "expo/config";
 const packageJsonPath = path.join(__dirname, "package.json");
 const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8")) as { version?: string };
 const appVersion = packageJson.version ?? "0.0.0";
+const admobAndroidAppId = process.env.EXPO_PUBLIC_ADMOB_ANDROID_APP_ID ?? "";
+const admobIosAppId = process.env.EXPO_PUBLIC_ADMOB_IOS_APP_ID ?? "";
 
 const config: ExpoConfig = {
-  name: "MoneyChecks",
+  name: "알뜰",
   slug: "money-checks",
   scheme: "moneychecks",
   version: appVersion,
@@ -49,6 +51,13 @@ const config: ExpoConfig = {
     "expo-secure-store",
     "expo-apple-authentication",
     "expo-notifications",
+    [
+      "react-native-google-mobile-ads",
+      {
+        androidAppId: admobAndroidAppId,
+        iosAppId: admobIosAppId,
+      },
+    ],
   ],
 };
 

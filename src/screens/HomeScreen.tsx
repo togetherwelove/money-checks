@@ -1,5 +1,6 @@
 import { Alert, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 
+import { AppBannerAd } from "../components/AppBannerAd";
 import { CalendarToolbar } from "../components/CalendarToolbar";
 import { IconActionButton } from "../components/IconActionButton";
 import { LedgerEntryList } from "../components/LedgerEntryList";
@@ -25,6 +26,7 @@ type HomeScreenProps = {
   onOpenCharts: () => void;
   onOpenEntry: () => void;
   onSelectCalendarDate: (isoDate: string) => void;
+  showsBannerAd: boolean;
   state: LedgerScreenState;
 };
 
@@ -34,6 +36,7 @@ export function HomeScreen({
   onOpenCharts,
   onOpenEntry,
   onSelectCalendarDate,
+  showsBannerAd,
   state,
 }: HomeScreenProps) {
   const todayIsoDate = toIsoDate(new Date());
@@ -72,6 +75,7 @@ export function HomeScreen({
           totalExpense={formatCurrency(monthlyLedger.totalExpense)}
           totalIncome={formatCurrency(monthlyLedger.totalIncome)}
         />
+        {showsBannerAd ? <AppBannerAd /> : null}
         <View style={styles.selectionRow}>
           <View style={styles.selectionInfo}>
             <Text style={styles.selectedDate}>{formatLedgerListHeaderDate(selectedDate)}</Text>

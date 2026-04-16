@@ -21,11 +21,14 @@ import { AllEntriesCopy } from "./src/constants/allEntries";
 import { AppColors } from "./src/constants/colors";
 import { EntryRegistrationCopy } from "./src/constants/entryRegistration";
 import { AppMessages } from "./src/constants/messages";
+import { SubscriptionMessages, SubscriptionTiers } from "./src/constants/subscription";
 import { useAnnualLedgerReportAction } from "./src/hooks/useAnnualLedgerReportAction";
 import { useAuthOnboarding } from "./src/hooks/useAuthOnboarding";
 import { useLedgerNotifications } from "./src/hooks/useLedgerNotifications";
 import { useLedgerScreenState } from "./src/hooks/useLedgerScreenState";
+import { useSubscriptionPlan } from "./src/hooks/useSubscriptionPlan";
 import { useSupabaseSession } from "./src/hooks/useSupabaseSession";
+import { ensureMobileAdsInitialized } from "./src/lib/ads/mobileAds";
 import { getAppHeaderTitle, showsCalendarReturnAction } from "./src/lib/appHeaderTitle";
 import { appPlatform } from "./src/lib/appPlatform";
 import { resolveSessionAuthProviderLabel } from "./src/lib/authProvider";
@@ -33,6 +36,7 @@ import { logAppError } from "./src/lib/logAppError";
 import { buildAppMenuItems } from "./src/lib/menuItems";
 import { showNativeToast } from "./src/lib/nativeToast";
 import { fetchOwnProfileDisplayName, updateOwnProfileDisplayName } from "./src/lib/profiles";
+import { isSubscriptionPurchaseCancelled } from "./src/lib/subscription/subscriptionError";
 import {
   createOtherMemberCreatedEntryEvent,
   createOtherMemberDeletedEntryEvent,
@@ -96,6 +100,7 @@ function SignedInApp({ session }: { session: Session }) {
   );
   const accountProviderLabel = resolveSessionAuthProviderLabel(session);
   const notifications = useLedgerNotifications(session.user.id);
+  const subscription = useSubscriptionPlan(session.user.id);
   const ledgerState = useLedgerScreenState(session);
   const annualReport = useAnnualLedgerReportAction({
     activeBook: ledgerState.activeBook,
@@ -118,6 +123,14 @@ function SignedInApp({ session }: { session: Session }) {
     userId: session.user.id,
   });
 
+  useEffect(() => {
+    if (!appPlatform.isNative) {
+      return;
+    }
+
+    void ensureMobileAdsInitialized();
+  }, []);
+
   const handleOpenCalendar = () => setActiveScreen("calendar");
   const handleOpenEntryScreen = (nextReturnScreen: Exclude<LedgerAppScreen, "entry">) => {
     setEntryReturnScreen(nextReturnScreen);
@@ -136,6 +149,7 @@ function SignedInApp({ session }: { session: Session }) {
     setActiveScreen((currentScreen) => (currentScreen === "charts" ? "calendar" : "charts"));
   const handleOpenAllEntries = () => setActiveScreen("all-entries");
   const handleOpenEntry = () => handleOpenEntryScreen("calendar");
+  const handleOpenSubscription = () => setActiveScreen("subscription");
   const menuItems = buildAppMenuItems(notifications.showNotificationSettings);
   const handleOpenYearPicker = () => {
     if (activeScreen !== "calendar") {
@@ -174,6 +188,42 @@ function SignedInApp({ session }: { session: Session }) {
   const handleCompletePermissionOnboarding = async () => {
     await notifications.requestNotifications();
     authOnboarding.completePermissionOnboarding();
+  };
+
+  const handlePurchasePlus = async () => {
+    try {
+      const nextTier = await trackBlockingTask(() => subscription.purchasePlus());
+      if (nextTier === SubscriptionTiers.plus) {
+        showNativeToast(SubscriptionMessages.purchaseSuccess);
+      }
+    } catch (error) {
+      if (isSubscriptionPurchaseCancelled(error)) {
+        return;
+      }
+
+      logAppError("App", error, {
+        step: "purchase_plus",
+        userId: session.user.id,
+      });
+      showNativeToast(SubscriptionMessages.purchaseError);
+    }
+  };
+
+  const handleRestorePurchases = async () => {
+    try {
+      const nextTier = await trackBlockingTask(() => subscription.restorePurchases());
+      showNativeToast(
+        nextTier === SubscriptionTiers.plus
+          ? SubscriptionMessages.restoreSuccess
+          : SubscriptionMessages.inactiveRestoreMessage,
+      );
+    } catch (error) {
+      logAppError("App", error, {
+        step: "restore_plus_purchases",
+        userId: session.user.id,
+      });
+      showNativeToast(SubscriptionMessages.restoreError);
+    }
   };
 
   const handleSaveEntry = async () => {
@@ -372,6 +422,8 @@ function SignedInApp({ session }: { session: Session }) {
               accountProviderLabel={accountProviderLabel}
               email={session.user.email ?? ""}
               fallbackDisplayName={fallbackDisplayName}
+              hasAvailablePlusPackage={subscription.hasAvailablePlusPackage}
+              isPlusActive={subscription.isPlusActive}
               ledgerState={ledgerState}
               notificationPreferenceGroups={notifications.preferenceGroups}
               notificationPermissionLabel={notifications.permissionLabel}
@@ -386,6 +438,9 @@ function SignedInApp({ session }: { session: Session }) {
               }
               onOpenCharts={handleToggleCharts}
               onOpenEntry={handleOpenEntry}
+              onOpenSubscription={handleOpenSubscription}
+              onPurchasePlus={handlePurchasePlus}
+              onRestorePurchases={handleRestorePurchases}
               onSaveEntry={handleSaveEntry}
               onSaveEntryDrafts={handleSaveEntryDrafts}
               onSettleInstallmentEntry={handleSettleInstallmentEntry}
@@ -400,6 +455,7 @@ function SignedInApp({ session }: { session: Session }) {
                 handleOpenCalendar();
               }}
               showNotificationSettings={notifications.showNotificationSettings}
+              subscriptionTier={subscription.currentTier}
               trackBlockingTask={trackBlockingTask}
               userId={session.user.id}
             />

@@ -1,4 +1,5 @@
-import type { ProfileDisplayRow } from "../types/supabase";
+import type { SubscriptionTier } from "../constants/subscription";
+import type { ProfileDisplayRow, ProfileSubscriptionRow } from "../types/supabase";
 import { isValidDisplayName } from "../utils/displayName";
 import {
   getCachedProfileDisplayName,
@@ -56,4 +57,22 @@ export async function updateOwnProfileDisplayName(
   const nextDisplayName = data.display_name ?? "";
   setCachedProfileDisplayName(userId, nextDisplayName);
   return nextDisplayName;
+}
+
+export async function updateOwnSubscriptionTier(
+  userId: string,
+  subscriptionTier: SubscriptionTier,
+): Promise<SubscriptionTier> {
+  const { data, error } = await supabase
+    .from(PROFILE_TABLE)
+    .update({ subscription_tier: subscriptionTier })
+    .eq("id", userId)
+    .select("id, subscription_tier")
+    .single<ProfileSubscriptionRow>();
+
+  if (error || !data) {
+    throw error ?? new Error("Failed to update subscription tier.");
+  }
+
+  return data.subscription_tier ?? subscriptionTier;
 }

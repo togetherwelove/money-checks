@@ -3,6 +3,11 @@ import { View } from "react-native";
 
 import { DEFAULT_MEMBER_DISPLAY_NAME } from "../constants/ledgerDisplay";
 import { AppMessages } from "../constants/messages";
+import {
+  SubscriptionConfig,
+  type SubscriptionTier,
+  SubscriptionTiers,
+} from "../constants/subscription";
 import { useLedgerBookNickname } from "../hooks/useLedgerBookNickname";
 import { showNativeToast } from "../lib/nativeToast";
 import { fetchOwnProfileDisplayName } from "../lib/profiles";
@@ -27,6 +32,7 @@ type SharedLedgerPanelProps = {
   activeBook: LedgerBook | null;
   currentUserId: string;
   members: LedgerBookMember[];
+  onOpenSubscription: () => void;
   onApproveJoinRequest: (requestId: string) => Promise<boolean>;
   onKickMember: (targetUserId: string) => Promise<boolean>;
   onRejectJoinRequest: (requestId: string) => Promise<boolean>;
@@ -45,12 +51,14 @@ type SharedLedgerPanelProps = {
     bookId?: string,
   ) => Promise<void>;
   pendingJoinRequests: LedgerBookJoinRequest[];
+  subscriptionTier: SubscriptionTier;
 };
 
 export function SharedLedgerPanel({
   activeBook,
   currentUserId,
   members,
+  onOpenSubscription,
   onApproveJoinRequest,
   onKickMember,
   onRejectJoinRequest,
@@ -61,6 +69,7 @@ export function SharedLedgerPanel({
   onSendPushNotificationToBookMembers,
   onSendPushNotificationToUsers,
   pendingJoinRequests,
+  subscriptionTier,
 }: SharedLedgerPanelProps) {
   const [shareCodeInput, setShareCodeInput] = useState("");
   const currentMemberRole =
@@ -83,6 +92,10 @@ export function SharedLedgerPanel({
     currentUserId,
     members,
   });
+  const shouldShowSharedMemberLimitNotice =
+    currentMemberRole === "owner" &&
+    subscriptionTier === SubscriptionTiers.free &&
+    members.length >= SubscriptionConfig.freeSharedMemberLimit;
 
   const handleJoin = async () => {
     if (isJoinBlocked) {
@@ -195,12 +208,14 @@ export function SharedLedgerPanel({
         currentUserId={currentUserId}
         isOwner={currentMemberRole === "owner"}
         members={members}
+        onOpenSubscription={onOpenSubscription}
         onApproveJoinRequest={handleApproveJoinRequest}
         onChangeBookName={handleChangeBookName}
         onKickMember={handleKickMember}
         onRejectJoinRequest={handleRejectJoinRequest}
         onSaveBookName={handleSaveBookName}
         pendingJoinRequests={pendingJoinRequests}
+        shouldShowSharedMemberLimitNotice={shouldShowSharedMemberLimitNotice}
       />
       <SharedLedgerJoinCard
         canLeaveSharedBook={canLeaveSharedBook}

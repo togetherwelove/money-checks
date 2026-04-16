@@ -1,5 +1,6 @@
 import { AppMessages } from "../constants/messages";
 import { ShareLedgerMessages } from "../constants/shareLedgerMessages";
+import { SubscriptionMessages } from "../constants/subscription";
 
 type SupabaseLikeError = {
   details?: string | null;
@@ -28,6 +29,10 @@ export function resolveSharedLedgerJoinErrorMessage(error: unknown): string {
 
   if (errorText.includes("Ledger book not found for code")) {
     return ShareLedgerMessages.joinInvalidCodeError;
+  }
+
+  if (errorText.includes("Shared ledger member limit reached for owner subscription tier.")) {
+    return SubscriptionMessages.sharedLedgerLimitError;
   }
 
   return AppMessages.accountJoinError;

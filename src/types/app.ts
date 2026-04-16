@@ -6,4 +6,5 @@ export type LedgerAppScreen =
   | "contact-support"
   | "entry"
   | "notification-settings"
+  | "subscription"
   | "share";

@@ -163,8 +163,7 @@ export const NotificationEventCopy: Record<NotificationEventType, NotificationEv
     title: "공유 가계부에서 제외",
   },
   other_member_created_entry: {
-    bodyTemplate:
-      "{actorName}님이 {category} {amountLabel}을 추가했어요.\n메모: {noteSentence}",
+    bodyTemplate: "{actorName}님이 {category} {amountLabel}을 추가했어요.\n메모: {noteSentence}",
     defaultEnabled: true,
     description: "다른 멤버가 기록을 새로 추가하면 알립니다.",
     groupId: "sharedLedger",
@@ -172,8 +171,7 @@ export const NotificationEventCopy: Record<NotificationEventType, NotificationEv
     title: "기록 추가",
   },
   other_member_deleted_entry: {
-    bodyTemplate:
-      "{actorName}님이 {category} {amountLabel} 기록을 삭제했어요.",
+    bodyTemplate: "{actorName}님이 {category} {amountLabel} 기록을 삭제했어요.",
     defaultEnabled: true,
     description: "다른 멤버가 기록을 삭제하면 알립니다.",
     groupId: "sharedLedger",
@@ -181,8 +179,7 @@ export const NotificationEventCopy: Record<NotificationEventType, NotificationEv
     title: "기록 삭제",
   },
   other_member_updated_entry: {
-    bodyTemplate:
-      "{actorName}님이 {category} {amountLabel} 기록을 수정했어요.",
+    bodyTemplate: "{actorName}님이 {category} {amountLabel} 기록을 수정했어요.",
     defaultEnabled: true,
     description: "다른 멤버가 기록을 수정하면 알립니다.",
     groupId: "sharedLedger",
