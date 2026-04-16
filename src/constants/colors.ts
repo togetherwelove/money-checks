@@ -18,3 +18,12 @@ export const AppColors = {
   border: "#d8cfbf",
   overlay: "rgba(31, 42, 40, 0.18)",
 } as const;
+
+export const AppChartColors = [
+  AppColors.primary,
+  AppColors.accent,
+  "#d7a44a",
+  "#6d8b74",
+  "#8f6f95",
+  "#4f759b",
+] as const;

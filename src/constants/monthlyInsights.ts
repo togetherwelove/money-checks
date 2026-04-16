@@ -1,11 +1,6 @@
-export const MONTHLY_INSIGHT_CHART_COLORS = [
-  "#235347",
-  "#c96c50",
-  "#d7a44a",
-  "#6d8b74",
-  "#8f6f95",
-  "#4f759b",
-] as const;
+import { AppChartColors } from "./colors";
+
+export const MONTHLY_INSIGHT_CHART_COLORS = AppChartColors;
 
 export const MonthlyInsightCopy = {
   categoryEmpty: "이번 달 지출이 없어 카테고리 차트를 표시하지 않을게요.",
