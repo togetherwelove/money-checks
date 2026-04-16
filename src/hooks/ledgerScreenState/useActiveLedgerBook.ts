@@ -10,6 +10,7 @@ import {
   leaveActiveLedgerBook,
   removeMemberFromActiveLedgerBook,
   requestLedgerBookJoinByCode,
+  updateActiveLedgerBookName,
 } from "../../lib/ledgerBooks";
 import { logAppError } from "../../lib/logAppError";
 import {
@@ -20,8 +21,16 @@ import { resolveSharedLedgerJoinErrorMessage } from "../../lib/sharedLedgerJoinE
 import { supabase } from "../../lib/supabase";
 import type { LedgerBook } from "../../types/ledgerBook";
 import type { JoinSharedLedgerBookAttempt } from "../../types/ledgerBookJoinRequest";
-import type { ProfileRow } from "../../types/supabase";
+import type { LedgerBookRow, ProfileRow } from "../../types/supabase";
+import { mapLedgerBookRow } from "../../utils/ledgerBookMapper";
 import type { BusyTaskTracker } from "./types";
+
+let realtimeChannelSequence = 0;
+
+function createRealtimeChannelName(prefix: string, identifier: string) {
+  realtimeChannelSequence += 1;
+  return `${prefix}-${identifier}-${realtimeChannelSequence}`;
+}
 
 type ActiveLedgerBookState = {
   activeBook: LedgerBook | null;
@@ -30,6 +39,7 @@ type ActiveLedgerBookState = {
   joinSharedLedgerBookByCode: (shareCode: string) => Promise<JoinSharedLedgerBookAttempt>;
   leaveSharedLedgerBook: () => Promise<boolean>;
   removeSharedLedgerMember: (targetUserId: string) => Promise<boolean>;
+  renameActiveLedgerBook: (nextName: string) => Promise<boolean>;
   refreshSharedLedgerBook: () => Promise<void>;
 };
 
@@ -128,7 +138,7 @@ export function useActiveLedgerBook(
     };
 
     const channel = supabase
-      .channel(`profile-${userId}`)
+      .channel(createRealtimeChannelName("profile", userId))
       .on(
         "postgres_changes",
         {
@@ -148,6 +158,33 @@ export function useActiveLedgerBook(
       void supabase.removeChannel(channel);
     };
   }, [activeBook?.id, userId]);
+
+  useEffect(() => {
+    if (!activeBook?.id) {
+      return;
+    }
+
+    const channel = supabase
+      .channel(createRealtimeChannelName("ledger-book", activeBook.id))
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "ledger_books",
+          filter: `id=eq.${activeBook.id}`,
+        },
+        (payload) => {
+          const changedBook = payload.new as LedgerBookRow;
+          setActiveBook(mapLedgerBookRow(changedBook));
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [activeBook?.id]);
 
   const joinSharedLedgerBookByCode = async (shareCode: string) => {
     const normalizedCode = shareCode.trim();
@@ -237,6 +274,24 @@ export function useActiveLedgerBook(
     }
   };
 
+  const renameActiveLedgerBook = async (nextName: string) => {
+    setActiveBookError(null);
+
+    try {
+      const nextBook = await trackBusyTask(() => updateActiveLedgerBookName(nextName));
+      setActiveBook(nextBook);
+      return true;
+    } catch (error) {
+      logAppError("ActiveLedgerBook", error, {
+        activeBookId: activeBook?.id ?? null,
+        nextName,
+        step: "rename_active_ledger_book",
+        userId,
+      });
+      return false;
+    }
+  };
+
   const refreshSharedLedgerBook = async () => {
     await trackBusyTask(loadActiveBook);
   };
@@ -248,6 +303,7 @@ export function useActiveLedgerBook(
     joinSharedLedgerBookByCode,
     leaveSharedLedgerBook,
     removeSharedLedgerMember,
+    renameActiveLedgerBook,
     refreshSharedLedgerBook,
   };
 }

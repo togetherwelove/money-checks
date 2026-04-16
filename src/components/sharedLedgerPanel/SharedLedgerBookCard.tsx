@@ -22,6 +22,7 @@ type SharedLedgerBookCardProps = {
   activeBook: LedgerBook | null;
   bookName: string | null;
   bookNameInput: string;
+  canEditBookName: boolean;
   currentUserId: string;
   isOwner: boolean;
   members: LedgerBookMember[];
@@ -29,7 +30,7 @@ type SharedLedgerBookCardProps = {
   onChangeBookName: (value: string) => void;
   onKickMember: (targetUserId: string) => Promise<boolean>;
   onRejectJoinRequest: (requestId: string) => Promise<boolean>;
-  onSaveBookName: () => void;
+  onSaveBookName: () => Promise<boolean>;
   pendingJoinRequests: LedgerBookJoinRequest[];
 };
 
@@ -37,6 +38,7 @@ export function SharedLedgerBookCard({
   activeBook,
   bookName,
   bookNameInput,
+  canEditBookName,
   currentUserId,
   isOwner,
   members,
@@ -71,15 +73,18 @@ export function SharedLedgerBookCard({
   };
 
   const handleSaveBookNamePress = () => {
-    onSaveBookName();
-    setIsEditingBookName(false);
+    void onSaveBookName().then((didSave) => {
+      if (didSave) {
+        setIsEditingBookName(false);
+      }
+    });
   };
 
   return (
     <View style={[styles.section, styles.primarySection]}>
       <View style={styles.sectionHeader}>
         <View style={styles.headerContent}>
-          {isOwner ? (
+          {canEditBookName ? (
             isEditingBookName ? (
               <View style={styles.bookNameEditRow}>
                 <TextInput

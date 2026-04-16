@@ -32,6 +32,7 @@ type SharedLedgerPanelProps = {
   onRejectJoinRequest: (requestId: string) => Promise<boolean>;
   onLeaveSharedLedgerBook: () => Promise<boolean>;
   onJoinSharedLedgerBook: (shareCode: string) => Promise<JoinSharedLedgerBookAttempt>;
+  onRenameActiveLedgerBook: (nextName: string) => Promise<boolean>;
   onSendPendingJoinRequestNotification: (requesterName: string) => Promise<void>;
   onSendPushNotificationToBookMembers: (
     bookId: string,
@@ -55,17 +56,28 @@ export function SharedLedgerPanel({
   onRejectJoinRequest,
   onLeaveSharedLedgerBook,
   onJoinSharedLedgerBook,
+  onRenameActiveLedgerBook,
   onSendPendingJoinRequestNotification,
   onSendPushNotificationToBookMembers,
   onSendPushNotificationToUsers,
   pendingJoinRequests,
 }: SharedLedgerPanelProps) {
   const [shareCodeInput, setShareCodeInput] = useState("");
-  const { bookNameInput, displayedBookName, handleChangeBookName, handleSaveBookName, isOwner } =
-    useLedgerBookNickname({
-      activeBook,
-      currentUserId,
-    });
+  const currentMemberRole =
+    members.find((member) => member.userId === currentUserId)?.role ??
+    (activeBook?.ownerId === currentUserId ? "owner" : "viewer");
+  const canEditBookName = currentMemberRole === "owner" || currentMemberRole === "editor";
+  const {
+    bookNameInput,
+    canEditBookName: canEditDisplayedBookName,
+    displayedBookName,
+    handleChangeBookName,
+    handleSaveBookName,
+  } = useLedgerBookNickname({
+    activeBook,
+    canEditBookName,
+    onSaveBookName: onRenameActiveLedgerBook,
+  });
   const isJoinBlocked = isJoinRequestBlockedByActiveSharedLedger({
     activeBook,
     currentUserId,
@@ -179,8 +191,9 @@ export function SharedLedgerPanel({
         activeBook={activeBook}
         bookName={displayedBookName}
         bookNameInput={bookNameInput}
+        canEditBookName={canEditDisplayedBookName}
         currentUserId={currentUserId}
-        isOwner={isOwner}
+        isOwner={currentMemberRole === "owner"}
         members={members}
         onApproveJoinRequest={handleApproveJoinRequest}
         onChangeBookName={handleChangeBookName}

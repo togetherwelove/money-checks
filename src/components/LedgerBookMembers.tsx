@@ -109,9 +109,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
   },
-  memberList: {
-    gap: LedgerBookMembersUi.listGap,
-  },
+  memberList: {},
   memberListScroll: {
     maxHeight: LedgerBookMembersLayout.listMaxHeight,
   },

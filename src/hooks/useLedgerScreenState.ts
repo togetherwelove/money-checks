@@ -47,6 +47,7 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
     joinSharedLedgerBookByCode,
     leaveSharedLedgerBook,
     removeSharedLedgerMember,
+    renameActiveLedgerBook,
     refreshSharedLedgerBook,
   } = useActiveLedgerBook(session.user.id, trackBusyTask);
   const { approveLedgerJoinRequest, pendingJoinRequests, rejectLedgerJoinRequest } =
@@ -294,6 +295,7 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
     approveLedgerJoinRequest,
     rejectLedgerJoinRequest,
     removeSharedLedgerMember,
+    renameActiveLedgerBook,
     refreshLedger,
     refreshSharedLedgerBook,
     selectedDate,

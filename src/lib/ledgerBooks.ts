@@ -17,6 +17,7 @@ import { supabase } from "./supabase";
 const GET_ACCESSIBLE_LEDGER_BOOK_FUNCTION = "get_accessible_ledger_book";
 const GET_ACTIVE_LEDGER_BOOK_FUNCTION = "get_active_ledger_book";
 const ENSURE_OWN_PERSONAL_LEDGER_BOOK_FUNCTION = "ensure_own_personal_ledger_book";
+const UPDATE_ACTIVE_LEDGER_BOOK_NAME_FUNCTION = "update_active_ledger_book_name";
 
 export async function fetchLedgerBookById(bookId: string): Promise<LedgerBook> {
   const { data, error: bookError } = await supabase
@@ -59,6 +60,20 @@ export async function fetchActiveLedgerBook(userId: string): Promise<LedgerBook 
   }
 
   return mapLedgerBookRow(activeBook);
+}
+
+export async function updateActiveLedgerBookName(nextName: string): Promise<LedgerBook> {
+  const { data, error } = await supabase
+    .rpc(UPDATE_ACTIVE_LEDGER_BOOK_NAME_FUNCTION, { next_name: nextName })
+    .returns<LedgerBookRow[]>();
+
+  const updatedBook = Array.isArray(data) ? data[0] : null;
+
+  if (error || !updatedBook) {
+    throw error ?? new Error("Failed to update the active ledger book name.");
+  }
+
+  return mapLedgerBookRow(updatedBook);
 }
 
 export async function requestLedgerBookJoinByCode(

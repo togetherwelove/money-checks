@@ -89,7 +89,6 @@ function SignedInApp({ session }: { session: Session }) {
   const ledgerState = useLedgerScreenState(session);
   const annualReport = useAnnualLedgerReportAction({
     activeBook: ledgerState.activeBook,
-    currentUserId: session.user.id,
     visibleMonth: ledgerState.visibleMonth,
   });
   const trackBlockingTask = useCallback(async function trackBlockingTask<T>(

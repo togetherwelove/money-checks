@@ -7,5 +7,6 @@ export const LedgerBookNicknameCopy = {
   saveAction: CommonActionCopy.save,
   cancelAction: CommonActionCopy.cancel,
   saveSuccess: "가계부 이름을 저장했어요.",
+  saveError: "가계부 이름을 저장하지 못했어요.",
   actionMinWidth: 72,
 } as const;

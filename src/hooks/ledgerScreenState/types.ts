@@ -44,6 +44,7 @@ export type LedgerScreenState = {
   approveLedgerJoinRequest: (requestId: string) => Promise<boolean>;
   rejectLedgerJoinRequest: (requestId: string) => Promise<boolean>;
   removeSharedLedgerMember: (targetUserId: string) => Promise<boolean>;
+  renameActiveLedgerBook: (nextName: string) => Promise<boolean>;
   refreshLedger: () => Promise<void>;
   refreshSharedLedgerBook: () => Promise<void>;
   selectedDate: string;

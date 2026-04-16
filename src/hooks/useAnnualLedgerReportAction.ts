@@ -11,14 +11,11 @@ import {
 } from "../lib/annualReport/annualReportPeriods";
 import { confirmAndDownloadAnnualReport } from "../lib/annualReport/downloadAnnualReport";
 import { appPlatform } from "../lib/appPlatform";
-import { resolveOwnedLedgerBookName } from "../lib/ledgerBookNickname";
-import { loadLedgerBookNickname } from "../lib/ledgerBookNicknameStorage";
 import { fetchLedgerEntries, fetchLedgerEntryDateBounds } from "../lib/ledgerEntries";
 import type { LedgerBook } from "../types/ledgerBook";
 
 type UseAnnualLedgerReportActionParams = {
   activeBook: LedgerBook | null;
-  currentUserId: string;
   visibleMonth: Date;
 };
 
@@ -30,7 +27,6 @@ type CustomRangeDraft = {
 
 export function useAnnualLedgerReportAction({
   activeBook,
-  currentUserId,
   visibleMonth,
 }: UseAnnualLedgerReportActionParams) {
   const [customRangeDraft, setCustomRangeDraft] = useState<CustomRangeDraft | null>(null);
@@ -41,12 +37,8 @@ export function useAnnualLedgerReportAction({
       return null;
     }
 
-    if (activeBook.ownerId !== currentUserId) {
-      return activeBook.name;
-    }
-
-    return resolveOwnedLedgerBookName(loadLedgerBookNickname(activeBook.id));
-  }, [activeBook, currentUserId]);
+    return activeBook.name;
+  }, [activeBook]);
 
   const handleDownloadReport = async () => {
     if (!activeBook || !bookName) {

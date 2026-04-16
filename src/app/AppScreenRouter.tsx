@@ -135,6 +135,7 @@ export function AppScreenRouter({
         onApproveJoinRequest={ledgerState.approveLedgerJoinRequest}
         onJoinSharedLedgerBook={ledgerState.joinSharedLedgerBookByCode}
         onLeaveSharedLedgerBook={ledgerState.leaveSharedLedgerBook}
+        onRenameActiveLedgerBook={ledgerState.renameActiveLedgerBook}
         onRemoveSharedLedgerMember={ledgerState.removeSharedLedgerMember}
         onRejectJoinRequest={ledgerState.rejectLedgerJoinRequest}
         onSendPendingJoinRequestNotification={onSendPendingJoinRequestNotification}
