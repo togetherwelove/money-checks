@@ -164,30 +164,30 @@ export const NotificationEventCopy: Record<NotificationEventType, NotificationEv
   },
   other_member_created_entry: {
     bodyTemplate:
-      "{actorName}님이 {bookName}에 {entryTypeLabel} {amountLabel} 기록을 추가했어요. 분류: {category}.{noteSentence}",
+      "{actorName}님이 {category} {amountLabel}을 추가했어요.\n메모: {noteSentence}",
     defaultEnabled: true,
     description: "다른 멤버가 기록을 새로 추가하면 알립니다.",
     groupId: "sharedLedger",
     label: "다른 멤버가 추가했을 때",
-    title: "공유 기록 추가",
+    title: "기록 추가",
   },
   other_member_deleted_entry: {
     bodyTemplate:
-      "{actorName}님이 {bookName}에서 {entryTypeLabel} {amountLabel} 기록을 삭제했어요. 분류: {category}.",
+      "{actorName}님이 {category} {amountLabel} 기록을 삭제했어요.",
     defaultEnabled: true,
     description: "다른 멤버가 기록을 삭제하면 알립니다.",
     groupId: "sharedLedger",
     label: "다른 멤버가 삭제했을 때",
-    title: "공유 기록 삭제",
+    title: "기록 삭제",
   },
   other_member_updated_entry: {
     bodyTemplate:
-      "{actorName}님이 {bookName}의 {entryTypeLabel} {amountLabel} 기록을 수정했어요. 분류: {category}.{noteSentence}",
+      "{actorName}님이 {category} {amountLabel} 기록을 수정했어요.",
     defaultEnabled: true,
     description: "다른 멤버가 기록을 수정하면 알립니다.",
     groupId: "sharedLedger",
     label: "다른 멤버가 수정했을 때",
-    title: "공유 기록 수정",
+    title: "기록 수정",
   },
 };
 
