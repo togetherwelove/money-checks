@@ -54,21 +54,31 @@ export default function App() {
       <GestureHandlerRootView style={styles.gestureRoot}>
         <RootSiblingParent>
           {isLoading ? (
-            <SafeAreaView style={styles.container}>
-              <StatusBar barStyle="dark-content" backgroundColor={AppColors.background} />
+            <SignedOutAppShell>
               <Text style={styles.loadingText}>{AppMessages.authLoading}</Text>
-            </SafeAreaView>
+            </SignedOutAppShell>
           ) : !session ? (
-            <SafeAreaView style={styles.container}>
-              <StatusBar barStyle="dark-content" backgroundColor={AppColors.background} />
+            <SignedOutAppShell>
               <AuthScreen initialErrorMessage={errorMessage} />
-            </SafeAreaView>
+            </SignedOutAppShell>
           ) : (
             <SignedInApp session={session} />
           )}
         </RootSiblingParent>
       </GestureHandlerRootView>
     </SafeAreaProvider>
+  );
+}
+
+function SignedOutAppShell({ children }: { children: React.ReactNode }) {
+  return (
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={AppColors.background} />
+      <SafeAreaView edges={["top"]} style={styles.signedOutSafeArea} />
+      <SafeAreaView edges={["left", "right", "bottom"]} style={styles.signedOutBodySafeArea}>
+        <View style={styles.signedOutBody}>{children}</View>
+      </SafeAreaView>
+    </View>
   );
 }
 
@@ -284,35 +294,32 @@ function SignedInApp({ session }: { session: Session }) {
 
   if (authOnboarding.isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor={AppColors.background} />
+      <SignedOutAppShell>
         <Text style={styles.loadingText}>{AppMessages.authLoading}</Text>
-      </SafeAreaView>
+      </SignedOutAppShell>
     );
   }
 
   if (authOnboarding.step === "nickname") {
     return (
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor={AppColors.background} />
+      <SignedOutAppShell>
         {isNicknameScreenReady ? (
           <NicknameSetupScreen onSubmit={handleCompleteNicknameOnboarding} />
         ) : (
           <OnboardingTransitionScreen />
         )}
-      </SafeAreaView>
+      </SignedOutAppShell>
     );
   }
 
   if (authOnboarding.step === "notification-permission") {
     return (
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor={AppColors.background} />
+      <SignedOutAppShell>
         <PermissionOnboardingScreen
           onAllow={handleCompletePermissionOnboarding}
           onSkip={authOnboarding.completePermissionOnboarding}
         />
-      </SafeAreaView>
+      </SignedOutAppShell>
     );
   }
 
@@ -574,6 +581,17 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.background,
   },
   body: {
+    flex: 1,
+    backgroundColor: AppColors.background,
+  },
+  signedOutSafeArea: {
+    backgroundColor: AppColors.background,
+  },
+  signedOutBodySafeArea: {
+    flex: 1,
+    backgroundColor: AppColors.background,
+  },
+  signedOutBody: {
     flex: 1,
     backgroundColor: AppColors.background,
   },
