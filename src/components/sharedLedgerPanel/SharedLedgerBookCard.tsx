@@ -9,7 +9,6 @@ import { showNativeToast } from "../../lib/nativeToast";
 import type { LedgerBook } from "../../types/ledgerBook";
 import type { LedgerBookJoinRequest } from "../../types/ledgerBookJoinRequest";
 import type { LedgerBookMember } from "../../types/ledgerBookMember";
-import { ActionButton } from "../ActionButton";
 import { IconActionButton } from "../IconActionButton";
 import { LedgerBookJoinRequests } from "../LedgerBookJoinRequests";
 import { LedgerBookMembers } from "../LedgerBookMembers";
@@ -91,26 +90,21 @@ export function SharedLedgerBookCard({
                   autoComplete="off"
                   autoCapitalize="words"
                   autoCorrect={false}
+                  submitBehavior={"blurAndSubmit"}
                   importantForAutofill="no"
                   textContentType="none"
                   onChangeText={onChangeBookName}
+                  onSubmitEditing={handleSaveBookNamePress}
                   placeholder={LedgerBookNicknameCopy.inputPlaceholder}
+                  returnKeyType="done"
                   spellCheck={false}
                   style={styles.bookNameHeaderInput}
                   value={bookNameInput}
                 />
                 <View style={styles.bookNameActionSlot}>
-                  <ActionButton
-                    label={LedgerBookNicknameCopy.saveAction}
-                    onPress={handleSaveBookNamePress}
-                  />
-                </View>
-                <View style={styles.bookNameActionSlot}>
-                  <ActionButton
-                    label={LedgerBookNicknameCopy.cancelAction}
-                    onPress={handleCancelEditingBookName}
-                    variant="secondary"
-                  />
+                  <Text onPress={handleCancelEditingBookName} style={styles.bookNameCancelAction}>
+                    {LedgerBookNicknameCopy.cancelAction}
+                  </Text>
                 </View>
               </View>
             ) : (

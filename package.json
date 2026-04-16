@@ -5,6 +5,8 @@
   "packageManager": "pnpm@10.16.1",
   "scripts": {
     "dev": "node scripts/write-build-info.cjs && expo start",
+    "supabase:db:push": "node scripts/run-supabase-target.cjs development db push",
+    "supabase:link": "node scripts/run-supabase-target.cjs development link",
     "verify": "pnpm exec tsc --noEmit -p tsconfig.json && vitest run && biome check . && node scripts/write-build-info.cjs && expo export --platform web && workbox generateSW workbox-config.cjs"
   },
   "dependencies": {

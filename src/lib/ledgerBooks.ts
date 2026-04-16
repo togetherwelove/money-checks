@@ -24,7 +24,7 @@ export async function fetchLedgerBookById(bookId: string): Promise<LedgerBook> {
     .rpc(GET_ACCESSIBLE_LEDGER_BOOK_FUNCTION, { target_book_id: bookId })
     .returns<LedgerBookRow[]>();
 
-  const book = Array.isArray(data) ? data[0] : null;
+  const book = resolveLedgerBookRow(data);
 
   if (bookError || !book) {
     throw bookError ?? new Error("Failed to load the requested ledger book.");
@@ -38,7 +38,7 @@ export async function fetchActiveLedgerBook(userId: string): Promise<LedgerBook 
     .rpc(GET_ACTIVE_LEDGER_BOOK_FUNCTION)
     .returns<LedgerBookRow[]>();
 
-  const activeBook = Array.isArray(data) ? data[0] : null;
+  const activeBook = resolveLedgerBookRow(data);
   if (error) {
     logAppError("LedgerBooks", error, {
       step: "get_active_ledger_book",
@@ -67,7 +67,7 @@ export async function updateActiveLedgerBookName(nextName: string): Promise<Ledg
     .rpc(UPDATE_ACTIVE_LEDGER_BOOK_NAME_FUNCTION, { next_name: nextName })
     .returns<LedgerBookRow[]>();
 
-  const updatedBook = Array.isArray(data) ? data[0] : null;
+  const updatedBook = resolveLedgerBookRow(data);
 
   if (error || !updatedBook) {
     throw error ?? new Error("Failed to update the active ledger book name.");
@@ -165,4 +165,27 @@ export async function fetchLedgerBookMembers(bookId: string): Promise<LedgerBook
     role: member.role,
     userId: member.user_id,
   }));
+}
+
+function resolveLedgerBookRow(data: unknown): LedgerBookRow | null {
+  if (Array.isArray(data)) {
+    const firstRow = data[0];
+    return isLedgerBookRow(firstRow) ? firstRow : null;
+  }
+
+  return isLedgerBookRow(data) ? data : null;
+}
+
+function isLedgerBookRow(value: unknown): value is LedgerBookRow {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const candidate = value as Partial<LedgerBookRow>;
+  return (
+    typeof candidate.id === "string" &&
+    typeof candidate.name === "string" &&
+    typeof candidate.owner_id === "string" &&
+    typeof candidate.share_code === "string"
+  );
 }

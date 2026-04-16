@@ -240,9 +240,10 @@ const styles = StyleSheet.create({
   description: NoteTextStyle,
   listViewport: {
     maxHeight: CATEGORY_CUSTOMIZER_LIST_MAX_HEIGHT,
+    overflow: "hidden",
   },
   list: {
-    maxHeight: CATEGORY_CUSTOMIZER_LIST_MAX_HEIGHT,
+    flexGrow: 0,
   },
   listContent: {
     paddingTop: 2,

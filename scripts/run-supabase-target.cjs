@@ -27,12 +27,7 @@ if (!projectRef || typeof projectRef !== "string") {
 }
 
 const supabasePath = resolveSupabaseCliPath();
-const finalArgs = buildSupabaseArgs(projectRef, supabaseArgs);
-const result = spawnSync(supabasePath, finalArgs, {
-  cwd: path.join(__dirname, ".."),
-  shell: false,
-  stdio: "inherit",
-});
+const result = runSupabaseCommand(resolveSupabaseCommand(projectRef, supabaseArgs));
 
 if (result.error) {
   console.error(result.error.message);
@@ -40,6 +35,27 @@ if (result.error) {
 }
 
 process.exit(result.status ?? 0);
+
+function resolveSupabaseCommand(projectRef, args) {
+  if (args[0] === "db" && args[1] === "push") {
+    const linkResult = runSupabaseCommand(["link", "--project-ref", projectRef]);
+    if ((linkResult.status ?? 1) !== 0) {
+      process.exit(linkResult.status ?? 1);
+    }
+
+    return ["db", "push"];
+  }
+
+  return buildSupabaseArgs(projectRef, args);
+}
+
+function runSupabaseCommand(args) {
+  return spawnSync(supabasePath, args, {
+    cwd: path.join(__dirname, ".."),
+    shell: false,
+    stdio: "inherit",
+  });
+}
 
 function buildSupabaseArgs(projectRef, args) {
   if (args[0] === "link") {

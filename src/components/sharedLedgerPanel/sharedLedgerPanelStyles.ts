@@ -64,7 +64,13 @@ export const sharedLedgerPanelStyles = StyleSheet.create({
     flex: 1,
   },
   bookNameActionSlot: {
-    minWidth: LedgerBookNicknameCopy.actionMinWidth,
+    alignItems: "flex-end",
+    justifyContent: "center",
+  },
+  bookNameCancelAction: {
+    color: AppColors.mutedText,
+    fontSize: 13,
+    fontWeight: "700",
   },
   codeBlock: {
     gap: 4,
