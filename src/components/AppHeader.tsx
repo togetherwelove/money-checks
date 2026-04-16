@@ -10,6 +10,7 @@ type AppHeaderProps = {
   onOpenMenu: () => void;
   onPressCenterLabel?: (() => void) | null;
   showsCenterLabelIndicator?: boolean;
+  trailingAction?: ReactNode;
   titleLabel?: string | null;
   yearLabel?: string | null;
 };
@@ -20,6 +21,7 @@ export function AppHeader({
   onOpenMenu,
   onPressCenterLabel = null,
   showsCenterLabelIndicator = false,
+  trailingAction = null,
   titleLabel = null,
   yearLabel = null,
 }: AppHeaderProps) {
@@ -39,7 +41,8 @@ export function AppHeader({
           <Text style={styles.titleText}>{centerLabel}</Text>
         ) : null}
       </View>
-      <View style={[styles.sideSlot, styles.menuSlot]}>
+      <View style={[styles.sideSlot, styles.trailingSlot]}>
+        {trailingAction}
         <IconActionButton icon="menu" isActive={isMenuOpen} onPress={onOpenMenu} />
       </View>
     </View>
@@ -58,8 +61,11 @@ const styles = StyleSheet.create({
     width: 104,
     justifyContent: "center",
   },
-  menuSlot: {
-    alignItems: "flex-end",
+  trailingSlot: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 4,
   },
   titleSlot: {
     flex: 1,

@@ -1,3 +1,4 @@
+import { AllEntriesCopy } from "../constants/allEntries";
 import { AppMessages } from "../constants/messages";
 import { SupportContactCopy } from "../constants/supportContact";
 import { NotificationUiCopy } from "../notifications/config/notificationCopy";
@@ -7,6 +8,8 @@ export function getAppHeaderTitle(activeScreen: LedgerAppScreen): string | null 
   switch (activeScreen) {
     case "account":
       return AppMessages.accountTitle;
+    case "all-entries":
+      return AllEntriesCopy.screenTitle;
     case "charts":
       return AppMessages.chartScreenTitle;
     case "contact-support":

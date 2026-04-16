@@ -1,12 +1,13 @@
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import type { Session } from "@supabase/supabase-js";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { InteractionManager, StatusBar, StyleSheet, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { RootSiblingParent } from "react-native-root-siblings";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 import { AppScreenRouter } from "./src/app/AppScreenRouter";
+import { AllEntriesAction } from "./src/components/AllEntriesAction";
 import { AppHeader } from "./src/components/AppHeader";
 import { AppMenuDrawer } from "./src/components/AppMenuDrawer";
 import { BackToCalendarAction } from "./src/components/BackToCalendarAction";
@@ -16,6 +17,7 @@ import { OnboardingTransitionScreen } from "./src/components/OnboardingTransitio
 import { ScreenSlideTransition } from "./src/components/ScreenSlideTransition";
 import { AnnualReportRangePickerModal } from "./src/components/annualReport/AnnualReportRangePickerModal";
 import { NativeYearPickerModal } from "./src/components/calendarPicker/NativeYearPickerModal";
+import { AllEntriesCopy } from "./src/constants/allEntries";
 import { AppColors } from "./src/constants/colors";
 import { EntryRegistrationCopy } from "./src/constants/entryRegistration";
 import { AppMessages } from "./src/constants/messages";
@@ -72,6 +74,8 @@ export default function App() {
 
 function SignedInApp({ session }: { session: Session }) {
   const [activeScreen, setActiveScreen] = useState<LedgerAppScreen>("calendar");
+  const [entryReturnScreen, setEntryReturnScreen] =
+    useState<Exclude<LedgerAppScreen, "entry">>("calendar");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNicknameScreenReady, setIsNicknameScreenReady] = useState(false);
   const [isYearPickerOpen, setIsYearPickerOpen] = useState(false);
@@ -88,14 +92,16 @@ function SignedInApp({ session }: { session: Session }) {
     currentUserId: session.user.id,
     visibleMonth: ledgerState.visibleMonth,
   });
-  const trackBlockingTask = async <T,>(task: () => Promise<T>) => {
+  const trackBlockingTask = useCallback(async function trackBlockingTask<T>(
+    task: () => Promise<T>,
+  ) {
     setBlockingTaskCount((currentCount) => currentCount + 1);
     try {
       return await task();
     } finally {
       setBlockingTaskCount((currentCount) => Math.max(0, currentCount - 1));
     }
-  };
+  }, []);
   const authOnboarding = useAuthOnboarding({
     fallbackDisplayName,
     isNotificationSupported: notifications.isSupported,
@@ -104,15 +110,23 @@ function SignedInApp({ session }: { session: Session }) {
   });
 
   const handleOpenCalendar = () => setActiveScreen("calendar");
+  const handleOpenEntryScreen = (nextReturnScreen: Exclude<LedgerAppScreen, "entry">) => {
+    setEntryReturnScreen(nextReturnScreen);
+    setActiveScreen("entry");
+  };
   const handleBackToCalendar = () => {
     if (activeScreen === "entry") {
       ledgerState.resetEditor(ledgerState.selectedDate);
+      setActiveScreen(entryReturnScreen);
+      return;
     }
+
     setActiveScreen("calendar");
   };
   const handleToggleCharts = () =>
     setActiveScreen((currentScreen) => (currentScreen === "charts" ? "calendar" : "charts"));
-  const handleOpenEntry = () => setActiveScreen("entry");
+  const handleOpenAllEntries = () => setActiveScreen("all-entries");
+  const handleOpenEntry = () => handleOpenEntryScreen("calendar");
   const menuItems = buildAppMenuItems(notifications.showNotificationSettings);
   const handleOpenYearPicker = () => {
     if (activeScreen !== "calendar") {
@@ -170,7 +184,7 @@ function SignedInApp({ session }: { session: Session }) {
       return;
     }
 
-    handleOpenCalendar();
+    setActiveScreen(entryReturnScreen);
     void runEntrySaveSideEffects(
       savedEntries,
       currentEntries,
@@ -196,13 +210,18 @@ function SignedInApp({ session }: { session: Session }) {
       return;
     }
 
-    handleOpenCalendar();
+    setActiveScreen(entryReturnScreen);
     void runQueuedEntrySaveSideEffects(savedEntries, currentEntries);
   };
 
   const handleEditEntryFromCalendar = (entry: LedgerEntry) => {
     ledgerState.handleEditEntry(entry);
-    handleOpenEntry();
+    handleOpenEntryScreen("calendar");
+  };
+
+  const handleEditEntryFromAllEntries = (entry: LedgerEntry) => {
+    ledgerState.handleEditEntry(entry);
+    handleOpenEntryScreen("all-entries");
   };
 
   const handleSettleInstallmentEntry = async (entry: LedgerEntry) => {
@@ -213,7 +232,7 @@ function SignedInApp({ session }: { session: Session }) {
         return;
       }
 
-      handleOpenCalendar();
+      setActiveScreen(entryReturnScreen);
       showNativeToast(EntryRegistrationCopy.installmentSettleSuccess);
     } catch (error) {
       logAppError("App", error, {
@@ -307,7 +326,14 @@ function SignedInApp({ session }: { session: Session }) {
             isMenuOpen={isMenuOpen}
             leadingAction={
               showsCalendarReturnAction(activeScreen) ? (
-                <BackToCalendarAction onPress={handleBackToCalendar} />
+                <BackToCalendarAction
+                  label={
+                    activeScreen === "entry" && entryReturnScreen === "all-entries"
+                      ? AllEntriesCopy.backActionLabel
+                      : undefined
+                  }
+                  onPress={handleBackToCalendar}
+                />
               ) : annualReport.bookName ? (
                 <LedgerBookHeaderAction
                   label={annualReport.bookName}
@@ -320,6 +346,11 @@ function SignedInApp({ session }: { session: Session }) {
             onPressCenterLabel={activeScreen === "calendar" ? handleOpenYearPicker : null}
             showsCenterLabelIndicator={activeScreen === "calendar"}
             titleLabel={getAppHeaderTitle(activeScreen)}
+            trailingAction={
+              activeScreen === "calendar" || activeScreen === "charts" ? (
+                <AllEntriesAction onPress={handleOpenAllEntries} />
+              ) : null
+            }
             yearLabel={
               activeScreen === "calendar" ? String(ledgerState.visibleMonth.getFullYear()) : null
             }
@@ -342,7 +373,11 @@ function SignedInApp({ session }: { session: Session }) {
               onChangeNotificationThresholdEnabled={notifications.updateThresholdEnabled}
               onChangeNotificationThreshold={notifications.updateThresholdValue}
               onDeleteSelectedEntry={handleDeleteEntryFromCalendar}
-              onEditSelectedEntry={handleEditEntryFromCalendar}
+              onEditSelectedEntry={
+                activeScreen === "all-entries"
+                  ? handleEditEntryFromAllEntries
+                  : handleEditEntryFromCalendar
+              }
               onOpenCharts={handleToggleCharts}
               onOpenEntry={handleOpenEntry}
               onSaveEntry={handleSaveEntry}

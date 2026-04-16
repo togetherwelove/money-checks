@@ -4,6 +4,7 @@ import type { NotificationEvent } from "../notifications/domain/notificationEven
 import type { NotificationThresholdKey } from "../notifications/domain/notificationEvents";
 import type { NotificationPreferenceGroup } from "../notifications/preferences/notificationPreferences";
 import { AccountScreen } from "../screens/AccountScreen";
+import { AllEntriesScreen } from "../screens/AllEntriesScreen";
 import { ChartScreen } from "../screens/ChartScreen";
 import { EntryScreen } from "../screens/EntryScreen";
 import { HomeScreen } from "../screens/HomeScreen";
@@ -87,6 +88,17 @@ export function AppScreenRouter({
         fallbackDisplayName={fallbackDisplayName}
         trackBlockingTask={trackBlockingTask}
         userId={userId}
+      />
+    );
+  }
+
+  if (activeScreen === "all-entries") {
+    return (
+      <AllEntriesScreen
+        activeBook={ledgerState.activeBook}
+        onDeleteEntry={onDeleteSelectedEntry}
+        onEditEntry={onEditSelectedEntry}
+        trackBlockingTask={trackBlockingTask}
       />
     );
   }

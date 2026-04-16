@@ -21,6 +21,10 @@ const selectedDateWithYearFormatter = new Intl.DateTimeFormat("ko-KR", {
   day: "numeric",
   weekday: "short",
 });
+const entryDateFormatter = new Intl.DateTimeFormat("ko-KR", {
+  month: "long",
+  day: "numeric",
+});
 const monthYearFormatter = new Intl.DateTimeFormat("ko-KR", {
   year: "numeric",
   month: "long",
@@ -46,6 +50,10 @@ export function formatSelectedDateWithYear(isoDate: string): string {
 
 export function formatLedgerListHeaderDate(isoDate: string): string {
   return formatDateWithOptionalYear(parseIsoDate(isoDate), true);
+}
+
+export function formatEntryMetaDate(isoDate: string): string {
+  return entryDateFormatter.format(parseIsoDate(isoDate));
 }
 
 export function formatMonthYear(date: Date): string {

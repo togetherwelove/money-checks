@@ -13,12 +13,16 @@ export async function fetchLedgerEntries(
   bookId: string,
   dateFrom?: string,
   dateTo?: string,
+  options?: {
+    ascending?: boolean;
+    orderBy?: "created_at" | "occurred_on";
+  },
 ): Promise<LedgerEntry[]> {
   let query = supabase
     .from(LEDGER_TABLE)
     .select("*")
     .eq("book_id", bookId)
-    .order("occurred_on", { ascending: true });
+    .order(options?.orderBy ?? "occurred_on", { ascending: options?.ascending ?? true });
 
   if (dateFrom) {
     query = query.gte("occurred_on", dateFrom);

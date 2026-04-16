@@ -5,14 +5,18 @@ import { AppColors } from "../constants/colors";
 import { AppMessages } from "../constants/messages";
 
 type BackToCalendarActionProps = {
+  label?: string;
   onPress: () => void;
 };
 
-export function BackToCalendarAction({ onPress }: BackToCalendarActionProps) {
+export function BackToCalendarAction({
+  label = AppMessages.backToCalendarAction,
+  onPress,
+}: BackToCalendarActionProps) {
   return (
     <Pressable onPress={onPress} style={styles.button}>
       <Feather color={AppColors.primary} name="arrow-left" size={18} />
-      <Text style={styles.label}>{AppMessages.backToCalendarAction}</Text>
+      <Text style={styles.label}>{label}</Text>
     </Pressable>
   );
 }
