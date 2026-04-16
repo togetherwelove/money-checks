@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
   },
   daySlot: {
     width: CELL_WIDTH,
-    paddingHorizontal: 1,
+    paddingHorizontal: 2,
     paddingVertical: CALENDAR_ROW_PADDING,
   },
   dayCell: {
