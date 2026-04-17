@@ -71,18 +71,20 @@ export function HomeScreen({
           previousPage={state.previousMonthPage}
           selectedDate={selectedDate}
         />
-        <MonthlySummary
-          totalExpense={formatCurrency(monthlyLedger.totalExpense)}
-          totalIncome={formatCurrency(monthlyLedger.totalIncome)}
-        />
-        {showsBannerAd ? <AppBannerAd /> : null}
-        <View style={styles.selectionRow}>
-          <View style={styles.selectionInfo}>
-            <Text style={styles.selectedDate}>{formatLedgerListHeaderDate(selectedDate)}</Text>
-          </View>
-          <View style={styles.selectionInfo}>
-            <IconActionButton icon="pie-chart" onPress={onOpenCharts} />
-            <IconActionButton icon="plus" onPress={onOpenEntry} />
+        <View style={styles.summarySection}>
+          <MonthlySummary
+            totalExpense={formatCurrency(monthlyLedger.totalExpense)}
+            totalIncome={formatCurrency(monthlyLedger.totalIncome)}
+          />
+          {showsBannerAd ? <AppBannerAd /> : null}
+          <View style={styles.selectionRow}>
+            <View style={styles.selectionInfo}>
+              <Text style={styles.selectedDate}>{formatLedgerListHeaderDate(selectedDate)}</Text>
+            </View>
+            <View style={styles.selectionInfo}>
+              <IconActionButton icon="pie-chart" onPress={onOpenCharts} size="compact" />
+              <IconActionButton icon="plus" onPress={onOpenEntry} size="compact" />
+            </View>
           </View>
         </View>
       </View>
@@ -143,10 +145,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: AppColors.background,
     padding: AppLayout.screenPadding,
-    gap: AppLayout.cardGap,
+    gap: AppLayout.compactGap,
   },
   fixedSection: {
     gap: AppLayout.cardGap,
+  },
+  summarySection: {
+    gap: AppLayout.compactGap,
   },
   listSection: {
     flex: 1,
@@ -173,11 +178,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 8,
+    gap: AppLayout.compactGap,
   },
   selectionInfo: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: AppLayout.compactGap,
   },
 });

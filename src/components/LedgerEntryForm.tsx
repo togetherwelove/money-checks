@@ -11,7 +11,6 @@ import {
 
 import { CategorySelector } from "../components/CategorySelector";
 import { CATEGORY_OPTIONS } from "../constants/categories";
-import { AppColors } from "../constants/colors";
 import { CommonActionCopy } from "../constants/commonActions";
 import { EntryRegistrationCopy } from "../constants/entryRegistration";
 import { AppLayout } from "../constants/layout";
@@ -28,6 +27,7 @@ import type { LedgerEntryDraft, LedgerEntryType } from "../types/ledger";
 import { formatAmountInput } from "../utils/amount";
 import { ActionButton } from "./ActionButton";
 import { EntryDirectionSelector } from "./EntryDirectionSelector";
+import { EntryPhotoAttachmentField } from "./EntryPhotoAttachmentField";
 import { InstallmentPickerModal } from "./InstallmentPickerModal";
 
 const AMOUNT_INPUT_FOCUS_DELAY_MS = 120;
@@ -39,8 +39,10 @@ type LedgerEntryFormProps = {
   editingEntryId: string | null;
   onChangeDraft: (field: keyof LedgerEntryDraft, value: string) => void;
   onChangeInstallmentMonths: (installmentMonths: number) => void;
+  onPickPhotoAttachments: () => void | Promise<void>;
   onCategorySelected?: (() => void) | null;
   onCategoryDraggingChange?: (isDragging: boolean) => void;
+  onRemovePhotoAttachment: (attachmentId: string) => void;
   onQueueEntry?: (() => void | Promise<void>) | null;
   onSaveEntry: () => void | Promise<void>;
   onSelectType: (type: LedgerEntryType) => void;
@@ -54,8 +56,10 @@ export function LedgerEntryForm({
   editingEntryId,
   onChangeDraft,
   onChangeInstallmentMonths,
+  onPickPhotoAttachments,
   onCategorySelected = null,
   onCategoryDraggingChange,
+  onRemovePhotoAttachment,
   onQueueEntry = null,
   onSaveEntry,
   onSelectType,
@@ -65,7 +69,6 @@ export function LedgerEntryForm({
   const categories = CATEGORY_OPTIONS[draft.type];
   const amountInputRef = useRef<TextInput>(null);
   const contentInputRef = useRef<TextInput>(null);
-  const noteInputRef = useRef<TextInput>(null);
   const amountFocusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isInstallmentPickerOpen, setIsInstallmentPickerOpen] = useState(false);
 
@@ -167,7 +170,6 @@ export function LedgerEntryForm({
       <View style={styles.fieldGroup}>
         <Text style={styles.label}>{EntryRegistrationCopy.noteLabel}</Text>
         <TextInput
-          ref={noteInputRef}
           submitBehavior="blurAndSubmit"
           multiline
           onChangeText={(value) => onChangeDraft("note", value)}
@@ -178,6 +180,13 @@ export function LedgerEntryForm({
           value={draft.note}
         />
       </View>
+      <EntryPhotoAttachmentField
+        attachments={draft.photoAttachments}
+        onPickAttachments={() => {
+          void onPickPhotoAttachments();
+        }}
+        onRemoveAttachment={onRemovePhotoAttachment}
+      />
       <View style={styles.formActions}>
         {!editingEntryId && onQueueEntry ? (
           <ActionButton

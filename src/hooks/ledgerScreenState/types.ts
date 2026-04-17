@@ -2,6 +2,7 @@ import type { MonthPage } from "../../components/monthCalendarPager/monthCalenda
 import type {
   LedgerEntry,
   LedgerEntryDraft,
+  LedgerEntryPhotoAttachment,
   LedgerEntryType,
   MonthlyInsights,
   MonthlyLedgerSummary,
@@ -60,5 +61,6 @@ export type LedgerScreenState = {
   resetEditor: (isoDate: string) => void;
   updateDraftField: (field: keyof LedgerEntryDraft, value: string) => void;
   updateDraftInstallmentMonths: (installmentMonths: number) => void;
+  updateDraftPhotoAttachments: (nextPhotoAttachments: LedgerEntryPhotoAttachment[]) => void;
   updateDraftType: (type: LedgerEntryType) => void;
 };

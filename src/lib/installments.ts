@@ -12,6 +12,7 @@ export function buildLedgerEntriesFromDraft(draft: LedgerEntryDraft): LedgerEntr
   const trimmedContent = draft.content.trim();
   const trimmedCategory = draft.category.trim();
   const trimmedNote = draft.note.trim();
+  const photoAttachments = draft.photoAttachments;
 
   if (draft.installmentMonths <= ONE_TIME_INSTALLMENT_MONTHS) {
     return [
@@ -23,6 +24,7 @@ export function buildLedgerEntriesFromDraft(draft: LedgerEntryDraft): LedgerEntr
         content: trimmedContent,
         category: trimmedCategory,
         note: trimmedNote,
+        photoAttachments,
         sourceType: "manual",
       },
     ];
@@ -44,6 +46,7 @@ export function buildLedgerEntriesFromDraft(draft: LedgerEntryDraft): LedgerEntr
       installmentMonths: draft.installmentMonths,
       installmentOrder,
       note: appendInstallmentNote(trimmedNote, installmentOrder, draft.installmentMonths),
+      photoAttachments,
       sourceType: "manual",
     };
   });
@@ -85,6 +88,7 @@ export function buildInstallmentSettlementEntry(
     content: currentEntry.content,
     category: currentEntry.category,
     note: appendSettlementNote(currentEntry),
+    photoAttachments: [],
     sourceType: "manual",
   };
 }

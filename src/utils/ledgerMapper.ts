@@ -15,6 +15,7 @@ export function mapLedgerEntryRow(row: LedgerEntryRow, authorName?: string): Led
     installmentMonths: row.installment_months,
     installmentOrder: row.installment_order,
     note: row.note,
+    photoAttachments: [],
     sourceType: row.source_type,
   };
 }

@@ -9,8 +9,10 @@ type LedgerEditorPanelProps = {
   editingEntryId: string | null;
   onChangeDraft: (field: keyof LedgerEntryDraft, value: string) => void;
   onChangeInstallmentMonths: (installmentMonths: number) => void;
+  onPickPhotoAttachments: () => void | Promise<void>;
   onCategorySelected?: (() => void) | null;
   onCategoryDraggingChange?: (isDragging: boolean) => void;
+  onRemovePhotoAttachment: (attachmentId: string) => void;
   onQueueEntry?: (() => void | Promise<void>) | null;
   onSaveEntry: () => void | Promise<void>;
   onSelectType: (type: LedgerEntryType) => void;
@@ -27,8 +29,10 @@ export function LedgerEditorPanel(props: LedgerEditorPanelProps) {
         editingEntryId={props.editingEntryId}
         onChangeDraft={props.onChangeDraft}
         onChangeInstallmentMonths={props.onChangeInstallmentMonths}
+        onPickPhotoAttachments={props.onPickPhotoAttachments}
         onCategorySelected={props.onCategorySelected}
         onCategoryDraggingChange={props.onCategoryDraggingChange}
+        onRemovePhotoAttachment={props.onRemovePhotoAttachment}
         onQueueEntry={props.onQueueEntry}
         onSaveEntry={props.onSaveEntry}
         onSelectType={props.onSelectType}

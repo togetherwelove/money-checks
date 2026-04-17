@@ -1,5 +1,14 @@
 export type LedgerEntryType = "income" | "expense";
 
+export type LedgerEntryPhotoAttachment = {
+  fileName: string;
+  id?: string;
+  mimeType?: string | null;
+  storageBucket?: string;
+  storagePath?: string;
+  uri: string;
+};
+
 export type LedgerEntry = {
   authorId?: string;
   authorName?: string;
@@ -13,6 +22,7 @@ export type LedgerEntry = {
   installmentMonths?: number | null;
   installmentOrder?: number | null;
   note: string;
+  photoAttachments: LedgerEntryPhotoAttachment[];
   sourceType?: string;
 };
 
@@ -24,6 +34,7 @@ export type LedgerEntryDraft = {
   category: string;
   installmentMonths: number;
   note: string;
+  photoAttachments: LedgerEntryPhotoAttachment[];
 };
 
 export type QueuedLedgerEntryDraft = {

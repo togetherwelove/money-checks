@@ -15,6 +15,7 @@ export function createDraft(isoDate: string): LedgerEntryDraft {
     category: "",
     installmentMonths: ONE_TIME_INSTALLMENT_MONTHS,
     note: "",
+    photoAttachments: [],
   };
 }
 

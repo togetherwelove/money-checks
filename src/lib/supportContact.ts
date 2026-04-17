@@ -1,30 +1,18 @@
-import * as ImagePicker from "expo-image-picker";
 import * as MailComposer from "expo-mail-composer";
 
 import { SupportContactCopy } from "../constants/supportContact";
+import { pickImageAttachments } from "./imageAttachments";
 
 export type SupportAttachment = {
   fileName: string;
   uri: string;
 };
 
-const supportAttachmentMediaTypes: ImagePicker.ImagePickerOptions["mediaTypes"] = ["images"];
-
 export async function pickSupportAttachments(): Promise<SupportAttachment[]> {
-  const result = await ImagePicker.launchImageLibraryAsync({
-    allowsMultipleSelection: true,
-    mediaTypes: supportAttachmentMediaTypes,
-    quality: 0.8,
-    selectionLimit: 5,
-  });
-
-  if (result.canceled) {
-    return [];
-  }
-
-  return result.assets.map((asset, index) => ({
-    fileName: asset.fileName ?? `attachment-${index + 1}.jpg`,
-    uri: asset.uri,
+  const attachments = await pickImageAttachments({ selectionLimit: 5 });
+  return attachments.map((attachment) => ({
+    fileName: attachment.fileName,
+    uri: attachment.uri,
   }));
 }
 

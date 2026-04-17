@@ -18,6 +18,15 @@ export type LedgerEntryRow = {
   updated_at: string;
 };
 
+export type LedgerEntryAttachmentRow = {
+  created_at: string;
+  id: string;
+  installment_group_id: string | null;
+  ledger_entry_id: string | null;
+  receipt_file_id: string;
+  user_id: string;
+};
+
 export type LedgerBookRow = {
   id: string;
   name: string;
@@ -83,5 +92,15 @@ export type PushDeviceTokenRow = {
   expo_push_token: string;
   platform: "android" | "ios";
   updated_at: string;
+  user_id: string;
+};
+
+export type ReceiptFileRow = {
+  content_type: string;
+  created_at: string;
+  id: string;
+  original_filename: string;
+  storage_bucket: string;
+  storage_path: string;
   user_id: string;
 };

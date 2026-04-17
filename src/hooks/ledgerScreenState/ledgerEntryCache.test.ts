@@ -17,6 +17,7 @@ const aprilEntry: LedgerEntry = {
   date: "2026-04-09",
   id: "april-1",
   note: "",
+  photoAttachments: [],
   type: "expense",
 };
 
@@ -27,6 +28,7 @@ const mayEntry: LedgerEntry = {
   date: "2026-05-11",
   id: "may-1",
   note: "",
+  photoAttachments: [],
   type: "expense",
 };
 
@@ -37,6 +39,7 @@ const juneEntry: LedgerEntry = {
   date: "2026-06-01",
   id: "june-1",
   note: "",
+  photoAttachments: [],
   type: "income",
 };
 

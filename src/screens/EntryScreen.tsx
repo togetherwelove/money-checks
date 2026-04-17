@@ -9,9 +9,12 @@ import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { LedgerEditorPanel } from "../components/LedgerEditorPanel";
 import { QueuedLedgerEntryList } from "../components/QueuedLedgerEntryList";
 import { AppColors } from "../constants/colors";
+import { ENTRY_PHOTO_LIMIT, EntryPhotoCopy } from "../constants/entryPhotos";
 import { AppLayout } from "../constants/layout";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
 import { appPlatform } from "../lib/appPlatform";
+import { pickImageAttachments } from "../lib/imageAttachments";
+import { showNativeToast } from "../lib/nativeToast";
 import type { LedgerEntry, LedgerEntryDraft, QueuedLedgerEntryDraft } from "../types/ledger";
 import { formatSelectedDate, parseIsoDate, toIsoDate } from "../utils/calendar";
 import { canSubmitDraft, createQueuedEntryId } from "../utils/ledgerEntries";
@@ -57,6 +60,7 @@ export function EntryScreen({
     resetEditor,
     updateDraftField,
     updateDraftInstallmentMonths,
+    updateDraftPhotoAttachments,
     updateDraftType,
   } = state;
   const editingEntry = entries.find((entry) => entry.id === editingEntryId) ?? null;
@@ -159,6 +163,45 @@ export function EntryScreen({
     });
   };
 
+  const handlePickPhotoAttachments = async () => {
+    try {
+      const remainingAttachmentSlots = Math.max(
+        0,
+        ENTRY_PHOTO_LIMIT - draft.photoAttachments.length,
+      );
+      if (remainingAttachmentSlots === 0) {
+        showNativeToast(EntryPhotoCopy.limitReachedError);
+        return;
+      }
+
+      const nextAttachments = await pickImageAttachments({
+        selectionLimit: remainingAttachmentSlots,
+      });
+      if (nextAttachments.length === 0) {
+        return;
+      }
+
+      updateDraftPhotoAttachments([
+        ...draft.photoAttachments,
+        ...nextAttachments.map((attachment) => ({
+          fileName: attachment.fileName,
+          mimeType: attachment.mimeType,
+          uri: attachment.uri,
+        })),
+      ]);
+    } catch {
+      showNativeToast(EntryPhotoCopy.imagePickerError);
+    }
+  };
+
+  const handleRemovePhotoAttachment = (attachmentId: string) => {
+    updateDraftPhotoAttachments(
+      draft.photoAttachments.filter(
+        (attachment) => (attachment.id ?? attachment.uri) !== attachmentId,
+      ),
+    );
+  };
+
   return (
     <>
       <KeyboardAwareScrollView
@@ -191,8 +234,10 @@ export function EntryScreen({
           editingEntryId={editingEntryId}
           onChangeDraft={updateDraftField}
           onChangeInstallmentMonths={updateDraftInstallmentMonths}
+          onPickPhotoAttachments={handlePickPhotoAttachments}
           onCategorySelected={handleCategorySelected}
           onCategoryDraggingChange={setIsCategoryDragging}
+          onRemovePhotoAttachment={handleRemovePhotoAttachment}
           onQueueEntry={!editingEntryId ? handleQueueEntry : null}
           onSaveEntry={handleSaveEntries}
           onSelectType={updateDraftType}

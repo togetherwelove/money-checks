@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 
 import type { MonthPage } from "../components/monthCalendarPager/monthCalendarPagerUtils";
 import { buildInstallmentSettlementEntry, buildLedgerEntriesFromDraft } from "../lib/installments";
-import type { LedgerEntry, LedgerEntryDraft } from "../types/ledger";
+import type { LedgerEntry, LedgerEntryDraft, LedgerEntryPhotoAttachment } from "../types/ledger";
 import { addMonths, getMonthKey, parseIsoDate, startOfMonth, toIsoDate } from "../utils/calendar";
 import {
   canSubmitDraft,
@@ -159,6 +159,7 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
         content: draftToSave.content.trim(),
         category: draftToSave.category.trim(),
         note: draftToSave.note.trim(),
+        photoAttachments: draftToSave.photoAttachments,
         sourceType: "manual",
       };
 
@@ -267,6 +268,7 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
       category: entry.category,
       installmentMonths: entry.installmentMonths ?? 1,
       note: entry.note,
+      photoAttachments: entry.photoAttachments,
     });
   };
 
@@ -316,6 +318,8 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
       })),
     updateDraftInstallmentMonths: (installmentMonths) =>
       setDraft((currentDraft) => ({ ...currentDraft, installmentMonths })),
+    updateDraftPhotoAttachments: (nextPhotoAttachments: LedgerEntryPhotoAttachment[]) =>
+      setDraft((currentDraft) => ({ ...currentDraft, photoAttachments: nextPhotoAttachments })),
     updateDraftType: (type) =>
       setDraft((currentDraft) => ({ ...currentDraft, category: "", type })),
   };

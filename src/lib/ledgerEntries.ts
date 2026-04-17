@@ -2,6 +2,11 @@ import { DEFAULT_MEMBER_DISPLAY_NAME } from "../constants/ledgerDisplay";
 import type { LedgerEntry } from "../types/ledger";
 import type { LedgerEntryRow, ProfileDisplayRow } from "../types/supabase";
 import { mapLedgerEntryRow } from "../utils/ledgerMapper";
+import {
+  deleteLedgerEntryPhotoAttachmentsForEntries,
+  fetchLedgerEntryPhotoAttachmentMap,
+  syncLedgerEntryPhotoAttachments,
+} from "./ledgerEntryPhotoAttachments";
 import { supabase } from "./supabase";
 
 const LEDGER_TABLE = "ledger_entries";
@@ -140,6 +145,19 @@ export async function insertLedgerEntries(
     throw error ?? new Error("Failed to create ledger entries.");
   }
 
+  if (entries.length > 0) {
+    const targetInstallmentGroupId = data[0]?.installment_group_id ?? null;
+    const photoAttachments = entries[0]?.photoAttachments ?? [];
+    if (data[0]?.id && photoAttachments.length > 0) {
+      await syncLedgerEntryPhotoAttachments({
+        entryId: data[0].id,
+        installmentGroupId: targetInstallmentGroupId,
+        photoAttachments,
+        userId,
+      });
+    }
+  }
+
   return mapLedgerEntries(data);
 }
 
@@ -162,10 +180,32 @@ export async function updateLedgerEntry(entry: LedgerEntry): Promise<LedgerEntry
     throw error ?? new Error("Failed to update ledger entry.");
   }
 
-  return (await mapLedgerEntries([data]))[0];
+  const savedPhotoAttachments = await syncLedgerEntryPhotoAttachments({
+    entryId: data.id,
+    installmentGroupId: data.installment_group_id,
+    photoAttachments: entry.photoAttachments,
+    userId: data.user_id,
+  });
+  const [savedEntry] = await mapLedgerEntries([data]);
+  return {
+    ...savedEntry,
+    photoAttachments: savedPhotoAttachments,
+  };
 }
 
 export async function deleteLedgerEntry(entryId: string): Promise<void> {
+  const { data: entryRows, error: entryRowsError } = await supabase
+    .from(LEDGER_TABLE)
+    .select("*")
+    .eq("id", entryId)
+    .returns<LedgerEntryRow[]>();
+
+  if (entryRowsError) {
+    throw entryRowsError;
+  }
+
+  await deleteLedgerEntryPhotoAttachmentsForEntries(entryRows ?? []);
+
   const { error } = await supabase.from(LEDGER_TABLE).delete().eq("id", entryId);
   if (error) {
     throw error;
@@ -176,6 +216,18 @@ export async function deleteLedgerEntries(entryIds: string[]): Promise<void> {
   if (entryIds.length === 0) {
     return;
   }
+
+  const { data: entryRows, error: entryRowsError } = await supabase
+    .from(LEDGER_TABLE)
+    .select("*")
+    .in("id", entryIds)
+    .returns<LedgerEntryRow[]>();
+
+  if (entryRowsError) {
+    throw entryRowsError;
+  }
+
+  await deleteLedgerEntryPhotoAttachmentsForEntries(entryRows ?? []);
 
   const { error } = await supabase.from(LEDGER_TABLE).delete().in("id", entryIds);
   if (error) {
@@ -203,10 +255,14 @@ export async function fetchLedgerEntriesByInstallmentGroup(
 }
 
 async function mapLedgerEntries(rows: LedgerEntryRow[]): Promise<LedgerEntry[]> {
-  const authorNameMap = await fetchAuthorNameMap(rows);
-  return rows.map((row) =>
-    mapLedgerEntryRow(row, authorNameMap.get(row.user_id) ?? DEFAULT_MEMBER_DISPLAY_NAME),
-  );
+  const [authorNameMap, photoAttachmentMap] = await Promise.all([
+    fetchAuthorNameMap(rows),
+    fetchLedgerEntryPhotoAttachmentMap(rows),
+  ]);
+  return rows.map((row) => ({
+    ...mapLedgerEntryRow(row, authorNameMap.get(row.user_id) ?? DEFAULT_MEMBER_DISPLAY_NAME),
+    photoAttachments: photoAttachmentMap.get(row.id) ?? [],
+  }));
 }
 
 async function fetchAuthorNameMap(rows: LedgerEntryRow[]): Promise<Map<string, string>> {

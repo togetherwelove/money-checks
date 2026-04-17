@@ -8,12 +8,21 @@ const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8")) as { versi
 const appVersion = packageJson.version ?? "0.0.0";
 const admobAndroidAppId = process.env.EXPO_PUBLIC_ADMOB_ANDROID_APP_ID ?? "";
 const admobIosAppId = process.env.EXPO_PUBLIC_ADMOB_IOS_APP_ID ?? "";
+const appIconPath = "./asset/icon.png";
+const imagePickerPermissionConfig = {
+  cameraPermission:
+    "입출금 내역과 문의에 첨부할 이미지를 촬영하기 위해 카메라 접근 권한이 필요합니다.",
+  microphonePermission: false,
+  photosPermission:
+    "입출금 내역과 문의에 첨부할 이미지를 선택하기 위해 사진 보관함 접근 권한이 필요합니다.",
+} as const;
 
 const config: ExpoConfig = {
   name: "알뜰",
   slug: "money-checks",
   scheme: "moneychecks",
   version: appVersion,
+  icon: appIconPath,
   orientation: "portrait",
   userInterfaceStyle: "light",
   extra: {
@@ -36,7 +45,7 @@ const config: ExpoConfig = {
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
     },
-    supportsTablet: true,
+    supportsTablet: false,
   },
   android: {
     adaptiveIcon: {
@@ -50,6 +59,7 @@ const config: ExpoConfig = {
     "expo-font",
     "expo-secure-store",
     "expo-apple-authentication",
+    ["expo-image-picker", imagePickerPermissionConfig],
     "expo-notifications",
     [
       "react-native-google-mobile-ads",

@@ -14,6 +14,7 @@ function createEntry(
     date,
     id: `${date}-${type}-${amount}-${category}`,
     note: "",
+    photoAttachments: [],
     type,
   };
 }

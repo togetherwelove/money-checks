@@ -9,7 +9,8 @@ function createExpenseEntry(date: string, amount: number): LedgerEntry {
     date,
     id: `${date}-${amount}`,
     note: "",
-    authorName: "테스터",
+    photoAttachments: [],
+    authorName: "테스트",
     sourceType: "manual",
     type: "expense",
   };

@@ -1,4 +1,5 @@
 export const AppLayout = {
+  compactGap: 4,
   screenPadding: 8,
   cardRadius: 20,
   cardGap: 10,
