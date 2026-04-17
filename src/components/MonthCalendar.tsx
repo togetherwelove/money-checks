@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { CalendarDayUi } from "../constants/calendarDay";
 import { AppColors } from "../constants/colors";
+import { DateMemoUi } from "../constants/dateMemo";
 import type { CalendarDay } from "../types/ledger";
 import { formatAmountNumber } from "../utils/amount";
 import { parseIsoDate } from "../utils/calendar";
@@ -67,6 +68,7 @@ const DayCell = memo(function DayCell({
   onSelectDate: (isoDate: string) => void;
 }) {
   const hasEntry = day.income > 0 || day.expense > 0;
+  const hasDateMemo = day.note.trim().length > 0;
   const isAdjacentMonth = !day.isCurrentMonth;
   const dayOfWeek = parseIsoDate(day.isoDate).getDay();
   const isSunday = dayOfWeek === 0;
@@ -81,6 +83,7 @@ const DayCell = memo(function DayCell({
       onPress={handlePress}
       style={[styles.dayCell, isAdjacentMonth && styles.adjacentMonthCell]}
     >
+      {hasDateMemo ? <View style={styles.memoIndicator} /> : null}
       <View style={styles.dayContent}>
         <Text
           style={[
@@ -163,6 +166,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 1,
+  },
+  memoIndicator: {
+    position: "absolute",
+    top: DateMemoUi.calendarIndicatorInset,
+    right: DateMemoUi.calendarIndicatorInset,
+    width: DateMemoUi.calendarIndicatorSize,
+    height: DateMemoUi.calendarIndicatorSize,
+    borderRadius: DateMemoUi.calendarIndicatorSize,
+    backgroundColor: AppColors.primary,
   },
   dayNumber: {
     color: AppColors.text,

@@ -4,6 +4,7 @@ import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { CalendarPickerCopy } from "../../constants/calendarPicker";
 import { AppColors } from "../../constants/colors";
 import { AppLayout } from "../../constants/layout";
+import { KeyboardAwareScrollView } from "../KeyboardAwareScrollView";
 
 type CalendarPickerModalShellProps = {
   children: ReactNode;
@@ -27,13 +28,19 @@ export function CalendarPickerModalShell({
       <View style={styles.overlay}>
         <Pressable onPress={onClose} style={styles.backdrop} />
         <View style={styles.sheet}>
-          <View style={styles.header}>
-            <Text style={styles.title}>{title}</Text>
-            <Pressable onPress={onClose}>
-              <Text style={styles.closeText}>{CalendarPickerCopy.closeAction}</Text>
-            </Pressable>
-          </View>
-          {children}
+          <KeyboardAwareScrollView
+            contentContainerStyle={styles.sheetContent}
+            extraScrollHeight={AppLayout.screenPadding * 6}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.header}>
+              <Text style={styles.title}>{title}</Text>
+              <Pressable onPress={onClose}>
+                <Text style={styles.closeText}>{CalendarPickerCopy.closeAction}</Text>
+              </Pressable>
+            </View>
+            {children}
+          </KeyboardAwareScrollView>
         </View>
       </View>
     </Modal>
@@ -50,11 +57,14 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
   },
   sheet: {
-    marginHorizontal: 16,
-    padding: 16,
-    gap: 12,
+    marginHorizontal: AppLayout.screenPadding * 2,
     borderRadius: AppLayout.cardRadius,
+    overflow: "hidden",
     backgroundColor: AppColors.surface,
+  },
+  sheetContent: {
+    padding: AppLayout.screenPadding * 2,
+    gap: AppLayout.cardGap,
   },
   header: {
     flexDirection: "row",

@@ -37,6 +37,16 @@ export type LedgerEntryDraft = {
   photoAttachments: LedgerEntryPhotoAttachment[];
 };
 
+export type LedgerDayNote = {
+  bookId: string;
+  createdAt: string;
+  date: string;
+  id: string;
+  note: string;
+  updatedAt: string;
+  userId: string;
+};
+
 export type QueuedLedgerEntryDraft = {
   draft: LedgerEntryDraft;
   id: string;

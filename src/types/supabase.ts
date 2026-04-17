@@ -27,6 +27,16 @@ export type LedgerEntryAttachmentRow = {
   user_id: string;
 };
 
+export type LedgerDayNoteRow = {
+  book_id: string;
+  created_at: string;
+  id: string;
+  note: string;
+  occurred_on: string;
+  updated_at: string;
+  user_id: string;
+};
+
 export type LedgerBookRow = {
   id: string;
   name: string;

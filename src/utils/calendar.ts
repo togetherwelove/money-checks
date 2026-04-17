@@ -7,7 +7,12 @@ import {
   KRW_CURRENCY_SUFFIX,
   formatMonthLabel,
 } from "../constants/ledgerDisplay";
-import type { CalendarDay, LedgerEntry, MonthlyLedgerSummary } from "../types/ledger";
+import type {
+  CalendarDay,
+  LedgerDayNote,
+  LedgerEntry,
+  MonthlyLedgerSummary,
+} from "../types/ledger";
 import { formatAmountNumber } from "./amount";
 
 const selectedDateFormatter = new Intl.DateTimeFormat("ko-KR", {
@@ -33,7 +38,6 @@ const monthYearFormatter = new Intl.DateTimeFormat("ko-KR", {
 type DayAggregate = {
   income: number;
   expense: number;
-  note: string;
 };
 
 export function formatCurrency(amount: number): string {
@@ -107,6 +111,7 @@ export function parseIsoDate(isoDate: string): Date {
 export function buildMonthlyLedger(
   monthKey: string,
   entries: LedgerEntry[],
+  dateNotes: Map<string, LedgerDayNote> = new Map(),
   todayKey?: string,
 ): MonthlyLedgerSummary {
   const monthDate = parseMonthKey(monthKey);
@@ -121,13 +126,14 @@ export function buildMonthlyLedger(
     totalExpense: summary.totalExpense,
     balance: summary.totalIncome - summary.totalExpense,
     topExpenseCategory: summary.topExpenseCategory,
-    days: buildCalendarDays(monthDate, dayMap, todayIso),
+    days: buildCalendarDays(monthDate, dayMap, dateNotes, todayIso),
   };
 }
 
 function buildCalendarDays(
   monthDate: Date,
   dayMap: Map<string, DayAggregate>,
+  dateNotes: Map<string, LedgerDayNote>,
   todayIso: string,
 ): CalendarDay[] {
   const firstDay = startOfMonth(monthDate);
@@ -149,6 +155,7 @@ function buildCalendarDays(
         new Date(previousMonth.getFullYear(), previousMonth.getMonth(), previousMonthDay),
         false,
         dayMap,
+        dateNotes,
         todayIso,
       );
     }
@@ -159,6 +166,7 @@ function buildCalendarDays(
         new Date(monthDate.getFullYear(), monthDate.getMonth(), currentMonthDay),
         true,
         dayMap,
+        dateNotes,
         todayIso,
       );
     }
@@ -168,6 +176,7 @@ function buildCalendarDays(
       new Date(nextMonth.getFullYear(), nextMonth.getMonth(), nextMonthDay),
       false,
       dayMap,
+      dateNotes,
       todayIso,
     );
   });
@@ -201,11 +210,10 @@ function groupEntriesByDate(entries: LedgerEntry[]): Map<string, DayAggregate> {
   const grouped = new Map<string, DayAggregate>();
 
   for (const entry of entries) {
-    const current = grouped.get(entry.date) ?? { income: 0, expense: 0, note: entry.note };
+    const current = grouped.get(entry.date) ?? { income: 0, expense: 0 };
     grouped.set(entry.date, {
       income: entry.type === "income" ? current.income + entry.amount : current.income,
       expense: entry.type === "expense" ? current.expense + entry.amount : current.expense,
-      note: current.note,
     });
   }
 
@@ -216,10 +224,12 @@ function createCalendarDay(
   date: Date,
   isCurrentMonth: boolean,
   dayMap: Map<string, DayAggregate>,
+  dateNotes: Map<string, LedgerDayNote>,
   todayIso: string,
 ): CalendarDay {
   const isoDate = toIsoDate(date);
   const aggregate = dayMap.get(isoDate);
+  const dateNote = dateNotes.get(isoDate);
 
   return {
     isoDate,
@@ -227,7 +237,7 @@ function createCalendarDay(
     income: aggregate?.income ?? 0,
     expense: aggregate?.expense ?? 0,
     balance: (aggregate?.income ?? 0) - (aggregate?.expense ?? 0),
-    note: aggregate?.note ?? "",
+    note: dateNote?.note ?? "",
     isCurrentMonth,
     isToday: isoDate === todayIso,
   };

@@ -1,14 +1,19 @@
+import { useState } from "react";
 import { Alert, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { AppBannerAd } from "../components/AppBannerAd";
 import { CalendarToolbar } from "../components/CalendarToolbar";
+import { DateMemoToggleButton } from "../components/DateMemoToggleButton";
 import { IconActionButton } from "../components/IconActionButton";
+import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { LedgerEntryList } from "../components/LedgerEntryList";
 import { MonthCalendarPager } from "../components/MonthCalendarPager";
 import { MonthlySummary } from "../components/MonthlySummary";
+import { SelectedDateMemoAccordion } from "../components/SelectedDateMemoAccordion";
 import { WeekdayHeader } from "../components/WeekdayHeader";
 import { AppColors } from "../constants/colors";
 import { CommonActionCopy } from "../constants/commonActions";
+import { DateMemoUi } from "../constants/dateMemo";
 import { AppLayout } from "../constants/layout";
 import { AppMessages } from "../constants/messages";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
@@ -43,20 +48,30 @@ export function HomeScreen({
   state,
 }: HomeScreenProps) {
   const todayIsoDate = toIsoDate(new Date());
+  const [isDateMemoExpanded, setIsDateMemoExpanded] = useState(false);
   const {
+    handleDeleteSelectedDateNote,
     errorMessage,
+    handleSaveSelectedDateNote,
     isRefreshing,
     monthlyLedger,
     refreshLedger,
     selectedDate,
     selectedEntries,
+    selectedDateNote,
     setVisibleMonth,
     visibleMonth,
   } = state;
+  const selectedDateLabel = formatLedgerListHeaderDate(selectedDate);
 
   return (
     <View style={styles.screen}>
-      <View style={styles.fixedSection}>
+      <KeyboardAwareScrollView
+        contentContainerStyle={styles.fixedSectionContent}
+        extraScrollHeight={DateMemoUi.keyboardExtraScrollHeight}
+        showsVerticalScrollIndicator={false}
+        style={styles.fixedSectionScroll}
+      >
         {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
         <CalendarToolbar
           monthLabel={formatMonthYear(visibleMonth)}
@@ -83,15 +98,26 @@ export function HomeScreen({
           {showsBannerAd ? <AppBannerAd /> : null}
           <View style={styles.selectionRow}>
             <View style={styles.selectionInfo}>
-              <Text style={styles.selectedDate}>{formatLedgerListHeaderDate(selectedDate)}</Text>
+              <Text style={styles.selectedDate}>{selectedDateLabel}</Text>
             </View>
             <View style={styles.selectionInfo}>
+              <DateMemoToggleButton
+                isExpanded={isDateMemoExpanded}
+                onPress={() => setIsDateMemoExpanded((currentValue) => !currentValue)}
+              />
               <IconActionButton icon="pie-chart" onPress={onOpenCharts} size="compact" />
               <IconActionButton icon="plus" onPress={onOpenEntry} size="compact" />
             </View>
           </View>
+          <SelectedDateMemoAccordion
+            key={selectedDate}
+            isExpanded={isDateMemoExpanded}
+            note={selectedDateNote}
+            onDelete={handleDeleteSelectedDateNote}
+            onSave={handleSaveSelectedDateNote}
+          />
         </View>
-      </View>
+      </KeyboardAwareScrollView>
       <View style={styles.listSection}>
         <ScrollView
           contentContainerStyle={styles.listContent}
@@ -151,7 +177,10 @@ const styles = StyleSheet.create({
     padding: AppLayout.screenPadding,
     gap: AppLayout.compactGap,
   },
-  fixedSection: {
+  fixedSectionScroll: {
+    flex: 0,
+  },
+  fixedSectionContent: {
     gap: AppLayout.cardGap,
   },
   summarySection: {

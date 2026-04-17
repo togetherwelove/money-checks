@@ -13,6 +13,7 @@ import {
 } from "../../constants/uiStyles";
 import { deleteOwnAccount } from "../../lib/auth/deleteAccount";
 import { ActionButton } from "../ActionButton";
+import { KeyboardAwareScrollView } from "../KeyboardAwareScrollView";
 
 type DeleteAccountModalProps = {
   isOpen: boolean;
@@ -61,39 +62,45 @@ export function DeleteAccountModal({ isOpen, onClose }: DeleteAccountModalProps)
       <View style={styles.overlay}>
         <Pressable onPress={handleClose} style={styles.backdrop} />
         <View style={styles.sheet}>
-          <View style={styles.header}>
-            <Text style={styles.title}>{AccountDeletionMessages.title}</Text>
-            <Pressable disabled={isDeleting} onPress={handleClose}>
-              <Text style={styles.closeText}>{CommonActionCopy.close}</Text>
-            </Pressable>
-          </View>
-          <Text style={styles.description}>{AccountDeletionMessages.description}</Text>
-          <Text style={styles.warning}>{AccountDeletionMessages.instruction}</Text>
-          <Text style={styles.label}>{AccountDeletionMessages.confirmLabel}</Text>
-          <TextInput
-            editable={!isDeleting}
-            onChangeText={(value) => {
-              setConfirmText(value);
-              if (statusMessage) {
-                setStatusMessage(null);
-              }
-            }}
-            placeholder={AccountDeletionMessages.confirmPlaceholder}
-            style={styles.input}
-            value={confirmText}
-          />
-          <Text style={styles.hint}>{AccountDeletionMessages.confirmHint}</Text>
-          {statusMessage ? <Text style={styles.status}>{statusMessage}</Text> : null}
-          <View style={styles.actionRow}>
-            <ActionButton
-              disabled={!isReadyToDelete || isDeleting}
-              label={AccountDeletionMessages.action}
-              loading={isDeleting}
-              onPress={handleDeleteAccount}
-              size="inline"
-              variant="destructive"
+          <KeyboardAwareScrollView
+            contentContainerStyle={styles.sheetContent}
+            extraScrollHeight={AppLayout.screenPadding * 6}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.header}>
+              <Text style={styles.title}>{AccountDeletionMessages.title}</Text>
+              <Pressable disabled={isDeleting} onPress={handleClose}>
+                <Text style={styles.closeText}>{CommonActionCopy.close}</Text>
+              </Pressable>
+            </View>
+            <Text style={styles.description}>{AccountDeletionMessages.description}</Text>
+            <Text style={styles.warning}>{AccountDeletionMessages.instruction}</Text>
+            <Text style={styles.label}>{AccountDeletionMessages.confirmLabel}</Text>
+            <TextInput
+              editable={!isDeleting}
+              onChangeText={(value) => {
+                setConfirmText(value);
+                if (statusMessage) {
+                  setStatusMessage(null);
+                }
+              }}
+              placeholder={AccountDeletionMessages.confirmPlaceholder}
+              style={styles.input}
+              value={confirmText}
             />
-          </View>
+            <Text style={styles.hint}>{AccountDeletionMessages.confirmHint}</Text>
+            {statusMessage ? <Text style={styles.status}>{statusMessage}</Text> : null}
+            <View style={styles.actionRow}>
+              <ActionButton
+                disabled={!isReadyToDelete || isDeleting}
+                label={AccountDeletionMessages.action}
+                loading={isDeleting}
+                onPress={handleDeleteAccount}
+                size="inline"
+                variant="destructive"
+              />
+            </View>
+          </KeyboardAwareScrollView>
         </View>
       </View>
     </Modal>
@@ -118,11 +125,14 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
   },
   sheet: {
-    marginHorizontal: 16,
-    padding: 16,
-    gap: 12,
+    marginHorizontal: AppLayout.screenPadding * 2,
     borderRadius: AppLayout.cardRadius,
+    overflow: "hidden",
     backgroundColor: AppColors.surface,
+  },
+  sheetContent: {
+    padding: AppLayout.screenPadding * 2,
+    gap: AppLayout.cardGap,
   },
   header: {
     flexDirection: "row",

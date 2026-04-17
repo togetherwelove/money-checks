@@ -2,7 +2,7 @@ import {
   type MonthPage,
   buildMonthPageFromSummary,
 } from "../../components/monthCalendarPager/monthCalendarPagerUtils";
-import type { MonthlyInsights, MonthlyLedgerSummary } from "../../types/ledger";
+import type { LedgerDayNote, MonthlyInsights, MonthlyLedgerSummary } from "../../types/ledger";
 import { addMonths, buildMonthlyLedger, getMonthKey } from "../../utils/calendar";
 import { formatMonthYear } from "../../utils/calendar";
 import { buildMonthlyInsightsFromMonths } from "../../utils/monthlyInsights";
@@ -13,6 +13,7 @@ import type { ChartMonthData } from "./types";
 const PAGE_WINDOW_MONTH_OFFSETS = [-1, 0, 1] as const;
 
 export function getMonthlyLedgerFromCache(
+  dateNoteByDate: Map<string, LedgerDayNote>,
   entryCache: LedgerEntryCache,
   targetMonth: Date,
 ): MonthlyLedgerSummary {
@@ -20,7 +21,7 @@ export function getMonthlyLedgerFromCache(
     getMonthEntries(entryCache, addMonths(targetMonth, monthOffset)),
   );
 
-  return buildMonthlyLedger(getMonthKey(targetMonth), windowEntries);
+  return buildMonthlyLedger(getMonthKey(targetMonth), windowEntries, dateNoteByDate);
 }
 
 export function getMonthlyInsightsFromCache(
@@ -34,19 +35,24 @@ export function getMonthlyInsightsFromCache(
   );
 }
 
-export function getMonthPageFromCache(entryCache: LedgerEntryCache, targetMonth: Date): MonthPage {
-  const monthSummary = getMonthlyLedgerFromCache(entryCache, targetMonth);
+export function getMonthPageFromCache(
+  dateNoteByDate: Map<string, LedgerDayNote>,
+  entryCache: LedgerEntryCache,
+  targetMonth: Date,
+): MonthPage {
+  const monthSummary = getMonthlyLedgerFromCache(dateNoteByDate, entryCache, targetMonth);
   return buildMonthPageFromSummary(getMonthKey(targetMonth), monthSummary);
 }
 
 export function getChartMonthDataFromCache(
+  dateNoteByDate: Map<string, LedgerDayNote>,
   entryCache: LedgerEntryCache,
   targetMonth: Date,
 ): ChartMonthData {
   return {
     key: getMonthKey(targetMonth),
     monthlyInsights: getMonthlyInsightsFromCache(entryCache, targetMonth),
-    monthlyLedger: getMonthlyLedgerFromCache(entryCache, targetMonth),
+    monthlyLedger: getMonthlyLedgerFromCache(dateNoteByDate, entryCache, targetMonth),
     title: formatMonthYear(targetMonth),
   };
 }

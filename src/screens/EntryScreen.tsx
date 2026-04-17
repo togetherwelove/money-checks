@@ -1,7 +1,7 @@
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import { useRef, useState } from "react";
+import type { ComponentRef } from "react";
 import { InteractionManager, StyleSheet, Text, View } from "react-native";
-import type { ScrollView } from "react-native";
 
 import { EntryDatePickerModal } from "../components/EntryDatePickerModal";
 import { EntryDateToolbar } from "../components/EntryDateToolbar";
@@ -43,7 +43,7 @@ export function EntryScreen({
 }: EntryScreenProps) {
   const actualToday = new Date();
   const todayIsoDate = toIsoDate(actualToday);
-  const scrollViewRef = useRef<ScrollView>(null);
+  const scrollViewRef = useRef<ComponentRef<typeof KeyboardAwareScrollView>>(null);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isCategoryDragging, setIsCategoryDragging] = useState(false);
   const [queuedEntries, setQueuedEntries] = useState<QueuedLedgerEntryDraft[]>([]);
@@ -158,7 +158,7 @@ export function EntryScreen({
   const handleCategorySelected = () => {
     InteractionManager.runAfterInteractions(() => {
       setTimeout(() => {
-        scrollViewRef.current?.scrollToEnd({ animated: true });
+        scrollViewRef.current?.scrollToEnd?.(true);
       }, CATEGORY_SELECTION_SCROLL_DELAY_MS);
     });
   };

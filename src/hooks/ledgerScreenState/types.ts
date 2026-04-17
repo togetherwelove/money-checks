@@ -50,10 +50,13 @@ export type LedgerScreenState = {
   refreshSharedLedgerBook: () => Promise<void>;
   selectedDate: string;
   selectedEntries: LedgerEntry[];
+  selectedDateNote: string;
   setVisibleMonth: (nextMonth: Date) => void;
   visibleMonth: Date;
+  handleDeleteSelectedDateNote: () => Promise<void>;
   handleDeleteEntry: (entryId: string) => Promise<void>;
   handleEditEntry: (entry: LedgerEntry) => void;
+  handleSaveSelectedDateNote: (note: string) => Promise<void>;
   handleSaveEntry: () => Promise<LedgerEntry[]>;
   handleSaveEntryDrafts: (drafts: LedgerEntryDraft[]) => Promise<LedgerEntry[]>;
   handleSettleInstallmentEntry: (entry: LedgerEntry) => Promise<LedgerEntry | null>;

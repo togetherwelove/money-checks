@@ -27,6 +27,7 @@ import {
 } from "./ledgerScreenState/helpers";
 import type { BusyTaskTracker, LedgerScreenState } from "./ledgerScreenState/types";
 import { useActiveLedgerBook } from "./ledgerScreenState/useActiveLedgerBook";
+import { useLedgerDayNotes } from "./ledgerScreenState/useLedgerDayNotes";
 import { useLedgerEntries } from "./ledgerScreenState/useLedgerEntries";
 import { useLedgerJoinRequests } from "./ledgerScreenState/useLedgerJoinRequests";
 
@@ -52,6 +53,8 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
   } = useActiveLedgerBook(session.user.id, trackBusyTask);
   const { approveLedgerJoinRequest, pendingJoinRequests, rejectLedgerJoinRequest } =
     useLedgerJoinRequests(activeBook, session.user.id, trackBusyTask);
+  const { dateNoteByDate, refreshLedgerDayNotes, removeLedgerDayNote, saveLedgerDayNote } =
+    useLedgerDayNotes(activeBook?.id ?? null, trackBusyTask, session.user.id, visibleMonth);
   const {
     entries,
     entriesError,
@@ -63,8 +66,8 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
   } = useLedgerEntries(activeBook?.id ?? null, visibleMonth);
 
   const monthlyLedger = useMemo(
-    () => getMonthlyLedgerFromCache(entryCache, visibleMonth),
-    [entryCache, visibleMonth],
+    () => getMonthlyLedgerFromCache(dateNoteByDate, entryCache, visibleMonth),
+    [dateNoteByDate, entryCache, visibleMonth],
   );
   const monthlyInsights = useMemo(
     () => getMonthlyInsightsFromCache(entryCache, visibleMonth),
@@ -75,29 +78,30 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
     [entries, selectedDate],
   );
   const previousMonthPage = useMemo<MonthPage>(
-    () => getMonthPageFromCache(entryCache, addMonths(visibleMonth, -1)),
-    [entryCache, visibleMonth],
+    () => getMonthPageFromCache(dateNoteByDate, entryCache, addMonths(visibleMonth, -1)),
+    [dateNoteByDate, entryCache, visibleMonth],
   );
   const currentMonthPage = useMemo<MonthPage>(
-    () => getMonthPageFromCache(entryCache, visibleMonth),
-    [entryCache, visibleMonth],
+    () => getMonthPageFromCache(dateNoteByDate, entryCache, visibleMonth),
+    [dateNoteByDate, entryCache, visibleMonth],
   );
   const nextMonthPage = useMemo<MonthPage>(
-    () => getMonthPageFromCache(entryCache, addMonths(visibleMonth, 1)),
-    [entryCache, visibleMonth],
+    () => getMonthPageFromCache(dateNoteByDate, entryCache, addMonths(visibleMonth, 1)),
+    [dateNoteByDate, entryCache, visibleMonth],
   );
   const previousChartMonth = useMemo(
-    () => getChartMonthDataFromCache(entryCache, addMonths(visibleMonth, -1)),
-    [entryCache, visibleMonth],
+    () => getChartMonthDataFromCache(dateNoteByDate, entryCache, addMonths(visibleMonth, -1)),
+    [dateNoteByDate, entryCache, visibleMonth],
   );
   const currentChartMonth = useMemo(
-    () => getChartMonthDataFromCache(entryCache, visibleMonth),
-    [entryCache, visibleMonth],
+    () => getChartMonthDataFromCache(dateNoteByDate, entryCache, visibleMonth),
+    [dateNoteByDate, entryCache, visibleMonth],
   );
   const nextChartMonth = useMemo(
-    () => getChartMonthDataFromCache(entryCache, addMonths(visibleMonth, 1)),
-    [entryCache, visibleMonth],
+    () => getChartMonthDataFromCache(dateNoteByDate, entryCache, addMonths(visibleMonth, 1)),
+    [dateNoteByDate, entryCache, visibleMonth],
   );
+  const selectedDateNote = dateNoteByDate.get(selectedDate)?.note ?? "";
 
   const resetEditor = (isoDate: string) => {
     setSelectedDate(isoDate);
@@ -273,6 +277,15 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
   };
 
   const errorMessage = activeBookError ?? entriesError;
+  const handleRefreshLedger = async () => {
+    await Promise.all([refreshLedger(), refreshLedgerDayNotes()]);
+  };
+  const handleSaveSelectedDateNote = async (note: string) => {
+    await saveLedgerDayNote(selectedDate, note);
+  };
+  const handleDeleteSelectedDateNote = async () => {
+    await removeLedgerDayNote(selectedDate);
+  };
 
   return {
     activeBook,
@@ -298,14 +311,17 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
     rejectLedgerJoinRequest,
     removeSharedLedgerMember,
     renameActiveLedgerBook,
-    refreshLedger,
+    refreshLedger: handleRefreshLedger,
     refreshSharedLedgerBook,
     selectedDate,
+    selectedDateNote,
     selectedEntries,
     setVisibleMonth,
     visibleMonth,
+    handleDeleteSelectedDateNote,
     handleDeleteEntry,
     handleEditEntry,
+    handleSaveSelectedDateNote,
     handleSaveEntry,
     handleSaveEntryDrafts,
     handleSettleInstallmentEntry,

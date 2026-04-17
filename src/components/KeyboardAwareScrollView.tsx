@@ -1,46 +1,62 @@
 import { forwardRef } from "react";
-import type { PropsWithChildren } from "react";
-import { Platform, ScrollView, StyleSheet } from "react-native";
-import type { ScrollView as ScrollViewType } from "react-native";
+import type { ComponentRef, PropsWithChildren, ReactElement } from "react";
+import { Platform, StyleSheet } from "react-native";
+import type { RefreshControlProps } from "react-native";
 import type { StyleProp, ViewStyle } from "react-native";
+import { KeyboardAwareScrollView as NativeKeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 import { KeyboardLayout } from "../constants/keyboard";
 
 type KeyboardAwareScrollViewProps = PropsWithChildren<{
   centerContent?: boolean;
   contentContainerStyle?: StyleProp<ViewStyle>;
+  extraScrollHeight?: number;
+  refreshControl?: ReactElement<RefreshControlProps>;
   scrollEnabled?: boolean;
+  showsVerticalScrollIndicator?: boolean;
   style?: StyleProp<ViewStyle>;
 }>;
 
-export const KeyboardAwareScrollView = forwardRef<ScrollViewType, KeyboardAwareScrollViewProps>(
-  function KeyboardAwareScrollView(
-    { centerContent = false, children, contentContainerStyle, scrollEnabled = true, style },
-    ref,
-  ) {
-    return (
-      <ScrollView
-        ref={ref}
-        automaticallyAdjustKeyboardInsets
-        contentContainerStyle={[
-          styles.content,
-          centerContent && styles.centerContent,
-          contentContainerStyle,
-        ]}
-        keyboardDismissMode={
-          Platform.OS === "ios"
-            ? KeyboardLayout.dismissMode.ios
-            : KeyboardLayout.dismissMode.android
-        }
-        keyboardShouldPersistTaps={KeyboardLayout.persistTaps}
-        scrollEnabled={scrollEnabled}
-        style={[styles.scroll, style]}
-      >
-        {children}
-      </ScrollView>
-    );
+export const KeyboardAwareScrollView = forwardRef<
+  ComponentRef<typeof NativeKeyboardAwareScrollView>,
+  KeyboardAwareScrollViewProps
+>(function KeyboardAwareScrollView(
+  {
+    centerContent = false,
+    children,
+    contentContainerStyle,
+    extraScrollHeight = 0,
+    refreshControl,
+    scrollEnabled = true,
+    showsVerticalScrollIndicator = true,
+    style,
   },
-);
+  ref,
+) {
+  return (
+    <NativeKeyboardAwareScrollView
+      ref={ref}
+      enableAutomaticScroll
+      enableOnAndroid
+      contentContainerStyle={[
+        styles.content,
+        centerContent && styles.centerContent,
+        contentContainerStyle,
+      ]}
+      extraScrollHeight={extraScrollHeight}
+      keyboardDismissMode={
+        Platform.OS === "ios" ? KeyboardLayout.dismissMode.ios : KeyboardLayout.dismissMode.android
+      }
+      keyboardShouldPersistTaps={KeyboardLayout.persistTaps}
+      refreshControl={refreshControl}
+      scrollEnabled={scrollEnabled}
+      showsVerticalScrollIndicator={showsVerticalScrollIndicator}
+      style={[styles.scroll, style]}
+    >
+      {children}
+    </NativeKeyboardAwareScrollView>
+  );
+});
 
 const styles = StyleSheet.create({
   scroll: {
