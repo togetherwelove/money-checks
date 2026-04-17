@@ -65,7 +65,7 @@ export function formatMonthYear(date: Date): string {
     return monthYearFormatter.format(date);
   }
 
-  return `${year}년 ${month}`;
+  return `${year}\uB144 ${month}`;
 }
 
 export function startOfMonth(date: Date): Date {
@@ -251,6 +251,6 @@ function formatDateWithOptionalYear(date: Date, includeYear: boolean): string {
   }
 
   return includeYear
-    ? `${year}년 ${month} ${day}일 (${weekday})`
-    : `${month} ${day}일 (${weekday})`;
+    ? `${year}\uB144 ${month} ${day}\uC77C(${weekday})`
+    : `${month} ${day}\uC77C(${weekday})`;
 }

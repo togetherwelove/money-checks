@@ -33,6 +33,7 @@ type AppScreenRouterProps = {
   onEditSelectedEntry: (entry: LedgerEntry) => void;
   onOpenCharts: () => void;
   onOpenEntry: () => void;
+  onOpenMonthPicker: () => void;
   onOpenSubscription: () => void;
   onPurchasePlus: () => Promise<void>;
   onRestorePurchases: () => Promise<void>;
@@ -78,6 +79,7 @@ export function AppScreenRouter({
   onEditSelectedEntry,
   onOpenCharts,
   onOpenEntry,
+  onOpenMonthPicker,
   onOpenSubscription,
   onPurchasePlus,
   onRestorePurchases,
@@ -202,6 +204,7 @@ export function AppScreenRouter({
       onEditSelectedEntry={onEditSelectedEntry}
       onOpenCharts={onOpenCharts}
       onOpenEntry={onOpenEntry}
+      onOpenMonthPicker={onOpenMonthPicker}
       onSelectCalendarDate={onSelectCalendarDate}
       showsBannerAd={subscriptionTier === "free"}
       state={ledgerState}

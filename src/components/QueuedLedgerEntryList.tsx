@@ -42,7 +42,12 @@ export function QueuedLedgerEntryList({
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>{EntryRegistrationCopy.queuedEntriesTitle}</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>
+          {EntryRegistrationCopy.queuedEntriesCountLabel(entries.length)}
+        </Text>
+        <Text style={styles.caption}>{EntryRegistrationCopy.queuedEntriesTitle}</Text>
+      </View>
       <View style={styles.list}>
         {entries.map((entry) => (
           <View key={entry.id} style={styles.row}>
@@ -67,9 +72,16 @@ const styles = StyleSheet.create({
     ...SurfaceCardStyle,
     gap: 8,
   },
-  title: CardTitleTextStyle,
-  list: {
+  header: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    justifyContent: "space-between",
     gap: 8,
+  },
+  title: CardTitleTextStyle,
+  caption: CompactLabelTextStyle,
+  list: {
+    gap: 6,
   },
   row: {
     flexDirection: "row",

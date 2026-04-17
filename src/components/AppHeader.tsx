@@ -34,11 +34,15 @@ export function AppHeader({
       <View style={styles.titleSlot}>
         {isCenterLabelPressable ? (
           <Pressable onPress={onPressCenterLabel} style={styles.titleButton}>
-            <Text style={styles.titleText}>{centerLabel}</Text>
+            <Text numberOfLines={1} style={styles.titleText}>
+              {centerLabel}
+            </Text>
             {showsCenterLabelIndicator ? <View style={styles.titleIndicator} /> : null}
           </Pressable>
         ) : centerLabel ? (
-          <Text style={styles.titleText}>{centerLabel}</Text>
+          <Text numberOfLines={1} style={styles.titleText}>
+            {centerLabel}
+          </Text>
         ) : null}
       </View>
       <View style={[styles.sideSlot, styles.trailingSlot]}>
@@ -53,7 +57,6 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    minHeight: 60,
     paddingHorizontal: 8,
     paddingBottom: 6,
   },

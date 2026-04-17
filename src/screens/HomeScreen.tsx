@@ -17,6 +17,7 @@ import {
   addMonths,
   formatCurrency,
   formatLedgerListHeaderDate,
+  formatMonthYear,
   toIsoDate,
 } from "../utils/calendar";
 
@@ -25,6 +26,7 @@ type HomeScreenProps = {
   onEditSelectedEntry: (entry: LedgerEntry) => void;
   onOpenCharts: () => void;
   onOpenEntry: () => void;
+  onOpenMonthPicker: () => void;
   onSelectCalendarDate: (isoDate: string) => void;
   showsBannerAd: boolean;
   state: LedgerScreenState;
@@ -35,6 +37,7 @@ export function HomeScreen({
   onEditSelectedEntry,
   onOpenCharts,
   onOpenEntry,
+  onOpenMonthPicker,
   onSelectCalendarDate,
   showsBannerAd,
   state,
@@ -56,7 +59,8 @@ export function HomeScreen({
       <View style={styles.fixedSection}>
         {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
         <CalendarToolbar
-          monthLabel={monthlyLedger.monthLabel}
+          monthLabel={formatMonthYear(visibleMonth)}
+          onPressMonthLabel={onOpenMonthPicker}
           onSelectToday={() => {
             onSelectCalendarDate(todayIsoDate);
           }}

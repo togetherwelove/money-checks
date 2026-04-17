@@ -217,17 +217,6 @@ export function EntryScreen({
           onPressDateLabel={() => handleOpenDatePicker({ kind: "draft" })}
           showMoveToToday={selectedDate !== todayIsoDate}
         />
-        {!editingEntryId ? (
-          <QueuedLedgerEntryList
-            entries={queuedEntries}
-            onPressEntryDate={(entryId) => handleOpenDatePicker({ entryId, kind: "queued-entry" })}
-            onRemoveEntry={(entryId) =>
-              setQueuedEntries((currentEntries) =>
-                currentEntries.filter((entry) => entry.id !== entryId),
-              )
-            }
-          />
-        ) : null}
         <LedgerEditorPanel
           canQueueEntry={canQueueEntry}
           draft={draft}
@@ -250,6 +239,17 @@ export function EntryScreen({
               editingEntry.installmentOrder < editingEntry.installmentMonths,
           )}
         />
+        {!editingEntryId ? (
+          <QueuedLedgerEntryList
+            entries={queuedEntries}
+            onPressEntryDate={(entryId) => handleOpenDatePicker({ entryId, kind: "queued-entry" })}
+            onRemoveEntry={(entryId) =>
+              setQueuedEntries((currentEntries) =>
+                currentEntries.filter((entry) => entry.id !== entryId),
+              )
+            }
+          />
+        ) : null}
       </KeyboardAwareScrollView>
       <EntryDatePickerModal
         entries={entries}

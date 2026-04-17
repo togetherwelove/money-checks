@@ -40,7 +40,7 @@ export function DateNavigationToolbar({
       {showMoveToCurrent ? (
         <View style={styles.trailingButton}>
           <IconActionButton
-            accessibilityLabel="?ㅻ뒛 ?좎쭨濡??대룞"
+            accessibilityLabel="오늘 날짜로 이동"
             icon="crosshair"
             onPress={onMoveToCurrent}
           />
@@ -60,15 +60,14 @@ const styles = StyleSheet.create({
     paddingBottom: DateNavigationToolbarLayout.compactBottomPadding,
   },
   labelButton: {
-    alignItems: "stretch",
+    alignItems: "flex-start",
     justifyContent: "center",
-    paddingLeft: 8,
   },
   labelContent: {
     alignItems: "center",
     columnGap: DateNavigationToolbarLayout.labelGap,
     flexDirection: "row",
-    justifyContent: "center",
+    justifyContent: "flex-start",
   },
   labelIndicator: {
     borderLeftColor: "transparent",

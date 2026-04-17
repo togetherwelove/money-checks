@@ -188,41 +188,51 @@ export function LedgerEntryForm({
         onRemoveAttachment={onRemovePhotoAttachment}
       />
       <View style={styles.formActions}>
+        <View style={styles.primaryActionRow}>
+          <ActionButton
+            fullWidth
+            label={editingEntryId ? AppMessages.editorUpdate : AppMessages.editorNewEntry}
+            onPress={handlePressSaveEntry}
+            size="large"
+            variant="primary"
+          />
+        </View>
         {!editingEntryId && onQueueEntry ? (
-          <ActionButton
-            label={EntryRegistrationCopy.addEntryAction}
-            onPress={handlePressQueueEntry}
-            variant="secondary"
-          />
+          <View style={styles.secondaryActionRow}>
+            <ActionButton
+              label={EntryRegistrationCopy.addEntryAction}
+              onPress={handlePressQueueEntry}
+              size="inline"
+              variant="secondary"
+            />
+          </View>
         ) : null}
-        <ActionButton
-          label={editingEntryId ? AppMessages.editorUpdate : AppMessages.editorNewEntry}
-          onPress={handlePressSaveEntry}
-          variant="primary"
-        />
         {showInstallmentSettleAction && onSettleInstallmentEntry ? (
-          <ActionButton
-            label={EntryRegistrationCopy.installmentSettleAction}
-            onPress={() => {
-              Alert.alert(
-                EntryRegistrationCopy.installmentSettleAction,
-                EntryRegistrationCopy.installmentSettleConfirmMessage,
-                [
-                  {
-                    style: "cancel",
-                    text: CommonActionCopy.cancel,
-                  },
-                  {
-                    onPress: () => {
-                      void onSettleInstallmentEntry();
+          <View style={styles.secondaryActionRow}>
+            <ActionButton
+              label={EntryRegistrationCopy.installmentSettleAction}
+              onPress={() => {
+                Alert.alert(
+                  EntryRegistrationCopy.installmentSettleAction,
+                  EntryRegistrationCopy.installmentSettleConfirmMessage,
+                  [
+                    {
+                      style: "cancel",
+                      text: CommonActionCopy.cancel,
                     },
-                    text: CommonActionCopy.confirm,
-                  },
-                ],
-              );
-            }}
-            variant="secondary"
-          />
+                    {
+                      onPress: () => {
+                        void onSettleInstallmentEntry();
+                      },
+                      text: CommonActionCopy.confirm,
+                    },
+                  ],
+                );
+              }}
+              size="inline"
+              variant="secondary"
+            />
+          </View>
         ) : null}
       </View>
       <InstallmentPickerModal
@@ -255,6 +265,13 @@ const styles = StyleSheet.create({
   formActions: {
     paddingTop: 4,
     gap: 8,
+  },
+  primaryActionRow: {
+    flexDirection: "row",
+  },
+  secondaryActionRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
   },
 });
 

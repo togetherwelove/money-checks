@@ -95,6 +95,7 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: "row",
+    alignItems: "flex-start",
     gap: AppLayout.cardGap,
   },
   card: {

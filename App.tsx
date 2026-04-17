@@ -8,11 +8,11 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 import { AppScreenRouter } from "./src/app/AppScreenRouter";
 import { AllEntriesAction } from "./src/components/AllEntriesAction";
+import { AnnualReportDownloadAction } from "./src/components/AnnualReportDownloadAction";
 import { AppHeader } from "./src/components/AppHeader";
 import { AppMenuDrawer } from "./src/components/AppMenuDrawer";
 import { BackToCalendarAction } from "./src/components/BackToCalendarAction";
 import { BlockingOverlay } from "./src/components/BlockingOverlay";
-import { LedgerBookHeaderAction } from "./src/components/LedgerBookHeaderAction";
 import { OnboardingTransitionScreen } from "./src/components/OnboardingTransitionScreen";
 import { ScreenSlideTransition } from "./src/components/ScreenSlideTransition";
 import { AnnualReportRangePickerModal } from "./src/components/annualReport/AnnualReportRangePickerModal";
@@ -391,25 +391,24 @@ function SignedInApp({ session }: { session: Session }) {
                   onPress={handleBackToCalendar}
                 />
               ) : annualReport.bookName ? (
-                <LedgerBookHeaderAction
-                  label={annualReport.bookName}
+                <AnnualReportDownloadAction
                   onPress={() => {
                     void annualReport.handleDownloadReport();
                   }}
                 />
               ) : null
             }
-            onPressCenterLabel={activeScreen === "calendar" ? handleOpenYearPicker : null}
-            showsCenterLabelIndicator={activeScreen === "calendar"}
-            titleLabel={getAppHeaderTitle(activeScreen)}
+            onPressCenterLabel={null}
+            showsCenterLabelIndicator={false}
+            titleLabel={
+              activeScreen === "calendar" ? annualReport.bookName : getAppHeaderTitle(activeScreen)
+            }
             trailingAction={
               activeScreen === "calendar" || activeScreen === "charts" ? (
                 <AllEntriesAction onPress={handleOpenAllEntries} />
               ) : null
             }
-            yearLabel={
-              activeScreen === "calendar" ? String(ledgerState.visibleMonth.getFullYear()) : null
-            }
+            yearLabel={null}
             onOpenMenu={() => setIsMenuOpen((currentValue) => !currentValue)}
           />
         </View>
@@ -438,6 +437,7 @@ function SignedInApp({ session }: { session: Session }) {
               }
               onOpenCharts={handleToggleCharts}
               onOpenEntry={handleOpenEntry}
+              onOpenMonthPicker={handleOpenYearPicker}
               onOpenSubscription={handleOpenSubscription}
               onPurchasePlus={handlePurchasePlus}
               onRestorePurchases={handleRestorePurchases}
