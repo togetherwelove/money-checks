@@ -61,6 +61,7 @@ export function SelectedDateMemoAccordion({
           void persistDraftNote();
         }}
         placeholder={DateMemoCopy.placeholder}
+        scrollEnabled
         style={styles.input}
         textAlignVertical="top"
         value={draftNote}
@@ -79,6 +80,7 @@ const styles = StyleSheet.create({
   input: {
     ...FormMultilineInputTextStyle,
     minHeight: DateMemoUi.accordionMinHeight,
+    maxHeight: DateMemoUi.accordionMaxHeight,
     padding: DateMemoUi.panelPadding,
     borderWidth: 0,
     borderRadius: 0,

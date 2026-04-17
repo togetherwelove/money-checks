@@ -9,6 +9,7 @@ export const DateMemoCopy = {
 } as const;
 
 export const DateMemoUi = {
+  accordionMaxHeight: 192,
   accordionMinHeight: 96,
   calendarIndicatorInset: 6,
   calendarIndicatorSize: 8,
