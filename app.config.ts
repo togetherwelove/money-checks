@@ -11,10 +11,10 @@ const admobIosAppId = process.env.EXPO_PUBLIC_ADMOB_IOS_APP_ID ?? "";
 const appIconPath = "./asset/icon.png";
 const imagePickerPermissionConfig = {
   cameraPermission:
-    "입출금 내역과 문의에 첨부할 이미지를 촬영하기 위해 카메라 접근 권한이 필요합니다.",
+    "알뜰 앱 이용 중 첨부할 이미지를 촬영하기 위해 카메라 접근 권한이 필요합니다.",
   microphonePermission: false,
   photosPermission:
-    "입출금 내역과 문의에 첨부할 이미지를 선택하기 위해 사진 보관함 접근 권한이 필요합니다.",
+    "알뜰 앱 이용 중 첨부할 이미지를 선택하기 위해 사진 보관함 접근 권한이 필요합니다.",
 } as const;
 
 const config: ExpoConfig = {
