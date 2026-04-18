@@ -1,11 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { AppBannerAd } from "../components/AppBannerAd";
 import { CalendarToolbar } from "../components/CalendarToolbar";
 import { DateMemoToggleButton } from "../components/DateMemoToggleButton";
 import { IconActionButton } from "../components/IconActionButton";
-import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { LedgerEntryList } from "../components/LedgerEntryList";
 import { MonthCalendarPager } from "../components/MonthCalendarPager";
 import { MonthlySummary } from "../components/MonthlySummary";
@@ -64,14 +63,13 @@ export function HomeScreen({
   } = state;
   const selectedDateLabel = formatLedgerListHeaderDate(selectedDate);
 
+  useEffect(() => {
+    setIsDateMemoExpanded(Boolean(selectedDateNote.trim()));
+  }, [selectedDate, selectedDateNote]);
+
   return (
     <View style={styles.screen}>
-      <KeyboardAwareScrollView
-        contentContainerStyle={styles.fixedSectionContent}
-        extraScrollHeight={DateMemoUi.keyboardExtraScrollHeight}
-        showsVerticalScrollIndicator={false}
-        style={styles.fixedSectionScroll}
-      >
+      <View style={styles.fixedSection}>
         {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
         <CalendarToolbar
           monthLabel={formatMonthYear(visibleMonth)}
@@ -79,7 +77,7 @@ export function HomeScreen({
           onSelectToday={() => {
             onSelectCalendarDate(todayIsoDate);
           }}
-          showMoveToCurrent={selectedDate !== todayIsoDate}
+          showMoveToCurrent={false}
         />
         <WeekdayHeader />
         <MonthCalendarPager
@@ -91,33 +89,36 @@ export function HomeScreen({
           selectedDate={selectedDate}
         />
         <View style={styles.summarySection}>
+          {showsBannerAd ? <AppBannerAd /> : null}
           <MonthlySummary
             totalExpense={formatCurrency(monthlyLedger.totalExpense)}
             totalIncome={formatCurrency(monthlyLedger.totalIncome)}
           />
-          {showsBannerAd ? <AppBannerAd /> : null}
-          <View style={styles.selectionRow}>
-            <View style={styles.selectionInfo}>
-              <Text style={styles.selectedDate}>{selectedDateLabel}</Text>
-            </View>
-            <View style={styles.selectionInfo}>
-              <DateMemoToggleButton
-                isExpanded={isDateMemoExpanded}
-                onPress={() => setIsDateMemoExpanded((currentValue) => !currentValue)}
-              />
-              <IconActionButton icon="pie-chart" onPress={onOpenCharts} size="compact" />
-              <IconActionButton icon="plus" onPress={onOpenEntry} size="compact" />
-            </View>
-          </View>
-          <SelectedDateMemoAccordion
-            key={selectedDate}
-            isExpanded={isDateMemoExpanded}
-            note={selectedDateNote}
-            onDelete={handleDeleteSelectedDateNote}
-            onSave={handleSaveSelectedDateNote}
-          />
         </View>
-      </KeyboardAwareScrollView>
+        <View style={styles.selectionRow}>
+          <View style={styles.selectionInfo}>
+            <Text style={styles.selectedDate}>{selectedDateLabel}</Text>
+            {selectedDate !== todayIsoDate ? (
+              <IconActionButton
+                accessibilityLabel="오늘 날짜로 이동"
+                icon="crosshair"
+                onPress={() => {
+                  onSelectCalendarDate(todayIsoDate);
+                }}
+                size="compact"
+              />
+            ) : null}
+          </View>
+          <View style={styles.selectionInfo}>
+            <DateMemoToggleButton
+              isExpanded={isDateMemoExpanded}
+              onPress={() => setIsDateMemoExpanded((currentValue) => !currentValue)}
+            />
+            <IconActionButton icon="pie-chart" onPress={onOpenCharts} size="compact" />
+            <IconActionButton icon="plus" onPress={onOpenEntry} size="compact" />
+          </View>
+        </View>
+      </View>
       <View style={styles.listSection}>
         <ScrollView
           contentContainerStyle={styles.listContent}
@@ -133,6 +134,14 @@ export function HomeScreen({
           showsVerticalScrollIndicator={false}
           style={styles.listScroll}
         >
+          <SelectedDateMemoAccordion
+            key={selectedDate}
+            isExpanded={isDateMemoExpanded}
+            note={selectedDateNote}
+            onCollapse={() => setIsDateMemoExpanded(false)}
+            onDelete={handleDeleteSelectedDateNote}
+            onSave={handleSaveSelectedDateNote}
+          />
           <LedgerEntryList
             entries={selectedEntries}
             onDeleteEntry={(entry) => {
@@ -177,10 +186,7 @@ const styles = StyleSheet.create({
     padding: AppLayout.screenPadding,
     gap: AppLayout.compactGap,
   },
-  fixedSectionScroll: {
-    flex: 0,
-  },
-  fixedSectionContent: {
+  fixedSection: {
     gap: AppLayout.cardGap,
   },
   summarySection: {

@@ -1,5 +1,7 @@
+import { useMemo } from "react";
 import { Alert, FlatList, RefreshControl, StyleSheet, Text, View } from "react-native";
 
+import { AppNativeAdCard } from "../components/AppNativeAdCard";
 import { LedgerEntryListItem } from "../components/LedgerEntryListItem";
 import { AllEntriesCopy } from "../constants/allEntries";
 import { AppColors } from "../constants/colors";
@@ -9,6 +11,7 @@ import { AppMessages } from "../constants/messages";
 import type { BusyTaskTracker } from "../hooks/ledgerScreenState/types";
 import { useAllLedgerEntries } from "../hooks/useAllLedgerEntries";
 import { useLedgerCategoryIconMap } from "../hooks/useLedgerCategoryIconMap";
+import { buildAllEntriesFeedItems } from "../lib/allEntriesFeedItems";
 import type { LedgerEntry } from "../types/ledger";
 import type { LedgerBook } from "../types/ledgerBook";
 
@@ -16,6 +19,7 @@ type AllEntriesScreenProps = {
   activeBook: LedgerBook | null;
   onDeleteEntry: (entry: LedgerEntry) => Promise<void>;
   onEditEntry: (entry: LedgerEntry) => void;
+  showsNativeAds: boolean;
   trackBlockingTask: BusyTaskTracker;
 };
 
@@ -23,6 +27,7 @@ export function AllEntriesScreen({
   activeBook,
   onDeleteEntry,
   onEditEntry,
+  showsNativeAds,
   trackBlockingTask,
 }: AllEntriesScreenProps) {
   const categoryIconByLabel = useLedgerCategoryIconMap();
@@ -31,14 +36,25 @@ export function AllEntriesScreen({
       activeBookId: activeBook?.id ?? null,
       trackBlockingTask,
     });
+  const feedItems = useMemo(() => {
+    if (showsNativeAds) {
+      return buildAllEntriesFeedItems(entries);
+    }
+
+    return entries.map((entry) => ({
+      entry,
+      key: entry.id,
+      type: "entry" as const,
+    }));
+  }, [entries, showsNativeAds]);
 
   return (
     <View style={styles.screen}>
       {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
       <FlatList
         contentContainerStyle={entries.length === 0 ? styles.emptyContent : styles.listContent}
-        data={entries}
-        keyExtractor={(entry) => entry.id}
+        data={feedItems}
+        keyExtractor={(item) => item.key}
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Text style={styles.emptyTitle}>{AllEntriesCopy.emptyTitle}</Text>
@@ -54,34 +70,38 @@ export function AllEntriesScreen({
             tintColor={AppColors.primary}
           />
         }
-        renderItem={({ item }) => (
-          <LedgerEntryListItem
-            categoryIconByLabel={categoryIconByLabel}
-            entry={item}
-            onDeleteEntry={(entry) => {
-              Alert.alert(
-                AppMessages.editorDeleteConfirmTitle,
-                AppMessages.editorDeleteConfirmMessage,
-                [
-                  {
-                    style: "cancel",
-                    text: CommonActionCopy.cancel,
-                  },
-                  {
-                    onPress: () => {
-                      void handleDeleteEntry(entry);
+        renderItem={({ item }) =>
+          item.type === "native-ad" ? (
+            <AppNativeAdCard slotIndex={item.slotIndex} />
+          ) : (
+            <LedgerEntryListItem
+              categoryIconByLabel={categoryIconByLabel}
+              entry={item.entry}
+              onDeleteEntry={(entry) => {
+                Alert.alert(
+                  AppMessages.editorDeleteConfirmTitle,
+                  AppMessages.editorDeleteConfirmMessage,
+                  [
+                    {
+                      style: "cancel",
+                      text: CommonActionCopy.cancel,
                     },
-                    style: "destructive",
-                    text: AppMessages.editorDeleteConfirmAction,
-                  },
-                ],
-              );
-            }}
-            onEditEntry={onEditEntry}
-            showsDate
-            showsInstallmentStatusLine
-          />
-        )}
+                    {
+                      onPress: () => {
+                        void handleDeleteEntry(entry);
+                      },
+                      style: "destructive",
+                      text: AppMessages.editorDeleteConfirmAction,
+                    },
+                  ],
+                );
+              }}
+              onEditEntry={onEditEntry}
+              showsDate
+              showsInstallmentStatusLine
+            />
+          )
+        }
         style={styles.list}
       />
     </View>

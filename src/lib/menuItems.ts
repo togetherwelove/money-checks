@@ -1,6 +1,5 @@
-import { AppMessages } from "../constants/messages";
-import { SubscriptionMessages } from "../constants/subscription";
 import type { LedgerAppScreen } from "../types/app";
+import { getAppScreenLabel } from "./appScreenLabels";
 
 export type AppMenuItem = {
   icon: "bell" | "calendar" | "credit-card" | "edit-3" | "mail" | "user" | "users";
@@ -12,27 +11,27 @@ export function buildAppMenuItems(showNotificationSettings: boolean): AppMenuIte
   const items: AppMenuItem[] = [
     {
       icon: "calendar",
-      label: AppMessages.calendarTab,
+      label: getAppScreenLabel("calendar"),
       targetScreen: "calendar",
     },
     {
       icon: "edit-3",
-      label: AppMessages.entryTab,
+      label: getAppScreenLabel("entry"),
       targetScreen: "entry",
     },
     {
       icon: "users",
-      label: AppMessages.menuShareTitle,
+      label: getAppScreenLabel("share"),
       targetScreen: "share",
     },
     {
       icon: "user",
-      label: AppMessages.menuAccountTitle,
+      label: getAppScreenLabel("account"),
       targetScreen: "account",
     },
     {
       icon: "credit-card",
-      label: SubscriptionMessages.menuTitle,
+      label: getAppScreenLabel("subscription"),
       targetScreen: "subscription",
     },
   ];
@@ -40,14 +39,14 @@ export function buildAppMenuItems(showNotificationSettings: boolean): AppMenuIte
   if (showNotificationSettings) {
     items.push({
       icon: "bell",
-      label: AppMessages.menuNotificationSettingsTitle,
+      label: getAppScreenLabel("notification-settings"),
       targetScreen: "notification-settings",
     });
   }
 
   items.push({
     icon: "mail",
-    label: AppMessages.menuContactSupportTitle,
+    label: getAppScreenLabel("contact-support"),
     targetScreen: "contact-support",
   });
 

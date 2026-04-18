@@ -27,3 +27,17 @@ export const AppChartColors = [
   "#8f6f95",
   "#4f759b",
 ] as const;
+
+export const AppGradientColors = {
+  subscriptionPlusBase: [AppColors.accentSoft, AppColors.surfaceStrong, AppColors.surface] as const,
+  subscriptionPlusWarmOverlay: [
+    "rgba(201, 108, 80, 0.26)",
+    "rgba(239, 228, 207, 0.18)",
+    "rgba(255, 250, 242, 0)",
+  ] as const,
+  subscriptionPlusSoftOverlay: [
+    "rgba(255, 250, 242, 0)",
+    "rgba(242, 212, 202, 0.14)",
+    "rgba(255, 250, 242, 0.38)",
+  ] as const,
+} as const;

@@ -15,11 +15,14 @@ type SubscriptionSnapshot = {
 
 let configuredAppUserId: string | null = null;
 let currentPlusPackage: PurchasesPackage | null = null;
+let hasConfiguredRevenueCatLogHandler = false;
 
 export async function configureSubscriptionClient(appUserId: string): Promise<void> {
   if (!RevenueCatConfig.publicApiKey) {
     return;
   }
+
+  configureRevenueCatLogHandler();
 
   if (configuredAppUserId === null) {
     Purchases.configure({ apiKey: RevenueCatConfig.publicApiKey, appUserID: appUserId });
@@ -111,4 +114,35 @@ function resolveSubscriptionTier(customerInfo: CustomerInfo): SubscriptionTier {
   return customerInfo.entitlements.active[SubscriptionConfig.plusEntitlementId]
     ? SubscriptionTiers.plus
     : SubscriptionTiers.free;
+}
+
+function configureRevenueCatLogHandler() {
+  if (hasConfiguredRevenueCatLogHandler) {
+    return;
+  }
+
+  const purchasesWithLogHandler = Purchases as typeof Purchases & {
+    setLogHandler?: (handler: (logLevel: string, message: string) => void) => void;
+  };
+
+  purchasesWithLogHandler.setLogHandler?.((logLevel, message) => {
+    if (isRevenueCatPurchaseCancelledMessage(message)) {
+      return;
+    }
+
+    if (logLevel === "ERROR") {
+      console.error(`[RevenueCat] ${message}`);
+      return;
+    }
+
+    if (logLevel === "WARN") {
+      console.warn(`[RevenueCat] ${message}`);
+    }
+  });
+
+  hasConfiguredRevenueCatLogHandler = true;
+}
+
+function isRevenueCatPurchaseCancelledMessage(message: string): boolean {
+  return message.toLowerCase().includes("purchase was cancelled");
 }

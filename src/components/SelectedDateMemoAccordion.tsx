@@ -1,14 +1,15 @@
-import { useEffect, useState } from "react";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { StyleSheet, TextInput, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
 import { DateMemoCopy, DateMemoUi } from "../constants/dateMemo";
 import { FormMultilineInputTextStyle } from "../constants/uiStyles";
+import { TextLinkButton } from "./TextLinkButton";
 
 type SelectedDateMemoAccordionProps = {
   isExpanded: boolean;
   note: string;
+  onCollapse?: (() => void) | null;
   onDelete: () => Promise<void>;
   onSave: (note: string) => Promise<void>;
 };
@@ -16,16 +17,30 @@ type SelectedDateMemoAccordionProps = {
 export function SelectedDateMemoAccordion({
   isExpanded,
   note,
+  onCollapse = null,
   onDelete,
   onSave,
 }: SelectedDateMemoAccordionProps) {
   const [draftNote, setDraftNote] = useState(note);
+  const [isEditing, setIsEditing] = useState(false);
+  const inputRef = useRef<TextInput>(null);
   const savedNoteRef = useRef(note);
 
   useEffect(() => {
     setDraftNote(note);
     savedNoteRef.current = note;
+    setIsEditing(false);
   }, [note]);
+
+  useEffect(() => {
+    if (!isEditing) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+    });
+  }, [isEditing]);
 
   if (!isExpanded) {
     return null;
@@ -35,15 +50,16 @@ export function SelectedDateMemoAccordion({
     const trimmedDraftNote = draftNote.trim();
     const trimmedSavedNote = savedNoteRef.current.trim();
 
-    if (trimmedDraftNote === trimmedSavedNote) {
-      return;
-    }
-
     if (!trimmedDraftNote) {
       if (trimmedSavedNote) {
         await onDelete();
         savedNoteRef.current = "";
       }
+      onCollapse?.();
+      return;
+    }
+
+    if (trimmedDraftNote === trimmedSavedNote) {
       return;
     }
 
@@ -53,19 +69,38 @@ export function SelectedDateMemoAccordion({
 
   return (
     <View style={styles.panel}>
-      <TextInput
-        maxLength={DateMemoUi.inputMaxLength}
-        multiline
-        onChangeText={setDraftNote}
-        onBlur={() => {
-          void persistDraftNote();
-        }}
-        placeholder={DateMemoCopy.placeholder}
-        scrollEnabled
-        style={styles.input}
-        textAlignVertical="top"
-        value={draftNote}
-      />
+      {isEditing ? (
+        <TextInput
+          ref={inputRef}
+          maxLength={DateMemoUi.inputMaxLength}
+          multiline
+          onBlur={() => {
+            setIsEditing(false);
+            void persistDraftNote();
+          }}
+          onChangeText={setDraftNote}
+          placeholder={DateMemoCopy.placeholder}
+          scrollEnabled
+          style={styles.input}
+          textAlignVertical="top"
+          value={draftNote}
+        />
+      ) : (
+        <View style={styles.previewContainer}>
+          <View style={styles.previewActionRow}>
+            <TextLinkButton label={DateMemoCopy.editAction} onPress={() => setIsEditing(true)} />
+          </View>
+          <TextInput
+            editable={false}
+            multiline
+            placeholder={DateMemoCopy.placeholder}
+            scrollEnabled
+            style={styles.previewInput}
+            textAlignVertical="top"
+            value={draftNote}
+          />
+        </View>
+      )}
     </View>
   );
 }
@@ -76,6 +111,29 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.surfaceMuted,
     borderRadius: DateMemoUi.panelBorderRadius,
     overflow: "hidden",
+  },
+  previewContainer: {
+    position: "relative",
+    minHeight: DateMemoUi.accordionMinHeight,
+    maxHeight: DateMemoUi.accordionMaxHeight,
+  },
+  previewActionRow: {
+    position: "absolute",
+    top: DateMemoUi.panelPadding,
+    right: DateMemoUi.panelPadding,
+    zIndex: 1,
+    flexDirection: "row",
+    justifyContent: "flex-end",
+  },
+  previewInput: {
+    ...FormMultilineInputTextStyle,
+    minHeight: DateMemoUi.accordionMinHeight,
+    maxHeight: DateMemoUi.accordionMaxHeight,
+    padding: DateMemoUi.panelPadding,
+    borderWidth: 0,
+    borderRadius: 0,
+    backgroundColor: AppColors.surfaceMuted,
+    color: AppColors.text,
   },
   input: {
     ...FormMultilineInputTextStyle,

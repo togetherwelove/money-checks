@@ -16,6 +16,7 @@ import type { LedgerBook } from "../types/ledgerBook";
 
 type UseAnnualLedgerReportActionParams = {
   activeBook: LedgerBook | null;
+  onAfterDownloadReport?: (() => Promise<void> | void) | null;
   visibleMonth: Date;
 };
 
@@ -27,6 +28,7 @@ type CustomRangeDraft = {
 
 export function useAnnualLedgerReportAction({
   activeBook,
+  onAfterDownloadReport = null,
   visibleMonth,
 }: UseAnnualLedgerReportActionParams) {
   const [customRangeDraft, setCustomRangeDraft] = useState<CustomRangeDraft | null>(null);
@@ -61,7 +63,12 @@ export function useAnnualLedgerReportAction({
           selectedYear,
         );
         if (reportPeriod) {
-          await downloadReportForPeriod(activeBook.id, bookName, reportPeriod);
+          await downloadReportForPeriod(
+            activeBook.id,
+            bookName,
+            reportPeriod,
+            onAfterDownloadReport,
+          );
         }
         return;
       }
@@ -74,6 +81,7 @@ export function useAnnualLedgerReportAction({
         activeBook.id,
         setCustomRangeDraft,
         downloadReportForPeriod,
+        onAfterDownloadReport,
       );
     } catch {
       Alert.alert(AnnualReportCopy.errorMessage);
@@ -101,6 +109,7 @@ export function useAnnualLedgerReportAction({
         activeBook.id,
         bookName,
         buildCustomRangePeriod(startDate, endDate),
+        onAfterDownloadReport,
       );
       return true;
     } catch {
@@ -158,7 +167,9 @@ async function selectAnnualReportPeriodOnNative(
     bookId: string,
     bookName: string,
     period: AnnualReportPeriod,
+    onAfterDownloadReport?: (() => Promise<void> | void) | null,
   ) => Promise<void>,
+  onAfterDownloadReport: (() => Promise<void> | void) | null,
 ) {
   return new Promise<void>((resolve) => {
     Alert.alert(AnnualReportCopy.confirmTitle, AnnualReportCopy.optionTitle, [
@@ -174,6 +185,7 @@ async function selectAnnualReportPeriodOnNative(
             bookId,
             bookName,
             buildFirstToLastPeriod(firstDate, lastDate),
+            onAfterDownloadReport,
           ).finally(resolve);
         },
       },
@@ -184,6 +196,7 @@ async function selectAnnualReportPeriodOnNative(
             bookId,
             bookName,
             buildSelectedYearPeriod(selectedYear),
+            onAfterDownloadReport,
           ).finally(resolve);
         },
       },
@@ -206,6 +219,7 @@ async function downloadReportForPeriod(
   bookId: string,
   bookName: string,
   period: AnnualReportPeriod,
+  onAfterDownloadReport: (() => Promise<void> | void) | null = null,
 ) {
   const entries = await fetchLedgerEntries(bookId, period.dateFrom, period.dateTo);
   await confirmAndDownloadAnnualReport({
@@ -213,4 +227,5 @@ async function downloadReportForPeriod(
     entries,
     period,
   });
+  await onAfterDownloadReport?.();
 }

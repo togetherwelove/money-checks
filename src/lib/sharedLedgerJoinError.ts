@@ -32,7 +32,7 @@ export function resolveSharedLedgerJoinErrorMessage(error: unknown): string {
   }
 
   if (errorText.includes("Shared ledger member limit reached for owner subscription tier.")) {
-    return SubscriptionMessages.sharedLedgerLimitError;
+    return SubscriptionMessages.sharedLedgerLimitDescription;
   }
 
   return AppMessages.accountJoinError;

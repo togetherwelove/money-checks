@@ -18,6 +18,7 @@ import { ScreenSlideTransition } from "./src/components/ScreenSlideTransition";
 import { AnnualReportRangePickerModal } from "./src/components/annualReport/AnnualReportRangePickerModal";
 import { NativeYearPickerModal } from "./src/components/calendarPicker/NativeYearPickerModal";
 import { AllEntriesCopy } from "./src/constants/allEntries";
+import { AdInterstitialPlacement } from "./src/constants/ads";
 import { AppColors } from "./src/constants/colors";
 import { EntryRegistrationCopy } from "./src/constants/entryRegistration";
 import { AppMessages } from "./src/constants/messages";
@@ -28,6 +29,7 @@ import { useLedgerNotifications } from "./src/hooks/useLedgerNotifications";
 import { useLedgerScreenState } from "./src/hooks/useLedgerScreenState";
 import { useSubscriptionPlan } from "./src/hooks/useSubscriptionPlan";
 import { useSupabaseSession } from "./src/hooks/useSupabaseSession";
+import { preloadInterstitialAd, showInterstitialAd } from "./src/lib/ads/interstitialAd";
 import { ensureMobileAdsInitialized } from "./src/lib/ads/mobileAds";
 import { getAppHeaderTitle, showsCalendarReturnAction } from "./src/lib/appHeaderTitle";
 import { appPlatform } from "./src/lib/appPlatform";
@@ -104,6 +106,9 @@ function SignedInApp({ session }: { session: Session }) {
   const ledgerState = useLedgerScreenState(session);
   const annualReport = useAnnualLedgerReportAction({
     activeBook: ledgerState.activeBook,
+    onAfterDownloadReport: async () => {
+      await showInterstitialAd(AdInterstitialPlacement.annualReportDownload);
+    },
     visibleMonth: ledgerState.visibleMonth,
   });
   const trackBlockingTask = useCallback(async function trackBlockingTask<T>(
@@ -128,7 +133,9 @@ function SignedInApp({ session }: { session: Session }) {
       return;
     }
 
-    void ensureMobileAdsInitialized();
+    void ensureMobileAdsInitialized().then(() => {
+      preloadInterstitialAd();
+    });
   }, []);
 
   const handleOpenCalendar = () => setActiveScreen("calendar");
@@ -226,6 +233,10 @@ function SignedInApp({ session }: { session: Session }) {
     }
   };
 
+  const handleCopyShareCode = async () => {
+    await showInterstitialAd(AdInterstitialPlacement.shareCodeCopy);
+  };
+
   const handleSaveEntry = async () => {
     const currentEntries = ledgerState.entries;
     const wasEditingEntry = Boolean(ledgerState.editingEntryId);
@@ -244,6 +255,7 @@ function SignedInApp({ session }: { session: Session }) {
     }
 
     setActiveScreen(entryReturnScreen);
+    void showInterstitialAd(AdInterstitialPlacement.entrySaveTest);
     void runEntrySaveSideEffects(
       savedEntries,
       currentEntries,
@@ -270,6 +282,7 @@ function SignedInApp({ session }: { session: Session }) {
     }
 
     setActiveScreen(entryReturnScreen);
+    void showInterstitialAd(AdInterstitialPlacement.entrySaveTest);
     void runQueuedEntrySaveSideEffects(savedEntries, currentEntries);
   };
 
@@ -429,6 +442,7 @@ function SignedInApp({ session }: { session: Session }) {
               notificationStatusMessage={notifications.statusMessage}
               onChangeNotificationThresholdEnabled={notifications.updateThresholdEnabled}
               onChangeNotificationThreshold={notifications.updateThresholdValue}
+              onCopyShareCode={handleCopyShareCode}
               onDeleteSelectedEntry={handleDeleteEntryFromCalendar}
               onEditSelectedEntry={
                 activeScreen === "all-entries"

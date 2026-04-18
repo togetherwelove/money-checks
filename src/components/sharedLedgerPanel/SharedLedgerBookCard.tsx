@@ -27,6 +27,7 @@ type SharedLedgerBookCardProps = {
   members: LedgerBookMember[];
   onOpenSubscription: () => void;
   onApproveJoinRequest: (requestId: string) => Promise<boolean>;
+  onAfterCopyShareCode: () => Promise<void>;
   onChangeBookName: (value: string) => void;
   onKickMember: (targetUserId: string) => Promise<boolean>;
   onRejectJoinRequest: (requestId: string) => Promise<boolean>;
@@ -45,6 +46,7 @@ export function SharedLedgerBookCard({
   members,
   onOpenSubscription,
   onApproveJoinRequest,
+  onAfterCopyShareCode,
   onChangeBookName,
   onKickMember,
   onRejectJoinRequest,
@@ -61,8 +63,9 @@ export function SharedLedgerBookCard({
       return;
     }
 
-    void Clipboard.setStringAsync(shareCode).then(() => {
+    void Clipboard.setStringAsync(shareCode).then(async () => {
       showNativeToast(SHARE_CODE_COPY_SUCCESS_TOAST);
+      await onAfterCopyShareCode();
     });
   };
 

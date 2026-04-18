@@ -29,6 +29,7 @@ type AppScreenRouterProps = {
   notificationStatusMessage: string;
   onChangeNotificationThresholdEnabled: (key: NotificationThresholdKey, enabled: boolean) => void;
   onChangeNotificationThreshold: (key: NotificationThresholdKey, value: string) => void;
+  onCopyShareCode: () => Promise<void>;
   onDeleteSelectedEntry: (entry: LedgerEntry) => Promise<void>;
   onEditSelectedEntry: (entry: LedgerEntry) => void;
   onOpenCharts: () => void;
@@ -75,6 +76,7 @@ export function AppScreenRouter({
   notificationStatusMessage,
   onChangeNotificationThresholdEnabled,
   onChangeNotificationThreshold,
+  onCopyShareCode,
   onDeleteSelectedEntry,
   onEditSelectedEntry,
   onOpenCharts,
@@ -102,6 +104,7 @@ export function AppScreenRouter({
         accountProviderLabel={accountProviderLabel}
         email={email}
         fallbackDisplayName={fallbackDisplayName}
+        onRestorePurchases={onRestorePurchases}
         subscriptionTier={subscriptionTier}
         trackBlockingTask={trackBlockingTask}
         userId={userId}
@@ -115,6 +118,7 @@ export function AppScreenRouter({
         activeBook={ledgerState.activeBook}
         onDeleteEntry={onDeleteSelectedEntry}
         onEditEntry={onEditSelectedEntry}
+        showsNativeAds={subscriptionTier === "free"}
         trackBlockingTask={trackBlockingTask}
       />
     );
@@ -127,6 +131,7 @@ export function AppScreenRouter({
           accountProviderLabel={accountProviderLabel}
           email={email}
           fallbackDisplayName={fallbackDisplayName}
+          onRestorePurchases={onRestorePurchases}
           subscriptionTier={subscriptionTier}
           trackBlockingTask={trackBlockingTask}
           userId={userId}
@@ -150,6 +155,7 @@ export function AppScreenRouter({
     return (
       <ShareLedgerScreen
         activeBook={ledgerState.activeBook}
+        onAfterCopyShareCode={onCopyShareCode}
         onOpenSubscription={onOpenSubscription}
         onApproveJoinRequest={ledgerState.approveLedgerJoinRequest}
         onJoinSharedLedgerBook={ledgerState.joinSharedLedgerBookByCode}
@@ -168,7 +174,7 @@ export function AppScreenRouter({
   }
 
   if (activeScreen === "charts") {
-    return <ChartScreen state={ledgerState} />;
+    return <ChartScreen showsBannerAd={subscriptionTier === "free"} state={ledgerState} />;
   }
 
   if (activeScreen === "contact-support") {
@@ -181,8 +187,6 @@ export function AppScreenRouter({
         hasAvailablePlusPackage={hasAvailablePlusPackage}
         isPlusActive={isPlusActive}
         onPurchasePlus={onPurchasePlus}
-        onRestorePurchases={onRestorePurchases}
-        subscriptionTier={subscriptionTier}
       />
     );
   }

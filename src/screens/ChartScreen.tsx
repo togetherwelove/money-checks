@@ -9,16 +9,19 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
+import { AppBannerAd } from "../components/AppBannerAd";
 import { ChartMonthPager } from "../components/chartScreen/ChartMonthPager";
 import { ChartScreenCopy } from "../constants/chartScreen";
 import { AppColors } from "../constants/colors";
+import { AppLayout } from "../constants/layout";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
 
 type ChartScreenProps = {
+  showsBannerAd: boolean;
   state: LedgerScreenState;
 };
 
-export function ChartScreen({ state }: ChartScreenProps) {
+export function ChartScreen({ showsBannerAd, state }: ChartScreenProps) {
   const translateX = useSharedValue(0);
 
   useEffect(() => {
@@ -47,6 +50,11 @@ export function ChartScreen({ state }: ChartScreenProps) {
 
   return (
     <View style={styles.screen}>
+      {showsBannerAd ? (
+        <View style={styles.bannerSection}>
+          <AppBannerAd />
+        </View>
+      ) : null}
       <Animated.View style={[styles.pagerLayer, animatedStyle]}>
         <ChartMonthPager
           currentMonth={state.currentChartMonth}
@@ -68,6 +76,11 @@ export function ChartScreen({ state }: ChartScreenProps) {
 }
 
 const styles = StyleSheet.create({
+  bannerSection: {
+    paddingHorizontal: AppLayout.screenPadding,
+    paddingBottom: AppLayout.compactGap,
+    paddingTop: AppLayout.screenPadding,
+  },
   pagerLayer: {
     flex: 1,
   },

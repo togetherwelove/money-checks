@@ -30,7 +30,6 @@ export const NotificationUiCopy = {
   fallbackTargetName: "멤버",
   iconPath: "/logo192.png",
   menuDescription: "권한과 알림 기준을 관리합니다.",
-  menuTitle: "푸시 알림 설정",
   permissionBlocked:
     "알림 권한이 차단되어 있습니다. iPhone 설정 또는 Safari 설정에서 다시 허용해 주세요.",
   permissionGranted: "허용됨",

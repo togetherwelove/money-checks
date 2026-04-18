@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { Alert, Keyboard, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { ActionButton } from "../components/ActionButton";
@@ -32,6 +32,7 @@ type AccountScreenProps = {
   accountProviderLabel: string;
   email: string;
   fallbackDisplayName: string;
+  onRestorePurchases: () => Promise<void>;
   subscriptionTier: SubscriptionTier;
   trackBlockingTask: BusyTaskTracker;
   userId: string;
@@ -41,6 +42,7 @@ export function AccountScreen({
   accountProviderLabel,
   email,
   fallbackDisplayName,
+  onRestorePurchases,
   subscriptionTier,
   trackBlockingTask,
   userId,
@@ -119,6 +121,10 @@ export function AccountScreen({
     ]);
   };
 
+  const handleRestorePurchases = () => {
+    void onRestorePurchases();
+  };
+
   return (
     <KeyboardAwareScrollView contentContainerStyle={styles.content} style={styles.screen}>
       <View style={[styles.card, styles.primaryCard]}>
@@ -126,6 +132,12 @@ export function AccountScreen({
         <InfoRow label={AppMessages.accountEmail} value={email} />
         <InfoRow label={AppMessages.accountProvider} value={accountProviderLabel} />
         <InfoRow
+          action={
+            <TextLinkButton
+              label={SubscriptionMessages.restoreAction}
+              onPress={handleRestorePurchases}
+            />
+          }
           label={SubscriptionMessages.statusLabel}
           value={
             subscriptionTier === SubscriptionTiers.plus
@@ -179,11 +191,22 @@ export function AccountScreen({
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function InfoRow({
+  action = null,
+  label,
+  value,
+}: {
+  action?: ReactNode;
+  label: string;
+  value: string;
+}) {
   return (
     <View style={styles.infoRow}>
       <Text style={styles.label}>{label}</Text>
-      <Text style={styles.value}>{value}</Text>
+      <View style={styles.valueRow}>
+        <Text style={styles.value}>{value}</Text>
+        {action}
+      </View>
     </View>
   );
 }
@@ -218,6 +241,12 @@ const styles = StyleSheet.create({
     color: AppColors.text,
     fontSize: 14,
     fontWeight: "700",
+  },
+  valueRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 8,
   },
   actionRow: {
     paddingTop: 2,
