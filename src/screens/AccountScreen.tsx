@@ -16,12 +16,15 @@ import {
   type SubscriptionTier,
   SubscriptionTiers,
 } from "../constants/subscription";
+import { SubscriptionManagementMessages } from "../constants/subscriptionManagement";
 import {
+  BrandPlusTextStyle,
   CardTitleTextStyle,
   CompactLabelTextStyle,
   FormInputTextStyle,
   SurfaceCardStyle,
 } from "../constants/uiStyles";
+import { SubscriptionPlusLabels } from "../constants/subscriptionPlusLabels";
 import type { BusyTaskTracker } from "../hooks/ledgerScreenState/types";
 import { signOutFromApp } from "../lib/auth/signOut";
 import { showNativeToast } from "../lib/nativeToast";
@@ -32,6 +35,7 @@ type AccountScreenProps = {
   accountProviderLabel: string;
   email: string;
   fallbackDisplayName: string;
+  onOpenSubscriptionManagement: () => Promise<void>;
   onRestorePurchases: () => Promise<void>;
   subscriptionTier: SubscriptionTier;
   trackBlockingTask: BusyTaskTracker;
@@ -42,6 +46,7 @@ export function AccountScreen({
   accountProviderLabel,
   email,
   fallbackDisplayName,
+  onOpenSubscriptionManagement,
   onRestorePurchases,
   subscriptionTier,
   trackBlockingTask,
@@ -125,6 +130,10 @@ export function AccountScreen({
     void onRestorePurchases();
   };
 
+  const handleOpenSubscriptionManagement = () => {
+    void onOpenSubscriptionManagement();
+  };
+
   return (
     <KeyboardAwareScrollView contentContainerStyle={styles.content} style={styles.screen}>
       <View style={[styles.card, styles.primaryCard]}>
@@ -133,15 +142,27 @@ export function AccountScreen({
         <InfoRow label={AppMessages.accountProvider} value={accountProviderLabel} />
         <InfoRow
           action={
-            <TextLinkButton
-              label={SubscriptionMessages.restoreAction}
-              onPress={handleRestorePurchases}
-            />
+            subscriptionTier === SubscriptionTiers.free ? (
+              <TextLinkButton
+                label={SubscriptionMessages.restoreAction}
+                onPress={handleRestorePurchases}
+              />
+            ) : subscriptionTier === SubscriptionTiers.plus ? (
+              <TextLinkButton
+                label={SubscriptionManagementMessages.actionLabel}
+                onPress={handleOpenSubscriptionManagement}
+              />
+            ) : null
           }
           label={SubscriptionMessages.statusLabel}
           value={
             subscriptionTier === SubscriptionTiers.plus
-              ? SubscriptionMessages.plusPlanLabel
+              ? (
+                  <Text style={styles.value}>
+                    <Text style={styles.plusLabelText}>plus</Text>{" "}
+                    {SubscriptionPlusLabels.accountActiveSuffix}
+                  </Text>
+                )
               : SubscriptionMessages.freePlanLabel
           }
         />
@@ -198,13 +219,13 @@ function InfoRow({
 }: {
   action?: ReactNode;
   label: string;
-  value: string;
+  value: ReactNode;
 }) {
   return (
     <View style={styles.infoRow}>
       <Text style={styles.label}>{label}</Text>
       <View style={styles.valueRow}>
-        <Text style={styles.value}>{value}</Text>
+        {typeof value === "string" ? <Text style={styles.value}>{value}</Text> : value}
         {action}
       </View>
     </View>
@@ -241,6 +262,9 @@ const styles = StyleSheet.create({
     color: AppColors.text,
     fontSize: 14,
     fontWeight: "700",
+  },
+  plusLabelText: {
+    ...BrandPlusTextStyle,
   },
   valueRow: {
     flexDirection: "row",

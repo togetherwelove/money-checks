@@ -1,5 +1,13 @@
 import { useEffect, useState } from "react";
-import { Alert, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 import { AppBannerAd } from "../components/AppBannerAd";
 import { CalendarToolbar } from "../components/CalendarToolbar";
@@ -52,6 +60,7 @@ export function HomeScreen({
     handleDeleteSelectedDateNote,
     errorMessage,
     handleSaveSelectedDateNote,
+    isLoadingSelectedDateEntries,
     isRefreshing,
     monthlyLedger,
     refreshLedger,
@@ -134,37 +143,45 @@ export function HomeScreen({
           showsVerticalScrollIndicator={false}
           style={styles.listScroll}
         >
-          <SelectedDateMemoAccordion
-            key={selectedDate}
-            isExpanded={isDateMemoExpanded}
-            note={selectedDateNote}
-            onCollapse={() => setIsDateMemoExpanded(false)}
-            onDelete={handleDeleteSelectedDateNote}
-            onSave={handleSaveSelectedDateNote}
-          />
-          <LedgerEntryList
-            entries={selectedEntries}
-            onDeleteEntry={(entry) => {
-              Alert.alert(
-                AppMessages.editorDeleteConfirmTitle,
-                AppMessages.editorDeleteConfirmMessage,
-                [
-                  {
-                    style: "cancel",
-                    text: CommonActionCopy.cancel,
-                  },
-                  {
-                    onPress: () => {
-                      void onDeleteSelectedEntry(entry);
-                    },
-                    style: "destructive",
-                    text: AppMessages.editorDeleteConfirmAction,
-                  },
-                ],
-              );
-            }}
-            onEditEntry={onEditSelectedEntry}
-          />
+          {isLoadingSelectedDateEntries && selectedEntries.length === 0 ? (
+            <View style={styles.selectedDateLoadingState}>
+              <ActivityIndicator color={AppColors.primary} size="small" />
+            </View>
+          ) : (
+            <>
+              <SelectedDateMemoAccordion
+                key={selectedDate}
+                isExpanded={isDateMemoExpanded}
+                note={selectedDateNote}
+                onCollapse={() => setIsDateMemoExpanded(false)}
+                onDelete={handleDeleteSelectedDateNote}
+                onSave={handleSaveSelectedDateNote}
+              />
+              <LedgerEntryList
+                entries={selectedEntries}
+                onDeleteEntry={(entry) => {
+                  Alert.alert(
+                    AppMessages.editorDeleteConfirmTitle,
+                    AppMessages.editorDeleteConfirmMessage,
+                    [
+                      {
+                        style: "cancel",
+                        text: CommonActionCopy.cancel,
+                      },
+                      {
+                        onPress: () => {
+                          void onDeleteSelectedEntry(entry);
+                        },
+                        style: "destructive",
+                        text: AppMessages.editorDeleteConfirmAction,
+                      },
+                    ],
+                  );
+                }}
+                onEditEntry={onEditSelectedEntry}
+              />
+            </>
+          )}
         </ScrollView>
       </View>
     </View>
@@ -223,5 +240,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: AppLayout.compactGap,
+  },
+  selectedDateLoadingState: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 160,
   },
 });

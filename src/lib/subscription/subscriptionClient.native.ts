@@ -6,10 +6,12 @@ import {
   type SubscriptionTier,
   SubscriptionTiers,
 } from "../../constants/subscription";
+import { formatSubscriptionPriceLabel } from "./formatSubscriptionPriceLabel";
 import { logAppWarning } from "../logAppError";
 
 type SubscriptionSnapshot = {
   hasAvailablePlusPackage: boolean;
+  plusPriceLabel: string | null;
   tier: SubscriptionTier;
 };
 
@@ -40,6 +42,7 @@ export async function loadSubscriptionSnapshot(): Promise<SubscriptionSnapshot> 
   if (!RevenueCatConfig.publicApiKey) {
     return {
       hasAvailablePlusPackage: false,
+      plusPriceLabel: null,
       tier: SubscriptionTiers.free,
     };
   }
@@ -49,6 +52,10 @@ export async function loadSubscriptionSnapshot(): Promise<SubscriptionSnapshot> 
 
   return {
     hasAvailablePlusPackage: Boolean(currentPlusPackage),
+    plusPriceLabel: formatSubscriptionPriceLabel(
+      currentPlusPackage?.product.priceString ?? null,
+      currentPlusPackage?.product.subscriptionPeriod ?? null,
+    ),
     tier: resolveSubscriptionTier(customerInfo),
   };
 }

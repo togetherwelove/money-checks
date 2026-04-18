@@ -19,7 +19,6 @@ export const AdMobNativeConfig = {
 
 export const AdInterstitialPlacement = {
   annualReportDownload: "annual-report-download",
-  entrySaveTest: "entry-save-test",
   shareCodeCopy: "share-code-copy",
 } as const;
 

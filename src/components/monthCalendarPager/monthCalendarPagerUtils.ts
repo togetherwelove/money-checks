@@ -90,9 +90,17 @@ export function animateTo(
   });
 }
 
-export function animateViewportHeight(heightValue: Animated.Value, nextHeight: number) {
+export function animateViewportHeight(
+  heightValue: Animated.Value,
+  nextHeight: number,
+  onComplete?: () => void,
+) {
   Animated.timing(heightValue, {
     ...HEIGHT_ANIMATION_CONFIG,
     toValue: nextHeight,
-  }).start();
+  }).start(({ finished }) => {
+    if (finished) {
+      onComplete?.();
+    }
+  });
 }

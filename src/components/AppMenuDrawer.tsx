@@ -4,6 +4,8 @@ import { Animated, Easing, Pressable, StyleSheet, Text, View, type ViewStyle } f
 
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
+import { SubscriptionPlusLabels } from "../constants/subscriptionPlusLabels";
+import { BrandPlusTextStyle } from "../constants/uiStyles";
 import type { AppMenuItem } from "../lib/menuItems";
 
 const MENU_DRAWER_ANIMATION_DURATION_MS = 220;
@@ -62,7 +64,13 @@ export function AppMenuDrawer({ isOpen, items, onClose, onSelectItem }: AppMenuD
               style={styles.item}
             >
               <Feather color={AppColors.primary} name={item.icon} size={18} />
-              <Text style={styles.itemLabel}>{item.label}</Text>
+              {item.targetScreen === "subscription" ? (
+                <Text style={styles.itemLabel}>
+                  {SubscriptionPlusLabels.menuPrefix} <Text style={styles.itemPlusLabel}>plus</Text>
+                </Text>
+              ) : (
+                <Text style={styles.itemLabel}>{item.label}</Text>
+              )}
             </Pressable>
           ))}
         </View>
@@ -124,5 +132,8 @@ const styles = StyleSheet.create({
     color: AppColors.text,
     fontSize: 15,
     fontWeight: "700",
+  },
+  itemPlusLabel: {
+    ...BrandPlusTextStyle,
   },
 });

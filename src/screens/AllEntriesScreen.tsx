@@ -31,7 +31,16 @@ export function AllEntriesScreen({
   trackBlockingTask,
 }: AllEntriesScreenProps) {
   const categoryIconByLabel = useLedgerCategoryIconMap();
-  const { entries, errorMessage, isRefreshing, refreshEntries, removeEntryFromFeed } =
+  const {
+    entries,
+    errorMessage,
+    hasMore,
+    isLoadingMore,
+    isRefreshing,
+    loadMoreEntries,
+    refreshEntries,
+    removeEntryFromFeed,
+  } =
     useAllLedgerEntries({
       activeBookId: activeBook?.id ?? null,
       trackBlockingTask,
@@ -61,6 +70,21 @@ export function AllEntriesScreen({
             <Text style={styles.emptyHint}>{AllEntriesCopy.emptyHint}</Text>
           </View>
         }
+        ListFooterComponent={
+          isLoadingMore ? (
+            <View style={styles.loadingMoreState}>
+              <Text style={styles.loadingMoreLabel}>{AllEntriesCopy.loadingLabel}</Text>
+            </View>
+          ) : null
+        }
+        onEndReached={() => {
+          if (!hasMore) {
+            return;
+          }
+
+          void loadMoreEntries();
+        }}
+        onEndReachedThreshold={0.4}
         refreshControl={
           <RefreshControl
             onRefresh={() => {
@@ -134,6 +158,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     minHeight: 180,
     gap: 6,
+  },
+  loadingMoreState: {
+    alignItems: "center",
+    paddingVertical: 12,
+  },
+  loadingMoreLabel: {
+    color: AppColors.mutedText,
+    fontSize: 12,
+    fontWeight: "600",
   },
   emptyTitle: {
     color: AppColors.text,

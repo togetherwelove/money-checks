@@ -36,6 +36,7 @@ type AppScreenRouterProps = {
   onOpenEntry: () => void;
   onOpenMonthPicker: () => void;
   onOpenSubscription: () => void;
+  onOpenSubscriptionManagement: () => Promise<void>;
   onPurchasePlus: () => Promise<void>;
   onRestorePurchases: () => Promise<void>;
   onSaveEntry: () => Promise<void>;
@@ -57,6 +58,7 @@ type AppScreenRouterProps = {
     enabled: boolean,
   ) => void;
   onSelectCalendarDate: (isoDate: string) => void;
+  plusPriceLabel: string | null;
   showNotificationSettings: boolean;
   subscriptionTier: SubscriptionTier;
   trackBlockingTask: BusyTaskTracker;
@@ -83,6 +85,7 @@ export function AppScreenRouter({
   onOpenEntry,
   onOpenMonthPicker,
   onOpenSubscription,
+  onOpenSubscriptionManagement,
   onPurchasePlus,
   onRestorePurchases,
   onSaveEntry,
@@ -93,6 +96,7 @@ export function AppScreenRouter({
   onSendPushNotificationToUsers,
   onToggleNotificationPreference,
   onSelectCalendarDate,
+  plusPriceLabel,
   showNotificationSettings,
   subscriptionTier,
   trackBlockingTask,
@@ -104,6 +108,7 @@ export function AppScreenRouter({
         accountProviderLabel={accountProviderLabel}
         email={email}
         fallbackDisplayName={fallbackDisplayName}
+        onOpenSubscriptionManagement={onOpenSubscriptionManagement}
         onRestorePurchases={onRestorePurchases}
         subscriptionTier={subscriptionTier}
         trackBlockingTask={trackBlockingTask}
@@ -131,6 +136,7 @@ export function AppScreenRouter({
           accountProviderLabel={accountProviderLabel}
           email={email}
           fallbackDisplayName={fallbackDisplayName}
+          onOpenSubscriptionManagement={onOpenSubscriptionManagement}
           onRestorePurchases={onRestorePurchases}
           subscriptionTier={subscriptionTier}
           trackBlockingTask={trackBlockingTask}
@@ -187,6 +193,7 @@ export function AppScreenRouter({
         hasAvailablePlusPackage={hasAvailablePlusPackage}
         isPlusActive={isPlusActive}
         onPurchasePlus={onPurchasePlus}
+        plusPriceLabel={plusPriceLabel}
       />
     );
   }

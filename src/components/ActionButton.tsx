@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text } from "react-native";
 
@@ -8,6 +9,7 @@ type ActionButtonProps = {
   disabled?: boolean;
   fullWidth?: boolean;
   label: string;
+  labelContent?: ReactNode;
   loading?: boolean;
   onPress: () => unknown;
   size?: "compact" | "inline" | "large";
@@ -18,6 +20,7 @@ export function ActionButton({
   disabled = false,
   fullWidth = false,
   label,
+  labelContent = null,
   loading = false,
   onPress,
   size = "compact",
@@ -62,7 +65,11 @@ export function ActionButton({
         disabled || isLoading ? styles.disabledButton : null,
       ]}
     >
-      <Text style={[styles.text, styles[`${size}Text`], styles[`${variant}Text`]]}>{label}</Text>
+      {labelContent ? (
+        labelContent
+      ) : (
+        <Text style={[styles.text, styles[`${size}Text`], styles[`${variant}Text`]]}>{label}</Text>
+      )}
     </Pressable>
   );
 }

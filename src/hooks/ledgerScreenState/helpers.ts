@@ -2,6 +2,7 @@ import {
   deleteLedgerEntries,
   deleteLedgerEntry,
   fetchLedgerEntries,
+  fetchLedgerEntriesSummary,
   fetchLedgerEntriesByInstallmentGroup,
   insertLedgerEntries,
   insertLedgerEntry,
@@ -15,7 +16,7 @@ export async function loadLedgerMonthEntries(
   bookId: string,
   visibleMonth: Date,
 ): Promise<LedgerEntry[]> {
-  return fetchLedgerEntries(
+  return fetchLedgerEntriesSummary(
     bookId,
     getLedgerMonthStart(visibleMonth),
     getLedgerMonthEnd(visibleMonth),

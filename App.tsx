@@ -23,6 +23,7 @@ import { AppColors } from "./src/constants/colors";
 import { EntryRegistrationCopy } from "./src/constants/entryRegistration";
 import { AppMessages } from "./src/constants/messages";
 import { SubscriptionMessages, SubscriptionTiers } from "./src/constants/subscription";
+import { SubscriptionManagementMessages } from "./src/constants/subscriptionManagement";
 import { useAnnualLedgerReportAction } from "./src/hooks/useAnnualLedgerReportAction";
 import { useAuthOnboarding } from "./src/hooks/useAuthOnboarding";
 import { useLedgerNotifications } from "./src/hooks/useLedgerNotifications";
@@ -31,14 +32,16 @@ import { useSubscriptionPlan } from "./src/hooks/useSubscriptionPlan";
 import { useSupabaseSession } from "./src/hooks/useSupabaseSession";
 import { preloadInterstitialAd, showInterstitialAd } from "./src/lib/ads/interstitialAd";
 import { ensureMobileAdsInitialized } from "./src/lib/ads/mobileAds";
-import { getAppHeaderTitle, showsCalendarReturnAction } from "./src/lib/appHeaderTitle";
 import { appPlatform } from "./src/lib/appPlatform";
+import { getAppScreenLabel } from "./src/lib/appScreenLabels";
+import { showsCalendarReturnAction } from "./src/lib/appHeaderTitle";
 import { resolveSessionAuthProviderLabel } from "./src/lib/authProvider";
 import { logAppError } from "./src/lib/logAppError";
 import { buildAppMenuItems } from "./src/lib/menuItems";
 import { showNativeToast } from "./src/lib/nativeToast";
 import { fetchOwnProfileDisplayName, updateOwnProfileDisplayName } from "./src/lib/profiles";
 import { isSubscriptionPurchaseCancelled } from "./src/lib/subscription/subscriptionError";
+import { openSubscriptionManagement } from "./src/lib/subscription/openSubscriptionManagement";
 import {
   createOtherMemberCreatedEntryEvent,
   createOtherMemberDeletedEntryEvent,
@@ -233,6 +236,18 @@ function SignedInApp({ session }: { session: Session }) {
     }
   };
 
+  const handleOpenSubscriptionManagement = async () => {
+    try {
+      await openSubscriptionManagement();
+    } catch (error) {
+      logAppError("App", error, {
+        step: "open_subscription_management",
+        userId: session.user.id,
+      });
+      showNativeToast(SubscriptionManagementMessages.openError);
+    }
+  };
+
   const handleCopyShareCode = async () => {
     await showInterstitialAd(AdInterstitialPlacement.shareCodeCopy);
   };
@@ -255,7 +270,6 @@ function SignedInApp({ session }: { session: Session }) {
     }
 
     setActiveScreen(entryReturnScreen);
-    void showInterstitialAd(AdInterstitialPlacement.entrySaveTest);
     void runEntrySaveSideEffects(
       savedEntries,
       currentEntries,
@@ -282,7 +296,6 @@ function SignedInApp({ session }: { session: Session }) {
     }
 
     setActiveScreen(entryReturnScreen);
-    void showInterstitialAd(AdInterstitialPlacement.entrySaveTest);
     void runQueuedEntrySaveSideEffects(savedEntries, currentEntries);
   };
 
@@ -391,10 +404,10 @@ function SignedInApp({ session }: { session: Session }) {
       <StatusBar barStyle="dark-content" backgroundColor={AppColors.surface} />
       <SafeAreaView edges={["top"]} style={styles.headerSafeArea}>
         <View style={styles.headerShell}>
-          <AppHeader
-            isMenuOpen={isMenuOpen}
-            leadingAction={
-              showsCalendarReturnAction(activeScreen) ? (
+            <AppHeader
+              isMenuOpen={isMenuOpen}
+              leadingAction={
+                showsCalendarReturnAction(activeScreen) ? (
                 <BackToCalendarAction
                   label={
                     activeScreen === "entry" && entryReturnScreen === "all-entries"
@@ -411,11 +424,12 @@ function SignedInApp({ session }: { session: Session }) {
                 />
               ) : null
             }
-            onPressCenterLabel={null}
-            showsCenterLabelIndicator={false}
-            titleLabel={
-              activeScreen === "calendar" ? annualReport.bookName : getAppHeaderTitle(activeScreen)
-            }
+              showsPlusBadge={
+                activeScreen === "calendar" && subscription.currentTier === SubscriptionTiers.plus
+              }
+              titleLabel={
+                activeScreen === "calendar" ? annualReport.bookName : getAppScreenLabel(activeScreen)
+              }
             trailingAction={
               activeScreen === "calendar" || activeScreen === "charts" ? (
                 <AllEntriesAction onPress={handleOpenAllEntries} />
@@ -453,6 +467,7 @@ function SignedInApp({ session }: { session: Session }) {
               onOpenEntry={handleOpenEntry}
               onOpenMonthPicker={handleOpenYearPicker}
               onOpenSubscription={handleOpenSubscription}
+              onOpenSubscriptionManagement={handleOpenSubscriptionManagement}
               onPurchasePlus={handlePurchasePlus}
               onRestorePurchases={handleRestorePurchases}
               onSaveEntry={handleSaveEntry}
@@ -468,6 +483,7 @@ function SignedInApp({ session }: { session: Session }) {
                 ledgerState.handleSelectDate(isoDate);
                 handleOpenCalendar();
               }}
+              plusPriceLabel={subscription.plusPriceLabel}
               showNotificationSettings={notifications.showNotificationSettings}
               subscriptionTier={subscription.currentTier}
               trackBlockingTask={trackBlockingTask}

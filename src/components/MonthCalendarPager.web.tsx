@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Animated, ScrollView, StyleSheet, View } from "react-native";
 
 import { MonthCalendarPageView } from "./monthCalendarPager/MonthCalendarPageView";
@@ -28,6 +28,7 @@ export function MonthCalendarPager({
   const pendingMonthOffsetRef = useRef<-1 | 0 | 1>(0);
   const currentPageKeyRef = useRef<string | null>(null);
   const viewportHeight = useRef(new Animated.Value(currentPage.height)).current;
+  const [isInteractionLocked, setIsInteractionLocked] = useState(false);
 
   useEffect(() => {
     if (!isReadyRef.current) {
@@ -44,11 +45,14 @@ export function MonthCalendarPager({
 
     currentPageKeyRef.current = currentPage.key;
     isResettingRef.current = true;
+    setIsInteractionLocked(true);
     pendingMonthOffsetRef.current = 0;
     scrollToPage(scrollViewRef, CURRENT_PAGE_INDEX, false);
     requestAnimationFrame(() => {
-      isResettingRef.current = false;
-      animateViewportHeight(viewportHeight, currentPage.height);
+      animateViewportHeight(viewportHeight, currentPage.height, () => {
+        isResettingRef.current = false;
+        setIsInteractionLocked(false);
+      });
     });
   }, [currentPage.height, currentPage.key, viewportHeight]);
 
@@ -63,6 +67,7 @@ export function MonthCalendarPager({
       return;
     }
     pendingMonthOffsetRef.current = monthOffset;
+    setIsInteractionLocked(true);
     onMoveMonth(monthOffset);
   };
 
@@ -77,6 +82,7 @@ export function MonthCalendarPager({
           onScrollEndDrag={(event) => handleScrollEnd(event.nativeEvent.contentOffset.y)}
           pagingEnabled
           ref={scrollViewRef}
+          scrollEnabled={!isInteractionLocked}
           scrollEventThrottle={16}
           showsVerticalScrollIndicator={false}
         >

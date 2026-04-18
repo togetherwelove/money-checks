@@ -1,15 +1,18 @@
 import type { ReactNode } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
+import { SubscriptionMessages } from "../constants/subscription";
+import { BrandPlusTextStyle } from "../constants/uiStyles";
+import { SubscriptionPlusLabels } from "../constants/subscriptionPlusLabels";
+
 import { IconActionButton } from "./IconActionButton";
 
 type AppHeaderProps = {
   isMenuOpen?: boolean;
   leadingAction?: ReactNode;
   onOpenMenu: () => void;
-  onPressCenterLabel?: (() => void) | null;
-  showsCenterLabelIndicator?: boolean;
+  showsPlusBadge?: boolean;
   trailingAction?: ReactNode;
   titleLabel?: string | null;
   yearLabel?: string | null;
@@ -19,30 +22,32 @@ export function AppHeader({
   isMenuOpen = false,
   leadingAction = null,
   onOpenMenu,
-  onPressCenterLabel = null,
-  showsCenterLabelIndicator = false,
+  showsPlusBadge = false,
   trailingAction = null,
   titleLabel = null,
   yearLabel = null,
 }: AppHeaderProps) {
   const centerLabel = yearLabel ?? titleLabel;
-  const isCenterLabelPressable = Boolean(centerLabel && onPressCenterLabel);
 
   return (
     <View style={styles.container}>
       <View style={styles.sideSlot}>{leadingAction}</View>
       <View style={styles.titleSlot}>
-        {isCenterLabelPressable ? (
-          <Pressable onPress={onPressCenterLabel} style={styles.titleButton}>
-            <Text numberOfLines={1} style={styles.titleText}>
-              {centerLabel}
-            </Text>
-            {showsCenterLabelIndicator ? <View style={styles.titleIndicator} /> : null}
-          </Pressable>
-        ) : centerLabel ? (
-          <Text numberOfLines={1} style={styles.titleText}>
-            {centerLabel}
-          </Text>
+        {centerLabel ? (
+          <View style={styles.titleRow}>
+            {centerLabel === SubscriptionMessages.screenTitle ? (
+              <Text style={styles.titleText}>
+                {SubscriptionPlusLabels.menuPrefix} <Text style={BrandPlusTextStyle}>plus</Text>
+              </Text>
+            ) : (
+              <>
+                <Text numberOfLines={1} style={styles.titleText}>
+                  {centerLabel}
+                </Text>
+                {showsPlusBadge ? <Text style={BrandPlusTextStyle}>plus</Text> : null}
+              </>
+            )}
+          </View>
         ) : null}
       </View>
       <View style={[styles.sideSlot, styles.trailingSlot]}>
@@ -74,29 +79,16 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 8,
   },
-  titleButton: {
+  titleRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 4,
+    gap: 4,
+    minWidth: 0,
   },
   titleText: {
     color: AppColors.text,
     fontSize: 18,
     fontWeight: "800",
-  },
-  titleIndicator: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 4,
-    borderRightWidth: 4,
-    borderTopWidth: 5,
-    borderLeftColor: "transparent",
-    borderRightColor: "transparent",
-    borderTopColor: AppColors.mutedText,
-    marginTop: 1,
   },
 });

@@ -32,6 +32,7 @@ export type LedgerScreenState = {
   entries: LedgerEntry[];
   isBusy: boolean;
   isLoading: boolean;
+  isLoadingSelectedDateEntries: boolean;
   isRefreshing: boolean;
   joinSharedLedgerBookByCode: (shareCode: string) => Promise<JoinSharedLedgerBookAttempt>;
   leaveSharedLedgerBook: () => Promise<boolean>;

@@ -1,7 +1,6 @@
 import { AdEventType, InterstitialAd } from "react-native-google-mobile-ads";
 
 import {
-  AdInterstitialPlacement,
   type AdInterstitialPlacementKey,
   AdMobInterstitialConfig,
   AdMobTestUnitIds,
@@ -66,7 +65,7 @@ function canShowInterstitialPlacement(placement: AdInterstitialPlacementKey) {
     return true;
   }
 
-  return placement !== AdInterstitialPlacement.entrySaveTest;
+  return true;
 }
 
 function createInterstitialAd(adUnitId: string) {

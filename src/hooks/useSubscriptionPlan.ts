@@ -16,6 +16,7 @@ type SubscriptionPlanState = {
   hasAvailablePlusPackage: boolean;
   isLoading: boolean;
   isPlusActive: boolean;
+  plusPriceLabel: string | null;
   purchasePlus: () => Promise<SubscriptionTier>;
   restorePurchases: () => Promise<SubscriptionTier>;
 };
@@ -24,6 +25,7 @@ export function useSubscriptionPlan(userId: string): SubscriptionPlanState {
   const [currentTier, setCurrentTier] = useState<SubscriptionTier>(SubscriptionTiers.free);
   const [hasAvailablePlusPackage, setHasAvailablePlusPackage] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [plusPriceLabel, setPlusPriceLabel] = useState<string | null>(null);
   const lastSyncedTierRef = useRef<SubscriptionTier | null>(null);
   const syncProfileTier = useCallback(
     async (nextTier: SubscriptionTier) => {
@@ -58,11 +60,13 @@ export function useSubscriptionPlan(userId: string): SubscriptionPlanState {
 
         setCurrentTier(nextSnapshot.tier);
         setHasAvailablePlusPackage(nextSnapshot.hasAvailablePlusPackage);
+        setPlusPriceLabel(nextSnapshot.plusPriceLabel);
         void syncProfileTier(nextSnapshot.tier);
       } catch (error) {
         if (isMounted) {
           setCurrentTier(SubscriptionTiers.free);
           setHasAvailablePlusPackage(false);
+          setPlusPriceLabel(null);
         }
         logAppError("SubscriptionPlan", error, {
           step: "load_subscription_plan",
@@ -97,11 +101,13 @@ export function useSubscriptionPlan(userId: string): SubscriptionPlanState {
     hasAvailablePlusPackage,
     isLoading,
     isPlusActive: currentTier === SubscriptionTiers.plus,
+    plusPriceLabel,
     purchasePlus: async () => {
       await configureSubscriptionClient(userId);
       const nextSnapshot = await purchasePlusPackage();
       setCurrentTier(nextSnapshot.tier);
       setHasAvailablePlusPackage(nextSnapshot.hasAvailablePlusPackage);
+      setPlusPriceLabel(nextSnapshot.plusPriceLabel);
       void syncProfileTier(nextSnapshot.tier);
       return nextSnapshot.tier;
     },
@@ -110,6 +116,7 @@ export function useSubscriptionPlan(userId: string): SubscriptionPlanState {
       const nextSnapshot = await restoreSubscriptionPurchases();
       setCurrentTier(nextSnapshot.tier);
       setHasAvailablePlusPackage(nextSnapshot.hasAvailablePlusPackage);
+      setPlusPriceLabel(nextSnapshot.plusPriceLabel);
       void syncProfileTier(nextSnapshot.tier);
       return nextSnapshot.tier;
     },

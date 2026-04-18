@@ -46,6 +46,67 @@ export async function fetchLedgerEntries(
   return mapLedgerEntries(data ?? []);
 }
 
+export async function fetchLedgerEntriesSummary(
+  bookId: string,
+  dateFrom?: string,
+  dateTo?: string,
+  options?: {
+    ascending?: boolean;
+    orderBy?: "created_at" | "occurred_on";
+  },
+): Promise<LedgerEntry[]> {
+  let query = supabase
+    .from(LEDGER_TABLE)
+    .select("*")
+    .eq("book_id", bookId)
+    .order(options?.orderBy ?? "occurred_on", { ascending: options?.ascending ?? true });
+
+  if (dateFrom) {
+    query = query.gte("occurred_on", dateFrom);
+  }
+
+  if (dateTo) {
+    query = query.lte("occurred_on", dateTo);
+  }
+
+  const { data, error } = await query.returns<LedgerEntryRow[]>();
+
+  if (error) {
+    throw error;
+  }
+
+  return mapLedgerEntrySummaries(data ?? []);
+}
+
+export async function fetchLedgerEntriesPage(
+  bookId: string,
+  params: {
+    limit: number;
+    offset: number;
+    ascending?: boolean;
+    orderBy?: "created_at" | "occurred_on";
+  },
+): Promise<{ entries: LedgerEntry[]; hasMore: boolean }> {
+  const { limit, offset, ascending = false, orderBy = "created_at" } = params;
+  const { data, error } = await supabase
+    .from(LEDGER_TABLE)
+    .select("*")
+    .eq("book_id", bookId)
+    .order(orderBy, { ascending })
+    .range(offset, offset + limit - 1)
+    .returns<LedgerEntryRow[]>();
+
+  if (error) {
+    throw error;
+  }
+
+  const rows = data ?? [];
+  return {
+    entries: await mapLedgerEntriesWithoutPhotoAttachments(rows),
+    hasMore: rows.length === limit,
+  };
+}
+
 export async function fetchFirstLedgerEntryDate(bookId: string): Promise<string | null> {
   const { data, error } = await supabase
     .from(LEDGER_TABLE)
@@ -263,6 +324,18 @@ async function mapLedgerEntries(rows: LedgerEntryRow[]): Promise<LedgerEntry[]> 
     ...mapLedgerEntryRow(row, authorNameMap.get(row.user_id) ?? DEFAULT_MEMBER_DISPLAY_NAME),
     photoAttachments: photoAttachmentMap.get(row.id) ?? [],
   }));
+}
+
+async function mapLedgerEntriesWithoutPhotoAttachments(rows: LedgerEntryRow[]): Promise<LedgerEntry[]> {
+  const authorNameMap = await fetchAuthorNameMap(rows);
+  return rows.map((row) => ({
+    ...mapLedgerEntryRow(row, authorNameMap.get(row.user_id) ?? DEFAULT_MEMBER_DISPLAY_NAME),
+    photoAttachments: [],
+  }));
+}
+
+function mapLedgerEntrySummaries(rows: LedgerEntryRow[]): LedgerEntry[] {
+  return rows.map((row) => mapLedgerEntryRow(row));
 }
 
 async function fetchAuthorNameMap(rows: LedgerEntryRow[]): Promise<Map<string, string>> {

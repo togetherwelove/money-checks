@@ -63,6 +63,15 @@ export const CompactLabelTextStyle: TextStyle = {
   fontWeight: "600",
 };
 
+export const BrandPlusTextStyle: TextStyle = {
+  color: AppColors.accent,
+  fontSize: 14,
+  fontStyle: "italic",
+  fontWeight: "800",
+  letterSpacing: 0.8,
+  textTransform: "lowercase",
+};
+
 export const FormInputTextStyle: TextStyle = {
   ...FormInputBaseStyle,
   height: FORM_INPUT_HEIGHT,

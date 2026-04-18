@@ -6,17 +6,22 @@ import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { AppColors, AppGradientColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import { SubscriptionMessages } from "../constants/subscription";
+import { SubscriptionBenefitMessages } from "../constants/subscriptionBenefits";
+import { SubscriptionPlusLabels } from "../constants/subscriptionPlusLabels";
+import { BrandPlusTextStyle } from "../constants/uiStyles";
 
 type SubscriptionScreenProps = {
   hasAvailablePlusPackage: boolean;
   isPlusActive: boolean;
   onPurchasePlus: () => Promise<void>;
+  plusPriceLabel: string | null;
 };
 
 export function SubscriptionScreen({
   hasAvailablePlusPackage,
   isPlusActive,
   onPurchasePlus,
+  plusPriceLabel,
 }: SubscriptionScreenProps) {
   return (
     <View style={styles.screen}>
@@ -52,9 +57,16 @@ export function SubscriptionScreen({
             >
               {SubscriptionMessages.heroDescription}
             </Text>
-            <Text style={styles.priceLabel}>{SubscriptionMessages.heroPriceLabel}</Text>
           </View>
-
+          <View style={styles.benefitSection}>
+            <View style={styles.benefitList}>
+              {SubscriptionBenefitMessages.items.map((item) => (
+                <Text key={item} style={styles.benefitItem}>
+                  {item}
+                </Text>
+              ))}
+            </View>
+          </View>
           <View style={styles.ctaSection}>
             {isPlusActive ? (
               <View style={styles.activeChip}>
@@ -64,6 +76,13 @@ export function SubscriptionScreen({
               <ActionButton
                 fullWidth
                 label={SubscriptionMessages.purchaseAction}
+                labelContent={
+                  <Text style={styles.purchaseButtonText}>
+                    {SubscriptionPlusLabels.purchaseActionPrefix}{" "}
+                    <Text style={styles.purchaseButtonPlusText}>plus</Text>{" "}
+                    {SubscriptionPlusLabels.purchaseActionSuffix}
+                  </Text>
+                }
                 onPress={() => {
                   void onPurchasePlus();
                 }}
@@ -73,6 +92,9 @@ export function SubscriptionScreen({
             ) : (
               <Text style={styles.unavailableSummary}>{SubscriptionMessages.purchaseError}</Text>
             )}
+            <Text style={styles.priceDetailLabel}>
+              {plusPriceLabel ?? SubscriptionMessages.heroPriceLabel}
+            </Text>
           </View>
         </View>
       </KeyboardAwareScrollView>
@@ -115,12 +137,14 @@ const styles = StyleSheet.create({
   },
   salesContent: {
     alignItems: "center",
-    gap: 28,
+    gap: 44,
   },
   copySection: {
+    width: "100%",
     alignItems: "center",
-    gap: 36,
-    paddingHorizontal: 12,
+  },
+  benefitSection: {
+    width: "100%",
   },
   description: {
     color: AppColors.text,
@@ -128,24 +152,30 @@ const styles = StyleSheet.create({
     lineHeight: 38,
     fontWeight: "800",
     textAlign: "center",
-  },
-  priceLabel: {
-    color: AppColors.text,
-    fontSize: 22,
-    lineHeight: 28,
-    fontWeight: "700",
-    textAlign: "center",
+    paddingHorizontal: 12,
   },
   ctaSection: {
     width: "100%",
     alignItems: "center",
+    gap: 10,
+  },
+  benefitList: {
+    width: "100%",
+    gap: 8,
+  },
+  benefitItem: {
+    color: AppColors.text,
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: "600",
+    textAlign: "center",
   },
   activeChip: {
-    width: "100%",
     borderRadius: 999,
     backgroundColor: AppColors.primary,
     paddingHorizontal: 16,
     paddingVertical: 14,
+    opacity: 0.45
   },
   activeChipText: {
     color: AppColors.inverseText,
@@ -153,10 +183,27 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     textAlign: "center",
   },
+  purchaseButtonText: {
+    color: AppColors.inverseText,
+    fontSize: 15,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  purchaseButtonPlusText: {
+    ...BrandPlusTextStyle,
+    color: AppColors.inverseText,
+  },
   unavailableSummary: {
     color: AppColors.mutedText,
     fontSize: 14,
     lineHeight: 20,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  priceDetailLabel: {
+    color: AppColors.mutedStrongText,
+    fontSize: 13,
+    lineHeight: 18,
     fontWeight: "600",
     textAlign: "center",
   },

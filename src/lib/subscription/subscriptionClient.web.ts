@@ -2,6 +2,7 @@ import { type SubscriptionTier, SubscriptionTiers } from "../../constants/subscr
 
 type SubscriptionSnapshot = {
   hasAvailablePlusPackage: boolean;
+  plusPriceLabel: string | null;
   tier: SubscriptionTier;
 };
 
@@ -10,6 +11,7 @@ export async function configureSubscriptionClient(_appUserId: string): Promise<v
 export async function loadSubscriptionSnapshot(): Promise<SubscriptionSnapshot> {
   return {
     hasAvailablePlusPackage: false,
+    plusPriceLabel: null,
     tier: SubscriptionTiers.free,
   };
 }

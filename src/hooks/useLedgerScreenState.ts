@@ -30,6 +30,7 @@ import { useActiveLedgerBook } from "./ledgerScreenState/useActiveLedgerBook";
 import { useLedgerDayNotes } from "./ledgerScreenState/useLedgerDayNotes";
 import { useLedgerEntries } from "./ledgerScreenState/useLedgerEntries";
 import { useLedgerJoinRequests } from "./ledgerScreenState/useLedgerJoinRequests";
+import { useSelectedDateEntries } from "./ledgerScreenState/useSelectedDateEntries";
 
 export type { LedgerScreenState } from "./ledgerScreenState/types";
 
@@ -64,6 +65,26 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
     refreshLedger,
     setEntries,
   } = useLedgerEntries(activeBook?.id ?? null, visibleMonth);
+  const selectedDateSummaryEntries = useMemo(
+    () => entries.filter((entry) => entry.date === selectedDate),
+    [entries, selectedDate],
+  );
+  const selectedDateEntrySignature = useMemo(
+    () =>
+      selectedDateSummaryEntries
+        .map(
+          (entry) =>
+            `${entry.id}:${entry.amount}:${entry.content}:${entry.category}:${entry.note}:${entry.type}`,
+        )
+        .join("|"),
+    [selectedDateSummaryEntries],
+  );
+  const {
+    isLoadingSelectedDateEntries,
+    refreshSelectedDateEntries,
+    selectedEntries,
+    selectedEntriesError,
+  } = useSelectedDateEntries(activeBook?.id ?? null, selectedDate, selectedDateEntrySignature);
 
   const monthlyLedger = useMemo(
     () => getMonthlyLedgerFromCache(dateNoteByDate, entryCache, visibleMonth),
@@ -72,10 +93,6 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
   const monthlyInsights = useMemo(
     () => getMonthlyInsightsFromCache(entryCache, visibleMonth),
     [entryCache, visibleMonth],
-  );
-  const selectedEntries = useMemo(
-    () => entries.filter((entry) => entry.date === selectedDate),
-    [entries, selectedDate],
   );
   const previousMonthPage = useMemo<MonthPage>(
     () => getMonthPageFromCache(dateNoteByDate, entryCache, addMonths(visibleMonth, -1)),
@@ -276,9 +293,9 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
     });
   };
 
-  const errorMessage = activeBookError ?? entriesError;
+  const errorMessage = activeBookError ?? entriesError ?? selectedEntriesError;
   const handleRefreshLedger = async () => {
-    await Promise.all([refreshLedger(), refreshLedgerDayNotes()]);
+    await Promise.all([refreshLedger(), refreshLedgerDayNotes(), refreshSelectedDateEntries()]);
   };
   const handleSaveSelectedDateNote = async (note: string) => {
     await saveLedgerDayNote(selectedDate, note);
@@ -296,6 +313,7 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
     entries,
     isBusy: busyTaskCount > 0,
     isLoading: isLoadingBook || isLoadingEntries,
+    isLoadingSelectedDateEntries,
     isRefreshing,
     joinSharedLedgerBookByCode,
     leaveSharedLedgerBook,
