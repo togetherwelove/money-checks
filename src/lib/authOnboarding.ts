@@ -16,6 +16,7 @@ type AuthOnboardingStorage = {
 type ResolveAuthOnboardingStepOptions = {
   hasCompletedNicknameOnboarding: boolean;
   hasCompletedPermissionOnboarding: boolean;
+  hasResolvedDisplayName: boolean;
   isNotificationSupported: boolean;
   permissionState: NotificationPermissionState;
 };
@@ -23,7 +24,7 @@ type ResolveAuthOnboardingStepOptions = {
 export function resolveAuthOnboardingStep(
   options: ResolveAuthOnboardingStepOptions,
 ): AuthOnboardingStep {
-  if (!options.hasCompletedNicknameOnboarding) {
+  if (!options.hasCompletedNicknameOnboarding && !options.hasResolvedDisplayName) {
     return "nickname";
   }
 

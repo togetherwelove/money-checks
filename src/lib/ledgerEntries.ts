@@ -84,17 +84,36 @@ export async function fetchLedgerEntriesPage(
     limit: number;
     offset: number;
     ascending?: boolean;
+    category?: string | null;
     orderBy?: "created_at" | "occurred_on";
+    searchQuery?: string;
   },
 ): Promise<{ entries: LedgerEntry[]; hasMore: boolean }> {
-  const { limit, offset, ascending = false, orderBy = "created_at" } = params;
-  const { data, error } = await supabase
+  const {
+    limit,
+    offset,
+    ascending = false,
+    category,
+    orderBy = "created_at",
+    searchQuery,
+  } = params;
+  let query = supabase
     .from(LEDGER_TABLE)
     .select("*")
     .eq("book_id", bookId)
     .order(orderBy, { ascending })
-    .range(offset, offset + limit - 1)
-    .returns<LedgerEntryRow[]>();
+    .range(offset, offset + limit - 1);
+
+  if (category) {
+    query = query.eq("category", category);
+  }
+
+  const normalizedSearchQuery = normalizeLedgerEntrySearchQuery(searchQuery);
+  if (normalizedSearchQuery) {
+    query = query.or(buildLedgerEntrySearchFilter(normalizedSearchQuery));
+  }
+
+  const { data, error } = await query.returns<LedgerEntryRow[]>();
 
   if (error) {
     throw error;
@@ -105,6 +124,15 @@ export async function fetchLedgerEntriesPage(
     entries: await mapLedgerEntriesWithoutPhotoAttachments(rows),
     hasMore: rows.length === limit,
   };
+}
+
+function normalizeLedgerEntrySearchQuery(searchQuery?: string): string {
+  return searchQuery?.trim() ?? "";
+}
+
+function buildLedgerEntrySearchFilter(searchQuery: string): string {
+  const escapedQuery = searchQuery.replaceAll(",", "\\,");
+  return `content.ilike.%${escapedQuery}%,note.ilike.%${escapedQuery}%`;
 }
 
 export async function fetchFirstLedgerEntryDate(bookId: string): Promise<string | null> {

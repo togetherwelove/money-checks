@@ -6,10 +6,23 @@ describe("resolveAuthOnboardingStep", () => {
       resolveAuthOnboardingStep({
         hasCompletedNicknameOnboarding: false,
         hasCompletedPermissionOnboarding: false,
+        hasResolvedDisplayName: false,
         isNotificationSupported: true,
         permissionState: "default",
       }),
     ).toBe("nickname");
+  });
+
+  it("skips nickname onboarding when a usable display name is already available", () => {
+    expect(
+      resolveAuthOnboardingStep({
+        hasCompletedNicknameOnboarding: false,
+        hasCompletedPermissionOnboarding: false,
+        hasResolvedDisplayName: true,
+        isNotificationSupported: true,
+        permissionState: "default",
+      }),
+    ).toBe("notification-permission");
   });
 
   it("shows permission onboarding after nickname when permission is still undecided", () => {
@@ -17,6 +30,7 @@ describe("resolveAuthOnboardingStep", () => {
       resolveAuthOnboardingStep({
         hasCompletedNicknameOnboarding: true,
         hasCompletedPermissionOnboarding: false,
+        hasResolvedDisplayName: false,
         isNotificationSupported: true,
         permissionState: "default",
       }),
@@ -28,6 +42,7 @@ describe("resolveAuthOnboardingStep", () => {
       resolveAuthOnboardingStep({
         hasCompletedNicknameOnboarding: true,
         hasCompletedPermissionOnboarding: false,
+        hasResolvedDisplayName: false,
         isNotificationSupported: true,
         permissionState: "granted",
       }),
@@ -39,6 +54,7 @@ describe("resolveAuthOnboardingStep", () => {
       resolveAuthOnboardingStep({
         hasCompletedNicknameOnboarding: true,
         hasCompletedPermissionOnboarding: false,
+        hasResolvedDisplayName: false,
         isNotificationSupported: true,
         permissionState: "default",
       }),

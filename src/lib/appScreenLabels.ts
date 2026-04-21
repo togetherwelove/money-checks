@@ -1,5 +1,7 @@
 import { AllEntriesCopy } from "../constants/allEntries";
+import { HelpCopy } from "../constants/help";
 import { AppMessages } from "../constants/messages";
+import { SupportMessages } from "../constants/support";
 import { SubscriptionMessages } from "../constants/subscription";
 import { SupportContactCopy } from "../constants/supportContact";
 import { NotificationUiCopy } from "../notifications/config/notificationCopy";
@@ -12,8 +14,10 @@ export const AppScreenLabels: Record<LedgerAppScreen, string> = {
   charts: AppMessages.chartScreenTitle,
   "contact-support": SupportContactCopy.screenTitle,
   entry: AppMessages.entryScreenTitle,
+  help: HelpCopy.screenTitle,
   "notification-settings": NotificationUiCopy.screenTitle,
   share: AppMessages.shareTitle,
+  support: SupportMessages.screenTitle,
   subscription: SubscriptionMessages.screenTitle,
 };
 

@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import type { ComponentRef } from "react";
 import { InteractionManager, StyleSheet, Text, View } from "react-native";
 
+import { AppBannerAd } from "../components/AppBannerAd";
 import { EntryDatePickerModal } from "../components/EntryDatePickerModal";
 import { EntryDateToolbar } from "../components/EntryDateToolbar";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
@@ -30,6 +31,7 @@ type EntryScreenProps = {
   onSaveEntry: () => Promise<void>;
   onSaveEntries: (drafts: LedgerEntryDraft[]) => Promise<void>;
   onSettleInstallmentEntry: (entry: LedgerEntry) => Promise<void>;
+  showsBannerAd: boolean;
   state: LedgerScreenState;
 };
 
@@ -39,6 +41,7 @@ export function EntryScreen({
   onSaveEntry,
   onSaveEntries,
   onSettleInstallmentEntry,
+  showsBannerAd,
   state,
 }: EntryScreenProps) {
   const actualToday = new Date();
@@ -217,6 +220,7 @@ export function EntryScreen({
           onPressDateLabel={() => handleOpenDatePicker({ kind: "draft" })}
           showMoveToToday={selectedDate !== todayIsoDate}
         />
+        {showsBannerAd ? <AppBannerAd /> : null}
         <LedgerEditorPanel
           canQueueEntry={canQueueEntry}
           draft={draft}

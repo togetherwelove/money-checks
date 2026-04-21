@@ -1,14 +1,20 @@
+import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { ActionButton } from "../components/ActionButton";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
+import { TextLinkButton } from "../components/TextLinkButton";
 import { AppColors, AppGradientColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
+import { LegalLinks } from "../constants/legal";
+import { SubscriptionDetailCopy } from "../constants/subscriptionDetails";
 import { SubscriptionMessages } from "../constants/subscription";
 import { SubscriptionBenefitMessages } from "../constants/subscriptionBenefits";
 import { SubscriptionPlusLabels } from "../constants/subscriptionPlusLabels";
-import { BrandPlusTextStyle } from "../constants/uiStyles";
+import { BrandPlusTextStyle, CompactLabelTextStyle, SurfaceCardStyle } from "../constants/uiStyles";
+import { showNativeToast } from "../lib/nativeToast";
 
 type SubscriptionScreenProps = {
   hasAvailablePlusPackage: boolean;
@@ -23,6 +29,16 @@ export function SubscriptionScreen({
   onPurchasePlus,
   plusPriceLabel,
 }: SubscriptionScreenProps) {
+  const [isPurchaseInfoExpanded, setIsPurchaseInfoExpanded] = useState(false);
+  const resolvedPlusPriceLabel = plusPriceLabel ?? SubscriptionMessages.heroPriceLabel;
+  const handleOpenLegalLink = async (url: string) => {
+    try {
+      await Linking.openURL(url);
+    } catch {
+      showNativeToast(SubscriptionDetailCopy.legalLinkError);
+    }
+  };
+
   return (
     <View style={styles.screen}>
       <LinearGradient
@@ -92,9 +108,62 @@ export function SubscriptionScreen({
             ) : (
               <Text style={styles.unavailableSummary}>{SubscriptionMessages.purchaseError}</Text>
             )}
-            <Text style={styles.priceDetailLabel}>
-              {plusPriceLabel ?? SubscriptionMessages.heroPriceLabel}
-            </Text>
+            <Text style={styles.priceDetailLabel}>{resolvedPlusPriceLabel}</Text>
+          </View>
+          <View style={styles.detailSection}>
+            <Pressable
+              onPress={() => setIsPurchaseInfoExpanded((currentValue) => !currentValue)}
+              style={styles.detailToggle}
+            >
+              <Text style={styles.detailToggleLabel}>
+                {isPurchaseInfoExpanded
+                  ? SubscriptionDetailCopy.collapseAction
+                  : SubscriptionDetailCopy.expandAction}
+              </Text>
+              <Feather
+                color={AppColors.mutedStrongText}
+                name={isPurchaseInfoExpanded ? "chevron-up" : "chevron-down"}
+                size={16}
+              />
+            </Pressable>
+            {isPurchaseInfoExpanded ? (
+              <View style={styles.purchaseInfoCard}>
+                <View style={[styles.purchaseInfoRow, styles.purchaseInfoFirstRow]}>
+                  <Text style={styles.purchaseInfoLabel}>
+                    {SubscriptionMessages.purchaseInfoNameLabel}
+                  </Text>
+                  <Text style={styles.purchaseInfoValue}>{SubscriptionMessages.screenTitle}</Text>
+                </View>
+                <View style={styles.purchaseInfoRow}>
+                  <Text style={styles.purchaseInfoLabel}>
+                    {SubscriptionMessages.purchaseInfoPeriodLabel}
+                  </Text>
+                  <Text style={styles.purchaseInfoValue}>
+                    {SubscriptionMessages.purchaseInfoDefaultPeriodValue}
+                  </Text>
+                </View>
+                <View style={[styles.purchaseInfoRow, styles.purchaseInfoLastRow]}>
+                  <Text style={styles.purchaseInfoLabel}>
+                    {SubscriptionMessages.purchaseInfoPriceLabel}
+                  </Text>
+                  <Text style={styles.purchaseInfoValue}>{resolvedPlusPriceLabel}</Text>
+                </View>
+                <View style={styles.legalLinkRow}>
+                  <TextLinkButton
+                    label={SubscriptionDetailCopy.privacyPolicyAction}
+                    onPress={() => {
+                      void handleOpenLegalLink(LegalLinks.privacyPolicyUrl);
+                    }}
+                  />
+                  <TextLinkButton
+                    label={SubscriptionDetailCopy.termsOfUseAction}
+                    onPress={() => {
+                      void handleOpenLegalLink(LegalLinks.termsOfUseUrl);
+                    }}
+                  />
+                </View>
+              </View>
+            ) : null}
           </View>
         </View>
       </KeyboardAwareScrollView>
@@ -146,6 +215,57 @@ const styles = StyleSheet.create({
   benefitSection: {
     width: "100%",
   },
+  detailSection: {
+    width: "100%",
+    alignItems: "center",
+    gap: 10,
+  },
+  detailToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+  },
+  detailToggleLabel: {
+    color: AppColors.mutedStrongText,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: "700",
+  },
+  purchaseInfoCard: {
+    ...SurfaceCardStyle,
+    width: "100%",
+  },
+  purchaseInfoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderBottomWidth: 1,
+    paddingVertical: 12,
+    borderBottomColor: AppColors.border,
+  },
+  purchaseInfoLastRow: {
+    borderBottomWidth: 0,
+  },
+  purchaseInfoFirstRow: {
+    paddingTop: 0,
+  },
+  legalLinkRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: AppColors.border,
+  },
+  purchaseInfoLabel: CompactLabelTextStyle,
+  purchaseInfoValue: {
+    color: AppColors.text,
+    fontSize: 15,
+    fontWeight: "700",
+    textAlign: "right",
+    flexShrink: 1,
+  },
   description: {
     color: AppColors.text,
     fontSize: 28,
@@ -175,7 +295,7 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.primary,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    opacity: 0.45
+    opacity: 0.45,
   },
   activeChipText: {
     color: AppColors.inverseText,

@@ -15,6 +15,7 @@ import { BackToCalendarAction } from "./src/components/BackToCalendarAction";
 import { BlockingOverlay } from "./src/components/BlockingOverlay";
 import { OnboardingTransitionScreen } from "./src/components/OnboardingTransitionScreen";
 import { ScreenSlideTransition } from "./src/components/ScreenSlideTransition";
+import { SessionLoadingScreen } from "./src/components/SessionLoadingScreen";
 import { AnnualReportRangePickerModal } from "./src/components/annualReport/AnnualReportRangePickerModal";
 import { NativeYearPickerModal } from "./src/components/calendarPicker/NativeYearPickerModal";
 import { AllEntriesCopy } from "./src/constants/allEntries";
@@ -22,12 +23,14 @@ import { AdInterstitialPlacement } from "./src/constants/ads";
 import { AppColors } from "./src/constants/colors";
 import { EntryRegistrationCopy } from "./src/constants/entryRegistration";
 import { AppMessages } from "./src/constants/messages";
+import { SupportMessages, type SupportPackageIdentifier } from "./src/constants/support";
 import { SubscriptionMessages, SubscriptionTiers } from "./src/constants/subscription";
 import { SubscriptionManagementMessages } from "./src/constants/subscriptionManagement";
 import { useAnnualLedgerReportAction } from "./src/hooks/useAnnualLedgerReportAction";
 import { useAuthOnboarding } from "./src/hooks/useAuthOnboarding";
 import { useLedgerNotifications } from "./src/hooks/useLedgerNotifications";
 import { useLedgerScreenState } from "./src/hooks/useLedgerScreenState";
+import { useSupportPackages } from "./src/hooks/useSupportPackages";
 import { useSubscriptionPlan } from "./src/hooks/useSubscriptionPlan";
 import { useSupabaseSession } from "./src/hooks/useSupabaseSession";
 import { preloadInterstitialAd, showInterstitialAd } from "./src/lib/ads/interstitialAd";
@@ -37,7 +40,7 @@ import { getAppScreenLabel } from "./src/lib/appScreenLabels";
 import { showsCalendarReturnAction } from "./src/lib/appHeaderTitle";
 import { resolveSessionAuthProviderLabel } from "./src/lib/authProvider";
 import { logAppError } from "./src/lib/logAppError";
-import { buildAppMenuItems } from "./src/lib/menuItems";
+import { buildAppMenuSections } from "./src/lib/menuItems";
 import { showNativeToast } from "./src/lib/nativeToast";
 import { fetchOwnProfileDisplayName, updateOwnProfileDisplayName } from "./src/lib/profiles";
 import { isSubscriptionPurchaseCancelled } from "./src/lib/subscription/subscriptionError";
@@ -64,7 +67,7 @@ export default function App() {
         <RootSiblingParent>
           {isLoading ? (
             <SignedOutAppShell>
-              <Text style={styles.loadingText}>{AppMessages.authLoading}</Text>
+              <SessionLoadingScreen />
             </SignedOutAppShell>
           ) : !session ? (
             <SignedOutAppShell>
@@ -106,10 +109,11 @@ function SignedInApp({ session }: { session: Session }) {
   const accountProviderLabel = resolveSessionAuthProviderLabel(session);
   const notifications = useLedgerNotifications(session.user.id);
   const subscription = useSubscriptionPlan(session.user.id);
+  const supportPackages = useSupportPackages(session.user.id);
   const ledgerState = useLedgerScreenState(session);
   const annualReport = useAnnualLedgerReportAction({
     activeBook: ledgerState.activeBook,
-    onAfterDownloadReport: async () => {
+    onBeforeDownloadReport: async () => {
       await showInterstitialAd(AdInterstitialPlacement.annualReportDownload);
     },
     visibleMonth: ledgerState.visibleMonth,
@@ -160,7 +164,7 @@ function SignedInApp({ session }: { session: Session }) {
   const handleOpenAllEntries = () => setActiveScreen("all-entries");
   const handleOpenEntry = () => handleOpenEntryScreen("calendar");
   const handleOpenSubscription = () => setActiveScreen("subscription");
-  const menuItems = buildAppMenuItems(notifications.showNotificationSettings);
+  const menuSections = buildAppMenuSections(notifications.showNotificationSettings);
   const handleOpenYearPicker = () => {
     if (activeScreen !== "calendar") {
       return;
@@ -219,6 +223,24 @@ function SignedInApp({ session }: { session: Session }) {
     }
   };
 
+  const handlePurchaseSupportPackage = async (identifier: SupportPackageIdentifier) => {
+    try {
+      await trackBlockingTask(() => supportPackages.purchasePackage(identifier));
+      showNativeToast(SupportMessages.purchaseSuccess);
+    } catch (error) {
+      if (isSubscriptionPurchaseCancelled(error)) {
+        return;
+      }
+
+      logAppError("App", error, {
+        identifier,
+        step: "purchase_support_package",
+        userId: session.user.id,
+      });
+      showNativeToast(SupportMessages.purchaseError);
+    }
+  };
+
   const handleRestorePurchases = async () => {
     try {
       const nextTier = await trackBlockingTask(() => subscription.restorePurchases());
@@ -248,7 +270,7 @@ function SignedInApp({ session }: { session: Session }) {
     }
   };
 
-  const handleCopyShareCode = async () => {
+  const handleBeforeCopyShareCode = async () => {
     await showInterstitialAd(AdInterstitialPlacement.shareCodeCopy);
   };
 
@@ -371,7 +393,7 @@ function SignedInApp({ session }: { session: Session }) {
   if (authOnboarding.isLoading) {
     return (
       <SignedOutAppShell>
-        <Text style={styles.loadingText}>{AppMessages.authLoading}</Text>
+        <SessionLoadingScreen />
       </SignedOutAppShell>
     );
   }
@@ -456,7 +478,7 @@ function SignedInApp({ session }: { session: Session }) {
               notificationStatusMessage={notifications.statusMessage}
               onChangeNotificationThresholdEnabled={notifications.updateThresholdEnabled}
               onChangeNotificationThreshold={notifications.updateThresholdValue}
-              onCopyShareCode={handleCopyShareCode}
+              onBeforeCopyShareCode={handleBeforeCopyShareCode}
               onDeleteSelectedEntry={handleDeleteEntryFromCalendar}
               onEditSelectedEntry={
                 activeScreen === "all-entries"
@@ -468,6 +490,7 @@ function SignedInApp({ session }: { session: Session }) {
               onOpenMonthPicker={handleOpenYearPicker}
               onOpenSubscription={handleOpenSubscription}
               onOpenSubscriptionManagement={handleOpenSubscriptionManagement}
+              onPurchaseSupportPackage={handlePurchaseSupportPackage}
               onPurchasePlus={handlePurchasePlus}
               onRestorePurchases={handleRestorePurchases}
               onSaveEntry={handleSaveEntry}
@@ -485,6 +508,8 @@ function SignedInApp({ session }: { session: Session }) {
               }}
               plusPriceLabel={subscription.plusPriceLabel}
               showNotificationSettings={notifications.showNotificationSettings}
+              supportPackages={supportPackages.packages}
+              supportPackagesLoading={supportPackages.isLoading}
               subscriptionTier={subscription.currentTier}
               trackBlockingTask={trackBlockingTask}
               userId={session.user.id}
@@ -493,7 +518,6 @@ function SignedInApp({ session }: { session: Session }) {
         </View>
         <AppMenuDrawer
           isOpen={isMenuOpen}
-          items={menuItems}
           onClose={() => setIsMenuOpen(false)}
           onSelectItem={(targetScreen) => {
             setIsMenuOpen(false);
@@ -505,6 +529,7 @@ function SignedInApp({ session }: { session: Session }) {
             }
             setActiveScreen(targetScreen);
           }}
+          sections={menuSections}
         />
         <NativeYearPickerModal
           isOpen={activeScreen === "calendar" && appPlatform.isIOS && isYearPickerOpen}
@@ -680,10 +705,5 @@ const styles = StyleSheet.create({
   signedOutBody: {
     flex: 1,
     backgroundColor: AppColors.background,
-  },
-  loadingText: {
-    margin: 16,
-    color: AppColors.text,
-    fontSize: 14,
   },
 });

@@ -1,6 +1,6 @@
 import type { SubscriptionTier } from "../constants/subscription";
 import type { ProfileDisplayRow, ProfileSubscriptionRow } from "../types/supabase";
-import { isValidDisplayName } from "../utils/displayName";
+import { isValidDisplayName, normalizeDisplayNameCandidate } from "../utils/displayName";
 import {
   getCachedProfileDisplayName,
   setCachedProfileDisplayName,
@@ -57,6 +57,21 @@ export async function updateOwnProfileDisplayName(
   const nextDisplayName = data.display_name ?? "";
   setCachedProfileDisplayName(userId, nextDisplayName);
   return nextDisplayName;
+}
+
+export async function syncOwnProfileDisplayNameIfMissing(
+  userId: string,
+  fallbackDisplayName: string,
+): Promise<string> {
+  const currentDisplayName = await fetchOwnProfileDisplayName(userId);
+  const normalizedCurrentDisplayName = normalizeDisplayNameCandidate(currentDisplayName);
+  const normalizedFallbackDisplayName = normalizeDisplayNameCandidate(fallbackDisplayName);
+
+  if (normalizedCurrentDisplayName || !normalizedFallbackDisplayName) {
+    return currentDisplayName;
+  }
+
+  return updateOwnProfileDisplayName(userId, normalizedFallbackDisplayName);
 }
 
 export async function updateOwnSubscriptionTier(

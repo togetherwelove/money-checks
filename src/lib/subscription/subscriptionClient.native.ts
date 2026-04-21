@@ -52,10 +52,7 @@ export async function loadSubscriptionSnapshot(): Promise<SubscriptionSnapshot> 
 
   return {
     hasAvailablePlusPackage: Boolean(currentPlusPackage),
-    plusPriceLabel: formatSubscriptionPriceLabel(
-      currentPlusPackage?.product.priceString ?? null,
-      currentPlusPackage?.product.subscriptionPeriod ?? null,
-    ),
+    plusPriceLabel: formatSubscriptionPriceLabel(currentPlusPackage?.product.priceString ?? null),
     tier: resolveSubscriptionTier(customerInfo),
   };
 }

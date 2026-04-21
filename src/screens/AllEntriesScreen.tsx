@@ -1,5 +1,15 @@
-import { useMemo } from "react";
-import { Alert, FlatList, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { useDeferredValue, useMemo, useState } from "react";
+import {
+  Alert,
+  FlatList,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 
 import { AppNativeAdCard } from "../components/AppNativeAdCard";
 import { LedgerEntryListItem } from "../components/LedgerEntryListItem";
@@ -8,9 +18,11 @@ import { AppColors } from "../constants/colors";
 import { CommonActionCopy } from "../constants/commonActions";
 import { AppLayout } from "../constants/layout";
 import { AppMessages } from "../constants/messages";
+import { FormInputTextStyle } from "../constants/uiStyles";
 import type { BusyTaskTracker } from "../hooks/ledgerScreenState/types";
 import { useAllLedgerEntries } from "../hooks/useAllLedgerEntries";
 import { useLedgerCategoryIconMap } from "../hooks/useLedgerCategoryIconMap";
+import { useLedgerCategoryLabels } from "../hooks/useLedgerCategoryLabels";
 import { buildAllEntriesFeedItems } from "../lib/allEntriesFeedItems";
 import type { LedgerEntry } from "../types/ledger";
 import type { LedgerBook } from "../types/ledgerBook";
@@ -30,6 +42,10 @@ export function AllEntriesScreen({
   showsNativeAds,
   trackBlockingTask,
 }: AllEntriesScreenProps) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const deferredSearchQuery = useDeferredValue(searchQuery.trim());
+  const categoryLabels = useLedgerCategoryLabels();
   const categoryIconByLabel = useLedgerCategoryIconMap();
   const {
     entries,
@@ -43,8 +59,11 @@ export function AllEntriesScreen({
   } =
     useAllLedgerEntries({
       activeBookId: activeBook?.id ?? null,
+      selectedCategory,
+      searchQuery: deferredSearchQuery,
       trackBlockingTask,
     });
+  const isSearching = deferredSearchQuery.length > 0;
   const feedItems = useMemo(() => {
     if (showsNativeAds) {
       return buildAllEntriesFeedItems(entries);
@@ -60,14 +79,74 @@ export function AllEntriesScreen({
   return (
     <View style={styles.screen}>
       {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
+      <TextInput
+        autoCapitalize="none"
+        autoCorrect={false}
+        clearButtonMode="while-editing"
+        onChangeText={setSearchQuery}
+        placeholder={AllEntriesCopy.searchPlaceholder}
+        returnKeyType="search"
+        style={styles.searchInput}
+        value={searchQuery}
+      />
+      <ScrollView
+        contentContainerStyle={styles.categoryFilterContent}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.categoryFilterList}
+      >
+        <Pressable
+          onPress={() => setSelectedCategory(null)}
+          style={[
+            styles.categoryFilterChip,
+            selectedCategory === null ? styles.activeCategoryFilterChip : null,
+          ]}
+        >
+          <Text
+            style={[
+              styles.categoryFilterLabel,
+              selectedCategory === null ? styles.activeCategoryFilterLabel : null,
+            ]}
+          >
+            {AllEntriesCopy.allCategoriesFilterLabel}
+          </Text>
+        </Pressable>
+        {categoryLabels.map((categoryLabel) => (
+          <Pressable
+            key={categoryLabel}
+            onPress={() =>
+              setSelectedCategory((currentCategory) =>
+                currentCategory === categoryLabel ? null : categoryLabel,
+              )
+            }
+            style={[
+              styles.categoryFilterChip,
+              selectedCategory === categoryLabel ? styles.activeCategoryFilterChip : null,
+            ]}
+          >
+            <Text
+              style={[
+                styles.categoryFilterLabel,
+                selectedCategory === categoryLabel ? styles.activeCategoryFilterLabel : null,
+              ]}
+            >
+              {categoryLabel}
+            </Text>
+          </Pressable>
+        ))}
+      </ScrollView>
       <FlatList
         contentContainerStyle={entries.length === 0 ? styles.emptyContent : styles.listContent}
         data={feedItems}
         keyExtractor={(item) => item.key}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>{AllEntriesCopy.emptyTitle}</Text>
-            <Text style={styles.emptyHint}>{AllEntriesCopy.emptyHint}</Text>
+            <Text style={styles.emptyTitle}>
+              {isSearching ? AllEntriesCopy.emptySearchTitle : AllEntriesCopy.emptyTitle}
+            </Text>
+            <Text style={styles.emptyHint}>
+              {isSearching ? AllEntriesCopy.emptySearchHint : AllEntriesCopy.emptyHint}
+            </Text>
           </View>
         }
         ListFooterComponent={
@@ -146,6 +225,35 @@ const styles = StyleSheet.create({
   },
   list: {
     flex: 1,
+  },
+  searchInput: FormInputTextStyle,
+  categoryFilterList: {
+    flexGrow: 0,
+  },
+  categoryFilterContent: {
+    gap: 8,
+    paddingRight: AppLayout.screenPadding,
+  },
+  categoryFilterChip: {
+    borderWidth: 1,
+    borderColor: AppColors.border,
+    borderRadius: 999,
+    backgroundColor: AppColors.surface,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  activeCategoryFilterChip: {
+    borderColor: AppColors.primary,
+    backgroundColor: AppColors.primary,
+  },
+  categoryFilterLabel: {
+    color: AppColors.mutedStrongText,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: "600",
+  },
+  activeCategoryFilterLabel: {
+    color: AppColors.inverseText,
   },
   listContent: {
     paddingBottom: 24,

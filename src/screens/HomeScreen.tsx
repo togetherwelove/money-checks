@@ -1,18 +1,23 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { ComponentRef } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Keyboard,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
+  TextInput,
+  TouchableWithoutFeedback,
   View,
+  findNodeHandle,
 } from "react-native";
 
 import { AppBannerAd } from "../components/AppBannerAd";
 import { CalendarToolbar } from "../components/CalendarToolbar";
 import { DateMemoToggleButton } from "../components/DateMemoToggleButton";
 import { IconActionButton } from "../components/IconActionButton";
+import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { LedgerEntryList } from "../components/LedgerEntryList";
 import { MonthCalendarPager } from "../components/MonthCalendarPager";
 import { MonthlySummary } from "../components/MonthlySummary";
@@ -44,6 +49,10 @@ type HomeScreenProps = {
   state: LedgerScreenState;
 };
 
+type KeyboardAwareScrollViewRef = ComponentRef<typeof KeyboardAwareScrollView> & {
+  scrollToFocusedInput?: (nodeHandle: number) => void;
+};
+
 export function HomeScreen({
   onDeleteSelectedEntry,
   onEditSelectedEntry,
@@ -56,6 +65,7 @@ export function HomeScreen({
 }: HomeScreenProps) {
   const todayIsoDate = toIsoDate(new Date());
   const [isDateMemoExpanded, setIsDateMemoExpanded] = useState(false);
+  const scrollViewRef = useRef<ComponentRef<typeof KeyboardAwareScrollView>>(null);
   const {
     handleDeleteSelectedDateNote,
     errorMessage,
@@ -76,115 +86,134 @@ export function HomeScreen({
     setIsDateMemoExpanded(Boolean(selectedDateNote.trim()));
   }, [selectedDate, selectedDateNote]);
 
+  const handleBeginDateMemoEditing = (input: TextInput | null) => {
+    const inputNodeHandle = input ? findNodeHandle(input) : null;
+    const keyboardAwareScrollView = scrollViewRef.current as KeyboardAwareScrollViewRef | null;
+
+    if (!inputNodeHandle || !keyboardAwareScrollView?.scrollToFocusedInput) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      keyboardAwareScrollView.scrollToFocusedInput?.(inputNodeHandle);
+    });
+  };
+
   return (
-    <View style={styles.screen}>
-      <View style={styles.fixedSection}>
-        {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
-        <CalendarToolbar
-          monthLabel={formatMonthYear(visibleMonth)}
-          onPressMonthLabel={onOpenMonthPicker}
-          onSelectToday={() => {
-            onSelectCalendarDate(todayIsoDate);
-          }}
-          showMoveToCurrent={false}
-        />
-        <WeekdayHeader />
-        <MonthCalendarPager
-          currentPage={state.currentMonthPage}
-          nextPage={state.nextMonthPage}
-          onMoveMonth={(monthOffset) => moveMonth(visibleMonth, monthOffset, setVisibleMonth)}
-          onSelectDate={onSelectCalendarDate}
-          previousPage={state.previousMonthPage}
-          selectedDate={selectedDate}
-        />
-        <View style={styles.summarySection}>
-          {showsBannerAd ? <AppBannerAd /> : null}
-          <MonthlySummary
-            totalExpense={formatCurrency(monthlyLedger.totalExpense)}
-            totalIncome={formatCurrency(monthlyLedger.totalIncome)}
+    <TouchableWithoutFeedback
+      accessible={false}
+      onPress={() => {
+        Keyboard.dismiss();
+      }}
+    >
+      <KeyboardAwareScrollView
+        ref={scrollViewRef}
+        contentContainerStyle={styles.content}
+        extraScrollHeight={DateMemoUi.keyboardExtraScrollHeight}
+        refreshControl={
+          <RefreshControl
+            onRefresh={() => {
+              void refreshLedger();
+            }}
+            refreshing={isRefreshing}
+            tintColor={AppColors.primary}
           />
-        </View>
-        <View style={styles.selectionRow}>
-          <View style={styles.selectionInfo}>
-            <Text style={styles.selectedDate}>{selectedDateLabel}</Text>
-            {selectedDate !== todayIsoDate ? (
-              <IconActionButton
-                accessibilityLabel="오늘 날짜로 이동"
-                icon="crosshair"
-                onPress={() => {
-                  onSelectCalendarDate(todayIsoDate);
-                }}
-                size="compact"
-              />
-            ) : null}
-          </View>
-          <View style={styles.selectionInfo}>
-            <DateMemoToggleButton
-              isExpanded={isDateMemoExpanded}
-              onPress={() => setIsDateMemoExpanded((currentValue) => !currentValue)}
+        }
+        showsVerticalScrollIndicator={false}
+        style={styles.screen}
+      >
+        <View style={styles.fixedSection}>
+          {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
+          <CalendarToolbar
+            monthLabel={formatMonthYear(visibleMonth)}
+            onPressMonthLabel={onOpenMonthPicker}
+            onSelectToday={() => {
+              onSelectCalendarDate(todayIsoDate);
+            }}
+            showMoveToCurrent={false}
+          />
+          <WeekdayHeader />
+          <MonthCalendarPager
+            currentPage={state.currentMonthPage}
+            nextPage={state.nextMonthPage}
+            onMoveMonth={(monthOffset) => moveMonth(visibleMonth, monthOffset, setVisibleMonth)}
+            onSelectDate={onSelectCalendarDate}
+            previousPage={state.previousMonthPage}
+            selectedDate={selectedDate}
+          />
+          <View style={styles.summarySection}>
+            {showsBannerAd ? <AppBannerAd /> : null}
+            <MonthlySummary
+              totalExpense={formatCurrency(monthlyLedger.totalExpense)}
+              totalIncome={formatCurrency(monthlyLedger.totalIncome)}
             />
-            <IconActionButton icon="pie-chart" onPress={onOpenCharts} size="compact" />
-            <IconActionButton icon="plus" onPress={onOpenEntry} size="compact" />
           </View>
-        </View>
-      </View>
-      <View style={styles.listSection}>
-        <ScrollView
-          contentContainerStyle={styles.listContent}
-          refreshControl={
-            <RefreshControl
-              onRefresh={() => {
-                void refreshLedger();
-              }}
-              refreshing={isRefreshing}
-              tintColor={AppColors.primary}
-            />
-          }
-          showsVerticalScrollIndicator={false}
-          style={styles.listScroll}
-        >
-          {isLoadingSelectedDateEntries && selectedEntries.length === 0 ? (
-            <View style={styles.selectedDateLoadingState}>
-              <ActivityIndicator color={AppColors.primary} size="small" />
+          <View style={styles.selectionRow}>
+            <View style={styles.selectionInfo}>
+              <Text style={styles.selectedDate}>{selectedDateLabel}</Text>
+              {selectedDate !== todayIsoDate ? (
+                <IconActionButton
+                  accessibilityLabel="오늘 날짜로 이동"
+                  icon="crosshair"
+                  onPress={() => {
+                    onSelectCalendarDate(todayIsoDate);
+                  }}
+                  size="compact"
+                />
+              ) : null}
             </View>
-          ) : (
-            <>
-              <SelectedDateMemoAccordion
-                key={selectedDate}
+            <View style={styles.selectionInfo}>
+              <DateMemoToggleButton
                 isExpanded={isDateMemoExpanded}
-                note={selectedDateNote}
-                onCollapse={() => setIsDateMemoExpanded(false)}
-                onDelete={handleDeleteSelectedDateNote}
-                onSave={handleSaveSelectedDateNote}
+                onPress={() => setIsDateMemoExpanded((currentValue) => !currentValue)}
               />
-              <LedgerEntryList
-                entries={selectedEntries}
-                onDeleteEntry={(entry) => {
-                  Alert.alert(
-                    AppMessages.editorDeleteConfirmTitle,
-                    AppMessages.editorDeleteConfirmMessage,
-                    [
-                      {
-                        style: "cancel",
-                        text: CommonActionCopy.cancel,
+              <IconActionButton icon="pie-chart" onPress={onOpenCharts} size="compact" />
+              <IconActionButton icon="plus" onPress={onOpenEntry} size="compact" />
+            </View>
+          </View>
+        </View>
+        {isLoadingSelectedDateEntries && selectedEntries.length === 0 ? (
+          <View style={styles.selectedDateLoadingState}>
+            <ActivityIndicator color={AppColors.primary} size="small" />
+          </View>
+        ) : (
+          <>
+            <SelectedDateMemoAccordion
+              key={selectedDate}
+              isExpanded={isDateMemoExpanded}
+              note={selectedDateNote}
+              onBeginEditing={handleBeginDateMemoEditing}
+              onCollapse={() => setIsDateMemoExpanded(false)}
+              onDelete={handleDeleteSelectedDateNote}
+              onSave={handleSaveSelectedDateNote}
+            />
+            <LedgerEntryList
+              entries={selectedEntries}
+              onDeleteEntry={(entry) => {
+                Alert.alert(
+                  AppMessages.editorDeleteConfirmTitle,
+                  AppMessages.editorDeleteConfirmMessage,
+                  [
+                    {
+                      style: "cancel",
+                      text: CommonActionCopy.cancel,
+                    },
+                    {
+                      onPress: () => {
+                        void onDeleteSelectedEntry(entry);
                       },
-                      {
-                        onPress: () => {
-                          void onDeleteSelectedEntry(entry);
-                        },
-                        style: "destructive",
-                        text: AppMessages.editorDeleteConfirmAction,
-                      },
-                    ],
-                  );
-                }}
-                onEditEntry={onEditSelectedEntry}
-              />
-            </>
-          )}
-        </ScrollView>
-      </View>
-    </View>
+                      style: "destructive",
+                      text: AppMessages.editorDeleteConfirmAction,
+                    },
+                  ],
+                );
+              }}
+              onEditEntry={onEditSelectedEntry}
+            />
+          </>
+        )}
+      </KeyboardAwareScrollView>
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -200,26 +229,18 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: AppColors.background,
+  },
+  content: {
+    flexGrow: 1,
     padding: AppLayout.screenPadding,
-    gap: AppLayout.compactGap,
+    gap: AppLayout.cardGap,
+    paddingBottom: DateMemoUi.keyboardExtraScrollHeight,
   },
   fixedSection: {
     gap: AppLayout.cardGap,
   },
   summarySection: {
     gap: AppLayout.compactGap,
-  },
-  listSection: {
-    flex: 1,
-    minHeight: 0,
-  },
-  listScroll: {
-    flex: 1,
-  },
-  listContent: {
-    flexGrow: 1,
-    gap: 8,
-    paddingBottom: 12,
   },
   error: {
     color: AppColors.expense,

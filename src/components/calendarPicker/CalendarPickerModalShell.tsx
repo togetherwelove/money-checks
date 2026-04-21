@@ -31,6 +31,7 @@ export function CalendarPickerModalShell({
           <KeyboardAwareScrollView
             contentContainerStyle={styles.sheetContent}
             extraScrollHeight={AppLayout.screenPadding * 6}
+            fillAvailableHeight={false}
             showsVerticalScrollIndicator={false}
           >
             <View style={styles.header}>

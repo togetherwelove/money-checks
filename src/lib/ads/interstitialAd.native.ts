@@ -48,7 +48,9 @@ export async function showInterstitialAd(placement: AdInterstitialPlacementKey):
   }
 
   try {
+    const dismissPromise = waitForInterstitialDismissal(interstitialAd);
     await interstitialAd.show();
+    await dismissPromise;
     return true;
   } catch (error) {
     logAppError("AdMob", error, {
@@ -66,6 +68,35 @@ function canShowInterstitialPlacement(placement: AdInterstitialPlacementKey) {
   }
 
   return true;
+}
+
+function waitForInterstitialDismissal(currentInterstitialAd: InterstitialAd): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    let hasSettled = false;
+
+    const cleanup = () => {
+      closeDisposer();
+      errorDisposer();
+    };
+
+    const settle = (nextHandler: () => void) => {
+      if (hasSettled) {
+        return;
+      }
+
+      hasSettled = true;
+      cleanup();
+      nextHandler();
+    };
+
+    const closeDisposer = currentInterstitialAd.addAdEventListener(AdEventType.CLOSED, () => {
+      settle(resolve);
+    });
+
+    const errorDisposer = currentInterstitialAd.addAdEventListener(AdEventType.ERROR, (error) => {
+      settle(() => reject(error));
+    });
+  });
 }
 
 function createInterstitialAd(adUnitId: string) {

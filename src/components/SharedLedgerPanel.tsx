@@ -34,7 +34,7 @@ type SharedLedgerPanelProps = {
   members: LedgerBookMember[];
   onOpenSubscription: () => void;
   onApproveJoinRequest: (requestId: string) => Promise<boolean>;
-  onAfterCopyShareCode: () => Promise<void>;
+  onBeforeCopyShareCode: () => Promise<void>;
   onKickMember: (targetUserId: string) => Promise<boolean>;
   onRejectJoinRequest: (requestId: string) => Promise<boolean>;
   onLeaveSharedLedgerBook: () => Promise<boolean>;
@@ -61,7 +61,7 @@ export function SharedLedgerPanel({
   members,
   onOpenSubscription,
   onApproveJoinRequest,
-  onAfterCopyShareCode,
+  onBeforeCopyShareCode,
   onKickMember,
   onRejectJoinRequest,
   onLeaveSharedLedgerBook,
@@ -212,7 +212,7 @@ export function SharedLedgerPanel({
         members={members}
         onOpenSubscription={onOpenSubscription}
         onApproveJoinRequest={handleApproveJoinRequest}
-        onAfterCopyShareCode={onAfterCopyShareCode}
+        onBeforeCopyShareCode={onBeforeCopyShareCode}
         onChangeBookName={handleChangeBookName}
         onKickMember={handleKickMember}
         onRejectJoinRequest={handleRejectJoinRequest}

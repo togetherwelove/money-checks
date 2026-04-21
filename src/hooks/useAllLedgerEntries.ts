@@ -9,6 +9,8 @@ import type { BusyTaskTracker } from "./ledgerScreenState/types";
 
 type UseAllLedgerEntriesParams = {
   activeBookId: string | null;
+  selectedCategory: string | null;
+  searchQuery: string;
   trackBlockingTask: BusyTaskTracker;
 };
 
@@ -16,6 +18,8 @@ const EMPTY_ENTRIES: LedgerEntry[] = [];
 
 export function useAllLedgerEntries({
   activeBookId,
+  selectedCategory,
+  searchQuery,
   trackBlockingTask,
 }: UseAllLedgerEntriesParams) {
   const [entries, setEntries] = useState<LedgerEntry[]>(EMPTY_ENTRIES);
@@ -47,8 +51,10 @@ export function useAllLedgerEntries({
       try {
         const { entries: nextEntries, hasMore: nextHasMore } = await executeTask(() =>
           fetchLedgerEntriesPage(activeBookId, {
+            category: selectedCategory,
             limit: LedgerQueryConfig.allEntriesPageSize,
             offset: 0,
+            searchQuery,
           }),
         );
         setEntries(nextEntries);
@@ -65,7 +71,7 @@ export function useAllLedgerEntries({
         }
       }
     },
-    [activeBookId, trackBlockingTask],
+    [activeBookId, searchQuery, selectedCategory, trackBlockingTask],
   );
 
   useEffect(() => {
@@ -84,8 +90,10 @@ export function useAllLedgerEntries({
       const { entries: nextEntries, hasMore: nextHasMore } = await fetchLedgerEntriesPage(
         activeBookId,
         {
+          category: selectedCategory,
           limit: LedgerQueryConfig.allEntriesPageSize,
           offset: entries.length,
+          searchQuery,
         },
       );
       setEntries((currentEntries) => [...currentEntries, ...nextEntries]);
@@ -100,7 +108,7 @@ export function useAllLedgerEntries({
     } finally {
       setIsLoadingMore(false);
     }
-  }, [activeBookId, entries.length, hasMore, isLoadingMore, isRefreshing]);
+  }, [activeBookId, entries.length, hasMore, isLoadingMore, isRefreshing, searchQuery, selectedCategory]);
 
   return {
     entries,

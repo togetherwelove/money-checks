@@ -1,5 +1,6 @@
 export const AppColors = {
   background: "#f5f1e8",
+  sessionLoadingBackground: "#F3EBD4",
   surface: "#fffaf2",
   surfaceStrong: "#efe4cf",
   surfaceMuted: "#f3ecde",

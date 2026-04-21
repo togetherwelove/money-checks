@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Alert } from "react-native";
+import { Alert, InteractionManager } from "react-native";
 
 import { AnnualReportCopy, buildSelectedYearOptionLabel } from "../constants/annualReport";
 import { CommonActionCopy } from "../constants/commonActions";
@@ -16,7 +16,7 @@ import type { LedgerBook } from "../types/ledgerBook";
 
 type UseAnnualLedgerReportActionParams = {
   activeBook: LedgerBook | null;
-  onAfterDownloadReport?: (() => Promise<void> | void) | null;
+  onBeforeDownloadReport?: (() => Promise<void> | void) | null;
   visibleMonth: Date;
 };
 
@@ -28,7 +28,7 @@ type CustomRangeDraft = {
 
 export function useAnnualLedgerReportAction({
   activeBook,
-  onAfterDownloadReport = null,
+  onBeforeDownloadReport = null,
   visibleMonth,
 }: UseAnnualLedgerReportActionParams) {
   const [customRangeDraft, setCustomRangeDraft] = useState<CustomRangeDraft | null>(null);
@@ -47,7 +47,6 @@ export function useAnnualLedgerReportAction({
       return;
     }
 
-    setIsDownloading(true);
     try {
       const dateBounds = await fetchLedgerEntryDateBounds(activeBook.id);
       if (!dateBounds) {
@@ -63,11 +62,12 @@ export function useAnnualLedgerReportAction({
           selectedYear,
         );
         if (reportPeriod) {
-          await downloadReportForPeriod(
+          await runDownloadReportForPeriod(
             activeBook.id,
             bookName,
             reportPeriod,
-            onAfterDownloadReport,
+            onBeforeDownloadReport,
+            setIsDownloading,
           );
         }
         return;
@@ -80,13 +80,12 @@ export function useAnnualLedgerReportAction({
         bookName,
         activeBook.id,
         setCustomRangeDraft,
-        downloadReportForPeriod,
-        onAfterDownloadReport,
+        runDownloadReportForPeriod,
+        onBeforeDownloadReport,
+        setIsDownloading,
       );
     } catch {
       Alert.alert(AnnualReportCopy.errorMessage);
-    } finally {
-      setIsDownloading(false);
     }
   };
 
@@ -109,7 +108,7 @@ export function useAnnualLedgerReportAction({
         activeBook.id,
         bookName,
         buildCustomRangePeriod(startDate, endDate),
-        onAfterDownloadReport,
+        onBeforeDownloadReport,
       );
       return true;
     } catch {
@@ -163,13 +162,15 @@ async function selectAnnualReportPeriodOnNative(
   bookName: string,
   bookId: string,
   setCustomRangeDraft: (draft: CustomRangeDraft) => void,
-  downloadReportForPeriod: (
+  runDownloadReportForPeriod: (
     bookId: string,
     bookName: string,
     period: AnnualReportPeriod,
-    onAfterDownloadReport?: (() => Promise<void> | void) | null,
+    onBeforeDownloadReport?: (() => Promise<void> | void) | null,
+    setIsDownloading?: ((nextValue: boolean) => void) | null,
   ) => Promise<void>,
-  onAfterDownloadReport: (() => Promise<void> | void) | null,
+  onBeforeDownloadReport: (() => Promise<void> | void) | null,
+  setIsDownloading: (nextValue: boolean) => void,
 ) {
   return new Promise<void>((resolve) => {
     Alert.alert(AnnualReportCopy.confirmTitle, AnnualReportCopy.optionTitle, [
@@ -181,34 +182,38 @@ async function selectAnnualReportPeriodOnNative(
       {
         text: AnnualReportCopy.firstToLastOption,
         onPress: () => {
-          void downloadReportForPeriod(
+          void runDownloadReportForPeriod(
             bookId,
             bookName,
             buildFirstToLastPeriod(firstDate, lastDate),
-            onAfterDownloadReport,
+            onBeforeDownloadReport,
+            setIsDownloading,
           ).finally(resolve);
         },
       },
       {
         text: buildSelectedYearOptionLabel(selectedYear),
         onPress: () => {
-          void downloadReportForPeriod(
+          void runDownloadReportForPeriod(
             bookId,
             bookName,
             buildSelectedYearPeriod(selectedYear),
-            onAfterDownloadReport,
+            onBeforeDownloadReport,
+            setIsDownloading,
           ).finally(resolve);
         },
       },
       {
         text: AnnualReportCopy.customRangeOption,
         onPress: () => {
-          setCustomRangeDraft({
-            endDate: lastDate,
-            isOpen: true,
-            startDate: firstDate,
-          });
           resolve();
+          InteractionManager.runAfterInteractions(() => {
+            setCustomRangeDraft({
+              endDate: lastDate,
+              isOpen: true,
+              startDate: firstDate,
+            });
+          });
         },
       },
     ]);
@@ -219,13 +224,28 @@ async function downloadReportForPeriod(
   bookId: string,
   bookName: string,
   period: AnnualReportPeriod,
-  onAfterDownloadReport: (() => Promise<void> | void) | null = null,
+  onBeforeDownloadReport: (() => Promise<void> | void) | null = null,
 ) {
   const entries = await fetchLedgerEntries(bookId, period.dateFrom, period.dateTo);
   await confirmAndDownloadAnnualReport({
     bookName,
     entries,
+    onBeforeDownload: onBeforeDownloadReport,
     period,
   });
-  await onAfterDownloadReport?.();
+}
+
+async function runDownloadReportForPeriod(
+  bookId: string,
+  bookName: string,
+  period: AnnualReportPeriod,
+  onBeforeDownloadReport: (() => Promise<void> | void) | null = null,
+  setIsDownloading: ((nextValue: boolean) => void) | null = null,
+) {
+  setIsDownloading?.(true);
+  try {
+    await downloadReportForPeriod(bookId, bookName, period, onBeforeDownloadReport);
+  } finally {
+    setIsDownloading?.(false);
+  }
 }

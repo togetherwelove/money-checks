@@ -8,11 +8,15 @@ import { AccountScreen } from "../screens/AccountScreen";
 import { AllEntriesScreen } from "../screens/AllEntriesScreen";
 import { ChartScreen } from "../screens/ChartScreen";
 import { EntryScreen } from "../screens/EntryScreen";
+import { HelpScreen } from "../screens/HelpScreen";
 import { HomeScreen } from "../screens/HomeScreen";
 import { NotificationSettingsScreen } from "../screens/NotificationSettingsScreen";
 import { ShareLedgerScreen } from "../screens/ShareLedgerScreen";
+import { SupportScreen } from "../screens/SupportScreen";
 import { SubscriptionScreen } from "../screens/SubscriptionScreen";
 import { SupportContactScreen } from "../screens/SupportContactScreen";
+import type { SupportPackageIdentifier } from "../constants/support";
+import type { SupportPackageSnapshot } from "../lib/subscription/supportClient";
 import type { LedgerAppScreen } from "../types/app";
 import type { LedgerEntry, LedgerEntryDraft } from "../types/ledger";
 
@@ -29,7 +33,7 @@ type AppScreenRouterProps = {
   notificationStatusMessage: string;
   onChangeNotificationThresholdEnabled: (key: NotificationThresholdKey, enabled: boolean) => void;
   onChangeNotificationThreshold: (key: NotificationThresholdKey, value: string) => void;
-  onCopyShareCode: () => Promise<void>;
+  onBeforeCopyShareCode: () => Promise<void>;
   onDeleteSelectedEntry: (entry: LedgerEntry) => Promise<void>;
   onEditSelectedEntry: (entry: LedgerEntry) => void;
   onOpenCharts: () => void;
@@ -37,6 +41,7 @@ type AppScreenRouterProps = {
   onOpenMonthPicker: () => void;
   onOpenSubscription: () => void;
   onOpenSubscriptionManagement: () => Promise<void>;
+  onPurchaseSupportPackage: (identifier: SupportPackageIdentifier) => Promise<void>;
   onPurchasePlus: () => Promise<void>;
   onRestorePurchases: () => Promise<void>;
   onSaveEntry: () => Promise<void>;
@@ -60,6 +65,8 @@ type AppScreenRouterProps = {
   onSelectCalendarDate: (isoDate: string) => void;
   plusPriceLabel: string | null;
   showNotificationSettings: boolean;
+  supportPackages: SupportPackageSnapshot[];
+  supportPackagesLoading: boolean;
   subscriptionTier: SubscriptionTier;
   trackBlockingTask: BusyTaskTracker;
   userId: string;
@@ -78,7 +85,7 @@ export function AppScreenRouter({
   notificationStatusMessage,
   onChangeNotificationThresholdEnabled,
   onChangeNotificationThreshold,
-  onCopyShareCode,
+  onBeforeCopyShareCode,
   onDeleteSelectedEntry,
   onEditSelectedEntry,
   onOpenCharts,
@@ -86,6 +93,7 @@ export function AppScreenRouter({
   onOpenMonthPicker,
   onOpenSubscription,
   onOpenSubscriptionManagement,
+  onPurchaseSupportPackage,
   onPurchasePlus,
   onRestorePurchases,
   onSaveEntry,
@@ -98,6 +106,8 @@ export function AppScreenRouter({
   onSelectCalendarDate,
   plusPriceLabel,
   showNotificationSettings,
+  supportPackages,
+  supportPackagesLoading,
   subscriptionTier,
   trackBlockingTask,
   userId,
@@ -161,7 +171,7 @@ export function AppScreenRouter({
     return (
       <ShareLedgerScreen
         activeBook={ledgerState.activeBook}
-        onAfterCopyShareCode={onCopyShareCode}
+        onBeforeCopyShareCode={onBeforeCopyShareCode}
         onOpenSubscription={onOpenSubscription}
         onApproveJoinRequest={ledgerState.approveLedgerJoinRequest}
         onJoinSharedLedgerBook={ledgerState.joinSharedLedgerBookByCode}
@@ -187,6 +197,10 @@ export function AppScreenRouter({
     return <SupportContactScreen email={email} />;
   }
 
+  if (activeScreen === "help") {
+    return <HelpScreen />;
+  }
+
   if (activeScreen === "subscription") {
     return (
       <SubscriptionScreen
@@ -198,12 +212,23 @@ export function AppScreenRouter({
     );
   }
 
+  if (activeScreen === "support") {
+    return (
+      <SupportScreen
+        isLoading={supportPackagesLoading}
+        onPurchasePackage={onPurchaseSupportPackage}
+        packages={supportPackages}
+      />
+    );
+  }
+
   if (activeScreen === "entry") {
     return (
       <EntryScreen
         onSaveEntries={onSaveEntryDrafts}
         onSaveEntry={onSaveEntry}
         onSettleInstallmentEntry={onSettleInstallmentEntry}
+        showsBannerAd={subscriptionTier === "free"}
         state={ledgerState}
       />
     );

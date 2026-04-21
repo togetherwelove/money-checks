@@ -2,9 +2,10 @@ import * as Clipboard from "expo-clipboard";
 import { useState } from "react";
 import { Text, TextInput, View } from "react-native";
 
-import { LedgerBookNicknameCopy } from "../../constants/ledgerBookNickname";
 import { EMPTY_VALUE_PLACEHOLDER } from "../../constants/ledgerDisplay";
+import { LedgerBookNicknameCopy } from "../../constants/ledgerBookNickname";
 import { AppMessages } from "../../constants/messages";
+import { ShareLedgerMessages } from "../../constants/shareLedgerMessages";
 import { showNativeToast } from "../../lib/nativeToast";
 import type { LedgerBook } from "../../types/ledgerBook";
 import type { LedgerBookJoinRequest } from "../../types/ledgerBookJoinRequest";
@@ -14,9 +15,6 @@ import { LedgerBookJoinRequests } from "../LedgerBookJoinRequests";
 import { LedgerBookMembers } from "../LedgerBookMembers";
 import { sharedLedgerPanelStyles as styles } from "./sharedLedgerPanelStyles";
 
-const SHARE_CODE_COPY_ACCESSIBILITY_LABEL = "공유 코드 복사";
-const SHARE_CODE_COPY_SUCCESS_TOAST = "공유 코드를 복사했어요.";
-
 type SharedLedgerBookCardProps = {
   activeBook: LedgerBook | null;
   bookName: string | null;
@@ -25,11 +23,11 @@ type SharedLedgerBookCardProps = {
   currentUserId: string;
   isOwner: boolean;
   members: LedgerBookMember[];
-  onOpenSubscription: () => void;
   onApproveJoinRequest: (requestId: string) => Promise<boolean>;
-  onAfterCopyShareCode: () => Promise<void>;
+  onBeforeCopyShareCode: () => Promise<void>;
   onChangeBookName: (value: string) => void;
   onKickMember: (targetUserId: string) => Promise<boolean>;
+  onOpenSubscription: () => void;
   onRejectJoinRequest: (requestId: string) => Promise<boolean>;
   onSaveBookName: () => Promise<boolean>;
   pendingJoinRequests: LedgerBookJoinRequest[];
@@ -44,11 +42,11 @@ export function SharedLedgerBookCard({
   currentUserId,
   isOwner,
   members,
-  onOpenSubscription,
   onApproveJoinRequest,
-  onAfterCopyShareCode,
+  onBeforeCopyShareCode,
   onChangeBookName,
   onKickMember,
+  onOpenSubscription,
   onRejectJoinRequest,
   onSaveBookName,
   pendingJoinRequests,
@@ -58,15 +56,14 @@ export function SharedLedgerBookCard({
   const isSharedBook = Boolean(activeBook && activeBook.ownerId !== currentUserId);
   const shareCode = activeBook?.shareCode ?? null;
 
-  const handleCopyShareCode = () => {
+  const handleCopyShareCode = async () => {
     if (!shareCode) {
       return;
     }
 
-    void Clipboard.setStringAsync(shareCode).then(async () => {
-      showNativeToast(SHARE_CODE_COPY_SUCCESS_TOAST);
-      await onAfterCopyShareCode();
-    });
+    await onBeforeCopyShareCode();
+    await Clipboard.setStringAsync(shareCode);
+    showNativeToast(ShareLedgerMessages.copyCodeSuccessToast);
   };
 
   const handleStartEditingBookName = () => {
@@ -94,18 +91,18 @@ export function SharedLedgerBookCard({
             isEditingBookName ? (
               <View style={styles.bookNameEditRow}>
                 <TextInput
-                  autoComplete="off"
                   autoCapitalize="words"
+                  autoComplete="off"
                   autoCorrect={false}
-                  submitBehavior={"blurAndSubmit"}
                   importantForAutofill="no"
-                  textContentType="none"
                   onChangeText={onChangeBookName}
                   onSubmitEditing={handleSaveBookNamePress}
                   placeholder={LedgerBookNicknameCopy.inputPlaceholder}
                   returnKeyType="done"
                   spellCheck={false}
                   style={styles.bookNameHeaderInput}
+                  submitBehavior="blurAndSubmit"
+                  textContentType="none"
                   value={bookNameInput}
                 />
                 <View style={styles.bookNameActionSlot}>
@@ -154,9 +151,11 @@ export function SharedLedgerBookCard({
           </Text>
           {shareCode ? (
             <IconActionButton
-              accessibilityLabel={SHARE_CODE_COPY_ACCESSIBILITY_LABEL}
+              accessibilityLabel={ShareLedgerMessages.copyCodeAccessibilityLabel}
               icon="copy"
-              onPress={handleCopyShareCode}
+              onPress={() => {
+                void handleCopyShareCode();
+              }}
             />
           ) : null}
         </View>
@@ -166,8 +165,8 @@ export function SharedLedgerBookCard({
         <LedgerBookMembers
           currentUserId={currentUserId}
           members={members}
-          onOpenSubscription={onOpenSubscription}
           onKickMember={onKickMember}
+          onOpenSubscription={onOpenSubscription}
           shouldShowSharedMemberLimitNotice={shouldShowSharedMemberLimitNotice}
         />
       ) : null}

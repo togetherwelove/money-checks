@@ -24,7 +24,7 @@ type ShareLedgerScreenProps = {
   activeBook: LedgerBook | null;
   onOpenSubscription: () => void;
   onApproveJoinRequest: (requestId: string) => Promise<boolean>;
-  onAfterCopyShareCode: () => Promise<void>;
+  onBeforeCopyShareCode: () => Promise<void>;
   onJoinSharedLedgerBook: (shareCode: string) => Promise<JoinSharedLedgerBookAttempt>;
   onLeaveSharedLedgerBook: () => Promise<boolean>;
   onRenameActiveLedgerBook: (nextName: string) => Promise<boolean>;
@@ -50,7 +50,7 @@ export function ShareLedgerScreen({
   activeBook,
   onOpenSubscription,
   onApproveJoinRequest,
-  onAfterCopyShareCode,
+  onBeforeCopyShareCode,
   onLeaveSharedLedgerBook,
   onJoinSharedLedgerBook,
   onRemoveSharedLedgerMember,
@@ -136,7 +136,7 @@ export function ShareLedgerScreen({
         members={members}
         onOpenSubscription={onOpenSubscription}
         onApproveJoinRequest={onApproveJoinRequest}
-        onAfterCopyShareCode={onAfterCopyShareCode}
+        onBeforeCopyShareCode={onBeforeCopyShareCode}
         onKickMember={handleKickMember}
         onLeaveSharedLedgerBook={onLeaveSharedLedgerBook}
         onJoinSharedLedgerBook={onJoinSharedLedgerBook}

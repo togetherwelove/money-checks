@@ -3,6 +3,7 @@ import * as Crypto from "expo-crypto";
 
 import { AppleAuthCopy } from "../../constants/appleAuth";
 import { appPlatform } from "../appPlatform";
+import { syncOwnProfileDisplayNameIfMissing } from "../profiles";
 import { supabase } from "../supabase";
 
 const APPLE_AUTH_PROVIDER = "apple";
@@ -41,6 +42,7 @@ function resolveAppleDisplayName(credential: AppleAuthentication.AppleAuthentica
 }
 
 async function persistAppleDisplayName(
+  userId: string | null | undefined,
   credential: AppleAuthentication.AppleAuthenticationCredential,
 ) {
   const appleDisplayName = resolveAppleDisplayName(credential);
@@ -59,6 +61,16 @@ async function persistAppleDisplayName(
 
   if (error) {
     console.error("[appleSignIn] Failed to persist Apple display name", error);
+  }
+
+  if (!userId) {
+    return;
+  }
+
+  try {
+    await syncOwnProfileDisplayNameIfMissing(userId, appleDisplayName.fullName);
+  } catch (profileError) {
+    console.error("[appleSignIn] Failed to sync Apple display name to profile", profileError);
   }
 }
 
@@ -98,7 +110,7 @@ export async function signInWithApple(): Promise<void> {
     throw new Error(AppleAuthCopy.missingTokenError);
   }
 
-  const { error } = await supabase.auth.signInWithIdToken({
+  const { data, error } = await supabase.auth.signInWithIdToken({
     nonce: rawNonce,
     provider: APPLE_AUTH_PROVIDER,
     token: credential.identityToken,
@@ -108,5 +120,5 @@ export async function signInWithApple(): Promise<void> {
     throw error;
   }
 
-  await persistAppleDisplayName(credential);
+  await persistAppleDisplayName(data.user?.id, credential);
 }

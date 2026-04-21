@@ -9,6 +9,7 @@ import { TextLinkButton } from "./TextLinkButton";
 type SelectedDateMemoAccordionProps = {
   isExpanded: boolean;
   note: string;
+  onBeginEditing?: ((input: TextInput | null) => void) | null;
   onCollapse?: (() => void) | null;
   onDelete: () => Promise<void>;
   onSave: (note: string) => Promise<void>;
@@ -17,6 +18,7 @@ type SelectedDateMemoAccordionProps = {
 export function SelectedDateMemoAccordion({
   isExpanded,
   note,
+  onBeginEditing = null,
   onCollapse = null,
   onDelete,
   onSave,
@@ -39,8 +41,9 @@ export function SelectedDateMemoAccordion({
 
     requestAnimationFrame(() => {
       inputRef.current?.focus();
+      onBeginEditing?.(inputRef.current);
     });
-  }, [isEditing]);
+  }, [isEditing, onBeginEditing]);
 
   if (!isExpanded) {
     return null;

@@ -11,6 +11,7 @@ type KeyboardAwareScrollViewProps = PropsWithChildren<{
   centerContent?: boolean;
   contentContainerStyle?: StyleProp<ViewStyle>;
   extraScrollHeight?: number;
+  fillAvailableHeight?: boolean;
   refreshControl?: ReactElement<RefreshControlProps>;
   scrollEnabled?: boolean;
   showsVerticalScrollIndicator?: boolean;
@@ -26,6 +27,7 @@ export const KeyboardAwareScrollView = forwardRef<
     children,
     contentContainerStyle,
     extraScrollHeight = 0,
+    fillAvailableHeight = true,
     refreshControl,
     scrollEnabled = true,
     showsVerticalScrollIndicator = true,
@@ -51,7 +53,7 @@ export const KeyboardAwareScrollView = forwardRef<
       refreshControl={refreshControl}
       scrollEnabled={scrollEnabled}
       showsVerticalScrollIndicator={showsVerticalScrollIndicator}
-      style={[styles.scroll, style]}
+      style={[fillAvailableHeight ? styles.scroll : null, style]}
     >
       {children}
     </NativeKeyboardAwareScrollView>

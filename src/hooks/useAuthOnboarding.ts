@@ -33,10 +33,11 @@ export function useAuthOnboarding({
   userId,
 }: UseAuthOnboardingOptions): AuthOnboardingState {
   const initialStoredState = readStoredAuthOnboardingState(appStorage, userId);
-  const [isLoading] = useState(false);
-  const [profileDisplayName, setProfileDisplayName] = useState(
-    normalizeDisplayNameCandidate(fallbackDisplayName),
+  const initialResolvedDisplayName = normalizeDisplayNameCandidate(fallbackDisplayName);
+  const [isLoading, setIsLoading] = useState(
+    !initialStoredState.hasCompletedNicknameOnboarding && !initialResolvedDisplayName,
   );
+  const [profileDisplayName, setProfileDisplayName] = useState(initialResolvedDisplayName);
   const [hasCompletedNicknameOnboarding, setHasCompletedNicknameOnboarding] = useState(
     initialStoredState.hasCompletedNicknameOnboarding,
   );
@@ -48,21 +49,42 @@ export function useAuthOnboarding({
     let isMounted = true;
     const nextFallbackDisplayName = normalizeDisplayNameCandidate(fallbackDisplayName);
     const nextStoredState = readStoredAuthOnboardingState(appStorage, userId);
+    const shouldWaitForProfileDisplayName =
+      !nextStoredState.hasCompletedNicknameOnboarding && !nextFallbackDisplayName;
 
     setProfileDisplayName(nextFallbackDisplayName);
     setHasCompletedNicknameOnboarding(nextStoredState.hasCompletedNicknameOnboarding);
     setHasCompletedPermissionOnboarding(nextStoredState.hasCompletedPermissionOnboarding);
+    setIsLoading(shouldWaitForProfileDisplayName);
+
+    if (nextFallbackDisplayName && !nextStoredState.hasCompletedNicknameOnboarding) {
+      appStorage.setItem(createNicknameOnboardingKey(userId), "true");
+      setHasCompletedNicknameOnboarding(true);
+    }
 
     void fetchOwnProfileDisplayName(userId)
       .then((fetchedDisplayName) => {
         const nextProfileDisplayName = normalizeDisplayNameCandidate(fetchedDisplayName);
-        if (!isMounted || !nextProfileDisplayName) {
+        if (!isMounted) {
           return;
         }
 
-        setProfileDisplayName(nextProfileDisplayName);
+        if (nextProfileDisplayName) {
+          setProfileDisplayName(nextProfileDisplayName);
+          if (!nextStoredState.hasCompletedNicknameOnboarding) {
+            appStorage.setItem(createNicknameOnboardingKey(userId), "true");
+            setHasCompletedNicknameOnboarding(true);
+          }
+        }
       })
-      .catch(() => undefined);
+      .catch(() => undefined)
+      .finally(() => {
+        if (!isMounted) {
+          return;
+        }
+
+        setIsLoading(false);
+      });
 
     return () => {
       isMounted = false;
@@ -74,12 +96,14 @@ export function useAuthOnboarding({
       resolveAuthOnboardingStep({
         hasCompletedNicknameOnboarding,
         hasCompletedPermissionOnboarding,
+        hasResolvedDisplayName: Boolean(profileDisplayName),
         isNotificationSupported,
         permissionState,
       }),
     [
       hasCompletedNicknameOnboarding,
       hasCompletedPermissionOnboarding,
+      profileDisplayName,
       isNotificationSupported,
       permissionState,
     ],

@@ -4,26 +4,29 @@ import { Animated, Easing, Pressable, StyleSheet, Text, View, type ViewStyle } f
 
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
+import { MenuUi } from "../constants/menu";
 import { SubscriptionPlusLabels } from "../constants/subscriptionPlusLabels";
 import { BrandPlusTextStyle } from "../constants/uiStyles";
-import type { AppMenuItem } from "../lib/menuItems";
-
-const MENU_DRAWER_ANIMATION_DURATION_MS = 220;
-const MENU_DRAWER_WIDTH = 284;
+import type { AppMenuItem, AppMenuSection } from "../lib/menuItems";
 
 type AppMenuDrawerProps = {
   isOpen: boolean;
-  items: AppMenuItem[];
   onClose: () => void;
   onSelectItem: (targetScreen: AppMenuItem["targetScreen"]) => void;
+  sections: AppMenuSection[];
 };
 
-export function AppMenuDrawer({ isOpen, items, onClose, onSelectItem }: AppMenuDrawerProps) {
+export function AppMenuDrawer({
+  isOpen,
+  onClose,
+  onSelectItem,
+  sections,
+}: AppMenuDrawerProps) {
   const progress = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.timing(progress, {
-      duration: MENU_DRAWER_ANIMATION_DURATION_MS,
+      duration: MenuUi.drawerAnimationDurationMs,
       easing: Easing.out(Easing.cubic),
       toValue: isOpen ? 1 : 0,
       useNativeDriver: true,
@@ -41,7 +44,7 @@ export function AppMenuDrawer({ isOpen, items, onClose, onSelectItem }: AppMenuD
       {
         translateX: progress.interpolate({
           inputRange: [0, 1],
-          outputRange: [MENU_DRAWER_WIDTH, 0],
+          outputRange: [MenuUi.drawerWidth, 0],
         }),
       },
     ],
@@ -53,25 +56,35 @@ export function AppMenuDrawer({ isOpen, items, onClose, onSelectItem }: AppMenuD
         <Pressable onPress={onClose} style={StyleSheet.absoluteFillObject} />
       </Animated.View>
       <Animated.View style={[styles.drawer, drawerStyle]}>
-        <View style={styles.menuTitle}>
-          <Text style={styles.menuLabel}>메뉴</Text>
-        </View>
-        <View style={styles.items}>
-          {items.map((item) => (
-            <Pressable
-              key={item.targetScreen}
-              onPress={() => onSelectItem(item.targetScreen)}
-              style={styles.item}
-            >
-              <Feather color={AppColors.primary} name={item.icon} size={18} />
-              {item.targetScreen === "subscription" ? (
-                <Text style={styles.itemLabel}>
-                  {SubscriptionPlusLabels.menuPrefix} <Text style={styles.itemPlusLabel}>plus</Text>
-                </Text>
-              ) : (
-                <Text style={styles.itemLabel}>{item.label}</Text>
-              )}
-            </Pressable>
+        <View style={styles.sections}>
+          {sections.map((section, index) => (
+            <View key={section.label} style={styles.section}>
+              <View style={index === 0 ? styles.firstSectionHeader : null}>
+                <Text style={styles.sectionLabel}>{section.label}</Text>
+              </View>
+              <View style={styles.items}>
+                {section.items.map((item, index) => (
+                  <Pressable
+                    key={item.targetScreen}
+                    onPress={() => onSelectItem(item.targetScreen)}
+                    style={[
+                      styles.item,
+                      index === section.items.length - 1 ? styles.lastItem : null,
+                    ]}
+                  >
+                    <Feather color={AppColors.primary} name={item.icon} size={18} />
+                    {item.targetScreen === "subscription" ? (
+                      <Text style={styles.itemLabel}>
+                        {SubscriptionPlusLabels.menuPrefix}{" "}
+                        <Text style={styles.itemPlusLabel}>plus</Text>
+                      </Text>
+                    ) : (
+                      <Text style={styles.itemLabel}>{item.label}</Text>
+                    )}
+                  </Pressable>
+                ))}
+              </View>
+            </View>
           ))}
         </View>
       </Animated.View>
@@ -93,10 +106,10 @@ const styles = StyleSheet.create({
     top: 0,
     right: 0,
     bottom: 0,
-    width: MENU_DRAWER_WIDTH,
+    width: MenuUi.drawerWidth,
     backgroundColor: AppColors.surface,
     paddingHorizontal: AppLayout.screenPadding * 2,
-    gap: 20,
+    gap: MenuUi.drawerGap,
     borderLeftWidth: 1,
     borderLeftColor: AppColors.border,
     shadowColor: AppColors.calendarShadow,
@@ -107,26 +120,35 @@ const styles = StyleSheet.create({
       height: 0,
     },
   },
-  menuTitle: {
+  sections: {
+    gap: MenuUi.drawerGap,
+    paddingTop: MenuUi.titlePaddingTop,
+  },
+  section: {
+    gap: MenuUi.sectionGap,
+  },
+  firstSectionHeader: {
     alignItems: "stretch",
     justifyContent: "center",
-    paddingTop: 20,
   },
-  menuLabel: {
-    color: AppColors.text,
-    fontSize: 18,
+  sectionLabel: {
+    color: AppColors.mutedStrongText,
+    fontSize: MenuUi.sectionTitleFontSize,
     fontWeight: "700",
   },
   items: {
-    gap: 6,
+    gap: MenuUi.itemGap,
   },
   item: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    paddingVertical: 14,
+    gap: MenuUi.itemIconGap,
+    paddingVertical: MenuUi.itemPaddingVertical,
     borderBottomWidth: 1,
     borderBottomColor: AppColors.border,
+  },
+  lastItem: {
+    borderBottomWidth: 0,
   },
   itemLabel: {
     color: AppColors.text,

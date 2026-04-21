@@ -1,7 +1,7 @@
 import { CommonActionCopy } from "./commonActions";
 
 export const AppMessages = {
-  brand: "MoneyChecks",
+  brand: "알뜰",
   chartScreenTitle: "차트",
   summaryIncome: "총수입",
   summaryExpense: "총지출",

@@ -11,15 +11,18 @@ import { buildAnnualReportFileName, buildAnnualReportWorkbook } from "./annualRe
 type DownloadAnnualReportParams = {
   bookName: string;
   entries: Parameters<typeof buildAnnualReportData>[1];
+  onBeforeDownload?: (() => Promise<void> | void) | null;
   period: AnnualReportPeriod;
 };
 
 export async function confirmAndDownloadAnnualReport(params: DownloadAnnualReportParams) {
-  const { bookName, entries, period } = params;
+  const { bookName, entries, onBeforeDownload = null, period } = params;
   const shouldDownload = await confirmAnnualReportDownload(bookName, period.periodLabel);
   if (!shouldDownload) {
     return false;
   }
+
+  await onBeforeDownload?.();
 
   const report = buildAnnualReportData(bookName, entries, period.dateFrom, period.dateTo);
   const workbook = buildAnnualReportWorkbook(report);
