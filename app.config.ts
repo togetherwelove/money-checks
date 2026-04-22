@@ -9,6 +9,7 @@ const appVersion = packageJson.version ?? "0.0.0";
 const admobAndroidAppId = process.env.EXPO_PUBLIC_ADMOB_ANDROID_APP_ID ?? "";
 const admobIosAppId = process.env.EXPO_PUBLIC_ADMOB_IOS_APP_ID ?? "";
 const appIconPath = "./asset/icon.png";
+const androidAdaptiveForegroundPath = "./asset/adaptive-icon-foreground.png";
 const imagePickerPermissionConfig = {
   cameraPermission:
     "알뜰 앱 이용 중 첨부할 이미지를 촬영하기 위해 카메라 접근 권한이 필요합니다.",
@@ -30,11 +31,6 @@ const config: ExpoConfig = {
       projectId: "36c2b019-99be-4045-b4ce-ed1a031c4aa8",
     },
   },
-  web: {
-    bundler: "metro",
-    output: "single",
-    favicon: "./public/logo192.png",
-  },
   splash: {
     resizeMode: "contain",
     backgroundColor: "#f5f1e8",
@@ -49,6 +45,7 @@ const config: ExpoConfig = {
   },
   android: {
     adaptiveIcon: {
+      foregroundImage: androidAdaptiveForegroundPath,
       backgroundColor: "#f5f1e8",
     },
     package: "com.chanwook.moneychecks",

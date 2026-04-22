@@ -9,7 +9,7 @@
     "dev": "node scripts/write-build-info.cjs && expo start",
     "supabase:db:push": "node scripts/run-supabase-target.cjs development db push",
     "supabase:link": "node scripts/run-supabase-target.cjs development link",
-    "verify": "pnpm exec tsc --noEmit -p tsconfig.json && vitest run && biome check . && node scripts/write-build-info.cjs && expo export --platform web && workbox generateSW workbox-config.cjs"
+    "verify": "pnpm exec tsc --noEmit -p tsconfig.json && vitest run && biome check . && node scripts/write-build-info.cjs"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
@@ -41,7 +41,6 @@
     "expo-status-bar": "~3.0.9",
     "expo-web-browser": "~15.0.8",
     "react": "19.1.0",
-    "react-dom": "19.1.0",
     "react-native": "0.81.5",
     "react-native-collapsible": "^1.6.2",
     "react-native-draggable-flatlist": "^4.0.3",
@@ -57,7 +56,6 @@
     "react-native-safe-area-context": "~5.6.2",
     "react-native-svg": "15.12.1",
     "react-native-url-polyfill": "^3.0.0",
-    "react-native-web": "0.21.2",
     "react-native-worklets": "0.5.1",
     "xlsx": "^0.18.5"
   },
@@ -67,7 +65,6 @@
     "@vitest/coverage-v8": "^3.2.4",
     "babel-preset-expo": "~54.0.10",
     "typescript": "~5.9.3",
-    "vitest": "^3.2.4",
-    "workbox-cli": "7.3.0"
+    "vitest": "^3.2.4"
   }
 }
