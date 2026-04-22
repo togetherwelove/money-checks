@@ -9,6 +9,7 @@ import {
   SubscriptionTiers,
 } from "../constants/subscription";
 import { useLedgerBookNickname } from "../hooks/useLedgerBookNickname";
+import { confirmSharedLedgerJoinWithExistingEntries } from "../lib/sharedLedgerJoinConfirmation";
 import { showNativeToast } from "../lib/nativeToast";
 import { fetchOwnProfileDisplayName } from "../lib/profiles";
 import {
@@ -34,13 +35,13 @@ type SharedLedgerPanelProps = {
   members: LedgerBookMember[];
   onOpenSubscription: () => void;
   onApproveJoinRequest: (requestId: string) => Promise<boolean>;
-  onBeforeCopyShareCode: () => Promise<void>;
+  onBeforeCopyShareCode: () => Promise<boolean>;
   onKickMember: (targetUserId: string) => Promise<boolean>;
   onRejectJoinRequest: (requestId: string) => Promise<boolean>;
   onLeaveSharedLedgerBook: () => Promise<boolean>;
   onJoinSharedLedgerBook: (shareCode: string) => Promise<JoinSharedLedgerBookAttempt>;
   onRenameActiveLedgerBook: (nextName: string) => Promise<boolean>;
-  onSendPendingJoinRequestNotification: (requesterName: string) => Promise<void>;
+  onSendPendingJoinRequestNotification: () => Promise<void>;
   onSendPushNotificationToBookMembers: (
     bookId: string,
     event: NotificationEvent,
@@ -109,6 +110,11 @@ export function SharedLedgerPanel({
       return;
     }
 
+    const didConfirmJoin = await confirmSharedLedgerJoinWithExistingEntries(activeBook?.id ?? null);
+    if (!didConfirmJoin) {
+      return;
+    }
+
     const joinAttempt = await onJoinSharedLedgerBook(nextShareCode);
     const didSucceed = Boolean(joinAttempt.result);
     showNativeToast(
@@ -124,7 +130,7 @@ export function SharedLedgerPanel({
     }
 
     if (joinAttempt.result === "requested") {
-      await onSendPendingJoinRequestNotification(await resolveCurrentActorName());
+      await onSendPendingJoinRequestNotification();
       return;
     }
 

@@ -1,5 +1,6 @@
 import { StyleSheet, View } from "react-native";
 
+import type { LedgerBookMember } from "../types/ledgerBookMember";
 import type { LedgerEntryDraft, LedgerEntryType } from "../types/ledger";
 import { LedgerEntryForm } from "./LedgerEntryForm";
 
@@ -7,10 +8,10 @@ type LedgerEditorPanelProps = {
   canQueueEntry?: boolean;
   draft: LedgerEntryDraft;
   editingEntryId: string | null;
+  members: LedgerBookMember[];
   onChangeDraft: (field: keyof LedgerEntryDraft, value: string) => void;
   onChangeInstallmentMonths: (installmentMonths: number) => void;
   onPickPhotoAttachments: () => void | Promise<void>;
-  onCategorySelected?: (() => void) | null;
   onCategoryDraggingChange?: (isDragging: boolean) => void;
   onRemovePhotoAttachment: (attachmentId: string) => void;
   onQueueEntry?: (() => void | Promise<void>) | null;
@@ -27,10 +28,10 @@ export function LedgerEditorPanel(props: LedgerEditorPanelProps) {
         canQueueEntry={props.canQueueEntry}
         draft={props.draft}
         editingEntryId={props.editingEntryId}
+        members={props.members}
         onChangeDraft={props.onChangeDraft}
         onChangeInstallmentMonths={props.onChangeInstallmentMonths}
         onPickPhotoAttachments={props.onPickPhotoAttachments}
-        onCategorySelected={props.onCategorySelected}
         onCategoryDraggingChange={props.onCategoryDraggingChange}
         onRemovePhotoAttachment={props.onRemovePhotoAttachment}
         onQueueEntry={props.onQueueEntry}

@@ -24,12 +24,16 @@ export type LedgerEntry = {
   note: string;
   photoAttachments: LedgerEntryPhotoAttachment[];
   sourceType?: string;
+  targetMemberId?: string;
+  targetMemberName?: string;
 };
 
 export type LedgerEntryDraft = {
   date: string;
   type: LedgerEntryType;
   amount: string;
+  targetMemberId: string;
+  targetMemberName?: string;
   content: string;
   category: string;
   installmentMonths: number;

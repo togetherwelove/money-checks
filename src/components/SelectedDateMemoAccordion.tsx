@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { StyleSheet, TextInput, View } from "react-native";
+import { Pressable, StyleSheet, TextInput, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
 import { DateMemoCopy, DateMemoUi } from "../constants/dateMemo";
@@ -49,6 +49,10 @@ export function SelectedDateMemoAccordion({
     return null;
   }
 
+  const startEditing = () => {
+    setIsEditing(true);
+  };
+
   const persistDraftNote = async () => {
     const trimmedDraftNote = draftNote.trim();
     const trimmedSavedNote = savedNoteRef.current.trim();
@@ -82,27 +86,34 @@ export function SelectedDateMemoAccordion({
             void persistDraftNote();
           }}
           onChangeText={setDraftNote}
+          onSubmitEditing={() => {
+            inputRef.current?.blur();
+          }}
           placeholder={DateMemoCopy.placeholder}
+          returnKeyType="done"
           scrollEnabled
           style={styles.input}
+          submitBehavior="blurAndSubmit"
           textAlignVertical="top"
           value={draftNote}
         />
       ) : (
-        <View style={styles.previewContainer}>
+        <Pressable onPress={startEditing} style={styles.previewContainer}>
           <View style={styles.previewActionRow}>
-            <TextLinkButton label={DateMemoCopy.editAction} onPress={() => setIsEditing(true)} />
+            <TextLinkButton label={DateMemoCopy.editAction} onPress={startEditing} />
           </View>
-          <TextInput
-            editable={false}
-            multiline
-            placeholder={DateMemoCopy.placeholder}
-            scrollEnabled
-            style={styles.previewInput}
-            textAlignVertical="top"
-            value={draftNote}
-          />
-        </View>
+          <View pointerEvents="none">
+            <TextInput
+              editable={false}
+              multiline
+              placeholder={DateMemoCopy.placeholder}
+              scrollEnabled
+              style={styles.previewInput}
+              textAlignVertical="top"
+              value={draftNote}
+            />
+          </View>
+        </Pressable>
       )}
     </View>
   );

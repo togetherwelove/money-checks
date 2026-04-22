@@ -33,7 +33,7 @@ type AppScreenRouterProps = {
   notificationStatusMessage: string;
   onChangeNotificationThresholdEnabled: (key: NotificationThresholdKey, enabled: boolean) => void;
   onChangeNotificationThreshold: (key: NotificationThresholdKey, value: string) => void;
-  onBeforeCopyShareCode: () => Promise<void>;
+  onBeforeCopyShareCode: () => Promise<boolean>;
   onDeleteSelectedEntry: (entry: LedgerEntry) => Promise<void>;
   onEditSelectedEntry: (entry: LedgerEntry) => void;
   onOpenCharts: () => void;
@@ -47,7 +47,7 @@ type AppScreenRouterProps = {
   onSaveEntry: () => Promise<void>;
   onSaveEntryDrafts: (drafts: LedgerEntryDraft[]) => Promise<void>;
   onSettleInstallmentEntry: (entry: LedgerEntry) => Promise<void>;
-  onSendPendingJoinRequestNotification: (requesterName: string) => Promise<void>;
+  onSendPendingJoinRequestNotification: () => Promise<void>;
   onSendPushNotificationToBookMembers: (
     bookId: string,
     event: NotificationEvent,
@@ -225,6 +225,7 @@ export function AppScreenRouter({
   if (activeScreen === "entry") {
     return (
       <EntryScreen
+        currentUserId={userId}
         onSaveEntries={onSaveEntryDrafts}
         onSaveEntry={onSaveEntry}
         onSettleInstallmentEntry={onSettleInstallmentEntry}

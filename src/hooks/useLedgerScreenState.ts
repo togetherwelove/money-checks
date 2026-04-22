@@ -39,7 +39,9 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
   const [visibleMonth, setVisibleMonth] = useState(actualToday);
   const [selectedDate, setSelectedDate] = useState(() => toIsoDate(new Date()));
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
-  const [draft, setDraft] = useState<LedgerEntryDraft>(() => createDraft(toIsoDate(new Date())));
+  const [draft, setDraft] = useState<LedgerEntryDraft>(() =>
+    createDraft(toIsoDate(new Date()), session.user.id),
+  );
   const [busyTaskCount, setBusyTaskCount] = useState(0);
   const trackBusyTask: BusyTaskTracker = (task) => runBusyTask(setBusyTaskCount, task);
   const {
@@ -123,7 +125,7 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
   const resetEditor = (isoDate: string) => {
     setSelectedDate(isoDate);
     setEditingEntryId(null);
-    setDraft(createDraft(isoDate));
+    setDraft(createDraft(isoDate, session.user.id));
   };
 
   const handleSelectDate = (isoDate: string) => {
@@ -177,6 +179,8 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
         date: draftToSave.date,
         type: draftToSave.type,
         amount: Number(draftToSave.amount),
+        targetMemberId: draftToSave.targetMemberId,
+        targetMemberName: draftToSave.targetMemberName,
         content: draftToSave.content.trim(),
         category: draftToSave.category.trim(),
         note: draftToSave.note.trim(),
@@ -285,6 +289,8 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
       date: entry.date,
       type: entry.type,
       amount: String(entry.amount),
+      targetMemberId: entry.targetMemberId ?? entry.authorId ?? session.user.id,
+      targetMemberName: entry.targetMemberName ?? entry.authorName,
       content: entry.content,
       category: entry.category,
       installmentMonths: entry.installmentMonths ?? 1,

@@ -37,7 +37,7 @@ type LedgerNotificationsState = {
   permissionState: NotificationPermissionState;
   preferenceGroups: NotificationPreferenceGroup[];
   requestNotifications: () => Promise<boolean>;
-  sendPendingJoinRequestNotification: (requesterName: string) => Promise<void>;
+  sendPendingJoinRequestNotification: () => Promise<void>;
   sendPushNotificationToBookMembers: (
     bookId: string,
     event: NotificationEvent,
@@ -188,12 +188,11 @@ export function useLedgerNotifications(userId: string): LedgerNotificationsState
     }
   };
 
-  const sendPendingJoinRequestNotificationInternal = async (requesterName: string) => {
+  const sendPendingJoinRequestNotificationInternal = async () => {
     try {
-      await sendPendingJoinRequestNotification(requesterName);
+      await sendPendingJoinRequestNotification();
     } catch (error) {
       logAppError("LedgerNotifications", error, {
-        requesterName,
         step: "send_pending_join_request_notification",
       });
     }

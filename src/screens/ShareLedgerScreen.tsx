@@ -24,13 +24,13 @@ type ShareLedgerScreenProps = {
   activeBook: LedgerBook | null;
   onOpenSubscription: () => void;
   onApproveJoinRequest: (requestId: string) => Promise<boolean>;
-  onBeforeCopyShareCode: () => Promise<void>;
+  onBeforeCopyShareCode: () => Promise<boolean>;
   onJoinSharedLedgerBook: (shareCode: string) => Promise<JoinSharedLedgerBookAttempt>;
   onLeaveSharedLedgerBook: () => Promise<boolean>;
   onRenameActiveLedgerBook: (nextName: string) => Promise<boolean>;
   onRemoveSharedLedgerMember: (targetUserId: string) => Promise<boolean>;
   onRejectJoinRequest: (requestId: string) => Promise<boolean>;
-  onSendPendingJoinRequestNotification: (requesterName: string) => Promise<void>;
+  onSendPendingJoinRequestNotification: () => Promise<void>;
   onSendPushNotificationToBookMembers: (
     bookId: string,
     event: NotificationEvent,

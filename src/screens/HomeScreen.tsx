@@ -4,7 +4,6 @@ import {
   ActivityIndicator,
   Alert,
   Keyboard,
-  RefreshControl,
   StyleSheet,
   Text,
   TextInput,
@@ -21,6 +20,7 @@ import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { LedgerEntryList } from "../components/LedgerEntryList";
 import { MonthCalendarPager } from "../components/MonthCalendarPager";
 import { MonthlySummary } from "../components/MonthlySummary";
+import { ScreenContentContainer } from "../components/ScreenContentContainer";
 import { SelectedDateMemoAccordion } from "../components/SelectedDateMemoAccordion";
 import { WeekdayHeader } from "../components/WeekdayHeader";
 import { AppColors } from "../constants/colors";
@@ -71,9 +71,7 @@ export function HomeScreen({
     errorMessage,
     handleSaveSelectedDateNote,
     isLoadingSelectedDateEntries,
-    isRefreshing,
     monthlyLedger,
-    refreshLedger,
     selectedDate,
     selectedEntries,
     selectedDateNote,
@@ -110,110 +108,187 @@ export function HomeScreen({
         ref={scrollViewRef}
         contentContainerStyle={styles.content}
         extraScrollHeight={DateMemoUi.keyboardExtraScrollHeight}
-        refreshControl={
-          <RefreshControl
-            onRefresh={() => {
-              void refreshLedger();
-            }}
-            refreshing={isRefreshing}
-            tintColor={AppColors.primary}
-          />
-        }
         showsVerticalScrollIndicator={false}
         style={styles.screen}
       >
-        <View style={styles.fixedSection}>
-          {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
-          <CalendarToolbar
-            monthLabel={formatMonthYear(visibleMonth)}
-            onPressMonthLabel={onOpenMonthPicker}
-            onSelectToday={() => {
-              onSelectCalendarDate(todayIsoDate);
-            }}
-            showMoveToCurrent={false}
-          />
-          <WeekdayHeader />
-          <MonthCalendarPager
-            currentPage={state.currentMonthPage}
-            nextPage={state.nextMonthPage}
-            onMoveMonth={(monthOffset) => moveMonth(visibleMonth, monthOffset, setVisibleMonth)}
-            onSelectDate={onSelectCalendarDate}
-            previousPage={state.previousMonthPage}
+        <ScreenContentContainer maxWidth={AppLayout.calendarScreenMaxWidth}>
+          <KeyboardAwareContent
+            errorMessage={errorMessage}
+            handleBeginDateMemoEditing={handleBeginDateMemoEditing}
+            isDateMemoExpanded={isDateMemoExpanded}
+            isLoadingSelectedDateEntries={isLoadingSelectedDateEntries}
+            monthlyLedger={monthlyLedger}
+            onDeleteSelectedEntry={onDeleteSelectedEntry}
+            onDeleteSelectedDateNote={handleDeleteSelectedDateNote}
+            onEditSelectedEntry={onEditSelectedEntry}
+            onOpenCharts={onOpenCharts}
+            onOpenEntry={onOpenEntry}
+            onOpenMonthPicker={onOpenMonthPicker}
+            onSaveSelectedDateNote={handleSaveSelectedDateNote}
+            onSelectCalendarDate={onSelectCalendarDate}
             selectedDate={selectedDate}
+            selectedDateLabel={selectedDateLabel}
+            selectedDateNote={selectedDateNote}
+            selectedEntries={selectedEntries}
+            setIsDateMemoExpanded={setIsDateMemoExpanded}
+            setVisibleMonth={setVisibleMonth}
+            showsBannerAd={showsBannerAd}
+            state={state}
+            todayIsoDate={todayIsoDate}
+            visibleMonth={visibleMonth}
           />
-          <View style={styles.summarySection}>
-            {showsBannerAd ? <AppBannerAd /> : null}
-            <MonthlySummary
-              totalExpense={formatCurrency(monthlyLedger.totalExpense)}
-              totalIncome={formatCurrency(monthlyLedger.totalIncome)}
-            />
-          </View>
-          <View style={styles.selectionRow}>
-            <View style={styles.selectionInfo}>
-              <Text style={styles.selectedDate}>{selectedDateLabel}</Text>
-              {selectedDate !== todayIsoDate ? (
-                <IconActionButton
-                  accessibilityLabel="오늘 날짜로 이동"
-                  icon="crosshair"
-                  onPress={() => {
-                    onSelectCalendarDate(todayIsoDate);
-                  }}
-                  size="compact"
-                />
-              ) : null}
-            </View>
-            <View style={styles.selectionInfo}>
-              <DateMemoToggleButton
-                isExpanded={isDateMemoExpanded}
-                onPress={() => setIsDateMemoExpanded((currentValue) => !currentValue)}
-              />
-              <IconActionButton icon="pie-chart" onPress={onOpenCharts} size="compact" />
-              <IconActionButton icon="plus" onPress={onOpenEntry} size="compact" />
-            </View>
-          </View>
-        </View>
-        {isLoadingSelectedDateEntries && selectedEntries.length === 0 ? (
-          <View style={styles.selectedDateLoadingState}>
-            <ActivityIndicator color={AppColors.primary} size="small" />
-          </View>
-        ) : (
-          <>
-            <SelectedDateMemoAccordion
-              key={selectedDate}
-              isExpanded={isDateMemoExpanded}
-              note={selectedDateNote}
-              onBeginEditing={handleBeginDateMemoEditing}
-              onCollapse={() => setIsDateMemoExpanded(false)}
-              onDelete={handleDeleteSelectedDateNote}
-              onSave={handleSaveSelectedDateNote}
-            />
-            <LedgerEntryList
-              entries={selectedEntries}
-              onDeleteEntry={(entry) => {
-                Alert.alert(
-                  AppMessages.editorDeleteConfirmTitle,
-                  AppMessages.editorDeleteConfirmMessage,
-                  [
-                    {
-                      style: "cancel",
-                      text: CommonActionCopy.cancel,
-                    },
-                    {
-                      onPress: () => {
-                        void onDeleteSelectedEntry(entry);
-                      },
-                      style: "destructive",
-                      text: AppMessages.editorDeleteConfirmAction,
-                    },
-                  ],
-                );
-              }}
-              onEditEntry={onEditSelectedEntry}
-            />
-          </>
-        )}
+        </ScreenContentContainer>
       </KeyboardAwareScrollView>
     </TouchableWithoutFeedback>
+  );
+}
+
+function KeyboardAwareContent({
+  errorMessage,
+  handleBeginDateMemoEditing,
+  isDateMemoExpanded,
+  isLoadingSelectedDateEntries,
+  monthlyLedger,
+  onDeleteSelectedEntry,
+  onDeleteSelectedDateNote,
+  onEditSelectedEntry,
+  onOpenCharts,
+  onOpenEntry,
+  onOpenMonthPicker,
+  onSaveSelectedDateNote,
+  onSelectCalendarDate,
+  selectedDate,
+  selectedDateLabel,
+  selectedDateNote,
+  selectedEntries,
+  setIsDateMemoExpanded,
+  setVisibleMonth,
+  showsBannerAd,
+  state,
+  todayIsoDate,
+  visibleMonth,
+}: {
+  errorMessage: string | null;
+  handleBeginDateMemoEditing: (input: TextInput | null) => void;
+  isDateMemoExpanded: boolean;
+  isLoadingSelectedDateEntries: boolean;
+  monthlyLedger: LedgerScreenState["monthlyLedger"];
+  onDeleteSelectedEntry: (entry: LedgerEntry) => Promise<void>;
+  onDeleteSelectedDateNote: () => Promise<void>;
+  onEditSelectedEntry: (entry: LedgerEntry) => void;
+  onOpenCharts: () => void;
+  onOpenEntry: () => void;
+  onOpenMonthPicker: () => void;
+  onSaveSelectedDateNote: (note: string) => Promise<void>;
+  onSelectCalendarDate: (isoDate: string) => void;
+  selectedDate: string;
+  selectedDateLabel: string;
+  selectedDateNote: string;
+  selectedEntries: LedgerEntry[];
+  setIsDateMemoExpanded: (updater: boolean | ((currentValue: boolean) => boolean)) => void;
+  setVisibleMonth: (nextMonth: Date) => void;
+  showsBannerAd: boolean;
+  state: LedgerScreenState;
+  todayIsoDate: string;
+  visibleMonth: Date;
+}) {
+  return (
+    <>
+      <View style={styles.fixedSection}>
+        {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
+        <CalendarToolbar
+          monthLabel={formatMonthYear(visibleMonth)}
+          onPressMonthLabel={onOpenMonthPicker}
+          onSelectToday={() => {
+            onSelectCalendarDate(todayIsoDate);
+          }}
+          showMoveToCurrent={false}
+        />
+        <WeekdayHeader />
+        <MonthCalendarPager
+          currentPage={state.currentMonthPage}
+          nextPage={state.nextMonthPage}
+          onMoveMonth={(monthOffset) => moveMonth(visibleMonth, monthOffset, setVisibleMonth)}
+          onSelectDate={onSelectCalendarDate}
+          previousPage={state.previousMonthPage}
+          selectedDate={selectedDate}
+        />
+        <View style={styles.summarySection}>
+          {showsBannerAd ? <AppBannerAd /> : null}
+          <MonthlySummary
+            totalExpense={formatCurrency(monthlyLedger.totalExpense)}
+            totalIncome={formatCurrency(monthlyLedger.totalIncome)}
+          />
+        </View>
+        <View style={styles.selectionRow}>
+          <View style={styles.selectionInfo}>
+            <Text style={styles.selectedDate}>{selectedDateLabel}</Text>
+            {selectedDate !== todayIsoDate ? (
+              <IconActionButton
+                accessibilityLabel="오늘 날짜로 이동"
+                icon="crosshair"
+                onPress={() => {
+                  onSelectCalendarDate(todayIsoDate);
+                }}
+                size="compact"
+              />
+            ) : null}
+          </View>
+          <View style={styles.selectionInfo}>
+            <DateMemoToggleButton
+              isExpanded={isDateMemoExpanded}
+              onPress={() => setIsDateMemoExpanded((currentValue) => !currentValue)}
+            />
+            <IconActionButton icon="pie-chart" onPress={onOpenCharts} size="compact" />
+            <IconActionButton icon="plus" onPress={onOpenEntry} size="compact" />
+          </View>
+        </View>
+      </View>
+      {isLoadingSelectedDateEntries && selectedEntries.length === 0 ? (
+        <ActivityIndicatorContainer />
+      ) : (
+        <>
+          <SelectedDateMemoAccordion
+            key={selectedDate}
+            isExpanded={isDateMemoExpanded}
+            note={selectedDateNote}
+            onBeginEditing={handleBeginDateMemoEditing}
+            onCollapse={() => setIsDateMemoExpanded(false)}
+            onDelete={onDeleteSelectedDateNote}
+            onSave={onSaveSelectedDateNote}
+          />
+          <LedgerEntryList
+            entries={selectedEntries}
+            onDeleteEntry={(entry) => {
+              Alert.alert(
+                AppMessages.editorDeleteConfirmTitle,
+                AppMessages.editorDeleteConfirmMessage,
+                [
+                  {
+                    style: "cancel",
+                    text: CommonActionCopy.cancel,
+                  },
+                  {
+                    onPress: () => {
+                      void onDeleteSelectedEntry(entry);
+                    },
+                    style: "destructive",
+                    text: AppMessages.editorDeleteConfirmAction,
+                  },
+                ],
+              );
+            }}
+            onEditEntry={onEditSelectedEntry}
+          />
+        </>
+      )}
+    </>
+  );
+}
+
+function ActivityIndicatorContainer() {
+  return (
+    <ActivityIndicator color={AppColors.primary} size="small" style={styles.selectedDateLoading} />
   );
 }
 
@@ -232,12 +307,13 @@ const styles = StyleSheet.create({
   },
   content: {
     flexGrow: 1,
-    padding: AppLayout.screenPadding,
-    gap: AppLayout.cardGap,
+    paddingHorizontal: AppLayout.screenPadding,
     paddingBottom: DateMemoUi.keyboardExtraScrollHeight,
   },
   fixedSection: {
     gap: AppLayout.cardGap,
+    paddingTop: AppLayout.screenPadding,
+    paddingBottom: AppLayout.cardGap,
   },
   summarySection: {
     gap: AppLayout.compactGap,
@@ -262,10 +338,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: AppLayout.compactGap,
   },
-  selectedDateLoadingState: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+  selectedDateLoading: {
     minHeight: 160,
   },
 });

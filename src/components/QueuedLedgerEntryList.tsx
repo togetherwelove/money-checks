@@ -18,6 +18,10 @@ function formatQueuedEntrySummary(entry: QueuedLedgerEntryDraft) {
   const amountPrefix = entry.draft.type === "income" ? "+ " : "- ";
   const summaryParts = [`${amountPrefix}${formatAmountNumber(Number(entry.draft.amount))}`];
 
+  if (entry.draft.targetMemberName?.trim()) {
+    summaryParts.push(entry.draft.targetMemberName.trim());
+  }
+
   if (entry.draft.content.trim()) {
     summaryParts.push(entry.draft.content.trim());
   }

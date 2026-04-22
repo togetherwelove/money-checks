@@ -1,0 +1,28 @@
+window.APK_DOWNLOAD_CONFIG = Object.freeze({
+  appName: "알뜰",
+  repositoryOwner: "togetherwelove",
+  repositoryName: "money-checks",
+  releaseTag: "android-preview-latest",
+  assetName: "alttle-preview.apk",
+  pageTitle: "알뜰 안드로이드 테스트 빌드",
+  pageDescription: "최신 Android APK를 바로 내려받아 태블릿과 휴대폰에서 테스트할 수 있습니다.",
+  installSteps: Object.freeze([
+    "APK를 다운로드합니다.",
+    "브라우저나 파일 앱에서 APK를 열어 설치를 진행합니다.",
+    "처음 설치라면 '알 수 없는 앱 설치' 권한을 허용합니다.",
+  ]),
+  messages: Object.freeze({
+    loading: "최신 빌드 정보를 불러오는 중입니다.",
+    ready: "최신 테스트 APK가 준비되었습니다.",
+    missing: "아직 배포된 APK가 없습니다.",
+    failed: "빌드 정보를 불러오지 못했습니다.",
+    retry: "다시 시도",
+    manualDownload: "릴리스 페이지 열기",
+    primaryDownload: "APK 다운로드",
+    publishedAtLabel: "업로드 시각",
+    fileSizeLabel: "파일 크기",
+    versionLabel: "릴리스",
+    notesLabel: "빌드 메모",
+    installGuideLabel: "설치 방법",
+  }),
+});

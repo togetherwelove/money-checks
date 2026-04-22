@@ -1,7 +1,7 @@
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
-import { useRef, useState } from "react";
 import type { ComponentRef } from "react";
-import { InteractionManager, StyleSheet, Text, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
 
 import { AppBannerAd } from "../components/AppBannerAd";
 import { EntryDatePickerModal } from "../components/EntryDatePickerModal";
@@ -9,13 +9,17 @@ import { EntryDateToolbar } from "../components/EntryDateToolbar";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { LedgerEditorPanel } from "../components/LedgerEditorPanel";
 import { QueuedLedgerEntryList } from "../components/QueuedLedgerEntryList";
+import { ScreenContentContainer } from "../components/ScreenContentContainer";
 import { AppColors } from "../constants/colors";
 import { ENTRY_PHOTO_LIMIT, EntryPhotoCopy } from "../constants/entryPhotos";
 import { AppLayout } from "../constants/layout";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
 import { appPlatform } from "../lib/appPlatform";
 import { pickImageAttachments } from "../lib/imageAttachments";
+import { fetchLedgerBookMembers } from "../lib/ledgerBooks";
+import { logAppError } from "../lib/logAppError";
 import { showNativeToast } from "../lib/nativeToast";
+import type { LedgerBookMember } from "../types/ledgerBookMember";
 import type { LedgerEntry, LedgerEntryDraft, QueuedLedgerEntryDraft } from "../types/ledger";
 import { formatSelectedDate, parseIsoDate, toIsoDate } from "../utils/calendar";
 import { canSubmitDraft, createQueuedEntryId } from "../utils/ledgerEntries";
@@ -28,6 +32,7 @@ type EntryDatePickerTarget =
     };
 
 type EntryScreenProps = {
+  currentUserId: string;
   onSaveEntry: () => Promise<void>;
   onSaveEntries: (drafts: LedgerEntryDraft[]) => Promise<void>;
   onSettleInstallmentEntry: (entry: LedgerEntry) => Promise<void>;
@@ -35,9 +40,8 @@ type EntryScreenProps = {
   state: LedgerScreenState;
 };
 
-const CATEGORY_SELECTION_SCROLL_DELAY_MS = 120;
-
 export function EntryScreen({
+  currentUserId,
   onSaveEntry,
   onSaveEntries,
   onSettleInstallmentEntry,
@@ -49,6 +53,7 @@ export function EntryScreen({
   const scrollViewRef = useRef<ComponentRef<typeof KeyboardAwareScrollView>>(null);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isCategoryDragging, setIsCategoryDragging] = useState(false);
+  const [members, setMembers] = useState<LedgerBookMember[]>([]);
   const [queuedEntries, setQueuedEntries] = useState<QueuedLedgerEntryDraft[]>([]);
   const [datePickerTarget, setDatePickerTarget] = useState<EntryDatePickerTarget>({
     kind: "draft",
@@ -66,9 +71,72 @@ export function EntryScreen({
     updateDraftPhotoAttachments,
     updateDraftType,
   } = state;
+  const activeBookId = state.activeBook?.id ?? null;
   const editingEntry = entries.find((entry) => entry.id === editingEntryId) ?? null;
   const pickerMode = appPlatform.entryDatePickerMode;
   const canQueueEntry = canSubmitDraft(draft);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadMembers = async () => {
+      if (!activeBookId) {
+        setMembers([]);
+        return;
+      }
+
+      try {
+        const nextMembers = await fetchLedgerBookMembers(activeBookId);
+        if (isMounted) {
+          setMembers(nextMembers);
+        }
+      } catch (error) {
+        logAppError("EntryScreen", error, {
+          activeBookId,
+          step: "load_target_members",
+        });
+        if (isMounted) {
+          setMembers([]);
+        }
+      }
+    };
+
+    void loadMembers();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeBookId]);
+
+  useEffect(() => {
+    if (members.length === 0) {
+      return;
+    }
+
+    const selectedMember = members.find((member) => member.userId === draft.targetMemberId);
+    if (selectedMember) {
+      if (draft.targetMemberName !== selectedMember.displayName) {
+        updateDraftField("targetMemberName", selectedMember.displayName);
+      }
+      return;
+    }
+
+    const fallbackMemberId =
+      members.find((member) => member.userId === currentUserId)?.userId ?? members[0]?.userId;
+    const fallbackMember = members.find((member) => member.userId === fallbackMemberId);
+    if (!fallbackMemberId || !fallbackMember) {
+      return;
+    }
+
+    updateDraftField("targetMemberId", fallbackMemberId);
+    updateDraftField("targetMemberName", fallbackMember.displayName);
+  }, [
+    currentUserId,
+    draft.targetMemberId,
+    draft.targetMemberName,
+    members,
+    updateDraftField,
+  ]);
   const resolvePickerDate = () => {
     if (datePickerTarget.kind === "queued-entry") {
       return (
@@ -158,14 +226,6 @@ export function EntryScreen({
     setQueuedEntries([]);
   };
 
-  const handleCategorySelected = () => {
-    InteractionManager.runAfterInteractions(() => {
-      setTimeout(() => {
-        scrollViewRef.current?.scrollToEnd?.(true);
-      }, CATEGORY_SELECTION_SCROLL_DELAY_MS);
-    });
-  };
-
   const handlePickPhotoAttachments = async () => {
     try {
       const remainingAttachmentSlots = Math.max(
@@ -213,47 +273,51 @@ export function EntryScreen({
         scrollEnabled={!isCategoryDragging}
         style={styles.screen}
       >
-        {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
-        <EntryDateToolbar
-          dateLabel={formatSelectedDate(selectedDate)}
-          onMoveToToday={() => handleSelectDate(todayIsoDate)}
-          onPressDateLabel={() => handleOpenDatePicker({ kind: "draft" })}
-          showMoveToToday={selectedDate !== todayIsoDate}
-        />
-        {showsBannerAd ? <AppBannerAd /> : null}
-        <LedgerEditorPanel
-          canQueueEntry={canQueueEntry}
-          draft={draft}
-          editingEntryId={editingEntryId}
-          onChangeDraft={updateDraftField}
-          onChangeInstallmentMonths={updateDraftInstallmentMonths}
-          onPickPhotoAttachments={handlePickPhotoAttachments}
-          onCategorySelected={handleCategorySelected}
-          onCategoryDraggingChange={setIsCategoryDragging}
-          onRemovePhotoAttachment={handleRemovePhotoAttachment}
-          onQueueEntry={!editingEntryId ? handleQueueEntry : null}
-          onSaveEntry={handleSaveEntries}
-          onSelectType={updateDraftType}
-          onSettleInstallmentEntry={
-            editingEntry ? () => onSettleInstallmentEntry(editingEntry) : null
-          }
-          showInstallmentSettleAction={Boolean(
-            editingEntry?.installmentMonths &&
-              editingEntry.installmentOrder &&
-              editingEntry.installmentOrder < editingEntry.installmentMonths,
-          )}
-        />
-        {!editingEntryId ? (
-          <QueuedLedgerEntryList
-            entries={queuedEntries}
-            onPressEntryDate={(entryId) => handleOpenDatePicker({ entryId, kind: "queued-entry" })}
-            onRemoveEntry={(entryId) =>
-              setQueuedEntries((currentEntries) =>
-                currentEntries.filter((entry) => entry.id !== entryId),
-              )
-            }
+        <ScreenContentContainer style={styles.contentContainer}>
+          {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
+          <EntryDateToolbar
+            dateLabel={formatSelectedDate(selectedDate)}
+            onMoveToToday={() => handleSelectDate(todayIsoDate)}
+            onPressDateLabel={() => handleOpenDatePicker({ kind: "draft" })}
+            showMoveToToday={selectedDate !== todayIsoDate}
           />
-        ) : null}
+          {showsBannerAd ? <AppBannerAd /> : null}
+          <LedgerEditorPanel
+            canQueueEntry={canQueueEntry}
+            draft={draft}
+            editingEntryId={editingEntryId}
+            members={members}
+            onChangeDraft={updateDraftField}
+            onChangeInstallmentMonths={updateDraftInstallmentMonths}
+            onPickPhotoAttachments={handlePickPhotoAttachments}
+            onCategoryDraggingChange={setIsCategoryDragging}
+            onRemovePhotoAttachment={handleRemovePhotoAttachment}
+            onQueueEntry={!editingEntryId ? handleQueueEntry : null}
+            onSaveEntry={handleSaveEntries}
+            onSelectType={updateDraftType}
+            onSettleInstallmentEntry={
+              editingEntry ? () => onSettleInstallmentEntry(editingEntry) : null
+            }
+            showInstallmentSettleAction={Boolean(
+              editingEntry?.installmentMonths &&
+                editingEntry.installmentOrder &&
+                editingEntry.installmentOrder < editingEntry.installmentMonths,
+            )}
+          />
+          {!editingEntryId ? (
+            <QueuedLedgerEntryList
+              entries={queuedEntries}
+              onPressEntryDate={(entryId) =>
+                handleOpenDatePicker({ entryId, kind: "queued-entry" })
+              }
+              onRemoveEntry={(entryId) =>
+                setQueuedEntries((currentEntries) =>
+                  currentEntries.filter((entry) => entry.id !== entryId),
+                )
+              }
+            />
+          ) : null}
+        </ScreenContentContainer>
       </KeyboardAwareScrollView>
       <EntryDatePickerModal
         entries={entries}
@@ -285,10 +349,12 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.background,
   },
   content: {
-    padding: AppLayout.screenPadding,
-    gap: AppLayout.cardGap,
-    backgroundColor: AppColors.background,
+    paddingHorizontal: AppLayout.screenPadding,
     paddingBottom: 24,
+  },
+  contentContainer: {
+    gap: AppLayout.cardGap,
+    paddingTop: AppLayout.screenPadding,
   },
   error: {
     color: AppColors.expense,

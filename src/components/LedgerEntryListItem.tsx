@@ -96,7 +96,9 @@ function buildEntryMeta({
 
   parts.push(entry.category);
 
-  if (entry.authorName) {
+  if (entry.targetMemberName) {
+    parts.push(entry.targetMemberName);
+  } else if (entry.authorName) {
     parts.push(entry.authorName);
   }
 

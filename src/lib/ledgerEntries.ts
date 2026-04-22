@@ -2,6 +2,7 @@ import { DEFAULT_MEMBER_DISPLAY_NAME } from "../constants/ledgerDisplay";
 import type { LedgerEntry } from "../types/ledger";
 import type { LedgerEntryRow, ProfileDisplayRow } from "../types/supabase";
 import { mapLedgerEntryRow } from "../utils/ledgerMapper";
+import { buildLedgerEntryMetadata, resolveLedgerEntryTargetMemberId } from "./ledgerEntryMetadata";
 import {
   deleteLedgerEntryPhotoAttachmentsForEntries,
   fetchLedgerEntryPhotoAttachmentMap,
@@ -221,6 +222,7 @@ export async function insertLedgerEntries(
         content: entry.content,
         currency: DEFAULT_CURRENCY,
         category: entry.category,
+        metadata: buildLedgerEntryMetadata(entry.targetMemberId ?? userId),
         installment_group_id: entry.installmentGroupId ?? null,
         installment_months: entry.installmentMonths ?? null,
         installment_order: entry.installmentOrder ?? null,
@@ -259,6 +261,7 @@ export async function updateLedgerEntry(entry: LedgerEntry): Promise<LedgerEntry
       amount: entry.amount,
       content: entry.content,
       category: entry.category,
+      metadata: buildLedgerEntryMetadata(entry.targetMemberId ?? entry.authorId ?? ""),
       note: entry.note,
     })
     .eq("id", entry.id)
@@ -344,21 +347,29 @@ export async function fetchLedgerEntriesByInstallmentGroup(
 }
 
 async function mapLedgerEntries(rows: LedgerEntryRow[]): Promise<LedgerEntry[]> {
-  const [authorNameMap, photoAttachmentMap] = await Promise.all([
+  const [authorNameMap, photoAttachmentMap, targetMemberNameMap] = await Promise.all([
     fetchAuthorNameMap(rows),
     fetchLedgerEntryPhotoAttachmentMap(rows),
+    fetchTargetMemberNameMap(rows),
   ]);
   return rows.map((row) => ({
     ...mapLedgerEntryRow(row, authorNameMap.get(row.user_id) ?? DEFAULT_MEMBER_DISPLAY_NAME),
     photoAttachments: photoAttachmentMap.get(row.id) ?? [],
+    targetMemberName:
+      targetMemberNameMap.get(resolveLedgerEntryTargetMemberId(row)) ?? DEFAULT_MEMBER_DISPLAY_NAME,
   }));
 }
 
 async function mapLedgerEntriesWithoutPhotoAttachments(rows: LedgerEntryRow[]): Promise<LedgerEntry[]> {
-  const authorNameMap = await fetchAuthorNameMap(rows);
+  const [authorNameMap, targetMemberNameMap] = await Promise.all([
+    fetchAuthorNameMap(rows),
+    fetchTargetMemberNameMap(rows),
+  ]);
   return rows.map((row) => ({
     ...mapLedgerEntryRow(row, authorNameMap.get(row.user_id) ?? DEFAULT_MEMBER_DISPLAY_NAME),
     photoAttachments: [],
+    targetMemberName:
+      targetMemberNameMap.get(resolveLedgerEntryTargetMemberId(row)) ?? DEFAULT_MEMBER_DISPLAY_NAME,
   }));
 }
 
@@ -376,6 +387,32 @@ async function fetchAuthorNameMap(rows: LedgerEntryRow[]): Promise<Map<string, s
     .from(PROFILE_TABLE)
     .select("id, display_name")
     .in("id", userIds)
+    .returns<ProfileDisplayRow[]>();
+
+  if (error) {
+    throw error;
+  }
+
+  return new Map(
+    (data ?? []).map((profile) => [
+      profile.id,
+      profile.display_name || DEFAULT_MEMBER_DISPLAY_NAME,
+    ]),
+  );
+}
+
+async function fetchTargetMemberNameMap(rows: LedgerEntryRow[]): Promise<Map<string, string>> {
+  const targetMemberIds = [
+    ...new Set(rows.map((row) => resolveLedgerEntryTargetMemberId(row)).filter(Boolean)),
+  ];
+  if (targetMemberIds.length === 0) {
+    return new Map();
+  }
+
+  const { data, error } = await supabase
+    .from(PROFILE_TABLE)
+    .select("id, display_name")
+    .in("id", targetMemberIds)
     .returns<ProfileDisplayRow[]>();
 
   if (error) {

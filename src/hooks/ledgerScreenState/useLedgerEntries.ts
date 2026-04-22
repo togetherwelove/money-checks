@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { DEFAULT_MEMBER_DISPLAY_NAME } from "../../constants/ledgerDisplay";
 import { AppMessages } from "../../constants/messages";
+import { resolveLedgerEntryTargetMemberId } from "../../lib/ledgerEntryMetadata";
 import { logAppError } from "../../lib/logAppError";
 import { fetchProfileDisplayName } from "../../lib/profiles";
 import { supabase } from "../../lib/supabase";
@@ -147,6 +148,7 @@ export function useLedgerEntries(
 
       const changedRow = payload.new as LedgerEntryRow;
       let authorName = DEFAULT_MEMBER_DISPLAY_NAME;
+      let targetMemberName = DEFAULT_MEMBER_DISPLAY_NAME;
       try {
         authorName =
           (await fetchProfileDisplayName(changedRow.user_id)).trim() || DEFAULT_MEMBER_DISPLAY_NAME;
@@ -155,6 +157,17 @@ export function useLedgerEntries(
           authorUserId: changedRow.user_id,
           entryId: changedRow.id,
           step: "load_entry_author_name",
+        });
+      }
+      try {
+        targetMemberName =
+          (await fetchProfileDisplayName(resolveLedgerEntryTargetMemberId(changedRow))).trim() ||
+          DEFAULT_MEMBER_DISPLAY_NAME;
+      } catch (error) {
+        logAppError("LedgerEntries", error, {
+          entryId: changedRow.id,
+          step: "load_entry_target_member_name",
+          targetMemberUserId: resolveLedgerEntryTargetMemberId(changedRow),
         });
       }
 
@@ -168,7 +181,10 @@ export function useLedgerEntries(
             ? (currentEntry.authorName ?? authorName)
             : authorName,
         );
-        return upsertEntryInCache(currentCache, nextEntry);
+        return upsertEntryInCache(currentCache, {
+          ...nextEntry,
+          targetMemberName,
+        });
       });
     };
 

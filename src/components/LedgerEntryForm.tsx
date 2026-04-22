@@ -10,6 +10,7 @@ import {
 } from "react-native";
 
 import { CategorySelector } from "../components/CategorySelector";
+import { EntryTargetMemberSelector } from "../components/EntryTargetMemberSelector";
 import { CATEGORY_OPTIONS } from "../constants/categories";
 import { CommonActionCopy } from "../constants/commonActions";
 import { EntryRegistrationCopy } from "../constants/entryRegistration";
@@ -23,6 +24,7 @@ import {
 } from "../constants/uiStyles";
 import { formatInstallmentLabel } from "../lib/installments";
 import { showNativeToast } from "../lib/nativeToast";
+import type { LedgerBookMember } from "../types/ledgerBookMember";
 import type { LedgerEntryDraft, LedgerEntryType } from "../types/ledger";
 import { formatAmountInput } from "../utils/amount";
 import { ActionButton } from "./ActionButton";
@@ -37,10 +39,10 @@ type LedgerEntryFormProps = {
   canQueueEntry?: boolean;
   draft: LedgerEntryDraft;
   editingEntryId: string | null;
+  members: LedgerBookMember[];
   onChangeDraft: (field: keyof LedgerEntryDraft, value: string) => void;
   onChangeInstallmentMonths: (installmentMonths: number) => void;
   onPickPhotoAttachments: () => void | Promise<void>;
-  onCategorySelected?: (() => void) | null;
   onCategoryDraggingChange?: (isDragging: boolean) => void;
   onRemovePhotoAttachment: (attachmentId: string) => void;
   onQueueEntry?: (() => void | Promise<void>) | null;
@@ -54,10 +56,10 @@ export function LedgerEntryForm({
   canQueueEntry = false,
   draft,
   editingEntryId,
+  members,
   onChangeDraft,
   onChangeInstallmentMonths,
   onPickPhotoAttachments,
-  onCategorySelected = null,
   onCategoryDraggingChange,
   onRemovePhotoAttachment,
   onQueueEntry = null,
@@ -127,13 +129,20 @@ export function LedgerEntryForm({
           value={formatAmountInput(draft.amount)}
         />
       </View>
+      <EntryTargetMemberSelector
+        members={members}
+        onSelectMember={(member) => {
+          onChangeDraft("targetMemberId", member.userId);
+          onChangeDraft("targetMemberName", member.displayName);
+        }}
+        selectedMemberId={draft.targetMemberId}
+      />
       <CategorySelector
         categories={categories}
         entryType={draft.type}
         onDraggingChange={onCategoryDraggingChange}
         onSelectCategory={(category) => {
           onChangeDraft("category", category);
-          onCategorySelected?.();
           setTimeout(() => {
             contentInputRef.current?.focus();
           }, CONTENT_INPUT_FOCUS_DELAY_MS);

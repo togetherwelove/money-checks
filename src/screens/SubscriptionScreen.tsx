@@ -5,6 +5,7 @@ import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { ActionButton } from "../components/ActionButton";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
+import { ScreenContentContainer } from "../components/ScreenContentContainer";
 import { TextLinkButton } from "../components/TextLinkButton";
 import { AppColors, AppGradientColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
@@ -64,7 +65,7 @@ export function SubscriptionScreen({
       />
 
       <KeyboardAwareScrollView contentContainerStyle={styles.content} style={styles.scrollView}>
-        <View style={styles.salesContent}>
+        <ScreenContentContainer style={styles.salesContent}>
           <View style={styles.copySection}>
             <Text
               lineBreakStrategyIOS="hangul-word"
@@ -165,7 +166,7 @@ export function SubscriptionScreen({
               </View>
             ) : null}
           </View>
-        </View>
+        </ScreenContentContainer>
       </KeyboardAwareScrollView>
     </View>
   );
@@ -199,13 +200,14 @@ const styles = StyleSheet.create({
   },
   content: {
     flexGrow: 1,
-    justifyContent: "center",
     paddingHorizontal: AppLayout.screenPadding,
     paddingTop: 24,
     paddingBottom: 24,
   },
   salesContent: {
+    flexGrow: 1,
     alignItems: "center",
+    justifyContent: "center",
     gap: 44,
   },
   copySection: {

@@ -13,6 +13,7 @@ import {
 
 import { AppNativeAdCard } from "../components/AppNativeAdCard";
 import { LedgerEntryListItem } from "../components/LedgerEntryListItem";
+import { ScreenContentContainer } from "../components/ScreenContentContainer";
 import { AllEntriesCopy } from "../constants/allEntries";
 import { AppColors } from "../constants/colors";
 import { CommonActionCopy } from "../constants/commonActions";
@@ -78,135 +79,137 @@ export function AllEntriesScreen({
 
   return (
     <View style={styles.screen}>
-      {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
-      <TextInput
-        autoCapitalize="none"
-        autoCorrect={false}
-        clearButtonMode="while-editing"
-        onChangeText={setSearchQuery}
-        placeholder={AllEntriesCopy.searchPlaceholder}
-        returnKeyType="search"
-        style={styles.searchInput}
-        value={searchQuery}
-      />
-      <ScrollView
-        contentContainerStyle={styles.categoryFilterContent}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.categoryFilterList}
-      >
-        <Pressable
-          onPress={() => setSelectedCategory(null)}
-          style={[
-            styles.categoryFilterChip,
-            selectedCategory === null ? styles.activeCategoryFilterChip : null,
-          ]}
+      <ScreenContentContainer style={styles.content}>
+        {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
+        <TextInput
+          autoCapitalize="none"
+          autoCorrect={false}
+          clearButtonMode="while-editing"
+          onChangeText={setSearchQuery}
+          placeholder={AllEntriesCopy.searchPlaceholder}
+          returnKeyType="search"
+          style={styles.searchInput}
+          value={searchQuery}
+        />
+        <ScrollView
+          contentContainerStyle={styles.categoryFilterContent}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.categoryFilterList}
         >
-          <Text
-            style={[
-              styles.categoryFilterLabel,
-              selectedCategory === null ? styles.activeCategoryFilterLabel : null,
-            ]}
-          >
-            {AllEntriesCopy.allCategoriesFilterLabel}
-          </Text>
-        </Pressable>
-        {categoryLabels.map((categoryLabel) => (
           <Pressable
-            key={categoryLabel}
-            onPress={() =>
-              setSelectedCategory((currentCategory) =>
-                currentCategory === categoryLabel ? null : categoryLabel,
-              )
-            }
+            onPress={() => setSelectedCategory(null)}
             style={[
               styles.categoryFilterChip,
-              selectedCategory === categoryLabel ? styles.activeCategoryFilterChip : null,
+              selectedCategory === null ? styles.activeCategoryFilterChip : null,
             ]}
           >
             <Text
               style={[
                 styles.categoryFilterLabel,
-                selectedCategory === categoryLabel ? styles.activeCategoryFilterLabel : null,
+                selectedCategory === null ? styles.activeCategoryFilterLabel : null,
               ]}
             >
-              {categoryLabel}
+              {AllEntriesCopy.allCategoriesFilterLabel}
             </Text>
           </Pressable>
-        ))}
-      </ScrollView>
-      <FlatList
-        contentContainerStyle={entries.length === 0 ? styles.emptyContent : styles.listContent}
-        data={feedItems}
-        keyExtractor={(item) => item.key}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>
-              {isSearching ? AllEntriesCopy.emptySearchTitle : AllEntriesCopy.emptyTitle}
-            </Text>
-            <Text style={styles.emptyHint}>
-              {isSearching ? AllEntriesCopy.emptySearchHint : AllEntriesCopy.emptyHint}
-            </Text>
-          </View>
-        }
-        ListFooterComponent={
-          isLoadingMore ? (
-            <View style={styles.loadingMoreState}>
-              <Text style={styles.loadingMoreLabel}>{AllEntriesCopy.loadingLabel}</Text>
+          {categoryLabels.map((categoryLabel) => (
+            <Pressable
+              key={categoryLabel}
+              onPress={() =>
+                setSelectedCategory((currentCategory) =>
+                  currentCategory === categoryLabel ? null : categoryLabel,
+                )
+              }
+              style={[
+                styles.categoryFilterChip,
+                selectedCategory === categoryLabel ? styles.activeCategoryFilterChip : null,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.categoryFilterLabel,
+                  selectedCategory === categoryLabel ? styles.activeCategoryFilterLabel : null,
+                ]}
+              >
+                {categoryLabel}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+        <FlatList
+          contentContainerStyle={entries.length === 0 ? styles.emptyContent : styles.listContent}
+          data={feedItems}
+          keyExtractor={(item) => item.key}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyTitle}>
+                {isSearching ? AllEntriesCopy.emptySearchTitle : AllEntriesCopy.emptyTitle}
+              </Text>
+              <Text style={styles.emptyHint}>
+                {isSearching ? AllEntriesCopy.emptySearchHint : AllEntriesCopy.emptyHint}
+              </Text>
             </View>
-          ) : null
-        }
-        onEndReached={() => {
-          if (!hasMore) {
-            return;
           }
+          ListFooterComponent={
+            isLoadingMore ? (
+              <View style={styles.loadingMoreState}>
+                <Text style={styles.loadingMoreLabel}>{AllEntriesCopy.loadingLabel}</Text>
+              </View>
+            ) : null
+          }
+          onEndReached={() => {
+            if (!hasMore) {
+              return;
+            }
 
-          void loadMoreEntries();
-        }}
-        onEndReachedThreshold={0.4}
-        refreshControl={
-          <RefreshControl
-            onRefresh={() => {
-              void refreshEntries();
-            }}
-            refreshing={isRefreshing}
-            tintColor={AppColors.primary}
-          />
-        }
-        renderItem={({ item }) =>
-          item.type === "native-ad" ? (
-            <AppNativeAdCard slotIndex={item.slotIndex} />
-          ) : (
-            <LedgerEntryListItem
-              categoryIconByLabel={categoryIconByLabel}
-              entry={item.entry}
-              onDeleteEntry={(entry) => {
-                Alert.alert(
-                  AppMessages.editorDeleteConfirmTitle,
-                  AppMessages.editorDeleteConfirmMessage,
-                  [
-                    {
-                      style: "cancel",
-                      text: CommonActionCopy.cancel,
-                    },
-                    {
-                      onPress: () => {
-                        void handleDeleteEntry(entry);
-                      },
-                      style: "destructive",
-                      text: AppMessages.editorDeleteConfirmAction,
-                    },
-                  ],
-                );
+            void loadMoreEntries();
+          }}
+          onEndReachedThreshold={0.4}
+          refreshControl={
+            <RefreshControl
+              onRefresh={() => {
+                void refreshEntries();
               }}
-              onEditEntry={onEditEntry}
-              showsDate
-              showsInstallmentStatusLine
+              refreshing={isRefreshing}
+              tintColor={AppColors.primary}
             />
-          )
-        }
-        style={styles.list}
-      />
+          }
+          renderItem={({ item }) =>
+            item.type === "native-ad" ? (
+              <AppNativeAdCard slotIndex={item.slotIndex} />
+            ) : (
+              <LedgerEntryListItem
+                categoryIconByLabel={categoryIconByLabel}
+                entry={item.entry}
+                onDeleteEntry={(entry) => {
+                  Alert.alert(
+                    AppMessages.editorDeleteConfirmTitle,
+                    AppMessages.editorDeleteConfirmMessage,
+                    [
+                      {
+                        style: "cancel",
+                        text: CommonActionCopy.cancel,
+                      },
+                      {
+                        onPress: () => {
+                          void handleDeleteEntry(entry);
+                        },
+                        style: "destructive",
+                        text: AppMessages.editorDeleteConfirmAction,
+                      },
+                    ],
+                  );
+                }}
+                onEditEntry={onEditEntry}
+                showsDate
+                showsInstallmentStatusLine
+              />
+            )
+          }
+          style={styles.list}
+        />
+      </ScreenContentContainer>
     </View>
   );
 
@@ -220,7 +223,11 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: AppColors.background,
-    padding: AppLayout.screenPadding,
+    paddingHorizontal: AppLayout.screenPadding,
+    paddingVertical: AppLayout.screenPadding,
+  },
+  content: {
+    flex: 1,
     gap: AppLayout.cardGap,
   },
   list: {

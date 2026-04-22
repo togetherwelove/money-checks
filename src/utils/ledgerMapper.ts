@@ -1,5 +1,6 @@
 import type { LedgerEntry } from "../types/ledger";
 import type { LedgerEntryRow } from "../types/supabase";
+import { resolveLedgerEntryTargetMemberId } from "../lib/ledgerEntryMetadata";
 
 export function mapLedgerEntryRow(row: LedgerEntryRow, authorName?: string): LedgerEntry {
   return {
@@ -17,5 +18,6 @@ export function mapLedgerEntryRow(row: LedgerEntryRow, authorName?: string): Led
     note: row.note,
     photoAttachments: [],
     sourceType: row.source_type,
+    targetMemberId: resolveLedgerEntryTargetMemberId(row),
   };
 }

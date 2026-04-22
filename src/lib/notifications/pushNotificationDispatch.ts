@@ -21,7 +21,6 @@ type DirectTargetsPushRequest = {
 };
 
 type LatestJoinRequestOwnerPushRequest = {
-  requesterName: string;
   route: "latest-join-request-owner";
 };
 
@@ -81,9 +80,8 @@ export async function sendPushNotificationContentToUsers(
   });
 }
 
-export async function sendPendingJoinRequestNotification(requesterName: string): Promise<void> {
+export async function sendPendingJoinRequestNotification(): Promise<void> {
   await sendPushNotification({
-    requesterName,
     route: "latest-join-request-owner",
   });
 }

@@ -6,11 +6,13 @@ const MANUAL_ENTRY_PREFIX = "manual";
 const QUEUED_ENTRY_PREFIX = "queued";
 export const ONE_TIME_INSTALLMENT_MONTHS = 1;
 
-export function createDraft(isoDate: string): LedgerEntryDraft {
+export function createDraft(isoDate: string, targetMemberId: string): LedgerEntryDraft {
   return {
     date: isoDate,
     type: "expense",
     amount: EMPTY_AMOUNT,
+    targetMemberId,
+    targetMemberName: undefined,
     content: "",
     category: "",
     installmentMonths: ONE_TIME_INSTALLMENT_MONTHS,

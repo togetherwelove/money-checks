@@ -1,0 +1,91 @@
+name: Android Preview APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "public/android-download/**"
+      - ".github/workflows/android-download-site.yml"
+
+env:
+  NODE_VERSION: "20"
+  JAVA_VERSION: "17"
+  PREVIEW_PROFILE: "preview"
+  ARTIFACTS_DIRECTORY: "artifacts"
+  RELEASE_TAG: "android-preview-latest"
+  RELEASE_ASSET_NAME: "alttle-preview.apk"
+
+jobs:
+  build-preview-apk:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: corepack pnpm install --frozen-lockfile
+
+      - name: Build Android preview APK locally
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EAS_LOCAL_BUILD_ARTIFACTS_DIR: ${{ github.workspace }}/${{ env.ARTIFACTS_DIRECTORY }}
+        run: npx eas-cli build --platform android --profile ${{ env.PREVIEW_PROFILE }} --local --non-interactive
+
+      - name: Resolve APK path
+        id: apk
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK_PATH="$(find "${ARTIFACTS_DIRECTORY}" -type f -name '*.apk' | head -n 1)"
+          if [ -z "${APK_PATH}" ]; then
+            echo "APK not found in ${ARTIFACTS_DIRECTORY}" >&2
+            exit 1
+          fi
+
+          echo "path=${APK_PATH}" >> "${GITHUB_OUTPUT}"
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-preview-apk
+          path: ${{ steps.apk.outputs.path }}
+          if-no-files-found: error
+
+      - name: Publish preview release asset
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          RELEASE_TITLE="Android Preview ${GITHUB_RUN_NUMBER}"
+          RELEASE_NOTES=$'Automatically generated Android preview build.\n\n'"- Commit: ${GITHUB_SHA}"$'\n'"- Workflow: ${GITHUB_WORKFLOW}"$'\n'"- Run number: ${GITHUB_RUN_NUMBER}"
+
+          if gh release view "${RELEASE_TAG}" >/dev/null 2>&1; then
+            gh release edit "${RELEASE_TAG}" --title "${RELEASE_TITLE}" --notes "${RELEASE_NOTES}" --prerelease
+            gh release upload "${RELEASE_TAG}" "${{ steps.apk.outputs.path }}#${RELEASE_ASSET_NAME}" --clobber
+          else
+            gh release create "${RELEASE_TAG}" "${{ steps.apk.outputs.path }}#${RELEASE_ASSET_NAME}" --title "${RELEASE_TITLE}" --notes "${RELEASE_NOTES}" --prerelease
+          fi

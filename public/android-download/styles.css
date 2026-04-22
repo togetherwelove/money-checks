@@ -1,0 +1,250 @@
+:root {
+  --page-background: #f6f0df;
+  --panel-background: rgba(255, 252, 245, 0.92);
+  --panel-border: rgba(35, 83, 71, 0.12);
+  --primary: #235347;
+  --primary-strong: #1a4036;
+  --secondary: #d9e4dc;
+  --muted-text: #5f6d67;
+  --body-text: #24312d;
+  --shadow: 0 20px 60px rgba(35, 83, 71, 0.14);
+  --radius-large: 28px;
+  --radius-medium: 18px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-5: 20px;
+  --spacing-6: 24px;
+  --spacing-8: 32px;
+  --content-width: 720px;
+  --heading-font: "Pretendard Variable", "SUIT Variable", "Noto Sans KR", sans-serif;
+  --body-font: "Pretendard Variable", "SUIT Variable", "Noto Sans KR", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background:
+    radial-gradient(circle at top left, rgba(35, 83, 71, 0.16), transparent 34%),
+    linear-gradient(180deg, #fcf7ea 0%, var(--page-background) 100%);
+  color: var(--body-text);
+  font-family: var(--body-font);
+}
+
+.page-shell {
+  min-height: 100vh;
+  padding: 48px 20px;
+}
+
+.page-card {
+  width: min(100%, var(--content-width));
+  margin: 0 auto;
+  padding: 40px 28px;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-large);
+  background: var(--panel-background);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+}
+
+.eyebrow {
+  margin: 0 0 var(--spacing-3);
+  color: var(--muted-text);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.page-title {
+  margin: 0;
+  font-family: var(--heading-font);
+  font-size: clamp(32px, 6vw, 52px);
+  line-height: 1.02;
+}
+
+.page-description {
+  margin: var(--spacing-4) 0 0;
+  max-width: 540px;
+  color: var(--muted-text);
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  margin-top: var(--spacing-6);
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(35, 83, 71, 0.08);
+  color: var(--primary-strong);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.status-chip[data-variant="error"] {
+  background: rgba(162, 39, 50, 0.1);
+  color: #8e2430;
+}
+
+.status-chip[data-variant="warning"] {
+  background: rgba(176, 112, 13, 0.12);
+  color: #8c5a0c;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-3);
+  margin-top: var(--spacing-6);
+}
+
+.primary-button,
+.secondary-button,
+.ghost-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    transform 140ms ease,
+    background-color 140ms ease,
+    border-color 140ms ease;
+}
+
+.primary-button {
+  background: var(--primary);
+  color: #fff;
+}
+
+.secondary-button {
+  background: rgba(255, 255, 255, 0.65);
+  border-color: var(--panel-border);
+  color: var(--primary-strong);
+}
+
+.ghost-button {
+  padding-inline: 0;
+  background: transparent;
+  color: var(--muted-text);
+}
+
+.primary-button:hover,
+.secondary-button:hover,
+.ghost-button:hover {
+  transform: translateY(-1px);
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--spacing-4);
+  margin-top: var(--spacing-8);
+}
+
+.info-card,
+.notes-card,
+.guide-card {
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-medium);
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.info-card {
+  padding: var(--spacing-5);
+}
+
+.info-label {
+  display: block;
+  color: var(--muted-text);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.info-value {
+  margin-top: var(--spacing-2);
+  font-size: 18px;
+  font-weight: 700;
+  word-break: break-word;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 0.9fr;
+  gap: var(--spacing-4);
+  margin-top: var(--spacing-4);
+}
+
+.notes-card,
+.guide-card {
+  padding: var(--spacing-5);
+}
+
+.section-title {
+  margin: 0 0 var(--spacing-3);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.notes-body {
+  margin: 0;
+  color: var(--muted-text);
+  font-size: 14px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.guide-list {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted-text);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.empty-state {
+  margin-top: var(--spacing-8);
+  padding: var(--spacing-6);
+  border: 1px dashed var(--panel-border);
+  border-radius: var(--radius-medium);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.empty-state p {
+  margin: 0;
+  color: var(--muted-text);
+  line-height: 1.6;
+}
+
+@media (max-width: 760px) {
+  .page-shell {
+    padding: 20px 14px;
+  }
+
+  .page-card {
+    padding: 28px 18px;
+  }
+
+  .info-grid,
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+}

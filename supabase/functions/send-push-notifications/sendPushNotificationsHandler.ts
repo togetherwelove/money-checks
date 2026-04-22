@@ -1,6 +1,7 @@
 const EXPO_PUSH_API_URL = "https://exp.host/--/api/v2/push/send";
 const ANDROID_NOTIFICATION_CHANNEL_ID = "ledger-updates";
 const DEFAULT_NOTIFICATION_ENABLED = true;
+const DEFAULT_REQUESTER_DISPLAY_NAME = "사용자";
 const EXPO_PUSH_TOKEN_PATTERN = /^(ExponentPushToken|ExpoPushToken)\[[^\]]+\]$/;
 const JOIN_REQUEST_NOTIFICATION_TITLE = "새 참여 요청";
 const JOIN_REQUEST_NOTIFICATION_BODY = "{requesterName}님이 {bookName} 참여를 요청했어요.";
@@ -49,7 +50,6 @@ type DirectTargetsPushRequest = {
 };
 
 type LatestJoinRequestOwnerPushRequest = {
-  requesterName: string;
   route: "latest-join-request-owner";
 };
 
@@ -67,6 +67,11 @@ type PushDeviceTokenRow = {
 type NotificationPreferencesRow = {
   enabled_by_event: Record<string, boolean> | null;
   user_id: string;
+};
+
+type ProfileDisplayNameRow = {
+  display_name: string | null;
+  id: string;
 };
 
 type LedgerBookMemberRow = {
@@ -187,7 +192,6 @@ async function buildPushMessages(
   if (payload.route === "latest-join-request-owner") {
     const joinRequestNotification = await resolveLatestJoinRequestOwnerNotification(
       adminClient,
-      payload.requesterName,
       senderUserId,
     );
     if (!joinRequestNotification) {
@@ -265,7 +269,6 @@ async function resolveTargetUserIds(
 
 async function resolveLatestJoinRequestOwnerNotification(
   adminClient: SendPushNotificationsAdminClient,
-  requesterName: string,
   senderUserId: string,
 ): Promise<JoinRequestOwnerNotification | null> {
   const joinRequestQuery = adminClient.from("ledger_book_join_requests") as {
@@ -318,6 +321,8 @@ async function resolveLatestJoinRequestOwnerNotification(
     return null;
   }
 
+  const requesterName = await fetchProfileDisplayName(adminClient, senderUserId);
+
   return {
     body: JOIN_REQUEST_NOTIFICATION_BODY.replace("{requesterName}", requesterName).replace(
       "{bookName}",
@@ -326,6 +331,32 @@ async function resolveLatestJoinRequestOwnerNotification(
     targetUserIds: [book.owner_id],
     title: JOIN_REQUEST_NOTIFICATION_TITLE,
   };
+}
+
+async function fetchProfileDisplayName(
+  adminClient: SendPushNotificationsAdminClient,
+  userId: string,
+): Promise<string> {
+  const profilesQuery = adminClient.from("profiles") as {
+    select: (columns: string) => {
+      eq: (
+        column: string,
+        value: string,
+      ) => {
+        maybeSingle: <Row>() => Promise<{ data: Row | null; error: Error | null }>;
+      };
+    };
+  };
+  const { data, error } = await profilesQuery
+    .select("id, display_name")
+    .eq("id", userId)
+    .maybeSingle<ProfileDisplayNameRow>();
+
+  if (error || !data) {
+    return DEFAULT_REQUESTER_DISPLAY_NAME;
+  }
+
+  return data.display_name?.trim() || DEFAULT_REQUESTER_DISPLAY_NAME;
 }
 
 async function filterRecipientsByPreference(

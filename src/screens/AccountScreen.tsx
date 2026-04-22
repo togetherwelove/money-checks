@@ -3,6 +3,7 @@ import { Alert, Keyboard, StyleSheet, Text, TextInput, View } from "react-native
 
 import { ActionButton } from "../components/ActionButton";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
+import { ScreenContentContainer } from "../components/ScreenContentContainer";
 import { TextLinkButton } from "../components/TextLinkButton";
 import { AccountVersionFooter } from "../components/accountScreen/AccountVersionFooter";
 import { DeleteAccountModal } from "../components/accountScreen/DeleteAccountModal";
@@ -136,78 +137,83 @@ export function AccountScreen({
 
   return (
     <KeyboardAwareScrollView contentContainerStyle={styles.content} style={styles.screen}>
-      <View style={[styles.card, styles.primaryCard]}>
-        <Text style={styles.cardTitle}>{AppMessages.accountSessionTitle}</Text>
-        <InfoRow label={AppMessages.accountEmail} value={email} />
-        <InfoRow label={AppMessages.accountProvider} value={accountProviderLabel} />
-        <InfoRow
-          action={
-            subscriptionTier === SubscriptionTiers.free ? (
-              <TextLinkButton
-                label={SubscriptionMessages.restoreAction}
-                onPress={handleRestorePurchases}
-              />
-            ) : subscriptionTier === SubscriptionTiers.plus ? (
-              <TextLinkButton
-                label={SubscriptionManagementMessages.actionLabel}
-                onPress={handleOpenSubscriptionManagement}
-              />
-            ) : null
-          }
-          label={SubscriptionMessages.statusLabel}
-          value={
-            subscriptionTier === SubscriptionTiers.plus
-              ? (
-                  <Text style={styles.value}>
-                    <Text style={styles.plusLabelText}>plus</Text>{" "}
-                    {SubscriptionPlusLabels.accountActiveSuffix}
-                  </Text>
-                )
-              : SubscriptionMessages.freePlanLabel
-          }
-        />
-      </View>
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>{AppMessages.accountNicknameTitle}</Text>
-        <TextInput
-          onChangeText={(value) => {
-            setDisplayName(value);
-          }}
-          placeholder={fallbackDisplayName || AppMessages.accountNicknamePlaceholder}
-          autoCapitalize="words"
-          autoComplete="nickname"
-          autoCorrect={false}
-          submitBehavior="blurAndSubmit"
-          importantForAutofill="no"
-          onSubmitEditing={handlePressSaveDisplayName}
-          placeholderTextColor={AppColors.mutedText}
-          returnKeyType="done"
-          editable={!isSavingDisplayName}
-          style={styles.inlineInput}
-          textContentType="none"
-          value={displayName}
-        />
-      </View>
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>{AppMessages.accountActionTitle}</Text>
-        <View style={styles.actionRow}>
-          <ActionButton
-            label={AppMessages.authSignOut}
-            onPress={handleConfirmSignOut}
-            size="inline"
-            variant="secondary"
+      <ScreenContentContainer style={styles.contentContainer}>
+        <View style={[styles.card, styles.primaryCard]}>
+          <Text style={styles.cardTitle}>{AppMessages.accountSessionTitle}</Text>
+          <InfoRow label={AppMessages.accountEmail} value={email} />
+          <InfoRow label={AppMessages.accountProvider} value={accountProviderLabel} />
+          <InfoRow
+            action={
+              subscriptionTier === SubscriptionTiers.free ? (
+                <TextLinkButton
+                  label={SubscriptionMessages.restoreAction}
+                  onPress={handleRestorePurchases}
+                />
+              ) : subscriptionTier === SubscriptionTiers.plus ? (
+                <TextLinkButton
+                  label={SubscriptionManagementMessages.actionLabel}
+                  onPress={handleOpenSubscriptionManagement}
+                />
+              ) : null
+            }
+            label={SubscriptionMessages.statusLabel}
+            value={
+              subscriptionTier === SubscriptionTiers.plus
+                ? (
+                    <Text style={styles.value}>
+                      <Text style={styles.plusLabelText}>plus</Text>{" "}
+                      {SubscriptionPlusLabels.accountActiveSuffix}
+                    </Text>
+                  )
+                : SubscriptionMessages.freePlanLabel
+            }
           />
         </View>
-        <View style={styles.deleteActionRow}>
-          <TextLinkButton
-            label={AccountDeletionMessages.openAction}
-            onPress={() => setIsDeleteModalOpen(true)}
-            tone="destructive"
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>{AppMessages.accountNicknameTitle}</Text>
+          <TextInput
+            onChangeText={(value) => {
+              setDisplayName(value);
+            }}
+            placeholder={fallbackDisplayName || AppMessages.accountNicknamePlaceholder}
+            autoCapitalize="words"
+            autoComplete="nickname"
+            autoCorrect={false}
+            submitBehavior="blurAndSubmit"
+            importantForAutofill="no"
+            onSubmitEditing={handlePressSaveDisplayName}
+            placeholderTextColor={AppColors.mutedText}
+            returnKeyType="done"
+            editable={!isSavingDisplayName}
+            style={styles.inlineInput}
+            textContentType="none"
+            value={displayName}
           />
         </View>
-      </View>
-      <DeleteAccountModal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} />
-      <AccountVersionFooter />
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>{AppMessages.accountActionTitle}</Text>
+          <View style={styles.actionRow}>
+            <ActionButton
+              label={AppMessages.authSignOut}
+              onPress={handleConfirmSignOut}
+              size="inline"
+              variant="secondary"
+            />
+          </View>
+          <View style={styles.deleteActionRow}>
+            <TextLinkButton
+              label={AccountDeletionMessages.openAction}
+              onPress={() => setIsDeleteModalOpen(true)}
+              tone="destructive"
+            />
+          </View>
+        </View>
+        <DeleteAccountModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+        />
+        <AccountVersionFooter />
+      </ScreenContentContainer>
     </KeyboardAwareScrollView>
   );
 }
@@ -238,9 +244,13 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.background,
   },
   content: {
-    padding: AppLayout.screenPadding,
+    paddingHorizontal: AppLayout.screenPadding,
+    paddingTop: AppLayout.screenPadding,
     gap: AppLayout.cardGap,
     paddingBottom: 24,
+  },
+  contentContainer: {
+    gap: AppLayout.cardGap,
   },
   card: {
     ...SurfaceCardStyle,
