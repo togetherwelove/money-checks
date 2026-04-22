@@ -6,6 +6,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: android-build-artifact-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   NODE_VERSION: "20"
   JAVA_VERSION: "17"
