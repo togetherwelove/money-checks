@@ -12,6 +12,8 @@ export const SubscriptionConfig = {
 } as const;
 
 export const RevenueCatConfig = {
+  androidPublicApiKey: process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY ?? "",
+  iosPublicApiKey: process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY ?? "",
   publicApiKey: process.env.EXPO_PUBLIC_REVENUECAT_API_KEY ?? "",
 } as const;
 

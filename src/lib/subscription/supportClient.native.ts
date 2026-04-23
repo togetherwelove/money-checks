@@ -1,8 +1,8 @@
 import Purchases, { type PurchasesPackage } from "react-native-purchases";
 
 import { SupportConfig, type SupportPackageIdentifier } from "../../constants/support";
-import { RevenueCatConfig } from "../../constants/subscription";
 import { configureSubscriptionClient } from "./subscriptionClient";
+import { getRevenueCatPublicApiKey } from "./revenueCatApiKey";
 
 export type SupportPackageSnapshot = {
   identifier: SupportPackageIdentifier;
@@ -16,7 +16,7 @@ type SupportSnapshot = {
 let currentSupportPackages = new Map<SupportPackageIdentifier, PurchasesPackage>();
 
 export async function loadSupportSnapshot(appUserId: string): Promise<SupportSnapshot> {
-  if (!RevenueCatConfig.publicApiKey) {
+  if (!getRevenueCatPublicApiKey()) {
     return { packages: [] };
   }
 
@@ -41,7 +41,7 @@ export async function purchaseSupportPackage(
   appUserId: string,
   identifier: SupportPackageIdentifier,
 ): Promise<void> {
-  if (!RevenueCatConfig.publicApiKey) {
+  if (!getRevenueCatPublicApiKey()) {
     throw new Error("RevenueCat is not configured.");
   }
 

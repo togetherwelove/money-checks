@@ -48,7 +48,7 @@ const config: ExpoConfig = {
       foregroundImage: androidAdaptiveForegroundPath,
       backgroundColor: "#f5f1e8",
     },
-    package: "com.chanwook.moneychecks",
+    package: "com.chanwook.alttle",
   },
   plugins: [
     "@react-native-community/datetimepicker",

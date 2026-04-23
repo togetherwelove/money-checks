@@ -1,13 +1,13 @@
 import Purchases, { type CustomerInfo, type PurchasesPackage } from "react-native-purchases";
 
 import {
-  RevenueCatConfig,
   SubscriptionConfig,
   type SubscriptionTier,
   SubscriptionTiers,
 } from "../../constants/subscription";
 import { formatSubscriptionPriceLabel } from "./formatSubscriptionPriceLabel";
 import { logAppWarning } from "../logAppError";
+import { getRevenueCatPublicApiKey } from "./revenueCatApiKey";
 
 type SubscriptionSnapshot = {
   hasAvailablePlusPackage: boolean;
@@ -20,14 +20,15 @@ let currentPlusPackage: PurchasesPackage | null = null;
 let hasConfiguredRevenueCatLogHandler = false;
 
 export async function configureSubscriptionClient(appUserId: string): Promise<void> {
-  if (!RevenueCatConfig.publicApiKey) {
+  const publicApiKey = getRevenueCatPublicApiKey();
+  if (!publicApiKey) {
     return;
   }
 
   configureRevenueCatLogHandler();
 
   if (configuredAppUserId === null) {
-    Purchases.configure({ apiKey: RevenueCatConfig.publicApiKey, appUserID: appUserId });
+    Purchases.configure({ apiKey: publicApiKey, appUserID: appUserId });
     configuredAppUserId = appUserId;
     return;
   }
@@ -39,7 +40,7 @@ export async function configureSubscriptionClient(appUserId: string): Promise<vo
 }
 
 export async function loadSubscriptionSnapshot(): Promise<SubscriptionSnapshot> {
-  if (!RevenueCatConfig.publicApiKey) {
+  if (!getRevenueCatPublicApiKey()) {
     return {
       hasAvailablePlusPackage: false,
       plusPriceLabel: null,
