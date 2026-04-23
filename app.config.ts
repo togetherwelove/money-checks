@@ -17,6 +17,9 @@ const imagePickerPermissionConfig = {
   photosPermission:
     "알뜰 앱 이용 중 첨부할 이미지를 선택하기 위해 사진 보관함 접근 권한이 필요합니다.",
 } as const;
+const webBrowserPluginConfig = {
+  experimentalLauncherActivity: true,
+} as const;
 
 const config: ExpoConfig = {
   name: "알뜰",
@@ -56,6 +59,7 @@ const config: ExpoConfig = {
     "expo-font",
     "expo-secure-store",
     "expo-apple-authentication",
+    ["expo-web-browser", webBrowserPluginConfig],
     ["expo-image-picker", imagePickerPermissionConfig],
     "expo-notifications",
     [
