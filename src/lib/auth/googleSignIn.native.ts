@@ -1,5 +1,5 @@
 import { makeRedirectUri } from "expo-auth-session";
-import * as WebBrowser from "expo-web-browser";
+import { Linking } from "react-native";
 
 import { GoogleAuthCopy } from "../../constants/googleAuth";
 import { supabase } from "../supabase";
@@ -9,8 +9,7 @@ import {
   GOOGLE_AUTH_PROVIDER,
 } from "./googleAuthConfig";
 import { resolveGoogleAuthSession } from "./googleAuthSession";
-
-WebBrowser.maybeCompleteAuthSession();
+let lastCompletedGoogleRedirectUrl: string | null = null;
 
 function resolveGoogleRedirectUri() {
   return makeRedirectUri({
@@ -19,8 +18,27 @@ function resolveGoogleRedirectUri() {
   });
 }
 
+function isMatchingGoogleRedirectUrl(redirectUrl: string) {
+  const resolvedRedirectUrl = new URL(resolveGoogleRedirectUri());
+  const parsedRedirectUrl = new URL(redirectUrl);
+
+  return (
+    parsedRedirectUrl.protocol === resolvedRedirectUrl.protocol &&
+    parsedRedirectUrl.host === resolvedRedirectUrl.host &&
+    parsedRedirectUrl.pathname === resolvedRedirectUrl.pathname
+  );
+}
+
 export function canUseGoogleSignIn(): boolean {
   return true;
+}
+
+export function isGoogleSignInRedirectUrl(redirectUrl: string): boolean {
+  try {
+    return isMatchingGoogleRedirectUrl(redirectUrl);
+  } catch {
+    return false;
+  }
 }
 
 export function isGoogleSignInCancelled(error: unknown): boolean {
@@ -30,6 +48,28 @@ export function isGoogleSignInCancelled(error: unknown): boolean {
 
   const errorWithMessage = error as { message?: unknown };
   return errorWithMessage.message === GoogleAuthCopy.cancelledError;
+}
+
+export async function completeGoogleSignInRedirect(redirectUrl: string): Promise<void> {
+  if (!isGoogleSignInRedirectUrl(redirectUrl)) {
+    return;
+  }
+
+  if (lastCompletedGoogleRedirectUrl === redirectUrl) {
+    return;
+  }
+
+  const googleAuthSession = resolveGoogleAuthSession(redirectUrl);
+  const { error: sessionError } = await supabase.auth.setSession({
+    access_token: googleAuthSession.accessToken,
+    refresh_token: googleAuthSession.refreshToken,
+  });
+
+  if (sessionError) {
+    throw sessionError;
+  }
+
+  lastCompletedGoogleRedirectUrl = redirectUrl;
 }
 
 export async function signInWithGoogle(): Promise<void> {
@@ -46,19 +86,6 @@ export async function signInWithGoogle(): Promise<void> {
     throw error;
   }
 
-  const authSessionResult = await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
-
-  if (authSessionResult.type !== "success") {
-    throw new Error(GoogleAuthCopy.cancelledError);
-  }
-
-  const googleAuthSession = resolveGoogleAuthSession(authSessionResult.url);
-  const { error: sessionError } = await supabase.auth.setSession({
-    access_token: googleAuthSession.accessToken,
-    refresh_token: googleAuthSession.refreshToken,
-  });
-
-  if (sessionError) {
-    throw sessionError;
-  }
+  lastCompletedGoogleRedirectUrl = null;
+  await Linking.openURL(data.url);
 }

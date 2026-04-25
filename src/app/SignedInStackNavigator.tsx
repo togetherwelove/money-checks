@@ -124,6 +124,8 @@ export function SignedInStackNavigator({
       screenOptions={{
         animation: "slide_from_right",
         contentStyle: { backgroundColor: "transparent" },
+        fullScreenGestureEnabled: true,
+        gestureEnabled: true,
         headerShown: false,
       }}
     >

@@ -1,5 +1,5 @@
 import type { LedgerAppScreen } from "../types/app";
 
-export function showsCalendarReturnAction(activeScreen: LedgerAppScreen): boolean {
+export function showsBackNavigationAction(activeScreen: LedgerAppScreen): boolean {
   return activeScreen !== "calendar";
 }

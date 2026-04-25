@@ -2,14 +2,14 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../../constants/colors";
 import { AppLayout } from "../../constants/layout";
-import { AppBuildInfo } from "../../generated/buildInfo";
+import { getAppVersionLabel } from "../../lib/appVersion";
 
 const VERSION_TITLE = "Version";
 
 export function AccountVersionFooter() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{`${VERSION_TITLE} ${AppBuildInfo.appVersion}`}</Text>
+      <Text style={styles.title}>{`${VERSION_TITLE} ${getAppVersionLabel()}`}</Text>
     </View>
   );
 }

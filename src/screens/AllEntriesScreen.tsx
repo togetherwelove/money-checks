@@ -13,7 +13,6 @@ import {
 
 import { AppNativeAdCard } from "../components/AppNativeAdCard";
 import { LedgerEntryListItem } from "../components/LedgerEntryListItem";
-import { ScreenContentContainer } from "../components/ScreenContentContainer";
 import { AllEntriesCopy } from "../constants/allEntries";
 import { AppColors } from "../constants/colors";
 import { CommonActionCopy } from "../constants/commonActions";
@@ -79,7 +78,7 @@ export function AllEntriesScreen({
 
   return (
     <View style={styles.screen}>
-      <ScreenContentContainer style={styles.content}>
+      <View style={styles.content}>
         {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
         <TextInput
           autoCapitalize="none"
@@ -209,7 +208,7 @@ export function AllEntriesScreen({
           }
           style={styles.list}
         />
-      </ScreenContentContainer>
+      </View>
     </View>
   );
 

@@ -1,6 +1,7 @@
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import {
   NavigationContainer,
+  StackActions,
   createNavigationContainerRef,
   type NavigationState,
 } from "@react-navigation/native";
@@ -17,13 +18,12 @@ import { AllEntriesAction } from "./src/components/AllEntriesAction";
 import { AnnualReportDownloadAction } from "./src/components/AnnualReportDownloadAction";
 import { AppHeader } from "./src/components/AppHeader";
 import { AppMenuDrawer } from "./src/components/AppMenuDrawer";
-import { BackToCalendarAction } from "./src/components/BackToCalendarAction";
+import { BackActionButton } from "./src/components/BackActionButton";
 import { BlockingOverlay } from "./src/components/BlockingOverlay";
 import { OnboardingTransitionScreen } from "./src/components/OnboardingTransitionScreen";
 import { SessionLoadingScreen } from "./src/components/SessionLoadingScreen";
 import { AnnualReportRangePickerModal } from "./src/components/annualReport/AnnualReportRangePickerModal";
 import { NativeYearPickerModal } from "./src/components/calendarPicker/NativeYearPickerModal";
-import { AllEntriesCopy } from "./src/constants/allEntries";
 import { AdInterstitialPlacement } from "./src/constants/ads";
 import { AppColors } from "./src/constants/colors";
 import { EntryRegistrationCopy } from "./src/constants/entryRegistration";
@@ -33,6 +33,7 @@ import { SubscriptionMessages, SubscriptionTiers } from "./src/constants/subscri
 import { SubscriptionManagementMessages } from "./src/constants/subscriptionManagement";
 import { useAnnualLedgerReportAction } from "./src/hooks/useAnnualLedgerReportAction";
 import { useAuthOnboarding } from "./src/hooks/useAuthOnboarding";
+import { useGoogleAuthRedirectCompletion } from "./src/hooks/useGoogleAuthRedirectCompletion";
 import { useLedgerNotifications } from "./src/hooks/useLedgerNotifications";
 import { useLedgerScreenState } from "./src/hooks/useLedgerScreenState";
 import { useSupportPackages } from "./src/hooks/useSupportPackages";
@@ -42,7 +43,7 @@ import { preloadInterstitialAd, showInterstitialAd } from "./src/lib/ads/interst
 import { ensureMobileAdsInitialized } from "./src/lib/ads/mobileAds";
 import { appPlatform } from "./src/lib/appPlatform";
 import { getAppScreenLabel } from "./src/lib/appScreenLabels";
-import { showsCalendarReturnAction } from "./src/lib/appHeaderTitle";
+import { showsBackNavigationAction } from "./src/lib/appHeaderTitle";
 import { resolveSessionAuthProviderLabel } from "./src/lib/authProvider";
 import { logAppError } from "./src/lib/logAppError";
 import { buildAppMenuSections } from "./src/lib/menuItems";
@@ -64,6 +65,7 @@ import { parseIsoDate, toIsoDate } from "./src/utils/calendar";
 import { resolveFallbackDisplayName } from "./src/utils/sessionDisplayName";
 
 export default function App() {
+  useGoogleAuthRedirectCompletion();
   const { errorMessage, isLoading, session } = useSupabaseSession();
 
   return (
@@ -164,40 +166,39 @@ function SignedInApp({ session }: { session: Session }) {
     setPreviousScreen(resolvedPreviousRoute);
   }, [navigationRef]);
 
-  const resetToCalendarRoot = useCallback(() => {
+  const returnToCalendarRoot = useCallback(() => {
     if (!navigationRef.isReady()) {
       return;
     }
 
-    navigationRef.resetRoot({
-      index: 0,
-      routes: [{ name: "calendar" }],
-    });
+    if (navigationRef.canGoBack()) {
+      navigationRef.dispatch(StackActions.popToTop());
+      return;
+    }
+
+    navigationRef.navigate("calendar");
   }, [navigationRef]);
 
-  const resetToCalendarStackScreen = useCallback(
+  const navigateToStackScreen = useCallback(
     (screen: Exclude<LedgerAppScreen, "calendar">) => {
       if (!navigationRef.isReady()) {
         return;
       }
 
-      navigationRef.resetRoot({
-        index: 1,
-        routes: [{ name: "calendar" }, { name: screen }],
-      });
+      navigationRef.navigate(screen);
     },
     [navigationRef],
   );
 
   const handleOpenCalendar = useCallback(() => {
-    resetToCalendarRoot();
-  }, [resetToCalendarRoot]);
+    returnToCalendarRoot();
+  }, [returnToCalendarRoot]);
 
   const handleOpenEntryFromCalendar = useCallback(() => {
-    resetToCalendarStackScreen("entry");
-  }, [resetToCalendarStackScreen]);
+    navigateToStackScreen("entry");
+  }, [navigateToStackScreen]);
 
-  const handleBackToCalendar = () => {
+  const handleBackNavigation = useCallback(() => {
     if (currentScreen === "entry") {
       ledgerState.resetEditor(ledgerState.selectedDate);
     }
@@ -207,23 +208,23 @@ function SignedInApp({ session }: { session: Session }) {
       return;
     }
 
-    resetToCalendarRoot();
-  };
+    returnToCalendarRoot();
+  }, [currentScreen, ledgerState, navigationRef, returnToCalendarRoot]);
   const handleToggleCharts = useCallback(() => {
     if (currentScreen === "charts" && navigationRef.isReady() && navigationRef.canGoBack()) {
       navigationRef.goBack();
       return;
     }
 
-    resetToCalendarStackScreen("charts");
-  }, [currentScreen, navigationRef, resetToCalendarStackScreen]);
+    navigateToStackScreen("charts");
+  }, [currentScreen, navigationRef, navigateToStackScreen]);
   const handleOpenAllEntries = useCallback(() => {
-    resetToCalendarStackScreen("all-entries");
-  }, [resetToCalendarStackScreen]);
+    navigateToStackScreen("all-entries");
+  }, [navigateToStackScreen]);
   const handleOpenEntry = handleOpenEntryFromCalendar;
   const handleOpenSubscription = useCallback(() => {
-    resetToCalendarStackScreen("subscription");
-  }, [resetToCalendarStackScreen]);
+    navigateToStackScreen("subscription");
+  }, [navigateToStackScreen]);
   const menuSections = buildAppMenuSections(notifications.showNotificationSettings);
   const handleOpenYearPicker = () => {
     if (currentScreen !== "calendar") {
@@ -355,7 +356,7 @@ function SignedInApp({ session }: { session: Session }) {
     if (navigationRef.isReady() && navigationRef.canGoBack()) {
       navigationRef.goBack();
     } else {
-      resetToCalendarRoot();
+      returnToCalendarRoot();
     }
     void runEntrySaveSideEffects(
       savedEntries,
@@ -385,7 +386,7 @@ function SignedInApp({ session }: { session: Session }) {
     if (navigationRef.isReady() && navigationRef.canGoBack()) {
       navigationRef.goBack();
     } else {
-      resetToCalendarRoot();
+      returnToCalendarRoot();
     }
     void runQueuedEntrySaveSideEffects(savedEntries, currentEntries);
   };
@@ -413,7 +414,7 @@ function SignedInApp({ session }: { session: Session }) {
       if (navigationRef.isReady() && navigationRef.canGoBack()) {
         navigationRef.goBack();
       } else {
-        resetToCalendarRoot();
+        returnToCalendarRoot();
       }
       showNativeToast(EntryRegistrationCopy.installmentSettleSuccess);
     } catch (error) {
@@ -501,18 +502,11 @@ function SignedInApp({ session }: { session: Session }) {
       <StatusBar barStyle="dark-content" backgroundColor={AppColors.surface} />
       <SafeAreaView edges={["top"]} style={styles.headerSafeArea}>
         <View style={styles.headerShell}>
-            <AppHeader
-              isMenuOpen={isMenuOpen}
-              leadingAction={
-                showsCalendarReturnAction(currentScreen) ? (
-                <BackToCalendarAction
-                  label={
-                    currentScreen === "entry" && previousScreen === "all-entries"
-                      ? AllEntriesCopy.backActionLabel
-                      : undefined
-                  }
-                  onPress={handleBackToCalendar}
-                />
+          <AppHeader
+            isMenuOpen={isMenuOpen}
+            leadingAction={
+              showsBackNavigationAction(currentScreen) ? (
+                <BackActionButton onPress={handleBackNavigation} />
               ) : annualReport.bookName ? (
                 <AnnualReportDownloadAction
                   onPress={() => {
@@ -520,13 +514,13 @@ function SignedInApp({ session }: { session: Session }) {
                   }}
                 />
               ) : null
-              }
-              showsPlusBadge={
-                currentScreen === "calendar" && subscription.currentTier === SubscriptionTiers.plus
-              }
-              titleLabel={
-                currentScreen === "calendar" ? annualReport.bookName : getAppScreenLabel(currentScreen)
-              }
+            }
+            showsPlusBadge={
+              currentScreen === "calendar" && subscription.currentTier === SubscriptionTiers.plus
+            }
+            titleLabel={
+              currentScreen === "calendar" ? annualReport.bookName : getAppScreenLabel(currentScreen)
+            }
             trailingAction={
               currentScreen === "calendar" || currentScreen === "charts" ? (
                 <AllEntriesAction onPress={handleOpenAllEntries} />
@@ -539,7 +533,11 @@ function SignedInApp({ session }: { session: Session }) {
       </SafeAreaView>
       <SafeAreaView edges={["left", "right", "bottom"]} style={styles.bodySafeArea}>
         <View style={styles.body}>
-          <NavigationContainer onReady={syncCurrentRouteState} onStateChange={syncCurrentRouteState} ref={navigationRef}>
+          <NavigationContainer
+            onReady={syncCurrentRouteState}
+            onStateChange={syncCurrentRouteState}
+            ref={navigationRef}
+          >
             <SignedInStackNavigator
               accountProviderLabel={accountProviderLabel}
               email={session.user.email ?? ""}
@@ -593,13 +591,13 @@ function SignedInApp({ session }: { session: Session }) {
             setIsMenuOpen(false);
             if (targetScreen === "calendar") {
               ledgerState.resetEditor(ledgerState.selectedDate);
-              resetToCalendarRoot();
+              returnToCalendarRoot();
               return;
             }
             if (targetScreen === "share" && ledgerState.activeBook?.ownerId === session.user.id) {
               void ledgerState.refreshSharedLedgerBook();
             }
-            resetToCalendarStackScreen(targetScreen);
+            navigateToStackScreen(targetScreen);
           }}
           sections={menuSections}
         />

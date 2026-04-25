@@ -20,7 +20,6 @@ import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { LedgerEntryList } from "../components/LedgerEntryList";
 import { MonthCalendarPager } from "../components/MonthCalendarPager";
 import { MonthlySummary } from "../components/MonthlySummary";
-import { ScreenContentContainer } from "../components/ScreenContentContainer";
 import { SelectedDateMemoAccordion } from "../components/SelectedDateMemoAccordion";
 import { WeekdayHeader } from "../components/WeekdayHeader";
 import { AppColors } from "../constants/colors";
@@ -111,33 +110,31 @@ export function HomeScreen({
         showsVerticalScrollIndicator={false}
         style={styles.screen}
       >
-        <ScreenContentContainer maxWidth={AppLayout.calendarScreenMaxWidth}>
-          <KeyboardAwareContent
-            errorMessage={errorMessage}
-            handleBeginDateMemoEditing={handleBeginDateMemoEditing}
-            isDateMemoExpanded={isDateMemoExpanded}
-            isLoadingSelectedDateEntries={isLoadingSelectedDateEntries}
-            monthlyLedger={monthlyLedger}
-            onDeleteSelectedEntry={onDeleteSelectedEntry}
-            onDeleteSelectedDateNote={handleDeleteSelectedDateNote}
-            onEditSelectedEntry={onEditSelectedEntry}
-            onOpenCharts={onOpenCharts}
-            onOpenEntry={onOpenEntry}
-            onOpenMonthPicker={onOpenMonthPicker}
-            onSaveSelectedDateNote={handleSaveSelectedDateNote}
-            onSelectCalendarDate={onSelectCalendarDate}
-            selectedDate={selectedDate}
-            selectedDateLabel={selectedDateLabel}
-            selectedDateNote={selectedDateNote}
-            selectedEntries={selectedEntries}
-            setIsDateMemoExpanded={setIsDateMemoExpanded}
-            setVisibleMonth={setVisibleMonth}
-            showsBannerAd={showsBannerAd}
-            state={state}
-            todayIsoDate={todayIsoDate}
-            visibleMonth={visibleMonth}
-          />
-        </ScreenContentContainer>
+        <KeyboardAwareContent
+          errorMessage={errorMessage}
+          handleBeginDateMemoEditing={handleBeginDateMemoEditing}
+          isDateMemoExpanded={isDateMemoExpanded}
+          isLoadingSelectedDateEntries={isLoadingSelectedDateEntries}
+          monthlyLedger={monthlyLedger}
+          onDeleteSelectedEntry={onDeleteSelectedEntry}
+          onDeleteSelectedDateNote={handleDeleteSelectedDateNote}
+          onEditSelectedEntry={onEditSelectedEntry}
+          onOpenCharts={onOpenCharts}
+          onOpenEntry={onOpenEntry}
+          onOpenMonthPicker={onOpenMonthPicker}
+          onSaveSelectedDateNote={handleSaveSelectedDateNote}
+          onSelectCalendarDate={onSelectCalendarDate}
+          selectedDate={selectedDate}
+          selectedDateLabel={selectedDateLabel}
+          selectedDateNote={selectedDateNote}
+          selectedEntries={selectedEntries}
+          setIsDateMemoExpanded={setIsDateMemoExpanded}
+          setVisibleMonth={setVisibleMonth}
+          showsBannerAd={showsBannerAd}
+          state={state}
+          todayIsoDate={todayIsoDate}
+          visibleMonth={visibleMonth}
+        />
       </KeyboardAwareScrollView>
     </TouchableWithoutFeedback>
   );

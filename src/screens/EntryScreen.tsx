@@ -9,7 +9,6 @@ import { EntryDateToolbar } from "../components/EntryDateToolbar";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { LedgerEditorPanel } from "../components/LedgerEditorPanel";
 import { QueuedLedgerEntryList } from "../components/QueuedLedgerEntryList";
-import { ScreenContentContainer } from "../components/ScreenContentContainer";
 import { AppColors } from "../constants/colors";
 import { ENTRY_PHOTO_LIMIT, EntryPhotoCopy } from "../constants/entryPhotos";
 import { AppLayout } from "../constants/layout";
@@ -273,51 +272,47 @@ export function EntryScreen({
         scrollEnabled={!isCategoryDragging}
         style={styles.screen}
       >
-        <ScreenContentContainer style={styles.contentContainer}>
-          {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
-          <EntryDateToolbar
-            dateLabel={formatSelectedDate(selectedDate)}
-            onMoveToToday={() => handleSelectDate(todayIsoDate)}
-            onPressDateLabel={() => handleOpenDatePicker({ kind: "draft" })}
-            showMoveToToday={selectedDate !== todayIsoDate}
-          />
-          {showsBannerAd ? <AppBannerAd /> : null}
-          <LedgerEditorPanel
-            canQueueEntry={canQueueEntry}
-            draft={draft}
-            editingEntryId={editingEntryId}
-            members={members}
-            onChangeDraft={updateDraftField}
-            onChangeInstallmentMonths={updateDraftInstallmentMonths}
-            onPickPhotoAttachments={handlePickPhotoAttachments}
-            onCategoryDraggingChange={setIsCategoryDragging}
-            onRemovePhotoAttachment={handleRemovePhotoAttachment}
-            onQueueEntry={!editingEntryId ? handleQueueEntry : null}
-            onSaveEntry={handleSaveEntries}
-            onSelectType={updateDraftType}
-            onSettleInstallmentEntry={
-              editingEntry ? () => onSettleInstallmentEntry(editingEntry) : null
+        {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
+        <EntryDateToolbar
+          dateLabel={formatSelectedDate(selectedDate)}
+          onMoveToToday={() => handleSelectDate(todayIsoDate)}
+          onPressDateLabel={() => handleOpenDatePicker({ kind: "draft" })}
+          showMoveToToday={selectedDate !== todayIsoDate}
+        />
+        {showsBannerAd ? <AppBannerAd /> : null}
+        <LedgerEditorPanel
+          canQueueEntry={canQueueEntry}
+          draft={draft}
+          editingEntryId={editingEntryId}
+          members={members}
+          onCategoryDraggingChange={setIsCategoryDragging}
+          onChangeDraft={updateDraftField}
+          onChangeInstallmentMonths={updateDraftInstallmentMonths}
+          onPickPhotoAttachments={handlePickPhotoAttachments}
+          onQueueEntry={!editingEntryId ? handleQueueEntry : null}
+          onRemovePhotoAttachment={handleRemovePhotoAttachment}
+          onSaveEntry={handleSaveEntries}
+          onSelectType={updateDraftType}
+          onSettleInstallmentEntry={editingEntry ? () => onSettleInstallmentEntry(editingEntry) : null}
+          showInstallmentSettleAction={Boolean(
+            editingEntry?.installmentMonths &&
+              editingEntry.installmentOrder &&
+              editingEntry.installmentOrder < editingEntry.installmentMonths,
+          )}
+        />
+        {!editingEntryId ? (
+          <QueuedLedgerEntryList
+            entries={queuedEntries}
+            onPressEntryDate={(entryId) =>
+              handleOpenDatePicker({ entryId, kind: "queued-entry" })
             }
-            showInstallmentSettleAction={Boolean(
-              editingEntry?.installmentMonths &&
-                editingEntry.installmentOrder &&
-                editingEntry.installmentOrder < editingEntry.installmentMonths,
-            )}
+            onRemoveEntry={(entryId) =>
+              setQueuedEntries((currentEntries) =>
+                currentEntries.filter((entry) => entry.id !== entryId),
+              )
+            }
           />
-          {!editingEntryId ? (
-            <QueuedLedgerEntryList
-              entries={queuedEntries}
-              onPressEntryDate={(entryId) =>
-                handleOpenDatePicker({ entryId, kind: "queued-entry" })
-              }
-              onRemoveEntry={(entryId) =>
-                setQueuedEntries((currentEntries) =>
-                  currentEntries.filter((entry) => entry.id !== entryId),
-                )
-              }
-            />
-          ) : null}
-        </ScreenContentContainer>
+        ) : null}
       </KeyboardAwareScrollView>
       <EntryDatePickerModal
         entries={entries}
@@ -351,8 +346,6 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: AppLayout.screenPadding,
     paddingBottom: 24,
-  },
-  contentContainer: {
     gap: AppLayout.cardGap,
     paddingTop: AppLayout.screenPadding,
   },

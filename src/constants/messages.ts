@@ -6,7 +6,6 @@ export const AppMessages = {
   summaryIncome: "총수입",
   summaryExpense: "총지출",
   calendarTab: "가계부 달력",
-  backToCalendarAction: "달력으로",
   entryScreenTitle: "입출금 등록",
   editorEmpty: "아직 기록이 없어요.",
   editorAmount: "금액",

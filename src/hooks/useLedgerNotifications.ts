@@ -57,7 +57,7 @@ type LedgerNotificationsState = {
 
 export function useLedgerNotifications(userId: string): LedgerNotificationsState {
   const [permission, setPermission] = useState<NotificationPermissionState>(
-    appPlatform.supportsPushNotifications ? "default" : "unsupported",
+    "unsupported",
   );
   const {
     preferenceGroups,

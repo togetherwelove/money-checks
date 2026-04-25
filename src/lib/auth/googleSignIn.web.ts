@@ -5,7 +5,15 @@ export function canUseGoogleSignIn(): boolean {
   return true;
 }
 
+export async function completeGoogleSignInRedirect(_redirectUrl: string): Promise<void> {
+  return;
+}
+
 export function isGoogleSignInCancelled(_error: unknown): boolean {
+  return false;
+}
+
+export function isGoogleSignInRedirectUrl(_redirectUrl: string): boolean {
   return false;
 }
 

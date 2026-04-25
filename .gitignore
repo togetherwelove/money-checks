@@ -8,3 +8,6 @@ node_modules/
 *.log
 .codex-logs/
 .eas-build-state/
+android/release-signing.properties
+android/*.keystore
+android/*.jks

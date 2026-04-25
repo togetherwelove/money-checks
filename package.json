@@ -8,11 +8,13 @@
     "build:ios:prod": "npx eas-cli build -p ios --profile production",
     "build:android:dev": "npx eas-cli build -p android --profile development",
     "build:android:prod": "npx eas-cli build -p android --profile production",
-    "build:android:aab:local": "npx eas-cli build -p android --profile production --local",
-    "dev": "node scripts/write-build-info.cjs && expo start",
+    "build:android:aab": "cd android && gradlew.bat bundleRelease",
+    "dev": "expo start",
     "supabase:db:push": "node scripts/run-supabase-target.cjs development db push",
     "supabase:link": "node scripts/run-supabase-target.cjs development link",
-    "verify": "pnpm exec tsc --noEmit -p tsconfig.json && vitest run && biome check . && node scripts/write-build-info.cjs"
+    "verify": "pnpm exec tsc --noEmit -p tsconfig.json && vitest run && biome check .",
+    "android": "expo run:android",
+    "ios": "expo run:ios"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",

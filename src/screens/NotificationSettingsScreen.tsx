@@ -1,7 +1,6 @@
 import { StyleSheet } from "react-native";
 
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
-import { ScreenContentContainer } from "../components/ScreenContentContainer";
 import { NotificationSettingsCard } from "../components/accountScreen/NotificationSettingsCard";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
@@ -30,16 +29,14 @@ export function NotificationSettingsScreen({
 }: NotificationSettingsScreenProps) {
   return (
     <KeyboardAwareScrollView contentContainerStyle={styles.content} style={styles.screen}>
-      <ScreenContentContainer>
-        <NotificationSettingsCard
-          onChangeThresholdEnabled={onChangeNotificationThresholdEnabled}
-          onChangeThresholdValue={onChangeNotificationThreshold}
-          onTogglePreference={onToggleNotificationPreference}
-          permissionLabel={notificationPermissionLabel}
-          preferenceGroups={notificationPreferenceGroups}
-          statusMessage={notificationStatusMessage}
-        />
-      </ScreenContentContainer>
+      <NotificationSettingsCard
+        onChangeThresholdEnabled={onChangeNotificationThresholdEnabled}
+        onChangeThresholdValue={onChangeNotificationThreshold}
+        onTogglePreference={onToggleNotificationPreference}
+        permissionLabel={notificationPermissionLabel}
+        preferenceGroups={notificationPreferenceGroups}
+        statusMessage={notificationStatusMessage}
+      />
     </KeyboardAwareScrollView>
   );
 }
