@@ -1,7 +1,6 @@
 import {
   CATEGORY_DRAG_SCALE,
   CATEGORY_GRID_GAP,
-  CATEGORY_GRID_MAX_COLUMNS,
   CATEGORY_GRID_MIN_CELL_SIZE,
   CATEGORY_GRID_MIN_COLUMNS,
 } from "../constants/categorySelector";
@@ -24,13 +23,12 @@ export type CategoryGridMetrics = {
 
 export function resolveCategoryGridMetrics(width: number): CategoryGridMetrics {
   if (width <= 0) {
-    return { cellSize: 0, columns: CATEGORY_GRID_MIN_COLUMNS };
+    return { cellSize: CATEGORY_GRID_MIN_CELL_SIZE, columns: CATEGORY_GRID_MIN_COLUMNS };
   }
 
-  const columnCount = clampValue(
+  const columnCount = Math.max(
     Math.floor((width + CATEGORY_GRID_GAP) / (CATEGORY_GRID_MIN_CELL_SIZE + CATEGORY_GRID_GAP)),
     CATEGORY_GRID_MIN_COLUMNS,
-    CATEGORY_GRID_MAX_COLUMNS,
   );
 
   return {

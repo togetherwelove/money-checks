@@ -8,7 +8,6 @@ import { EntryDatePickerModal } from "../components/EntryDatePickerModal";
 import { EntryDateToolbar } from "../components/EntryDateToolbar";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { LedgerEditorPanel } from "../components/LedgerEditorPanel";
-import { QueuedLedgerEntryList } from "../components/QueuedLedgerEntryList";
 import { AppColors } from "../constants/colors";
 import { ENTRY_PHOTO_LIMIT, EntryPhotoCopy } from "../constants/entryPhotos";
 import { AppLayout } from "../constants/layout";
@@ -18,22 +17,13 @@ import { pickImageAttachments } from "../lib/imageAttachments";
 import { fetchLedgerBookMembers } from "../lib/ledgerBooks";
 import { logAppError } from "../lib/logAppError";
 import { showNativeToast } from "../lib/nativeToast";
+import type { LedgerEntry } from "../types/ledger";
 import type { LedgerBookMember } from "../types/ledgerBookMember";
-import type { LedgerEntry, LedgerEntryDraft, QueuedLedgerEntryDraft } from "../types/ledger";
 import { formatSelectedDate, parseIsoDate, toIsoDate } from "../utils/calendar";
-import { canSubmitDraft, createQueuedEntryId } from "../utils/ledgerEntries";
-
-type EntryDatePickerTarget =
-  | { kind: "draft" }
-  | {
-      entryId: string;
-      kind: "queued-entry";
-    };
 
 type EntryScreenProps = {
   currentUserId: string;
   onSaveEntry: () => Promise<void>;
-  onSaveEntries: (drafts: LedgerEntryDraft[]) => Promise<void>;
   onSettleInstallmentEntry: (entry: LedgerEntry) => Promise<void>;
   showsBannerAd: boolean;
   state: LedgerScreenState;
@@ -42,7 +32,6 @@ type EntryScreenProps = {
 export function EntryScreen({
   currentUserId,
   onSaveEntry,
-  onSaveEntries,
   onSettleInstallmentEntry,
   showsBannerAd,
   state,
@@ -53,10 +42,6 @@ export function EntryScreen({
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isCategoryDragging, setIsCategoryDragging] = useState(false);
   const [members, setMembers] = useState<LedgerBookMember[]>([]);
-  const [queuedEntries, setQueuedEntries] = useState<QueuedLedgerEntryDraft[]>([]);
-  const [datePickerTarget, setDatePickerTarget] = useState<EntryDatePickerTarget>({
-    kind: "draft",
-  });
   const {
     draft,
     editingEntryId,
@@ -64,7 +49,6 @@ export function EntryScreen({
     errorMessage,
     selectedDate,
     handleSelectDate,
-    resetEditor,
     updateDraftField,
     updateDraftInstallmentMonths,
     updateDraftPhotoAttachments,
@@ -73,7 +57,6 @@ export function EntryScreen({
   const activeBookId = state.activeBook?.id ?? null;
   const editingEntry = entries.find((entry) => entry.id === editingEntryId) ?? null;
   const pickerMode = appPlatform.entryDatePickerMode;
-  const canQueueEntry = canSubmitDraft(draft);
 
   useEffect(() => {
     let isMounted = true;
@@ -129,53 +112,16 @@ export function EntryScreen({
 
     updateDraftField("targetMemberId", fallbackMemberId);
     updateDraftField("targetMemberName", fallbackMember.displayName);
-  }, [
-    currentUserId,
-    draft.targetMemberId,
-    draft.targetMemberName,
-    members,
-    updateDraftField,
-  ]);
-  const resolvePickerDate = () => {
-    if (datePickerTarget.kind === "queued-entry") {
-      return (
-        queuedEntries.find((entry) => entry.id === datePickerTarget.entryId)?.draft.date ??
-        selectedDate
-      );
-    }
-
-    return selectedDate;
-  };
-
+  }, [currentUserId, draft.targetMemberId, draft.targetMemberName, members, updateDraftField]);
   const applySelectedDate = (isoDate: string) => {
-    if (datePickerTarget.kind === "queued-entry") {
-      setQueuedEntries((currentEntries) =>
-        currentEntries.map((entry) =>
-          entry.id === datePickerTarget.entryId
-            ? {
-                ...entry,
-                draft: {
-                  ...entry.draft,
-                  date: isoDate,
-                },
-              }
-            : entry,
-        ),
-      );
-      return;
-    }
-
     handleSelectDate(isoDate);
   };
 
-  const handleOpenDatePicker = (target: EntryDatePickerTarget = { kind: "draft" }) => {
-    setDatePickerTarget(target);
-    const pickerDate = resolveDatePickerValue(target, queuedEntries, selectedDate);
-
+  const handleOpenDatePicker = () => {
     if (pickerMode === "native" && appPlatform.usesAndroidDatePickerDialog) {
       DateTimePickerAndroid.open({
         mode: "date",
-        value: parseIsoDate(pickerDate),
+        value: parseIsoDate(selectedDate),
         onChange: (_event, nextDate) => {
           if (!nextDate) {
             return;
@@ -188,41 +134,6 @@ export function EntryScreen({
     }
 
     setIsDatePickerOpen(true);
-  };
-
-  const handleQueueEntry = () => {
-    if (!canQueueEntry) {
-      return;
-    }
-
-    setQueuedEntries((currentEntries) => [
-      ...currentEntries,
-      {
-        draft: { ...draft, date: selectedDate },
-        id: createQueuedEntryId(),
-      },
-    ]);
-    resetEditor(selectedDate);
-    updateDraftType(draft.type);
-  };
-
-  const handleSaveEntries = async () => {
-    const draftsToSave = [
-      ...queuedEntries.map((entry) => entry.draft),
-      ...(canQueueEntry ? [{ ...draft, date: selectedDate }] : []),
-    ];
-
-    if (draftsToSave.length === 0) {
-      return;
-    }
-
-    if (editingEntryId) {
-      await onSaveEntry();
-      return;
-    }
-
-    await onSaveEntries(draftsToSave);
-    setQueuedEntries([]);
   };
 
   const handlePickPhotoAttachments = async () => {
@@ -276,12 +187,11 @@ export function EntryScreen({
         <EntryDateToolbar
           dateLabel={formatSelectedDate(selectedDate)}
           onMoveToToday={() => handleSelectDate(todayIsoDate)}
-          onPressDateLabel={() => handleOpenDatePicker({ kind: "draft" })}
+          onPressDateLabel={handleOpenDatePicker}
           showMoveToToday={selectedDate !== todayIsoDate}
         />
         {showsBannerAd ? <AppBannerAd /> : null}
         <LedgerEditorPanel
-          canQueueEntry={canQueueEntry}
           draft={draft}
           editingEntryId={editingEntryId}
           members={members}
@@ -289,30 +199,18 @@ export function EntryScreen({
           onChangeDraft={updateDraftField}
           onChangeInstallmentMonths={updateDraftInstallmentMonths}
           onPickPhotoAttachments={handlePickPhotoAttachments}
-          onQueueEntry={!editingEntryId ? handleQueueEntry : null}
           onRemovePhotoAttachment={handleRemovePhotoAttachment}
-          onSaveEntry={handleSaveEntries}
+          onSaveEntry={onSaveEntry}
           onSelectType={updateDraftType}
-          onSettleInstallmentEntry={editingEntry ? () => onSettleInstallmentEntry(editingEntry) : null}
+          onSettleInstallmentEntry={
+            editingEntry ? () => onSettleInstallmentEntry(editingEntry) : null
+          }
           showInstallmentSettleAction={Boolean(
             editingEntry?.installmentMonths &&
               editingEntry.installmentOrder &&
               editingEntry.installmentOrder < editingEntry.installmentMonths,
           )}
         />
-        {!editingEntryId ? (
-          <QueuedLedgerEntryList
-            entries={queuedEntries}
-            onPressEntryDate={(entryId) =>
-              handleOpenDatePicker({ entryId, kind: "queued-entry" })
-            }
-            onRemoveEntry={(entryId) =>
-              setQueuedEntries((currentEntries) =>
-                currentEntries.filter((entry) => entry.id !== entryId),
-              )
-            }
-          />
-        ) : null}
       </KeyboardAwareScrollView>
       <EntryDatePickerModal
         entries={entries}
@@ -320,22 +218,10 @@ export function EntryScreen({
         mode={pickerMode}
         onClose={() => setIsDatePickerOpen(false)}
         onSelectDate={applySelectedDate}
-        selectedDate={resolvePickerDate()}
+        selectedDate={selectedDate}
       />
     </>
   );
-}
-
-function resolveDatePickerValue(
-  target: EntryDatePickerTarget,
-  queuedEntries: QueuedLedgerEntryDraft[],
-  selectedDate: string,
-) {
-  if (target.kind === "queued-entry") {
-    return queuedEntries.find((entry) => entry.id === target.entryId)?.draft.date ?? selectedDate;
-  }
-
-  return selectedDate;
 }
 
 const styles = StyleSheet.create({

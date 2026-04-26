@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "977831036780",
+    "project_id": "alttle",
+    "storage_bucket": "alttle.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:977831036780:android:fb42fc127535cb8f201549",
+        "android_client_info": {
+          "package_name": "com.chanwook.moneychecks"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDwKVFL-9GRaoFaZi8I1hiNqOOvPUSatiI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

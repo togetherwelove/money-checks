@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { Pressable, StyleSheet, TextInput, View } from "react-native";
+import type { GestureResponderEvent } from "react-native";
+import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
 import { DateMemoCopy, DateMemoUi } from "../constants/dateMemo";
 import { FormMultilineInputTextStyle } from "../constants/uiStyles";
-import { TextLinkButton } from "./TextLinkButton";
+
+const PREVIEW_TAP_MAX_MOVE_DISTANCE = 6;
 
 type SelectedDateMemoAccordionProps = {
   isExpanded: boolean;
@@ -26,6 +28,8 @@ export function SelectedDateMemoAccordion({
   const [draftNote, setDraftNote] = useState(note);
   const [isEditing, setIsEditing] = useState(false);
   const inputRef = useRef<TextInput>(null);
+  const pressStartPositionRef = useRef<{ pageX: number; pageY: number } | null>(null);
+  const isPreviewTapCandidateRef = useRef(false);
   const savedNoteRef = useRef(note);
 
   useEffect(() => {
@@ -51,6 +55,20 @@ export function SelectedDateMemoAccordion({
 
   const startEditing = () => {
     setIsEditing(true);
+  };
+
+  const updatePreviewTapCandidate = (event: GestureResponderEvent) => {
+    const startPosition = pressStartPositionRef.current;
+    if (!startPosition) {
+      isPreviewTapCandidateRef.current = false;
+      return;
+    }
+
+    const moveX = Math.abs(event.nativeEvent.pageX - startPosition.pageX);
+    const moveY = Math.abs(event.nativeEvent.pageY - startPosition.pageY);
+    if (moveX > PREVIEW_TAP_MAX_MOVE_DISTANCE || moveY > PREVIEW_TAP_MAX_MOVE_DISTANCE) {
+      isPreviewTapCandidateRef.current = false;
+    }
   };
 
   const persistDraftNote = async () => {
@@ -86,34 +104,41 @@ export function SelectedDateMemoAccordion({
             void persistDraftNote();
           }}
           onChangeText={setDraftNote}
-          onSubmitEditing={() => {
-            inputRef.current?.blur();
-          }}
           placeholder={DateMemoCopy.placeholder}
-          returnKeyType="done"
           scrollEnabled
           style={styles.input}
-          submitBehavior="blurAndSubmit"
           textAlignVertical="top"
           value={draftNote}
         />
       ) : (
-        <Pressable onPress={startEditing} style={styles.previewContainer}>
-          <View style={styles.previewActionRow}>
-            <TextLinkButton label={DateMemoCopy.editAction} onPress={startEditing} />
-          </View>
-          <View pointerEvents="none">
-            <TextInput
-              editable={false}
-              multiline
-              placeholder={DateMemoCopy.placeholder}
-              scrollEnabled
-              style={styles.previewInput}
-              textAlignVertical="top"
-              value={draftNote}
-            />
-          </View>
-        </Pressable>
+        <ScrollView
+          bounces={false}
+          onScrollBeginDrag={() => {
+            isPreviewTapCandidateRef.current = false;
+          }}
+          onTouchEnd={(event) => {
+            updatePreviewTapCandidate(event);
+            pressStartPositionRef.current = null;
+            if (isPreviewTapCandidateRef.current) {
+              startEditing();
+            }
+            isPreviewTapCandidateRef.current = false;
+          }}
+          onTouchMove={updatePreviewTapCandidate}
+          onTouchStart={(event) => {
+            pressStartPositionRef.current = {
+              pageX: event.nativeEvent.pageX,
+              pageY: event.nativeEvent.pageY,
+            };
+            isPreviewTapCandidateRef.current = true;
+          }}
+          scrollEventThrottle={16}
+          style={styles.previewContainer}
+        >
+          <Text style={[styles.previewText, draftNote ? null : styles.placeholderText]}>
+            {draftNote || DateMemoCopy.placeholder}
+          </Text>
+        </ScrollView>
       )}
     </View>
   );
@@ -127,27 +152,18 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   previewContainer: {
-    position: "relative",
     minHeight: DateMemoUi.accordionMinHeight,
     maxHeight: DateMemoUi.accordionMaxHeight,
   },
-  previewActionRow: {
-    position: "absolute",
-    top: DateMemoUi.panelPadding,
-    right: DateMemoUi.panelPadding,
-    zIndex: 1,
-    flexDirection: "row",
-    justifyContent: "flex-end",
-  },
-  previewInput: {
-    ...FormMultilineInputTextStyle,
+  previewText: {
     minHeight: DateMemoUi.accordionMinHeight,
-    maxHeight: DateMemoUi.accordionMaxHeight,
     padding: DateMemoUi.panelPadding,
-    borderWidth: 0,
-    borderRadius: 0,
-    backgroundColor: AppColors.surfaceMuted,
     color: AppColors.text,
+    fontSize: FormMultilineInputTextStyle.fontSize,
+    lineHeight: FormMultilineInputTextStyle.lineHeight,
+  },
+  placeholderText: {
+    color: AppColors.mutedText,
   },
   input: {
     ...FormMultilineInputTextStyle,

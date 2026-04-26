@@ -59,7 +59,6 @@ export type LedgerScreenState = {
   handleEditEntry: (entry: LedgerEntry) => void;
   handleSaveSelectedDateNote: (note: string) => Promise<void>;
   handleSaveEntry: () => Promise<LedgerEntry[]>;
-  handleSaveEntryDrafts: (drafts: LedgerEntryDraft[]) => Promise<LedgerEntry[]>;
   handleSettleInstallmentEntry: (entry: LedgerEntry) => Promise<LedgerEntry | null>;
   handleSelectDate: (isoDate: string) => void;
   resetEditor: (isoDate: string) => void;

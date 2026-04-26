@@ -51,11 +51,6 @@ export type LedgerDayNote = {
   userId: string;
 };
 
-export type QueuedLedgerEntryDraft = {
-  draft: LedgerEntryDraft;
-  id: string;
-};
-
 export type CalendarDay = {
   isoDate: string;
   dayNumber: string;

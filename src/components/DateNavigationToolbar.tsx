@@ -1,8 +1,11 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
-import { DateNavigationToolbarLayout } from "../constants/dateNavigationToolbar";
-import { ICON_ACTION_BUTTON_SIZE, IconActionButton } from "./IconActionButton";
+import {
+  DateNavigationToolbarCopy,
+  DateNavigationToolbarLayout,
+} from "../constants/dateNavigationToolbar";
+import { IconActionButton } from "./IconActionButton";
 
 type DateNavigationToolbarProps = {
   label: string;
@@ -37,24 +40,28 @@ export function DateNavigationToolbar({
       style={[styles.container, spacing === "compactBottom" ? styles.compactBottomContainer : null]}
     >
       {labelNode}
-      {showMoveToCurrent ? (
-        <View style={styles.trailingButton}>
+      <View style={styles.currentButtonSlot}>
+        {showMoveToCurrent ? (
           <IconActionButton
-            accessibilityLabel="오늘 날짜로 이동"
+            accessibilityLabel={DateNavigationToolbarCopy.moveToTodayAccessibilityLabel}
             icon="crosshair"
             onPress={onMoveToCurrent}
+            size="compact"
           />
-        </View>
-      ) : null}
+        ) : null}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: DateNavigationToolbarLayout.labelGap,
+    minHeight: DateNavigationToolbarLayout.defaultMinHeight,
     paddingBottom: DateNavigationToolbarLayout.defaultBottomPadding,
     paddingTop: DateNavigationToolbarLayout.defaultTopPadding,
-    position: "relative",
   },
   compactBottomContainer: {
     paddingBottom: DateNavigationToolbarLayout.compactBottomPadding,
@@ -85,10 +92,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
   },
-  trailingButton: {
-    position: "absolute",
-    right: 0,
-    top: "100%",
-    transform: [{ translateY: -ICON_ACTION_BUTTON_SIZE / 2 }],
+  currentButtonSlot: {
+    width: DateNavigationToolbarLayout.defaultMinHeight,
+    height: DateNavigationToolbarLayout.defaultMinHeight,
   },
 });

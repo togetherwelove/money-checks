@@ -1,5 +1,5 @@
-import type { LedgerAppScreen } from "../types/app";
 import { MenuCopy } from "../constants/menu";
+import type { LedgerAppScreen } from "../types/app";
 import { getAppScreenLabel } from "./appScreenLabels";
 
 export type AppMenuItem = {
@@ -10,6 +10,7 @@ export type AppMenuItem = {
     | "edit-3"
     | "gift"
     | "help-circle"
+    | "file-text"
     | "mail"
     | "user"
     | "users";
@@ -81,6 +82,11 @@ export function buildAppMenuSections(showNotificationSettings: boolean): AppMenu
           icon: "help-circle",
           label: getAppScreenLabel("help"),
           targetScreen: "help",
+        },
+        {
+          icon: "file-text",
+          label: getAppScreenLabel("open-source-licenses"),
+          targetScreen: "open-source-licenses",
         },
         {
           icon: "mail",

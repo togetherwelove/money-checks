@@ -146,21 +146,6 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
     return savedEntries;
   };
 
-  const handleSaveEntryDrafts = async (drafts: LedgerEntryDraft[]) => {
-    const savedEntries: LedgerEntry[] = [];
-
-    for (const queuedDraft of drafts) {
-      const nextSavedEntries = await persistDraftEntry(queuedDraft, null);
-      savedEntries.push(...nextSavedEntries);
-    }
-
-    if (savedEntries.length > 0) {
-      resetEditor(selectedDate);
-    }
-
-    return savedEntries;
-  };
-
   const persistDraftEntry = async (
     draftToSave: LedgerEntryDraft,
     targetEditingEntryId: string | null,
@@ -347,7 +332,6 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
     handleEditEntry,
     handleSaveSelectedDateNote,
     handleSaveEntry,
-    handleSaveEntryDrafts,
     handleSettleInstallmentEntry,
     handleSelectDate,
     resetEditor,

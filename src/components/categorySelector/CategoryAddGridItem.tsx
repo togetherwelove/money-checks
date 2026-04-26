@@ -1,6 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import { Pressable, StyleSheet } from "react-native";
 
+import { CategoryCustomizerCopy } from "../../constants/categoryCustomizer";
 import { AppColors } from "../../constants/colors";
 
 type CategoryAddGridItemProps = {
@@ -13,7 +14,7 @@ type CategoryAddGridItemProps = {
 export function CategoryAddGridItem({ cellSize, left, top, onPress }: CategoryAddGridItemProps) {
   return (
     <Pressable
-      accessibilityLabel="분류 추가"
+      accessibilityLabel={CategoryCustomizerCopy.inlineAddAccessibilityLabel}
       onPress={onPress}
       style={[
         styles.button,

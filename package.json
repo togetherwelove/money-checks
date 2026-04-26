@@ -5,16 +5,17 @@
   "packageManager": "pnpm@10.16.1",
   "scripts": {
     "build:ios:dev": "npx eas-cli build -p ios --profile development",
-    "build:ios:prod": "npx eas-cli build -p ios --profile production",
+    "build:ios:prod": "pnpm licenses:generate && npx eas-cli build -p ios --profile production",
     "build:android:dev": "npx eas-cli build -p android --profile development",
-    "build:android:prod": "npx eas-cli build -p android --profile production",
-    "build:android:aab": "cd android && gradlew.bat bundleRelease",
+    "build:android:prod": "pnpm licenses:generate && npx eas-cli build -p android --profile production",
+    "build:android:aab": "pnpm licenses:generate && cd android && gradlew.bat bundleRelease",
     "dev": "expo start",
     "supabase:db:push": "node scripts/run-supabase-target.cjs development db push",
     "supabase:link": "node scripts/run-supabase-target.cjs development link",
     "verify": "pnpm exec tsc --noEmit -p tsconfig.json && vitest run && biome check .",
     "android": "expo run:android",
-    "ios": "expo run:ios"
+    "ios": "expo run:ios",
+    "licenses:generate": "node scripts/generate-open-source-licenses.cjs"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",

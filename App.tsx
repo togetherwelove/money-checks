@@ -1,9 +1,9 @@
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import {
   NavigationContainer,
+  type NavigationState,
   StackActions,
   createNavigationContainerRef,
-  type NavigationState,
 } from "@react-navigation/native";
 import type { Session } from "@supabase/supabase-js";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -13,7 +13,7 @@ import { RootSiblingParent } from "react-native-root-siblings";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 import { SignedInStackNavigator } from "./src/app/SignedInStackNavigator";
-import { isSignedInStackScreen, type SignedInStackParamList } from "./src/app/signedInNavigation";
+import { type SignedInStackParamList, isSignedInStackScreen } from "./src/app/signedInNavigation";
 import { AllEntriesAction } from "./src/components/AllEntriesAction";
 import { AnnualReportDownloadAction } from "./src/components/AnnualReportDownloadAction";
 import { AppHeader } from "./src/components/AppHeader";
@@ -28,29 +28,35 @@ import { AdInterstitialPlacement } from "./src/constants/ads";
 import { AppColors } from "./src/constants/colors";
 import { EntryRegistrationCopy } from "./src/constants/entryRegistration";
 import { AppMessages } from "./src/constants/messages";
-import { SupportMessages, type SupportPackageIdentifier } from "./src/constants/support";
 import { SubscriptionMessages, SubscriptionTiers } from "./src/constants/subscription";
 import { SubscriptionManagementMessages } from "./src/constants/subscriptionManagement";
+import { SupportMessages, type SupportPackageIdentifier } from "./src/constants/support";
 import { useAnnualLedgerReportAction } from "./src/hooks/useAnnualLedgerReportAction";
 import { useAuthOnboarding } from "./src/hooks/useAuthOnboarding";
+import { useCardSmsClipboardAutoPrompt } from "./src/hooks/useCardSmsClipboardAutoPrompt";
 import { useGoogleAuthRedirectCompletion } from "./src/hooks/useGoogleAuthRedirectCompletion";
+import { useLedgerCategoryLabels } from "./src/hooks/useLedgerCategoryLabels";
 import { useLedgerNotifications } from "./src/hooks/useLedgerNotifications";
 import { useLedgerScreenState } from "./src/hooks/useLedgerScreenState";
-import { useSupportPackages } from "./src/hooks/useSupportPackages";
 import { useSubscriptionPlan } from "./src/hooks/useSubscriptionPlan";
 import { useSupabaseSession } from "./src/hooks/useSupabaseSession";
+import { useSupportPackages } from "./src/hooks/useSupportPackages";
 import { preloadInterstitialAd, showInterstitialAd } from "./src/lib/ads/interstitialAd";
 import { ensureMobileAdsInitialized } from "./src/lib/ads/mobileAds";
+import { showsBackNavigationAction } from "./src/lib/appHeaderTitle";
 import { appPlatform } from "./src/lib/appPlatform";
 import { getAppScreenLabel } from "./src/lib/appScreenLabels";
-import { showsBackNavigationAction } from "./src/lib/appHeaderTitle";
 import { resolveSessionAuthProviderLabel } from "./src/lib/authProvider";
+import {
+  type CardSmsClipboardDraft,
+  promptCardSmsClipboardImport,
+} from "./src/lib/cardSmsClipboardImport";
 import { logAppError } from "./src/lib/logAppError";
 import { buildAppMenuSections } from "./src/lib/menuItems";
 import { showNativeToast } from "./src/lib/nativeToast";
 import { fetchOwnProfileDisplayName, updateOwnProfileDisplayName } from "./src/lib/profiles";
-import { isSubscriptionPurchaseCancelled } from "./src/lib/subscription/subscriptionError";
 import { openSubscriptionManagement } from "./src/lib/subscription/openSubscriptionManagement";
+import { isSubscriptionPurchaseCancelled } from "./src/lib/subscription/subscriptionError";
 import {
   createOtherMemberCreatedEntryEvent,
   createOtherMemberDeletedEntryEvent,
@@ -60,7 +66,7 @@ import { AuthScreen } from "./src/screens/AuthScreen";
 import { NicknameSetupScreen } from "./src/screens/NicknameSetupScreen";
 import { PermissionOnboardingScreen } from "./src/screens/PermissionOnboardingScreen";
 import type { LedgerAppScreen } from "./src/types/app";
-import type { LedgerEntry, LedgerEntryDraft } from "./src/types/ledger";
+import type { LedgerEntry } from "./src/types/ledger";
 import { parseIsoDate, toIsoDate } from "./src/utils/calendar";
 import { resolveFallbackDisplayName } from "./src/utils/sessionDisplayName";
 
@@ -103,6 +109,7 @@ function SignedOutAppShell({ children }: { children: React.ReactNode }) {
 
 function SignedInApp({ session }: { session: Session }) {
   const navigationRef = useRef(createNavigationContainerRef<SignedInStackParamList>()).current;
+  const clipboardImportBaseDate = useRef(new Date()).current;
   const [currentScreen, setCurrentScreen] = useState<LedgerAppScreen>("calendar");
   const [previousScreen, setPreviousScreen] = useState<LedgerAppScreen | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -118,6 +125,7 @@ function SignedInApp({ session }: { session: Session }) {
   const subscription = useSubscriptionPlan(session.user.id);
   const supportPackages = useSupportPackages(session.user.id);
   const ledgerState = useLedgerScreenState(session);
+  const visibleCategoryLabels = useLedgerCategoryLabels();
   const annualReport = useAnnualLedgerReportAction({
     activeBook: ledgerState.activeBook,
     onBeforeDownloadReport: async () => {
@@ -159,7 +167,9 @@ function SignedInApp({ session }: { session: Session }) {
 
     const rootState = navigationRef.getRootState();
     const activeRoute = rootState.routes[rootState.index];
-    const activeRouteName = isSignedInStackScreen(activeRoute?.name) ? activeRoute.name : "calendar";
+    const activeRouteName = isSignedInStackScreen(activeRoute?.name)
+      ? activeRoute.name
+      : "calendar";
     const resolvedPreviousRoute = resolvePreviousRouteName(rootState);
 
     setCurrentScreen(activeRouteName);
@@ -194,9 +204,68 @@ function SignedInApp({ session }: { session: Session }) {
     returnToCalendarRoot();
   }, [returnToCalendarRoot]);
 
-  const handleOpenEntryFromCalendar = useCallback(() => {
+  const navigateToEntryFromCalendar = useCallback(() => {
     navigateToStackScreen("entry");
   }, [navigateToStackScreen]);
+
+  const handleApplyCardSmsClipboardDraft = useCallback(
+    (clipboardDraft: CardSmsClipboardDraft) => {
+      if (clipboardDraft.date) {
+        ledgerState.handleSelectDate(clipboardDraft.date);
+      }
+
+      ledgerState.updateDraftType(clipboardDraft.type);
+      ledgerState.updateDraftField("amount", clipboardDraft.amount);
+      ledgerState.updateDraftField("content", clipboardDraft.content);
+      if (clipboardDraft.category && visibleCategoryLabels.includes(clipboardDraft.category)) {
+        ledgerState.updateDraftField("category", clipboardDraft.category);
+      }
+
+      navigateToEntryFromCalendar();
+    },
+    [ledgerState, navigateToEntryFromCalendar, visibleCategoryLabels],
+  );
+
+  const shouldIgnoreCardSmsClipboardDraft = useCallback(
+    (clipboardDraft: CardSmsClipboardDraft) => {
+      const targetDate = clipboardDraft.date ?? ledgerState.selectedDate;
+      return ledgerState.entries.some(
+        (entry) =>
+          entry.date === targetDate &&
+          entry.amount === Number(clipboardDraft.amount) &&
+          entry.content.trim() === clipboardDraft.content.trim() &&
+          entry.type === clipboardDraft.type,
+      );
+    },
+    [ledgerState.entries, ledgerState.selectedDate],
+  );
+
+  const handleOpenEntryFromCalendar = useCallback(async () => {
+    const didPromptCardSmsImport = await promptCardSmsClipboardImport({
+      baseDate: clipboardImportBaseDate,
+      onApply: handleApplyCardSmsClipboardDraft,
+      onSkip: navigateToEntryFromCalendar,
+      shouldIgnoreDraft: shouldIgnoreCardSmsClipboardDraft,
+    });
+
+    if (!didPromptCardSmsImport) {
+      navigateToEntryFromCalendar();
+    }
+  }, [
+    clipboardImportBaseDate,
+    handleApplyCardSmsClipboardDraft,
+    navigateToEntryFromCalendar,
+    shouldIgnoreCardSmsClipboardDraft,
+  ]);
+
+  useCardSmsClipboardAutoPrompt({
+    baseDate: clipboardImportBaseDate,
+    enabled:
+      !authOnboarding.isLoading && authOnboarding.step === null && currentScreen === "calendar",
+    onApply: handleApplyCardSmsClipboardDraft,
+    onSkip: navigateToEntryFromCalendar,
+    shouldIgnoreDraft: shouldIgnoreCardSmsClipboardDraft,
+  });
 
   const handleBackNavigation = useCallback(() => {
     if (currentScreen === "entry") {
@@ -365,32 +434,6 @@ function SignedInApp({ session }: { session: Session }) {
     );
   };
 
-  const handleSaveEntryDrafts = async (drafts: LedgerEntryDraft[]) => {
-    const currentEntries = ledgerState.entries;
-    let savedEntries: LedgerEntry[] = [];
-    try {
-      savedEntries = await ledgerState.handleSaveEntryDrafts(drafts);
-    } catch (error) {
-      logAppError("App", error, {
-        entryCount: drafts.length,
-        step: "save_entry_drafts",
-      });
-      showNativeToast(resolveLedgerSaveErrorMessage(error));
-      return;
-    }
-
-    if (savedEntries.length === 0) {
-      return;
-    }
-
-    if (navigationRef.isReady() && navigationRef.canGoBack()) {
-      navigationRef.goBack();
-    } else {
-      returnToCalendarRoot();
-    }
-    void runQueuedEntrySaveSideEffects(savedEntries, currentEntries);
-  };
-
   const handleEditEntryFromCalendar = (entry: LedgerEntry) => {
     ledgerState.handleEditEntry(entry);
     handleOpenEntryFromCalendar();
@@ -519,7 +562,9 @@ function SignedInApp({ session }: { session: Session }) {
               currentScreen === "calendar" && subscription.currentTier === SubscriptionTiers.plus
             }
             titleLabel={
-              currentScreen === "calendar" ? annualReport.bookName : getAppScreenLabel(currentScreen)
+              currentScreen === "calendar"
+                ? annualReport.bookName
+                : getAppScreenLabel(currentScreen)
             }
             trailingAction={
               currentScreen === "calendar" || currentScreen === "charts" ? (
@@ -563,12 +608,13 @@ function SignedInApp({ session }: { session: Session }) {
               onPurchaseSupportPackage={handlePurchaseSupportPackage}
               onRestorePurchases={handleRestorePurchases}
               onSaveEntry={handleSaveEntry}
-              onSaveEntryDrafts={handleSaveEntryDrafts}
               onSelectCalendarDate={(isoDate) => {
                 ledgerState.handleSelectDate(isoDate);
                 handleOpenCalendar();
               }}
-              onSendPendingJoinRequestNotification={notifications.sendPendingJoinRequestNotification}
+              onSendPendingJoinRequestNotification={
+                notifications.sendPendingJoinRequestNotification
+              }
               onSendPushNotificationToBookMembers={notifications.sendPushNotificationToBookMembers}
               onSendPushNotificationToUsers={notifications.sendPushNotificationToUsers}
               onSettleInstallmentEntry={handleSettleInstallmentEntry}
@@ -681,30 +727,6 @@ function SignedInApp({ session }: { session: Session }) {
         changeType,
         entryCount: savedEntries.length,
         step: "run_entry_save_side_effects",
-      });
-    }
-  }
-
-  async function runQueuedEntrySaveSideEffects(
-    savedEntries: LedgerEntry[],
-    currentEntries: LedgerEntry[],
-  ) {
-    try {
-      const visibleSavedEntries = savedEntries.filter(
-        (entry) => !entry.installmentOrder || entry.installmentOrder === 1,
-      );
-      const lastSavedEntry = visibleSavedEntries[visibleSavedEntries.length - 1];
-      if (lastSavedEntry) {
-        await notifications.notifySavedEntry(lastSavedEntry, currentEntries);
-      }
-
-      for (const savedEntry of visibleSavedEntries) {
-        await notifySharedLedgerEntryChange(savedEntry, "create");
-      }
-    } catch (error) {
-      logAppError("App", error, {
-        entryCount: savedEntries.length,
-        step: "run_queued_entry_save_side_effects",
       });
     }
   }

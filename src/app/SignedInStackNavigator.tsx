@@ -1,8 +1,10 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import type { SubscriptionTier } from "../constants/subscription";
+import type { SupportPackageIdentifier } from "../constants/support";
 import type { BusyTaskTracker } from "../hooks/ledgerScreenState/types";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
+import type { SupportPackageSnapshot } from "../lib/subscription/supportClient";
 import type { NotificationEvent } from "../notifications/domain/notificationEvents";
 import type { NotificationThresholdKey } from "../notifications/domain/notificationEvents";
 import type { NotificationPreferenceGroup } from "../notifications/preferences/notificationPreferences";
@@ -13,13 +15,12 @@ import { EntryScreen } from "../screens/EntryScreen";
 import { HelpScreen } from "../screens/HelpScreen";
 import { HomeScreen } from "../screens/HomeScreen";
 import { NotificationSettingsScreen } from "../screens/NotificationSettingsScreen";
+import { OpenSourceLicensesScreen } from "../screens/OpenSourceLicensesScreen";
 import { ShareLedgerScreen } from "../screens/ShareLedgerScreen";
 import { SubscriptionScreen } from "../screens/SubscriptionScreen";
 import { SupportContactScreen } from "../screens/SupportContactScreen";
 import { SupportScreen } from "../screens/SupportScreen";
-import type { SupportPackageIdentifier } from "../constants/support";
-import type { SupportPackageSnapshot } from "../lib/subscription/supportClient";
-import type { LedgerEntry, LedgerEntryDraft } from "../types/ledger";
+import type { LedgerEntry } from "../types/ledger";
 import type { SignedInStackParamList } from "./signedInNavigation";
 
 const Stack = createNativeStackNavigator<SignedInStackParamList>();
@@ -49,7 +50,6 @@ type SignedInStackNavigatorProps = {
   onPurchasePlus: () => Promise<void>;
   onRestorePurchases: () => Promise<void>;
   onSaveEntry: () => Promise<void>;
-  onSaveEntryDrafts: (drafts: LedgerEntryDraft[]) => Promise<void>;
   onSelectCalendarDate: (isoDate: string) => void;
   onSendPendingJoinRequestNotification: () => Promise<void>;
   onSendPushNotificationToBookMembers: (
@@ -102,7 +102,6 @@ export function SignedInStackNavigator({
   onPurchasePlus,
   onRestorePurchases,
   onSaveEntry,
-  onSaveEntryDrafts,
   onSelectCalendarDate,
   onSendPendingJoinRequestNotification,
   onSendPushNotificationToBookMembers,
@@ -158,7 +157,6 @@ export function SignedInStackNavigator({
         {() => (
           <EntryScreen
             currentUserId={userId}
-            onSaveEntries={onSaveEntryDrafts}
             onSaveEntry={onSaveEntry}
             onSettleInstallmentEntry={onSettleInstallmentEntry}
             showsBannerAd={showsBannerAd}
@@ -249,6 +247,7 @@ export function SignedInStackNavigator({
         )}
       </Stack.Screen>
       <Stack.Screen name="help" component={HelpScreen} />
+      <Stack.Screen name="open-source-licenses" component={OpenSourceLicensesScreen} />
       <Stack.Screen name="contact-support">
         {() => <SupportContactScreen email={email} />}
       </Stack.Screen>

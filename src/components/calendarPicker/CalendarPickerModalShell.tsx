@@ -10,6 +10,7 @@ type CalendarPickerModalShellProps = {
   children: ReactNode;
   isOpen: boolean;
   onClose: () => void;
+  scrollEnabled?: boolean;
   title: string;
 };
 
@@ -17,6 +18,7 @@ export function CalendarPickerModalShell({
   children,
   isOpen,
   onClose,
+  scrollEnabled = true,
   title,
 }: CalendarPickerModalShellProps) {
   if (!isOpen) {
@@ -32,6 +34,7 @@ export function CalendarPickerModalShell({
             contentContainerStyle={styles.sheetContent}
             extraScrollHeight={AppLayout.screenPadding * 6}
             fillAvailableHeight={false}
+            scrollEnabled={scrollEnabled}
             showsVerticalScrollIndicator={false}
           >
             <View style={styles.header}>

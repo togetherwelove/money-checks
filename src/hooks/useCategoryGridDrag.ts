@@ -14,10 +14,13 @@ import { resolvePreviewCategoryOrder } from "../lib/categoryOrder";
 import type { CategoryDefinition } from "../types/category";
 
 type UseCategoryGridDragParams = {
+  isReorderEnabled?: boolean;
+  onDeleteCategory?: (categoryId: string) => void;
   onDraggingChange?: (isDragging: boolean) => void;
   orderedCategories: CategoryDefinition[];
   replaceOrderedCategories: (nextCategories: CategoryDefinition[]) => void;
   saveCurrentOrder: () => void;
+  shouldDeleteCategory?: (pageX: number, pageY: number) => boolean;
 };
 
 type UseCategoryGridDragResult = {
@@ -27,16 +30,19 @@ type UseCategoryGridDragResult = {
   draggingCategoryId: string | null;
   getAnimatedPosition: (categoryId: string) => Animated.ValueXY;
   handleContainerLayout: (view: View | null, width: number) => void;
-  handleDragEnd: (categoryId: string) => void;
+  handleDragEnd: (categoryId: string, pageX: number, pageY: number) => void;
   handleDragMove: (categoryId: string, pageX: number, pageY: number) => void;
   handleDragStart: (categoryId: string, pageX: number, pageY: number) => void;
 };
 
 export function useCategoryGridDrag({
+  isReorderEnabled = true,
+  onDeleteCategory,
   onDraggingChange,
   orderedCategories,
   replaceOrderedCategories,
   saveCurrentOrder,
+  shouldDeleteCategory,
 }: UseCategoryGridDragParams): UseCategoryGridDragResult {
   const [containerBounds, setContainerBounds] = useState<CategoryGridBounds>({
     left: 0,
@@ -102,8 +108,18 @@ export function useCategoryGridDrag({
         setContainerBounds({ left, top, width });
       });
     },
-    handleDragEnd: (categoryId) => {
+    handleDragEnd: (categoryId, pageX, pageY) => {
       if (draggingCategoryIdRef.current !== categoryId) {
+        return;
+      }
+
+      if (shouldDeleteCategory?.(pageX, pageY)) {
+        draggingCategoryIdRef.current = null;
+        dragStartOrderRef.current = [];
+        dragTargetIndexRef.current = null;
+        setDraggingCategoryId(null);
+        onDraggingChange?.(false);
+        onDeleteCategory?.(categoryId);
         return;
       }
 
@@ -143,6 +159,10 @@ export function useCategoryGridDrag({
       );
       const nextPosition = resolveDraggedCategoryPosition(pageX, pageY, containerBounds, cellSize);
       animatedPosition.setValue(nextPosition);
+
+      if (!isReorderEnabled) {
+        return;
+      }
 
       const toIndex = resolveCategoryDropIndex(
         pageX,

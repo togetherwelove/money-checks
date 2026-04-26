@@ -1,5 +1,4 @@
 export const EntryRegistrationCopy = {
-  addEntryAction: "목록에 추가",
   amountRequiredError: "금액을 입력해 주세요.",
   categoryLabel: "분류",
   categoryRequiredError: "분류를 선택해 주세요.",
@@ -12,11 +11,7 @@ export const EntryRegistrationCopy = {
   installmentSettleSuccess: "할부를 정리했어요.",
   installmentSettleUnavailable: "정리할 할부가 없어요.",
   noteLabel: "메모",
-  queuedEntriesTitle: "추가 등록 예정",
-  queuedEntriesCountLabel: (count: number) => `추가 등록 예정 ${count}건`,
-  removeQueuedEntryAction: "삭제",
   saveError: "기록 저장에 실패했어요.",
   saveMigrationError: "DB 마이그레이션 적용이 필요해요.",
-  summarySeparator: " · ",
   targetMemberLabel: "대상 구성원",
 } as const;

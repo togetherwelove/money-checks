@@ -13,6 +13,8 @@ import {
   CATEGORY_DRAG_START_THRESHOLD,
   CATEGORY_ICON_LABEL_GAP,
   CATEGORY_ICON_SIZE,
+  CATEGORY_ITEM_PADDING_HORIZONTAL,
+  CATEGORY_ITEM_PADDING_VERTICAL,
 } from "../../constants/categorySelector";
 import { AppColors } from "../../constants/colors";
 import { resolveDraggedCategoryScale } from "../../lib/categoryGrid";
@@ -24,7 +26,7 @@ type CategoryGridItemProps = {
   cellSize: number;
   isActive: boolean;
   isDragging: boolean;
-  onDragEnd: (categoryId: string) => void;
+  onDragEnd: (categoryId: string, pageX: number, pageY: number) => void;
   onDragMove: (categoryId: string, pageX: number, pageY: number) => void;
   onDragStart: (categoryId: string, pageX: number, pageY: number) => void;
   onPressCategory: (category: CategoryDefinition) => void;
@@ -72,7 +74,7 @@ export function CategoryGridItem({
           dragTimerRef.current = null;
 
           if (hasDraggedRef.current) {
-            onDragEnd(category.id);
+            onDragEnd(category.id, gestureState.moveX, gestureState.moveY);
             return;
           }
 
@@ -80,12 +82,12 @@ export function CategoryGridItem({
             onPressCategory(category);
           }
         },
-        onPanResponderTerminate: () => {
+        onPanResponderTerminate: (_event, gestureState) => {
           clearDragTimer(dragTimerRef.current);
           dragTimerRef.current = null;
 
           if (hasDraggedRef.current) {
-            onDragEnd(category.id);
+            onDragEnd(category.id, gestureState.moveX, gestureState.moveY);
           }
         },
         onStartShouldSetPanResponder: () => true,
@@ -118,7 +120,14 @@ export function CategoryGridItem({
         name={iconName}
         size={CATEGORY_ICON_SIZE}
       />
-      <Text style={[styles.optionText, isActive && styles.activeOptionText]}>{category.label}</Text>
+      <Text
+        adjustsFontSizeToFit
+        minimumFontScale={0.86}
+        numberOfLines={2}
+        style={[styles.optionText, isActive && styles.activeOptionText]}
+      >
+        {category.label}
+      </Text>
     </Animated.View>
   );
 }
@@ -136,8 +145,8 @@ function resolveMovementDistance(gestureState: PanResponderGestureState): number
 const styles = StyleSheet.create({
   option: {
     position: "absolute",
-    paddingHorizontal: 8,
-    paddingVertical: 8,
+    paddingHorizontal: CATEGORY_ITEM_PADDING_HORIZONTAL,
+    paddingVertical: CATEGORY_ITEM_PADDING_VERTICAL,
     borderWidth: 1,
     borderColor: AppColors.border,
     borderRadius: 16,

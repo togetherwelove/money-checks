@@ -24,8 +24,8 @@ import {
 } from "../constants/uiStyles";
 import { formatInstallmentLabel } from "../lib/installments";
 import { showNativeToast } from "../lib/nativeToast";
-import type { LedgerBookMember } from "../types/ledgerBookMember";
 import type { LedgerEntryDraft, LedgerEntryType } from "../types/ledger";
+import type { LedgerBookMember } from "../types/ledgerBookMember";
 import { formatAmountInput } from "../utils/amount";
 import { ActionButton } from "./ActionButton";
 import { EntryDirectionSelector } from "./EntryDirectionSelector";
@@ -36,7 +36,6 @@ const AMOUNT_INPUT_FOCUS_DELAY_MS = 120;
 const CONTENT_INPUT_FOCUS_DELAY_MS = 80;
 
 type LedgerEntryFormProps = {
-  canQueueEntry?: boolean;
   draft: LedgerEntryDraft;
   editingEntryId: string | null;
   members: LedgerBookMember[];
@@ -45,7 +44,6 @@ type LedgerEntryFormProps = {
   onPickPhotoAttachments: () => void | Promise<void>;
   onCategoryDraggingChange?: (isDragging: boolean) => void;
   onRemovePhotoAttachment: (attachmentId: string) => void;
-  onQueueEntry?: (() => void | Promise<void>) | null;
   onSaveEntry: () => void | Promise<void>;
   onSelectType: (type: LedgerEntryType) => void;
   onSettleInstallmentEntry?: (() => void | Promise<void>) | null;
@@ -53,7 +51,6 @@ type LedgerEntryFormProps = {
 };
 
 export function LedgerEntryForm({
-  canQueueEntry = false,
   draft,
   editingEntryId,
   members,
@@ -62,7 +59,6 @@ export function LedgerEntryForm({
   onPickPhotoAttachments,
   onCategoryDraggingChange,
   onRemovePhotoAttachment,
-  onQueueEntry = null,
   onSaveEntry,
   onSelectType,
   onSettleInstallmentEntry = null,
@@ -73,16 +69,6 @@ export function LedgerEntryForm({
   const contentInputRef = useRef<TextInput>(null);
   const amountFocusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isInstallmentPickerOpen, setIsInstallmentPickerOpen] = useState(false);
-
-  const handlePressQueueEntry = () => {
-    const validationMessage = resolveDraftValidationMessage(draft);
-    if (validationMessage) {
-      showNativeToast(validationMessage);
-      return;
-    }
-
-    return onQueueEntry?.();
-  };
 
   const handlePressSaveEntry = () => {
     const validationMessage = resolveDraftValidationMessage(draft);
@@ -179,11 +165,9 @@ export function LedgerEntryForm({
       <View style={styles.fieldGroup}>
         <Text style={styles.label}>{EntryRegistrationCopy.noteLabel}</Text>
         <TextInput
-          submitBehavior="blurAndSubmit"
           multiline
           onChangeText={(value) => onChangeDraft("note", value)}
           placeholder={EntryRegistrationCopy.noteLabel}
-          returnKeyType="done"
           style={styles.multilineInput}
           textAlignVertical="top"
           value={draft.note}
@@ -206,16 +190,6 @@ export function LedgerEntryForm({
             variant="primary"
           />
         </View>
-        {!editingEntryId && onQueueEntry ? (
-          <View style={styles.secondaryActionRow}>
-            <ActionButton
-              label={EntryRegistrationCopy.addEntryAction}
-              onPress={handlePressQueueEntry}
-              size="inline"
-              variant="secondary"
-            />
-          </View>
-        ) : null}
         {showInstallmentSettleAction && onSettleInstallmentEntry ? (
           <View style={styles.secondaryActionRow}>
             <ActionButton

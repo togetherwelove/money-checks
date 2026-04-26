@@ -3,11 +3,9 @@ import type { ComponentRef } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Keyboard,
   StyleSheet,
   Text,
-  TextInput,
-  TouchableWithoutFeedback,
+  type TextInput,
   View,
   findNodeHandle,
 } from "react-native";
@@ -28,6 +26,7 @@ import { DateMemoUi } from "../constants/dateMemo";
 import { AppLayout } from "../constants/layout";
 import { AppMessages } from "../constants/messages";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
+import { appPlatform } from "../lib/appPlatform";
 import type { LedgerEntry } from "../types/ledger";
 import {
   addMonths,
@@ -81,7 +80,7 @@ export function HomeScreen({
 
   useEffect(() => {
     setIsDateMemoExpanded(Boolean(selectedDateNote.trim()));
-  }, [selectedDate, selectedDateNote]);
+  }, [selectedDateNote]);
 
   const handleBeginDateMemoEditing = (input: TextInput | null) => {
     const inputNodeHandle = input ? findNodeHandle(input) : null;
@@ -97,46 +96,39 @@ export function HomeScreen({
   };
 
   return (
-    <TouchableWithoutFeedback
-      accessible={false}
-      onPress={() => {
-        Keyboard.dismiss();
-      }}
+    <KeyboardAwareScrollView
+      ref={scrollViewRef}
+      contentContainerStyle={styles.content}
+      extraScrollHeight={DateMemoUi.keyboardExtraScrollHeight}
+      showsVerticalScrollIndicator={false}
+      style={styles.screen}
     >
-      <KeyboardAwareScrollView
-        ref={scrollViewRef}
-        contentContainerStyle={styles.content}
-        extraScrollHeight={DateMemoUi.keyboardExtraScrollHeight}
-        showsVerticalScrollIndicator={false}
-        style={styles.screen}
-      >
-        <KeyboardAwareContent
-          errorMessage={errorMessage}
-          handleBeginDateMemoEditing={handleBeginDateMemoEditing}
-          isDateMemoExpanded={isDateMemoExpanded}
-          isLoadingSelectedDateEntries={isLoadingSelectedDateEntries}
-          monthlyLedger={monthlyLedger}
-          onDeleteSelectedEntry={onDeleteSelectedEntry}
-          onDeleteSelectedDateNote={handleDeleteSelectedDateNote}
-          onEditSelectedEntry={onEditSelectedEntry}
-          onOpenCharts={onOpenCharts}
-          onOpenEntry={onOpenEntry}
-          onOpenMonthPicker={onOpenMonthPicker}
-          onSaveSelectedDateNote={handleSaveSelectedDateNote}
-          onSelectCalendarDate={onSelectCalendarDate}
-          selectedDate={selectedDate}
-          selectedDateLabel={selectedDateLabel}
-          selectedDateNote={selectedDateNote}
-          selectedEntries={selectedEntries}
-          setIsDateMemoExpanded={setIsDateMemoExpanded}
-          setVisibleMonth={setVisibleMonth}
-          showsBannerAd={showsBannerAd}
-          state={state}
-          todayIsoDate={todayIsoDate}
-          visibleMonth={visibleMonth}
-        />
-      </KeyboardAwareScrollView>
-    </TouchableWithoutFeedback>
+      <KeyboardAwareContent
+        errorMessage={errorMessage}
+        handleBeginDateMemoEditing={handleBeginDateMemoEditing}
+        isDateMemoExpanded={isDateMemoExpanded}
+        isLoadingSelectedDateEntries={isLoadingSelectedDateEntries}
+        monthlyLedger={monthlyLedger}
+        onDeleteSelectedEntry={onDeleteSelectedEntry}
+        onDeleteSelectedDateNote={handleDeleteSelectedDateNote}
+        onEditSelectedEntry={onEditSelectedEntry}
+        onOpenCharts={onOpenCharts}
+        onOpenEntry={onOpenEntry}
+        onOpenMonthPicker={onOpenMonthPicker}
+        onSaveSelectedDateNote={handleSaveSelectedDateNote}
+        onSelectCalendarDate={onSelectCalendarDate}
+        selectedDate={selectedDate}
+        selectedDateLabel={selectedDateLabel}
+        selectedDateNote={selectedDateNote}
+        selectedEntries={selectedEntries}
+        setIsDateMemoExpanded={setIsDateMemoExpanded}
+        setVisibleMonth={setVisibleMonth}
+        showsBannerAd={showsBannerAd}
+        state={state}
+        todayIsoDate={todayIsoDate}
+        visibleMonth={visibleMonth}
+      />
+    </KeyboardAwareScrollView>
   );
 }
 
@@ -195,11 +187,17 @@ function KeyboardAwareContent({
         {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
         <CalendarToolbar
           monthLabel={formatMonthYear(visibleMonth)}
-          onPressMonthLabel={onOpenMonthPicker}
+          onMoveNextMonth={
+            appPlatform.isWeb ? () => moveMonth(visibleMonth, 1, setVisibleMonth) : null
+          }
+          onMovePreviousMonth={
+            appPlatform.isWeb ? () => moveMonth(visibleMonth, -1, setVisibleMonth) : null
+          }
+          onPressMonthLabel={appPlatform.isWeb ? null : onOpenMonthPicker}
           onSelectToday={() => {
             onSelectCalendarDate(todayIsoDate);
           }}
-          showMoveToCurrent={false}
+          showMoveToCurrent={selectedDate !== todayIsoDate}
         />
         <WeekdayHeader />
         <MonthCalendarPager
@@ -218,20 +216,10 @@ function KeyboardAwareContent({
           />
         </View>
         <View style={styles.selectionRow}>
-          <View style={styles.selectionInfo}>
+          <View style={styles.selectedDateInfo}>
             <Text style={styles.selectedDate}>{selectedDateLabel}</Text>
-            {selectedDate !== todayIsoDate ? (
-              <IconActionButton
-                accessibilityLabel="오늘 날짜로 이동"
-                icon="crosshair"
-                onPress={() => {
-                  onSelectCalendarDate(todayIsoDate);
-                }}
-                size="compact"
-              />
-            ) : null}
           </View>
-          <View style={styles.selectionInfo}>
+          <View style={styles.selectionActions}>
             <DateMemoToggleButton
               isExpanded={isDateMemoExpanded}
               onPress={() => setIsDateMemoExpanded((currentValue) => !currentValue)}
@@ -330,7 +318,13 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: AppLayout.compactGap,
   },
-  selectionInfo: {
+  selectedDateInfo: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    minWidth: 0,
+  },
+  selectionActions: {
     flexDirection: "row",
     alignItems: "center",
     gap: AppLayout.compactGap,

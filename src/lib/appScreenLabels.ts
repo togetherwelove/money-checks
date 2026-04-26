@@ -1,8 +1,9 @@
 import { AllEntriesCopy } from "../constants/allEntries";
 import { HelpCopy } from "../constants/help";
 import { AppMessages } from "../constants/messages";
-import { SupportMessages } from "../constants/support";
+import { OpenSourceLicensesCopy } from "../constants/openSourceLicenses";
 import { SubscriptionMessages } from "../constants/subscription";
+import { SupportMessages } from "../constants/support";
 import { SupportContactCopy } from "../constants/supportContact";
 import { NotificationUiCopy } from "../notifications/config/notificationCopy";
 import type { LedgerAppScreen } from "../types/app";
@@ -16,6 +17,7 @@ export const AppScreenLabels: Record<LedgerAppScreen, string> = {
   entry: AppMessages.entryScreenTitle,
   help: HelpCopy.screenTitle,
   "notification-settings": NotificationUiCopy.screenTitle,
+  "open-source-licenses": OpenSourceLicensesCopy.screenTitle,
   share: AppMessages.shareTitle,
   support: SupportMessages.screenTitle,
   subscription: SubscriptionMessages.screenTitle,

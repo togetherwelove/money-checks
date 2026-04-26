@@ -3,7 +3,6 @@ import { sanitizeAmountDigits } from "./amount";
 
 const EMPTY_AMOUNT = "";
 const MANUAL_ENTRY_PREFIX = "manual";
-const QUEUED_ENTRY_PREFIX = "queued";
 export const ONE_TIME_INSTALLMENT_MONTHS = 1;
 
 export function createDraft(isoDate: string, targetMemberId: string): LedgerEntryDraft {
@@ -52,8 +51,4 @@ export function canSubmitDraft(draft: LedgerEntryDraft): boolean {
 
 export function createManualEntryId(): string {
   return `${MANUAL_ENTRY_PREFIX}-${Date.now()}`;
-}
-
-export function createQueuedEntryId(): string {
-  return `${QUEUED_ENTRY_PREFIX}-${Date.now()}`;
 }

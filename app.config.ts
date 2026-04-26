@@ -10,9 +10,9 @@ const admobAndroidAppId = process.env.EXPO_PUBLIC_ADMOB_ANDROID_APP_ID ?? "";
 const admobIosAppId = process.env.EXPO_PUBLIC_ADMOB_IOS_APP_ID ?? "";
 const appIconPath = "./asset/icon.png";
 const androidAdaptiveForegroundPath = "./asset/adaptive-icon-foreground.png";
+const androidGoogleServicesFilePath = "./android/app/google-services.json";
 const imagePickerPermissionConfig = {
-  cameraPermission:
-    "알뜰 앱 이용 중 첨부할 이미지를 촬영하기 위해 카메라 접근 권한이 필요합니다.",
+  cameraPermission: "알뜰 앱 이용 중 첨부할 이미지를 촬영하기 위해 카메라 접근 권한이 필요합니다.",
   microphonePermission: false,
   photosPermission:
     "알뜰 앱 이용 중 첨부할 이미지를 선택하기 위해 사진 보관함 접근 권한이 필요합니다.",
@@ -48,6 +48,7 @@ const config: ExpoConfig = {
       foregroundImage: androidAdaptiveForegroundPath,
       backgroundColor: "#f5f1e8",
     },
+    googleServicesFile: androidGoogleServicesFilePath,
     package: "com.chanwook.moneychecks",
   },
   plugins: [
