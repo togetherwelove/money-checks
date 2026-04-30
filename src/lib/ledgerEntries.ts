@@ -1,4 +1,5 @@
 import { DEFAULT_MEMBER_DISPLAY_NAME } from "../constants/ledgerDisplay";
+import { LedgerEntrySelectColumns } from "../constants/ledgerQueries";
 import type { LedgerEntry } from "../types/ledger";
 import type { LedgerEntryRow, ProfileDisplayRow } from "../types/supabase";
 import { mapLedgerEntryRow } from "../utils/ledgerMapper";
@@ -15,6 +16,11 @@ const PROFILE_TABLE = "profiles";
 const DEFAULT_CURRENCY = "KRW";
 const DEFAULT_SOURCE_TYPE = "manual";
 
+export type LedgerEntriesPageCursor = {
+  createdAt: string;
+  id: string;
+};
+
 export async function fetchLedgerEntries(
   bookId: string,
   dateFrom?: string,
@@ -26,7 +32,7 @@ export async function fetchLedgerEntries(
 ): Promise<LedgerEntry[]> {
   let query = supabase
     .from(LEDGER_TABLE)
-    .select("*")
+    .select(LedgerEntrySelectColumns.list)
     .eq("book_id", bookId)
     .order(options?.orderBy ?? "occurred_on", { ascending: options?.ascending ?? true });
 
@@ -58,7 +64,7 @@ export async function fetchLedgerEntriesSummary(
 ): Promise<LedgerEntry[]> {
   let query = supabase
     .from(LEDGER_TABLE)
-    .select("*")
+    .select(LedgerEntrySelectColumns.list)
     .eq("book_id", bookId)
     .order(options?.orderBy ?? "occurred_on", { ascending: options?.ascending ?? true });
 
@@ -82,17 +88,21 @@ export async function fetchLedgerEntriesSummary(
 export async function fetchLedgerEntriesPage(
   bookId: string,
   params: {
+    cursor?: LedgerEntriesPageCursor | null;
     limit: number;
-    offset: number;
     ascending?: boolean;
     category?: string | null;
     orderBy?: "created_at" | "occurred_on";
     searchQuery?: string;
   },
-): Promise<{ entries: LedgerEntry[]; hasMore: boolean }> {
+): Promise<{
+  entries: LedgerEntry[];
+  hasMore: boolean;
+  nextCursor: LedgerEntriesPageCursor | null;
+}> {
   const {
+    cursor,
     limit,
-    offset,
     ascending = false,
     category,
     orderBy = "created_at",
@@ -100,13 +110,18 @@ export async function fetchLedgerEntriesPage(
   } = params;
   let query = supabase
     .from(LEDGER_TABLE)
-    .select("*")
+    .select(LedgerEntrySelectColumns.list)
     .eq("book_id", bookId)
     .order(orderBy, { ascending })
-    .range(offset, offset + limit - 1);
+    .order("id", { ascending })
+    .range(0, limit);
 
   if (category) {
     query = query.eq("category", category);
+  }
+
+  if (cursor && orderBy === "created_at" && !ascending) {
+    query = query.or(buildLedgerEntryPageCursorFilter(cursor));
   }
 
   const normalizedSearchQuery = normalizeLedgerEntrySearchQuery(searchQuery);
@@ -121,9 +136,12 @@ export async function fetchLedgerEntriesPage(
   }
 
   const rows = data ?? [];
+  const visibleRows = rows.slice(0, limit);
+  const lastRow = visibleRows[visibleRows.length - 1];
   return {
-    entries: await mapLedgerEntriesWithoutPhotoAttachments(rows),
-    hasMore: rows.length === limit,
+    entries: await mapLedgerEntriesWithoutPhotoAttachments(visibleRows),
+    hasMore: rows.length > limit,
+    nextCursor: lastRow ? { createdAt: lastRow.created_at, id: lastRow.id } : null,
   };
 }
 
@@ -134,6 +152,10 @@ function normalizeLedgerEntrySearchQuery(searchQuery?: string): string {
 function buildLedgerEntrySearchFilter(searchQuery: string): string {
   const escapedQuery = searchQuery.replaceAll(",", "\\,");
   return `content.ilike.%${escapedQuery}%,note.ilike.%${escapedQuery}%`;
+}
+
+function buildLedgerEntryPageCursorFilter(cursor: LedgerEntriesPageCursor): string {
+  return `created_at.lt.${cursor.createdAt},and(created_at.eq.${cursor.createdAt},id.lt.${cursor.id})`;
 }
 
 export async function fetchFirstLedgerEntryDate(bookId: string): Promise<string | null> {
@@ -229,7 +251,7 @@ export async function insertLedgerEntries(
         note: entry.note,
       })),
     )
-    .select("*")
+    .select(LedgerEntrySelectColumns.list)
     .returns<LedgerEntryRow[]>();
 
   if (error || !data) {
@@ -265,7 +287,7 @@ export async function updateLedgerEntry(entry: LedgerEntry): Promise<LedgerEntry
       note: entry.note,
     })
     .eq("id", entry.id)
-    .select("*")
+    .select(LedgerEntrySelectColumns.list)
     .single<LedgerEntryRow>();
 
   if (error || !data) {
@@ -288,7 +310,7 @@ export async function updateLedgerEntry(entry: LedgerEntry): Promise<LedgerEntry
 export async function deleteLedgerEntry(entryId: string): Promise<void> {
   const { data: entryRows, error: entryRowsError } = await supabase
     .from(LEDGER_TABLE)
-    .select("*")
+    .select(LedgerEntrySelectColumns.list)
     .eq("id", entryId)
     .returns<LedgerEntryRow[]>();
 
@@ -311,7 +333,7 @@ export async function deleteLedgerEntries(entryIds: string[]): Promise<void> {
 
   const { data: entryRows, error: entryRowsError } = await supabase
     .from(LEDGER_TABLE)
-    .select("*")
+    .select(LedgerEntrySelectColumns.list)
     .in("id", entryIds)
     .returns<LedgerEntryRow[]>();
 
@@ -333,7 +355,7 @@ export async function fetchLedgerEntriesByInstallmentGroup(
 ): Promise<LedgerEntry[]> {
   const { data, error } = await supabase
     .from(LEDGER_TABLE)
-    .select("*")
+    .select(LedgerEntrySelectColumns.list)
     .eq("book_id", bookId)
     .eq("installment_group_id", installmentGroupId)
     .order("occurred_on", { ascending: true })

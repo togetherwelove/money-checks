@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { LedgerQueryConfig } from "../constants/ledgerQueries";
 import { AppMessages } from "../constants/messages";
-import { fetchLedgerEntriesPage } from "../lib/ledgerEntries";
+import { type LedgerEntriesPageCursor, fetchLedgerEntriesPage } from "../lib/ledgerEntries";
 import { logAppError } from "../lib/logAppError";
 import type { LedgerEntry } from "../types/ledger";
 import type { BusyTaskTracker } from "./ledgerScreenState/types";
@@ -27,6 +27,7 @@ export function useAllLedgerEntries({
   const [hasMore, setHasMore] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [nextCursor, setNextCursor] = useState<LedgerEntriesPageCursor | null>(null);
 
   const loadFirstPage = useCallback(
     async (usesBlockingOverlay: boolean) => {
@@ -36,6 +37,7 @@ export function useAllLedgerEntries({
         setHasMore(false);
         setIsLoadingMore(false);
         setIsRefreshing(false);
+        setNextCursor(null);
         return;
       }
 
@@ -49,16 +51,20 @@ export function useAllLedgerEntries({
         : async <T>(task: () => Promise<T>) => task();
 
       try {
-        const { entries: nextEntries, hasMore: nextHasMore } = await executeTask(() =>
+        const {
+          entries: nextEntries,
+          hasMore: nextHasMore,
+          nextCursor: firstPageNextCursor,
+        } = await executeTask(() =>
           fetchLedgerEntriesPage(activeBookId, {
             category: selectedCategory,
             limit: LedgerQueryConfig.allEntriesPageSize,
-            offset: 0,
             searchQuery,
           }),
         );
         setEntries(nextEntries);
         setHasMore(nextHasMore);
+        setNextCursor(firstPageNextCursor);
       } catch (error) {
         logAppError("AllEntriesScreen", error, {
           activeBookId,
@@ -87,21 +93,23 @@ export function useAllLedgerEntries({
     setErrorMessage(null);
 
     try {
-      const { entries: nextEntries, hasMore: nextHasMore } = await fetchLedgerEntriesPage(
-        activeBookId,
-        {
-          category: selectedCategory,
-          limit: LedgerQueryConfig.allEntriesPageSize,
-          offset: entries.length,
-          searchQuery,
-        },
-      );
+      const {
+        entries: nextEntries,
+        hasMore: nextHasMore,
+        nextCursor: loadedPageNextCursor,
+      } = await fetchLedgerEntriesPage(activeBookId, {
+        category: selectedCategory,
+        cursor: nextCursor,
+        limit: LedgerQueryConfig.allEntriesPageSize,
+        searchQuery,
+      });
       setEntries((currentEntries) => [...currentEntries, ...nextEntries]);
       setHasMore(nextHasMore);
+      setNextCursor(loadedPageNextCursor);
     } catch (error) {
       logAppError("AllEntriesScreen", error, {
         activeBookId,
-        offset: entries.length,
+        cursor: nextCursor,
         step: "load_all_ledger_entries_more",
       });
       setErrorMessage(AppMessages.ledgerError);
@@ -110,10 +118,10 @@ export function useAllLedgerEntries({
     }
   }, [
     activeBookId,
-    entries.length,
     hasMore,
     isLoadingMore,
     isRefreshing,
+    nextCursor,
     searchQuery,
     selectedCategory,
   ]);
