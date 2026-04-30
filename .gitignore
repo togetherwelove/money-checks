@@ -9,6 +9,7 @@ node_modules/
 .codex-logs/
 .eas-build-state/
 .tmp-glance-aar/
+GoogleService-Info.plist
 android/release-signing.properties
 android/*.keystore
 android/*.jks

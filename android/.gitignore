@@ -12,6 +12,7 @@ local.properties
 *.iml
 *.hprof
 .cxx/
+app/google-services.json
 *.keystore
 *.jks
 
