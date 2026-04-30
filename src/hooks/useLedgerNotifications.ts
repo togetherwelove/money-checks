@@ -27,6 +27,7 @@ import type {
 } from "../notifications/domain/notificationEvents";
 import type { NotificationPreferenceGroup } from "../notifications/preferences/notificationPreferences";
 import type { LedgerEntry } from "../types/ledger";
+import type { LedgerWidgetSummary } from "../types/widget";
 import { upsertEntry } from "../utils/ledgerEntries";
 import { useNotificationPreferences } from "./useNotificationPreferences";
 
@@ -42,6 +43,7 @@ type LedgerNotificationsState = {
     bookId: string,
     event: NotificationEvent,
     excludeUserIds: string[],
+    widget?: { monthKey: string; summary: LedgerWidgetSummary },
   ) => Promise<void>;
   sendPushNotificationToUsers: (
     event: NotificationEvent,
@@ -50,15 +52,16 @@ type LedgerNotificationsState = {
   ) => Promise<void>;
   showNotificationSettings: boolean;
   statusMessage: string;
-  updatePreference: (eventType: NotificationEventType, enabled: boolean) => void;
+  updatePreference: (
+    eventTypes: NotificationEventType | readonly NotificationEventType[],
+    enabled: boolean,
+  ) => void;
   updateThresholdEnabled: (key: NotificationThresholdKey, enabled: boolean) => void;
   updateThresholdValue: (key: NotificationThresholdKey, value: string) => void;
 };
 
 export function useLedgerNotifications(userId: string): LedgerNotificationsState {
-  const [permission, setPermission] = useState<NotificationPermissionState>(
-    "unsupported",
-  );
+  const [permission, setPermission] = useState<NotificationPermissionState>("unsupported");
   const {
     preferenceGroups,
     preferences,
@@ -159,9 +162,10 @@ export function useLedgerNotifications(userId: string): LedgerNotificationsState
     bookId: string,
     event: NotificationEvent,
     excludeUserIds: string[],
+    widget?: { monthKey: string; summary: LedgerWidgetSummary },
   ) => {
     try {
-      await sendPushNotificationToBookMembers(bookId, event, excludeUserIds);
+      await sendPushNotificationToBookMembers(bookId, event, excludeUserIds, widget);
     } catch (error) {
       logAppError("LedgerNotifications", error, {
         bookId,

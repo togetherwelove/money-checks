@@ -2,15 +2,19 @@ import { Feather } from "@expo/vector-icons";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { SupportPackageIcon } from "../components/SupportPackageIcon";
+import { AppColors } from "../constants/colors";
+import { AppLayout } from "../constants/layout";
 import {
   SupportMessages,
   SupportPackageCatalog,
   type SupportPackageIdentifier,
   SupportUi,
 } from "../constants/support";
-import { AppColors } from "../constants/colors";
-import { AppLayout } from "../constants/layout";
-import { CompactLabelTextStyle, SurfaceCardStyle, SupportingTextStyle } from "../constants/uiStyles";
+import {
+  CompactLabelTextStyle,
+  SupportingTextStyle,
+  SurfaceCardStyle,
+} from "../constants/uiStyles";
 import type { SupportPackageSnapshot } from "../lib/subscription/supportClient";
 
 type SupportScreenProps = {
@@ -19,11 +23,7 @@ type SupportScreenProps = {
   packages: SupportPackageSnapshot[];
 };
 
-export function SupportScreen({
-  isLoading,
-  onPurchasePackage,
-  packages,
-}: SupportScreenProps) {
+export function SupportScreen({ isLoading, onPurchasePackage, packages }: SupportScreenProps) {
   return (
     <ScrollView contentContainerStyle={styles.content} style={styles.screen}>
       <View style={styles.packageList}>

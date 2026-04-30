@@ -7,11 +7,15 @@ import {
 } from "../../constants/ads";
 import { appPlatform } from "../appPlatform";
 import { logAppError, logAppWarning } from "../logAppError";
+import { logAdMobLoadError } from "./adMobLoadError";
 
 let interstitialAd: InterstitialAd | null = null;
 let interstitialAdDisposers: Array<() => void> = [];
 let isInterstitialLoaded = false;
 let isInterstitialShowing = false;
+let loadRetryTimer: ReturnType<typeof setTimeout> | null = null;
+
+const INTERSTITIAL_LOAD_RETRY_DELAY_MS = 30_000;
 
 export function preloadInterstitialAd() {
   const adUnitId = resolveInterstitialAdUnitId();
@@ -23,6 +27,7 @@ export function preloadInterstitialAd() {
     return;
   }
 
+  clearInterstitialLoadRetry();
   interstitialAd = createInterstitialAd(adUnitId);
   interstitialAd.load();
 }
@@ -105,6 +110,7 @@ function createInterstitialAd(adUnitId: string) {
   interstitialAdDisposers = [
     nextInterstitialAd.addAdEventListener(AdEventType.LOADED, () => {
       isInterstitialLoaded = true;
+      clearInterstitialLoadRetry();
     }),
     nextInterstitialAd.addAdEventListener(AdEventType.OPENED, () => {
       isInterstitialShowing = true;
@@ -117,11 +123,11 @@ function createInterstitialAd(adUnitId: string) {
     nextInterstitialAd.addAdEventListener(AdEventType.ERROR, (error) => {
       isInterstitialLoaded = false;
       isInterstitialShowing = false;
-      logAppError("AdMob", error, {
+      logAdMobLoadError("AdMob", error, {
         step: "load_interstitial_ad",
         unitId: adUnitId,
       });
-      rebuildInterstitialAd();
+      scheduleInterstitialAdRebuild();
     }),
   ];
 
@@ -147,6 +153,28 @@ function cleanupInterstitialAd() {
 
   interstitialAdDisposers = [];
   interstitialAd = null;
+}
+
+function scheduleInterstitialAdRebuild() {
+  cleanupInterstitialAd();
+
+  if (loadRetryTimer) {
+    return;
+  }
+
+  loadRetryTimer = setTimeout(() => {
+    loadRetryTimer = null;
+    preloadInterstitialAd();
+  }, INTERSTITIAL_LOAD_RETRY_DELAY_MS);
+}
+
+function clearInterstitialLoadRetry() {
+  if (!loadRetryTimer) {
+    return;
+  }
+
+  clearTimeout(loadRetryTimer);
+  loadRetryTimer = null;
 }
 
 function resolveInterstitialAdUnitId() {

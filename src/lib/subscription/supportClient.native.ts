@@ -1,8 +1,8 @@
 import Purchases, { type PurchasesPackage } from "react-native-purchases";
 
 import { SupportConfig, type SupportPackageIdentifier } from "../../constants/support";
-import { configureSubscriptionClient } from "./subscriptionClient";
 import { getRevenueCatPublicApiKey } from "./revenueCatApiKey";
+import { configureSubscriptionClient } from "./subscriptionClient";
 
 export type SupportPackageSnapshot = {
   identifier: SupportPackageIdentifier;

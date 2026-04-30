@@ -1,3 +1,4 @@
+import { useCallback, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../../constants/colors";
@@ -12,7 +13,9 @@ type NotificationPreferenceGroupProps = {
   onChangeThresholdEnabled: (key: NotificationThresholdKey, enabled: boolean) => void;
   onChangeThresholdValue: (key: NotificationThresholdKey, value: string) => void;
   onToggle: (
-    eventType: NotificationPreferenceGroupState["items"][number]["type"],
+    eventTypes:
+      | NotificationPreferenceGroupState["items"][number]["type"]
+      | NonNullable<NotificationPreferenceGroupState["items"][number]["eventTypes"]>,
     enabled: boolean,
   ) => void;
 };
@@ -23,6 +26,11 @@ export function NotificationPreferenceGroup({
   onChangeThresholdValue,
   onToggle,
 }: NotificationPreferenceGroupProps) {
+  const [thresholdLabelWidth, setThresholdLabelWidth] = useState(0);
+  const handleMeasureThresholdLabel = useCallback((width: number) => {
+    setThresholdLabelWidth((currentWidth) => Math.max(currentWidth, Math.ceil(width)));
+  }, []);
+
   return (
     <View style={styles.group}>
       <Text style={styles.title}>{group.title}</Text>
@@ -33,7 +41,9 @@ export function NotificationPreferenceGroup({
               field={field}
               isFirst={index === 0}
               key={field.key}
+              labelWidth={thresholdLabelWidth}
               onChangeEnabled={(enabled) => onChangeThresholdEnabled(field.key, enabled)}
+              onMeasureLabel={handleMeasureThresholdLabel}
               onChangeValue={(value) => onChangeThresholdValue(field.key, value)}
             />
           ))}
@@ -46,7 +56,7 @@ export function NotificationPreferenceGroup({
               isFirst={index === 0}
               item={item}
               key={item.type}
-              onToggle={(enabled) => onToggle(item.type, enabled)}
+              onToggle={(enabled) => onToggle(item.eventTypes ?? item.type, enabled)}
             />
           ))}
         </View>

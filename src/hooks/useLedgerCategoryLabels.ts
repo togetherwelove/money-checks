@@ -14,21 +14,20 @@ export function useLedgerCategoryLabels(): string[] {
   } = useCustomCategories("income");
 
   return useMemo(
-    () =>
-      [
-        ...new Set(
-          [
-            ...CATEGORY_OPTIONS.expense.filter(
-              (category) => !expenseHiddenSystemCategoryIds.includes(category.id),
-            ),
-            ...CATEGORY_OPTIONS.income.filter(
-              (category) => !incomeHiddenSystemCategoryIds.includes(category.id),
-            ),
-            ...expenseCustomCategories,
-            ...incomeCustomCategories,
-          ].map((category) => category.label),
-        ),
-      ],
+    () => [
+      ...new Set(
+        [
+          ...CATEGORY_OPTIONS.expense.filter(
+            (category) => !expenseHiddenSystemCategoryIds.includes(category.id),
+          ),
+          ...CATEGORY_OPTIONS.income.filter(
+            (category) => !incomeHiddenSystemCategoryIds.includes(category.id),
+          ),
+          ...expenseCustomCategories,
+          ...incomeCustomCategories,
+        ].map((category) => category.label),
+      ),
+    ],
     [
       expenseCustomCategories,
       expenseHiddenSystemCategoryIds,

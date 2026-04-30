@@ -14,7 +14,9 @@ type NotificationSettingsCardProps = {
   preferenceGroups: NotificationPreferenceGroupState[];
   statusMessage: string;
   onTogglePreference: (
-    eventType: NotificationPreferenceGroupState["items"][number]["type"],
+    eventTypes:
+      | NotificationPreferenceGroupState["items"][number]["type"]
+      | NonNullable<NotificationPreferenceGroupState["items"][number]["eventTypes"]>,
     enabled: boolean,
   ) => void;
 };

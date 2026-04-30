@@ -1,6 +1,8 @@
 import { buildNotificationContent } from "../../notifications/content/buildNotificationContent";
 import type { NotificationEvent } from "../../notifications/domain/notificationEvents";
+import type { LedgerWidgetSummary } from "../../types/widget";
 import { supabase, supabasePublishableKey, supabaseUrl } from "../supabase";
+import { buildLedgerWidgetPushPayload } from "../widgetPushPayload";
 
 type BookMembersPushRequest = {
   body: string;
@@ -9,6 +11,8 @@ type BookMembersPushRequest = {
   excludeUserIds?: string[];
   route: "book-members";
   title: string;
+  widget?: PushWidgetSummaryPayload;
+  widgetData?: SerializedLedgerWidgetPushPayload;
 };
 
 type DirectTargetsPushRequest = {
@@ -18,6 +22,8 @@ type DirectTargetsPushRequest = {
   route: "direct-targets";
   targetUserIds: string[];
   title: string;
+  widget?: PushWidgetSummaryPayload;
+  widgetData?: SerializedLedgerWidgetPushPayload;
 };
 
 type LatestJoinRequestOwnerPushRequest = {
@@ -29,6 +35,12 @@ type PushNotificationRequest =
   | DirectTargetsPushRequest
   | LatestJoinRequestOwnerPushRequest;
 
+type PushWidgetSummaryPayload = {
+  monthKey: string;
+  summary: LedgerWidgetSummary;
+};
+type SerializedLedgerWidgetPushPayload = ReturnType<typeof buildLedgerWidgetPushPayload>;
+
 const PUSH_NOTIFICATIONS_FUNCTION = "send-push-notifications";
 const PUSH_NOTIFICATIONS_ENDPOINT = `${supabaseUrl}/functions/v1/${PUSH_NOTIFICATIONS_FUNCTION}`;
 
@@ -36,6 +48,7 @@ export async function sendPushNotificationToBookMembers(
   bookId: string,
   event: NotificationEvent,
   excludeUserIds: string[],
+  widget?: PushWidgetSummaryPayload,
 ): Promise<void> {
   const notificationContent = buildNotificationContent(event);
   await sendPushNotification({
@@ -45,6 +58,7 @@ export async function sendPushNotificationToBookMembers(
     excludeUserIds,
     route: "book-members",
     title: notificationContent.title,
+    widget,
   });
 }
 
@@ -102,7 +116,7 @@ async function sendPushNotification(request: PushNotificationRequest): Promise<v
   }
 
   const response = await fetch(PUSH_NOTIFICATIONS_ENDPOINT, {
-    body: JSON.stringify(request),
+    body: JSON.stringify(serializePushNotificationRequest(request)),
     headers: {
       apikey: supabasePublishableKey,
       Authorization: `Bearer ${accessToken}`,
@@ -119,6 +133,24 @@ async function sendPushNotification(request: PushNotificationRequest): Promise<v
         : `send-push-notifications returned ${response.status}.`,
     );
   }
+}
+
+function serializePushNotificationRequest(
+  request: PushNotificationRequest,
+): PushNotificationRequest {
+  if (!("widget" in request) || !request.widget) {
+    return request;
+  }
+
+  if (!("bookId" in request) || !request.bookId) {
+    return request;
+  }
+
+  const { widget, ...notificationRequest } = request;
+  return {
+    ...notificationRequest,
+    widgetData: buildLedgerWidgetPushPayload(request.bookId, widget.monthKey, widget.summary),
+  };
 }
 
 async function readResponseText(response: Response): Promise<string | null> {

@@ -3,8 +3,8 @@ import { BannerAd, BannerAdSize } from "react-native-google-mobile-ads";
 
 import { AdMobTestUnitIds } from "../constants/ads";
 import { AdMobConfig } from "../constants/subscription";
+import { logAdMobLoadError } from "../lib/ads/adMobLoadError";
 import { appPlatform } from "../lib/appPlatform";
-import { logAppError } from "../lib/logAppError";
 
 export function AppBannerAd() {
   const configuredAdUnitId = appPlatform.isIOS
@@ -29,7 +29,7 @@ export function AppBannerAd() {
           });
         }}
         onAdFailedToLoad={(error) => {
-          logAppError("[AdMob] Banner ad failed to load", error, {
+          logAdMobLoadError("AdMob", error, {
             platform: appPlatform.isIOS ? "ios" : "android",
             unitId: adUnitId,
             step: "load_banner_ad",

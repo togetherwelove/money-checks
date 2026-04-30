@@ -360,7 +360,9 @@ async function mapLedgerEntries(rows: LedgerEntryRow[]): Promise<LedgerEntry[]> 
   }));
 }
 
-async function mapLedgerEntriesWithoutPhotoAttachments(rows: LedgerEntryRow[]): Promise<LedgerEntry[]> {
+async function mapLedgerEntriesWithoutPhotoAttachments(
+  rows: LedgerEntryRow[],
+): Promise<LedgerEntry[]> {
   const [authorNameMap, targetMemberNameMap] = await Promise.all([
     fetchAuthorNameMap(rows),
     fetchTargetMemberNameMap(rows),

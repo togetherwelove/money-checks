@@ -38,6 +38,7 @@ type BookMembersPushRequest = {
   excludeUserIds?: string[];
   route: "book-members";
   title: string;
+  widgetData?: WidgetPushData;
 };
 
 type DirectTargetsPushRequest = {
@@ -47,6 +48,7 @@ type DirectTargetsPushRequest = {
   route: "direct-targets";
   targetUserIds: string[];
   title: string;
+  widgetData?: WidgetPushData;
 };
 
 type LatestJoinRequestOwnerPushRequest = {
@@ -119,9 +121,17 @@ type JoinRequestOwnerNotification = {
 type ExpoPushMessage = {
   body: string;
   channelId?: string;
+  data?: WidgetPushData;
   sound: "default";
   title: string;
   to: string;
+};
+
+type WidgetPushData = {
+  bookId: string;
+  kind: "ledger_widget_summary";
+  monthKey: string;
+  summary: string;
 };
 
 export async function handleSendPushNotificationsRequest(
@@ -394,7 +404,7 @@ async function filterRecipientsByPreference(
 async function resolveExpoPushMessages(
   adminClient: SendPushNotificationsAdminClient,
   targetUserIds: string[],
-  content: { body: string; title: string },
+  content: { body: string; title: string; widgetData?: WidgetPushData },
 ): Promise<ExpoPushMessage[]> {
   const pushDeviceTokensQuery = adminClient.from("push_device_tokens") as {
     select: (columns: string) => {
@@ -413,6 +423,7 @@ async function resolveExpoPushMessages(
     .filter((row) => EXPO_PUSH_TOKEN_PATTERN.test(row.expo_push_token))
     .map((row) => ({
       body: content.body,
+      ...("widgetData" in content && content.widgetData ? { data: content.widgetData } : {}),
       ...(row.platform === "android" ? { channelId: ANDROID_NOTIFICATION_CHANNEL_ID } : {}),
       sound: "default",
       title: content.title,

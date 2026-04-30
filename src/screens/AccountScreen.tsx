@@ -17,6 +17,7 @@ import {
   SubscriptionTiers,
 } from "../constants/subscription";
 import { SubscriptionManagementMessages } from "../constants/subscriptionManagement";
+import { SubscriptionPlusLabels } from "../constants/subscriptionPlusLabels";
 import {
   BrandPlusTextStyle,
   CardTitleTextStyle,
@@ -24,7 +25,6 @@ import {
   FormInputTextStyle,
   SurfaceCardStyle,
 } from "../constants/uiStyles";
-import { SubscriptionPlusLabels } from "../constants/subscriptionPlusLabels";
 import type { BusyTaskTracker } from "../hooks/ledgerScreenState/types";
 import { signOutFromApp } from "../lib/auth/signOut";
 import { showNativeToast } from "../lib/nativeToast";

@@ -5,8 +5,11 @@ import type { SupportPackageIdentifier } from "../constants/support";
 import type { BusyTaskTracker } from "../hooks/ledgerScreenState/types";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
 import type { SupportPackageSnapshot } from "../lib/subscription/supportClient";
-import type { NotificationEvent } from "../notifications/domain/notificationEvents";
-import type { NotificationThresholdKey } from "../notifications/domain/notificationEvents";
+import type {
+  NotificationEvent,
+  NotificationEventType,
+  NotificationThresholdKey,
+} from "../notifications/domain/notificationEvents";
 import type { NotificationPreferenceGroup } from "../notifications/preferences/notificationPreferences";
 import { AccountScreen } from "../screens/AccountScreen";
 import { AllEntriesScreen } from "../screens/AllEntriesScreen";
@@ -21,6 +24,7 @@ import { SubscriptionScreen } from "../screens/SubscriptionScreen";
 import { SupportContactScreen } from "../screens/SupportContactScreen";
 import { SupportScreen } from "../screens/SupportScreen";
 import type { LedgerEntry } from "../types/ledger";
+import type { LedgerWidgetSummary } from "../types/widget";
 import type { SignedInStackParamList } from "./signedInNavigation";
 
 const Stack = createNativeStackNavigator<SignedInStackParamList>();
@@ -56,6 +60,7 @@ type SignedInStackNavigatorProps = {
     bookId: string,
     event: NotificationEvent,
     excludeUserIds: string[],
+    widget?: { monthKey: string; summary: LedgerWidgetSummary },
   ) => Promise<void>;
   onSendPushNotificationToUsers: (
     event: NotificationEvent,
@@ -64,7 +69,7 @@ type SignedInStackNavigatorProps = {
   ) => Promise<void>;
   onSettleInstallmentEntry: (entry: LedgerEntry) => Promise<void>;
   onToggleNotificationPreference: (
-    eventType: NotificationPreferenceGroup["items"][number]["type"],
+    eventTypes: NotificationEventType | readonly NotificationEventType[],
     enabled: boolean,
   ) => void;
   plusPriceLabel: string | null;

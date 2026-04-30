@@ -38,6 +38,8 @@ import { useGoogleAuthRedirectCompletion } from "./src/hooks/useGoogleAuthRedire
 import { useLedgerCategoryLabels } from "./src/hooks/useLedgerCategoryLabels";
 import { useLedgerNotifications } from "./src/hooks/useLedgerNotifications";
 import { useLedgerScreenState } from "./src/hooks/useLedgerScreenState";
+import { useLedgerWidgetDeepLinks } from "./src/hooks/useLedgerWidgetDeepLinks";
+import { useLedgerWidgetSync } from "./src/hooks/useLedgerWidgetSync";
 import { useSubscriptionPlan } from "./src/hooks/useSubscriptionPlan";
 import { useSupabaseSession } from "./src/hooks/useSupabaseSession";
 import { useSupportPackages } from "./src/hooks/useSupportPackages";
@@ -51,12 +53,15 @@ import {
   type CardSmsClipboardDraft,
   promptCardSmsClipboardImport,
 } from "./src/lib/cardSmsClipboardImport";
+import { fetchLedgerEntriesSummary } from "./src/lib/ledgerEntries";
 import { logAppError } from "./src/lib/logAppError";
 import { buildAppMenuSections } from "./src/lib/menuItems";
 import { showNativeToast } from "./src/lib/nativeToast";
 import { fetchOwnProfileDisplayName, updateOwnProfileDisplayName } from "./src/lib/profiles";
 import { openSubscriptionManagement } from "./src/lib/subscription/openSubscriptionManagement";
 import { isSubscriptionPurchaseCancelled } from "./src/lib/subscription/subscriptionError";
+import { registerLedgerWidgetNotificationSync } from "./src/lib/widgetNotificationSync";
+import { buildLedgerWidgetSummary } from "./src/lib/widgetSummary";
 import {
   createOtherMemberCreatedEntryEvent,
   createOtherMemberDeletedEntryEvent,
@@ -67,7 +72,13 @@ import { NicknameSetupScreen } from "./src/screens/NicknameSetupScreen";
 import { PermissionOnboardingScreen } from "./src/screens/PermissionOnboardingScreen";
 import type { LedgerAppScreen } from "./src/types/app";
 import type { LedgerEntry } from "./src/types/ledger";
-import { parseIsoDate, toIsoDate } from "./src/utils/calendar";
+import {
+  addMonths,
+  getMonthKey,
+  parseIsoDate,
+  startOfMonth,
+  toIsoDate,
+} from "./src/utils/calendar";
 import { resolveFallbackDisplayName } from "./src/utils/sessionDisplayName";
 
 export default function App() {
@@ -125,6 +136,24 @@ function SignedInApp({ session }: { session: Session }) {
   const subscription = useSubscriptionPlan(session.user.id);
   const supportPackages = useSupportPackages(session.user.id);
   const ledgerState = useLedgerScreenState(session);
+  useLedgerWidgetSync(ledgerState.activeBook?.id ?? null, ledgerState.entries);
+  useEffect(() => {
+    let removeListener: (() => void) | null = null;
+
+    void registerLedgerWidgetNotificationSync()
+      .then((cleanup) => {
+        removeListener = cleanup;
+      })
+      .catch((error) => {
+        logAppError("App", error, {
+          step: "register_ledger_widget_notification_sync",
+        });
+      });
+
+    return () => {
+      removeListener?.();
+    };
+  }, []);
   const visibleCategoryLabels = useLedgerCategoryLabels();
   const annualReport = useAnnualLedgerReportAction({
     activeBook: ledgerState.activeBook,
@@ -257,6 +286,16 @@ function SignedInApp({ session }: { session: Session }) {
     navigateToEntryFromCalendar,
     shouldIgnoreCardSmsClipboardDraft,
   ]);
+
+  const handleOpenClipboardImportFromWidget = useCallback(() => {
+    void handleOpenEntryFromCalendar();
+  }, [handleOpenEntryFromCalendar]);
+
+  useLedgerWidgetDeepLinks({
+    enabled: !authOnboarding.isLoading && authOnboarding.step === null,
+    onOpenClipboardImport: handleOpenClipboardImportFromWidget,
+    onOpenEntry: navigateToEntryFromCalendar,
+  });
 
   useCardSmsClipboardAutoPrompt({
     baseDate: clipboardImportBaseDate,
@@ -478,6 +517,7 @@ function SignedInApp({ session }: { session: Session }) {
     }
 
     const actorName = await resolveCurrentActorName();
+    const widget = await resolveCurrentLedgerWidgetPushSummary(ledgerState.activeBook.id);
     await notifications.sendPushNotificationToBookMembers(
       ledgerState.activeBook.id,
       createOtherMemberDeletedEntryEvent(
@@ -485,6 +525,7 @@ function SignedInApp({ session }: { session: Session }) {
         { ...entry, authorId: session.user.id, authorName: actorName },
       ),
       [session.user.id],
+      widget,
     );
   };
 
@@ -673,6 +714,7 @@ function SignedInApp({ session }: { session: Session }) {
   async function notifySharedLedgerEntryChange(
     savedEntry: LedgerEntry,
     changeType: "create" | "update",
+    widget?: Awaited<ReturnType<typeof resolveCurrentLedgerWidgetPushSummary>>,
   ) {
     if (!ledgerState.activeBook) {
       return;
@@ -690,9 +732,31 @@ function SignedInApp({ session }: { session: Session }) {
             { ...savedEntry, authorId: session.user.id, authorName: actorName },
           );
 
-    await notifications.sendPushNotificationToBookMembers(ledgerState.activeBook.id, event, [
-      session.user.id,
-    ]);
+    await notifications.sendPushNotificationToBookMembers(
+      ledgerState.activeBook.id,
+      event,
+      [session.user.id],
+      widget,
+    );
+  }
+
+  async function resolveCurrentLedgerWidgetPushSummary(bookId: string) {
+    const today = new Date();
+    const monthStart = startOfMonth(today);
+    const monthEnd = addMonths(monthStart, 1);
+    monthEnd.setDate(monthEnd.getDate() - 1);
+
+    const monthEntries = await fetchLedgerEntriesSummary(
+      bookId,
+      toIsoDate(monthStart),
+      toIsoDate(monthEnd),
+      { ascending: true, orderBy: "occurred_on" },
+    );
+
+    return {
+      monthKey: getMonthKey(today),
+      summary: buildLedgerWidgetSummary(monthEntries, toIsoDate(today)),
+    };
   }
 
   async function resolveCurrentActorName() {
@@ -719,8 +783,12 @@ function SignedInApp({ session }: { session: Session }) {
         await notifications.notifySavedEntry(lastCurrentMonthEntry, currentEntries);
       }
 
+      const widget = ledgerState.activeBook
+        ? await resolveCurrentLedgerWidgetPushSummary(ledgerState.activeBook.id)
+        : undefined;
+
       for (const savedEntry of currentMonthEntries) {
-        await notifySharedLedgerEntryChange(savedEntry, changeType);
+        await notifySharedLedgerEntryChange(savedEntry, changeType, widget);
       }
     } catch (error) {
       logAppError("App", error, {

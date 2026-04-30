@@ -10,7 +10,6 @@ export type AppMenuItem = {
     | "edit-3"
     | "gift"
     | "help-circle"
-    | "file-text"
     | "mail"
     | "user"
     | "users";
@@ -82,11 +81,6 @@ export function buildAppMenuSections(showNotificationSettings: boolean): AppMenu
           icon: "help-circle",
           label: getAppScreenLabel("help"),
           targetScreen: "help",
-        },
-        {
-          icon: "file-text",
-          label: getAppScreenLabel("open-source-licenses"),
-          targetScreen: "open-source-licenses",
         },
         {
           icon: "mail",

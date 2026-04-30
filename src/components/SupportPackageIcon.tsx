@@ -1,7 +1,11 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { StyleSheet, View } from "react-native";
 
-import { SupportPackageCatalog, type SupportPackageIdentifier, SupportUi } from "../constants/support";
+import {
+  SupportPackageCatalog,
+  type SupportPackageIdentifier,
+  SupportUi,
+} from "../constants/support";
 
 type SupportPackageIconProps = {
   identifier: SupportPackageIdentifier;
@@ -15,12 +19,7 @@ export function SupportPackageIcon({ identifier }: SupportPackageIconProps) {
   }
 
   return (
-    <View
-      style={[
-        styles.container,
-        { backgroundColor: packageCatalogItem.iconBackgroundColor },
-      ]}
-    >
+    <View style={[styles.container, { backgroundColor: packageCatalogItem.iconBackgroundColor }]}>
       <MaterialCommunityIcons
         color={packageCatalogItem.iconColor}
         name={packageCatalogItem.iconName}

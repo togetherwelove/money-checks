@@ -13,6 +13,16 @@
     }
   },
   "files": {
-    "ignore": ["**/dist/**", "**/node_modules/**"]
+    "ignore": [
+      "**/.expo/**",
+      "**/android/.gradle/**",
+      "**/android/app/.cxx/**",
+      "**/android/app/build/**",
+      "**/android/app/google-services.json",
+      "**/android/build/**",
+      "**/dist/**",
+      "**/src/generated/**",
+      "**/node_modules/**"
+    ]
   }
 }

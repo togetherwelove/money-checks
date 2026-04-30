@@ -5,8 +5,8 @@ import {
   type SubscriptionTier,
   SubscriptionTiers,
 } from "../../constants/subscription";
-import { formatSubscriptionPriceLabel } from "./formatSubscriptionPriceLabel";
 import { logAppWarning } from "../logAppError";
+import { formatSubscriptionPriceLabel } from "./formatSubscriptionPriceLabel";
 import { getRevenueCatPublicApiKey } from "./revenueCatApiKey";
 
 type SubscriptionSnapshot = {

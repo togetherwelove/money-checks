@@ -13,6 +13,8 @@ export type NotificationPreferences = {
 export type NotificationPreferenceItem = {
   description: string;
   enabled: boolean;
+  eventTypes?: readonly NotificationEventType[];
+  helpMessage?: string;
   label: string;
   type: NotificationEventType;
 };

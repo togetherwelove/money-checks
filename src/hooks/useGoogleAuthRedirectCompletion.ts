@@ -1,10 +1,7 @@
 import { useEffect } from "react";
 import { Linking } from "react-native";
 
-import {
-  completeGoogleSignInRedirect,
-  isGoogleSignInRedirectUrl,
-} from "../lib/auth/googleSignIn";
+import { completeGoogleSignInRedirect, isGoogleSignInRedirectUrl } from "../lib/auth/googleSignIn";
 
 export function useGoogleAuthRedirectCompletion() {
   useEffect(() => {

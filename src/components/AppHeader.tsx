@@ -3,8 +3,8 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
 import { SubscriptionMessages } from "../constants/subscription";
-import { BrandPlusTextStyle } from "../constants/uiStyles";
 import { SubscriptionPlusLabels } from "../constants/subscriptionPlusLabels";
+import { BrandPlusTextStyle } from "../constants/uiStyles";
 
 import { IconActionButton } from "./IconActionButton";
 

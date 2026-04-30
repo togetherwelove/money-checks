@@ -3,9 +3,9 @@ import { useEffect, useState } from "react";
 import type { SupportPackageIdentifier } from "../constants/support";
 import { logAppError } from "../lib/logAppError";
 import {
+  type SupportPackageSnapshot,
   loadSupportSnapshot,
   purchaseSupportPackage,
-  type SupportPackageSnapshot,
 } from "../lib/subscription/supportClient";
 
 type SupportPackagesState = {

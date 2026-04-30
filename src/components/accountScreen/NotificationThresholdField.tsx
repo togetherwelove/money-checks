@@ -8,20 +8,29 @@ import { formatAmountInput } from "../../utils/amount";
 type NotificationThresholdFieldProps = {
   field: NotificationThresholdFieldState;
   isFirst?: boolean;
+  labelWidth?: number;
   onChangeEnabled: (enabled: boolean) => void;
+  onMeasureLabel?: (width: number) => void;
   onChangeValue: (value: string) => void;
 };
 
 export function NotificationThresholdField({
   field,
   isFirst = false,
+  labelWidth,
   onChangeEnabled,
+  onMeasureLabel,
   onChangeValue,
 }: NotificationThresholdFieldProps) {
   return (
     <View style={[styles.field, isFirst && styles.firstField]}>
       <View style={styles.inputWrap}>
-        <Text style={styles.label}>{field.label}</Text>
+        <Text
+          onLayout={(event) => onMeasureLabel?.(event.nativeEvent.layout.width)}
+          style={[styles.label, labelWidth ? { width: labelWidth } : null]}
+        >
+          {field.label}
+        </Text>
         <TextInput
           editable={field.enabled}
           inputMode="numeric"
@@ -61,7 +70,6 @@ const styles = StyleSheet.create({
     color: AppColors.text,
     fontSize: 13,
     fontWeight: "700",
-    width: 36,
   },
   inputWrap: {
     alignItems: "center",

@@ -4,7 +4,10 @@ import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { NotificationSettingsCard } from "../components/accountScreen/NotificationSettingsCard";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
-import type { NotificationThresholdKey } from "../notifications/domain/notificationEvents";
+import type {
+  NotificationEventType,
+  NotificationThresholdKey,
+} from "../notifications/domain/notificationEvents";
 import type { NotificationPreferenceGroup } from "../notifications/preferences/notificationPreferences";
 
 type NotificationSettingsScreenProps = {
@@ -14,7 +17,7 @@ type NotificationSettingsScreenProps = {
   onChangeNotificationThresholdEnabled: (key: NotificationThresholdKey, enabled: boolean) => void;
   onChangeNotificationThreshold: (key: NotificationThresholdKey, value: string) => void;
   onToggleNotificationPreference: (
-    eventType: NotificationPreferenceGroup["items"][number]["type"],
+    eventTypes: NotificationEventType | readonly NotificationEventType[],
     enabled: boolean,
   ) => void;
 };

@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 
 import {
   NotificationDefaultThresholdEnabled,
+  NotificationEntryChangeEventTypes,
+  NotificationEntryChangePreferenceCopy,
   NotificationEventCopy,
   NotificationEventOrder,
   NotificationGroupCopy,
@@ -28,7 +30,10 @@ import { sanitizeAmountInput } from "../utils/ledgerEntries";
 type NotificationPreferencesState = {
   preferenceGroups: NotificationPreferenceGroup[];
   preferences: NotificationPreferences;
-  updateEventPreference: (eventType: NotificationEventType, enabled: boolean) => void;
+  updateEventPreference: (
+    eventTypes: NotificationEventType | readonly NotificationEventType[],
+    enabled: boolean,
+  ) => void;
   updateThresholdEnabled: (key: NotificationThresholdKey, enabled: boolean) => void;
   updateThresholdValue: (key: NotificationThresholdKey, value: string) => void;
 };
@@ -62,18 +67,23 @@ export function useNotificationPreferences(userId: string): NotificationPreferen
   return {
     preferenceGroups,
     preferences,
-    updateEventPreference: (eventType, enabled) => {
-      if (isRequiredNotificationEvent(eventType)) {
+    updateEventPreference: (eventTypes, enabled) => {
+      const targetEventTypes: readonly NotificationEventType[] = Array.isArray(eventTypes)
+        ? eventTypes
+        : [eventTypes];
+      if (targetEventTypes.some(isRequiredNotificationEvent)) {
         return;
       }
 
       setPreferences((currentPreferences) => {
+        const nextEnabledByEvent = { ...currentPreferences.enabledByEvent };
+        for (const eventType of targetEventTypes) {
+          nextEnabledByEvent[eventType] = enabled;
+        }
+
         const nextPreferences = {
           ...currentPreferences,
-          enabledByEvent: {
-            ...currentPreferences.enabledByEvent,
-            [eventType]: enabled,
-          },
+          enabledByEvent: nextEnabledByEvent,
         };
         void saveNotificationPreferences(userId, nextPreferences);
         return nextPreferences;
@@ -124,25 +134,64 @@ function buildPreferenceGroups(
     value: formatThresholdValue(preferences.thresholds[key as NotificationThresholdKey]),
   })) as NotificationPreferenceGroup["thresholdFields"];
 
+  const entryChangeEventTypeSet = new Set<NotificationEventType>(NotificationEntryChangeEventTypes);
+
   return NotificationGroupOrder.map((groupId) => ({
     description: NotificationGroupCopy[groupId].description,
     id: groupId,
     items:
       groupId === "threshold"
         ? []
-        : NotificationEventOrder.filter(
-            (eventType) =>
-              NotificationEventCopy[eventType].groupId === groupId &&
-              !isRequiredNotificationEvent(eventType),
-          ).map((eventType) => ({
-            description: NotificationEventCopy[eventType].description,
-            enabled: preferences.enabledByEvent[eventType],
-            label: NotificationEventCopy[eventType].label,
-            type: eventType,
-          })),
+        : buildNotificationPreferenceItems(groupId, preferences, entryChangeEventTypeSet),
     thresholdFields: groupId === "threshold" ? thresholdFields : undefined,
     title: NotificationGroupCopy[groupId].title,
   })) as NotificationPreferenceGroup[];
+}
+
+function buildNotificationPreferenceItems(
+  groupId: NotificationPreferenceGroup["id"],
+  preferences: NotificationPreferences,
+  entryChangeEventTypeSet: Set<NotificationEventType>,
+): NotificationPreferenceGroup["items"] {
+  let hasAddedEntryChangePreference = false;
+  const preferenceItems: NotificationPreferenceGroup["items"] = [];
+
+  for (const eventType of NotificationEventOrder) {
+    if (
+      NotificationEventCopy[eventType].groupId !== groupId ||
+      isRequiredNotificationEvent(eventType)
+    ) {
+      continue;
+    }
+
+    if (entryChangeEventTypeSet.has(eventType)) {
+      if (hasAddedEntryChangePreference) {
+        continue;
+      }
+
+      hasAddedEntryChangePreference = true;
+      preferenceItems.push({
+        description: NotificationEntryChangePreferenceCopy.description,
+        enabled: NotificationEntryChangeEventTypes.every(
+          (entryChangeEventType) => preferences.enabledByEvent[entryChangeEventType],
+        ),
+        eventTypes: NotificationEntryChangeEventTypes,
+        label: NotificationEntryChangePreferenceCopy.label,
+        type: NotificationEntryChangeEventTypes[0],
+      });
+      continue;
+    }
+
+    preferenceItems.push({
+      description: NotificationEventCopy[eventType].description,
+      enabled: preferences.enabledByEvent[eventType],
+      helpMessage: NotificationEventCopy[eventType].helpMessage,
+      label: NotificationEventCopy[eventType].label,
+      type: eventType,
+    });
+  }
+
+  return preferenceItems;
 }
 
 function formatThresholdValue(value: number): string {

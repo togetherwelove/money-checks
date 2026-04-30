@@ -1,6 +1,6 @@
+import { resolveLedgerEntryTargetMemberId } from "../lib/ledgerEntryMetadata";
 import type { LedgerEntry } from "../types/ledger";
 import type { LedgerEntryRow } from "../types/supabase";
-import { resolveLedgerEntryTargetMemberId } from "../lib/ledgerEntryMetadata";
 
 export function mapLedgerEntryRow(row: LedgerEntryRow, authorName?: string): LedgerEntry {
   return {

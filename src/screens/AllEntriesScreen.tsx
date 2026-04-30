@@ -56,13 +56,12 @@ export function AllEntriesScreen({
     loadMoreEntries,
     refreshEntries,
     removeEntryFromFeed,
-  } =
-    useAllLedgerEntries({
-      activeBookId: activeBook?.id ?? null,
-      selectedCategory,
-      searchQuery: deferredSearchQuery,
-      trackBlockingTask,
-    });
+  } = useAllLedgerEntries({
+    activeBookId: activeBook?.id ?? null,
+    selectedCategory,
+    searchQuery: deferredSearchQuery,
+    trackBlockingTask,
+  });
   const isSearching = deferredSearchQuery.length > 0;
   const feedItems = useMemo(() => {
     if (showsNativeAds) {

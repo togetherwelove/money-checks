@@ -1,0 +1,9 @@
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+  android:description="@string/money_checks_summary_widget_description"
+  android:minWidth="@dimen/money_checks_widget_min_width"
+  android:minHeight="@dimen/money_checks_widget_min_height"
+  android:resizeMode="none"
+  android:targetCellWidth="2"
+  android:targetCellHeight="1"
+  android:updatePeriodMillis="0"
+  android:widgetCategory="home_screen" />

@@ -10,6 +10,7 @@ type NotificationEventDefinition = {
   defaultEnabled: boolean;
   description: string;
   groupId: NotificationPreferenceGroupId;
+  helpMessage?: string;
   label: string;
   title: string;
 };
@@ -134,6 +135,8 @@ export const NotificationEventCopy: Record<NotificationEventType, NotificationEv
     defaultEnabled: false,
     description: "매월 1일 지난달 수입·지출과 전월 비교를 정리해서 알려드려요.",
     groupId: "summary",
+    helpMessage:
+      "매월 1일에 지난달 수입·지출과 전월 대비 변화를 요약해 알려드려요.\n\n예시\n제목: 3월 입출금 돌아보기\n본문: 3월 가계부 요약입니다.\n수입: 전월보다 120,000원 더 벌었어요\n지출: 전월보다 35,000원 덜 썼어요",
     label: "매월 1일에 지난달 요약 알림 보내기",
     title: "{currentMonthLabel} 입출금 돌아보기",
   },
@@ -166,7 +169,7 @@ export const NotificationEventCopy: Record<NotificationEventType, NotificationEv
     defaultEnabled: true,
     description: "다른 멤버가 기록을 새로 추가하면 알립니다.",
     groupId: "sharedLedger",
-    label: "다른 멤버가 추가했을 때",
+    label: "다른 멤버가 등록했을 때 내게 알립니다.",
     title: "기록 추가",
   },
   other_member_deleted_entry: {
@@ -174,7 +177,7 @@ export const NotificationEventCopy: Record<NotificationEventType, NotificationEv
     defaultEnabled: true,
     description: "다른 멤버가 기록을 삭제하면 알립니다.",
     groupId: "sharedLedger",
-    label: "다른 멤버가 삭제했을 때",
+    label: "다른 멤버가 삭제했을 때 내게 알립니다.",
     title: "기록 삭제",
   },
   other_member_updated_entry: {
@@ -182,10 +185,21 @@ export const NotificationEventCopy: Record<NotificationEventType, NotificationEv
     defaultEnabled: true,
     description: "다른 멤버가 기록을 수정하면 알립니다.",
     groupId: "sharedLedger",
-    label: "다른 멤버가 수정했을 때",
+    label: "다른 멤버가 수정했을 때 내게 알립니다.",
     title: "기록 수정",
   },
 };
+
+export const NotificationEntryChangeEventTypes = [
+  "other_member_created_entry",
+  "other_member_updated_entry",
+  "other_member_deleted_entry",
+] as const satisfies readonly NotificationEventType[];
+
+export const NotificationEntryChangePreferenceCopy = {
+  description: "다른 멤버가 내역을 등록, 수정, 삭제하면 알립니다.",
+  label: "다른 멤버의 내역 변경",
+} as const;
 
 export const NotificationRequiredEvents = [
   "member_joined_book",

@@ -11,6 +11,7 @@ const admobIosAppId = process.env.EXPO_PUBLIC_ADMOB_IOS_APP_ID ?? "";
 const appIconPath = "./asset/icon.png";
 const androidAdaptiveForegroundPath = "./asset/adaptive-icon-foreground.png";
 const androidGoogleServicesFilePath = "./android/app/google-services.json";
+const iosGoogleServicesFilePath = "./GoogleService-Info.plist";
 const imagePickerPermissionConfig = {
   cameraPermission: "알뜰 앱 이용 중 첨부할 이미지를 촬영하기 위해 카메라 접근 권한이 필요합니다.",
   microphonePermission: false,
@@ -38,6 +39,7 @@ const config: ExpoConfig = {
   assetBundlePatterns: ["**/*"],
   ios: {
     bundleIdentifier: "com.chanwook.moneychecks",
+    googleServicesFile: iosGoogleServicesFilePath,
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
     },

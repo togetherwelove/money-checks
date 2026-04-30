@@ -2,8 +2,8 @@ import * as Clipboard from "expo-clipboard";
 import { useState } from "react";
 import { Text, TextInput, View } from "react-native";
 
-import { EMPTY_VALUE_PLACEHOLDER } from "../../constants/ledgerDisplay";
 import { LedgerBookNicknameCopy } from "../../constants/ledgerBookNickname";
+import { EMPTY_VALUE_PLACEHOLDER } from "../../constants/ledgerDisplay";
 import { AppMessages } from "../../constants/messages";
 import { ShareLedgerMessages } from "../../constants/shareLedgerMessages";
 import { showNativeToast } from "../../lib/nativeToast";

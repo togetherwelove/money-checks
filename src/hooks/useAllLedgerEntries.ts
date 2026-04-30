@@ -108,7 +108,15 @@ export function useAllLedgerEntries({
     } finally {
       setIsLoadingMore(false);
     }
-  }, [activeBookId, entries.length, hasMore, isLoadingMore, isRefreshing, searchQuery, selectedCategory]);
+  }, [
+    activeBookId,
+    entries.length,
+    hasMore,
+    isLoadingMore,
+    isRefreshing,
+    searchQuery,
+    selectedCategory,
+  ]);
 
   return {
     entries,

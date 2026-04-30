@@ -16,12 +16,7 @@ type AppMenuDrawerProps = {
   sections: AppMenuSection[];
 };
 
-export function AppMenuDrawer({
-  isOpen,
-  onClose,
-  onSelectItem,
-  sections,
-}: AppMenuDrawerProps) {
+export function AppMenuDrawer({ isOpen, onClose, onSelectItem, sections }: AppMenuDrawerProps) {
   const progress = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
