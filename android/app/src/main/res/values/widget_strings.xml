@@ -1,4 +1,4 @@
 <resources>
-  <string name="money_checks_summary_widget_title">&#xC54C;&#xB730; &#xC694;&#xC57D; &#xC704;&#xC82F;</string>
-  <string name="money_checks_summary_widget_description">&#xC54C;&#xB730; &#xC694;&#xC57D; &#xC704;&#xC82F;</string>
+  <string name="money_checks_summary_widget_title">이번달 요약</string>
+  <string name="money_checks_summary_widget_description">이번달 요약</string>
 </resources>
