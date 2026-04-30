@@ -29,6 +29,7 @@ export function MonthCalendarPager({
   const pagerViewRef = useRef<PagerViewRef | null>(null);
   const isReadyRef = useRef(false);
   const isResettingRef = useRef(false);
+  const resetFrameCountRef = useRef(0);
   const pendingMonthOffsetRef = useRef<-1 | 0 | 1>(0);
   const currentPageKeyRef = useRef<string | null>(null);
   const viewportHeight = useRef(new Animated.Value(currentPage.height)).current;
@@ -48,13 +49,21 @@ export function MonthCalendarPager({
 
     currentPageKeyRef.current = currentPage.key;
     isResettingRef.current = true;
+    resetFrameCountRef.current += 1;
+    const resetFrameCount = resetFrameCountRef.current;
     setIsInteractionLocked(true);
     pagerViewRef.current?.setPageWithoutAnimation?.(CURRENT_PAGE_INDEX);
     requestAnimationFrame(() => {
-      animateViewportHeight(viewportHeight, currentPage.height, () => {
-        pendingMonthOffsetRef.current = 0;
-        isResettingRef.current = false;
-        setIsInteractionLocked(false);
+      requestAnimationFrame(() => {
+        if (resetFrameCountRef.current !== resetFrameCount) {
+          return;
+        }
+
+        animateViewportHeight(viewportHeight, currentPage.height, () => {
+          pendingMonthOffsetRef.current = 0;
+          isResettingRef.current = false;
+          setIsInteractionLocked(false);
+        });
       });
     });
   }, [currentPage.height, currentPage.key, viewportHeight]);

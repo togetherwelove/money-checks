@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { StyleSheet } from "react-native";
 import PagerView from "react-native-pager-view";
 
@@ -25,8 +25,31 @@ export function ChartMonthPager({
   previousMonth,
 }: ChartMonthPagerProps) {
   const pagerViewRef = useRef<PagerViewRef | null>(null);
+  const currentMonthKeyRef = useRef<string | null>(null);
   const isResettingRef = useRef(false);
   const pendingMonthOffsetRef = useRef<-1 | 0 | 1>(0);
+  const [isInteractionLocked, setIsInteractionLocked] = useState(false);
+
+  useEffect(() => {
+    if (currentMonthKeyRef.current === null) {
+      currentMonthKeyRef.current = currentMonth.key;
+      return;
+    }
+
+    if (currentMonthKeyRef.current === currentMonth.key) {
+      return;
+    }
+
+    currentMonthKeyRef.current = currentMonth.key;
+    isResettingRef.current = true;
+    setIsInteractionLocked(true);
+    pagerViewRef.current?.setPageWithoutAnimation?.(CURRENT_PAGE_INDEX);
+    requestAnimationFrame(() => {
+      pendingMonthOffsetRef.current = 0;
+      isResettingRef.current = false;
+      setIsInteractionLocked(false);
+    });
+  }, [currentMonth.key]);
 
   return (
     <PagerView
@@ -34,6 +57,7 @@ export function ChartMonthPager({
       orientation="horizontal"
       overdrag={false}
       ref={pagerViewRef}
+      scrollEnabled={!isInteractionLocked}
       style={styles.pager}
       onPageSelected={(event) => {
         if (isResettingRef.current) {
@@ -47,13 +71,8 @@ export function ChartMonthPager({
         }
 
         pendingMonthOffsetRef.current = monthOffset;
-        isResettingRef.current = true;
+        setIsInteractionLocked(true);
         onMoveMonth(monthOffset);
-        pagerViewRef.current?.setPageWithoutAnimation?.(CURRENT_PAGE_INDEX);
-        requestAnimationFrame(() => {
-          pendingMonthOffsetRef.current = 0;
-          isResettingRef.current = false;
-        });
       }}
     >
       <ChartMonthPageContent key={previousMonth.key} month={previousMonth} />

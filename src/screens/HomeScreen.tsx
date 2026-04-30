@@ -1,3 +1,4 @@
+import { useIsFocused } from "@react-navigation/native";
 import { useEffect, useRef, useState } from "react";
 import type { ComponentRef } from "react";
 import {
@@ -33,6 +34,7 @@ import {
   formatCurrency,
   formatLedgerListHeaderDate,
   formatMonthYear,
+  getMonthKey,
   toIsoDate,
 } from "../utils/calendar";
 
@@ -62,7 +64,10 @@ export function HomeScreen({
   state,
 }: HomeScreenProps) {
   const todayIsoDate = toIsoDate(new Date());
+  const isScreenFocused = useIsFocused();
   const [isDateMemoExpanded, setIsDateMemoExpanded] = useState(false);
+  const [calendarFocusRevision, setCalendarFocusRevision] = useState(0);
+  const wasScreenFocusedRef = useRef(isScreenFocused);
   const scrollViewRef = useRef<ComponentRef<typeof KeyboardAwareScrollView>>(null);
   const {
     handleDeleteSelectedDateNote,
@@ -76,11 +81,27 @@ export function HomeScreen({
     setVisibleMonth,
     visibleMonth,
   } = state;
+  const calendarMonthKeyRef = useRef(getMonthKey(visibleMonth));
   const selectedDateLabel = formatLedgerListHeaderDate(selectedDate);
 
   useEffect(() => {
     setIsDateMemoExpanded(Boolean(selectedDateNote.trim()));
   }, [selectedDateNote]);
+
+  useEffect(() => {
+    if (!wasScreenFocusedRef.current && isScreenFocused) {
+      setCalendarFocusRevision((currentRevision) => currentRevision + 1);
+    }
+    wasScreenFocusedRef.current = isScreenFocused;
+  }, [isScreenFocused]);
+
+  useEffect(() => {
+    const nextMonthKey = getMonthKey(visibleMonth);
+    if (calendarMonthKeyRef.current !== nextMonthKey) {
+      calendarMonthKeyRef.current = nextMonthKey;
+      setCalendarFocusRevision((currentRevision) => currentRevision + 1);
+    }
+  }, [visibleMonth]);
 
   const handleBeginDateMemoEditing = (input: TextInput | null) => {
     const inputNodeHandle = input ? findNodeHandle(input) : null;
@@ -105,6 +126,7 @@ export function HomeScreen({
     >
       <KeyboardAwareContent
         errorMessage={errorMessage}
+        calendarFocusRevision={calendarFocusRevision}
         handleBeginDateMemoEditing={handleBeginDateMemoEditing}
         isDateMemoExpanded={isDateMemoExpanded}
         isLoadingSelectedDateEntries={isLoadingSelectedDateEntries}
@@ -134,6 +156,7 @@ export function HomeScreen({
 
 function KeyboardAwareContent({
   errorMessage,
+  calendarFocusRevision,
   handleBeginDateMemoEditing,
   isDateMemoExpanded,
   isLoadingSelectedDateEntries,
@@ -158,6 +181,7 @@ function KeyboardAwareContent({
   visibleMonth,
 }: {
   errorMessage: string | null;
+  calendarFocusRevision: number;
   handleBeginDateMemoEditing: (input: TextInput | null) => void;
   isDateMemoExpanded: boolean;
   isLoadingSelectedDateEntries: boolean;
@@ -201,6 +225,7 @@ function KeyboardAwareContent({
         />
         <WeekdayHeader />
         <MonthCalendarPager
+          key={calendarFocusRevision}
           currentPage={state.currentMonthPage}
           nextPage={state.nextMonthPage}
           onMoveMonth={(monthOffset) => moveMonth(visibleMonth, monthOffset, setVisibleMonth)}
