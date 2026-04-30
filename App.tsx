@@ -53,7 +53,6 @@ import {
   type CardSmsClipboardDraft,
   promptCardSmsClipboardImport,
 } from "./src/lib/cardSmsClipboardImport";
-import { fetchLedgerEntriesSummary } from "./src/lib/ledgerEntries";
 import { logAppError } from "./src/lib/logAppError";
 import { buildAppMenuSections } from "./src/lib/menuItems";
 import { showNativeToast } from "./src/lib/nativeToast";
@@ -61,7 +60,7 @@ import { fetchOwnProfileDisplayName, updateOwnProfileDisplayName } from "./src/l
 import { openSubscriptionManagement } from "./src/lib/subscription/openSubscriptionManagement";
 import { isSubscriptionPurchaseCancelled } from "./src/lib/subscription/subscriptionError";
 import { registerLedgerWidgetNotificationSync } from "./src/lib/widgetNotificationSync";
-import { buildLedgerWidgetSummary } from "./src/lib/widgetSummary";
+import { fetchLedgerWidgetSummary } from "./src/lib/widgetSummary";
 import {
   createOtherMemberCreatedEntryEvent,
   createOtherMemberDeletedEntryEvent,
@@ -72,13 +71,7 @@ import { NicknameSetupScreen } from "./src/screens/NicknameSetupScreen";
 import { PermissionOnboardingScreen } from "./src/screens/PermissionOnboardingScreen";
 import type { LedgerAppScreen } from "./src/types/app";
 import type { LedgerEntry } from "./src/types/ledger";
-import {
-  addMonths,
-  getMonthKey,
-  parseIsoDate,
-  startOfMonth,
-  toIsoDate,
-} from "./src/utils/calendar";
+import { getMonthKey, parseIsoDate, toIsoDate } from "./src/utils/calendar";
 import { resolveFallbackDisplayName } from "./src/utils/sessionDisplayName";
 
 export default function App() {
@@ -742,20 +735,11 @@ function SignedInApp({ session }: { session: Session }) {
 
   async function resolveCurrentLedgerWidgetPushSummary(bookId: string) {
     const today = new Date();
-    const monthStart = startOfMonth(today);
-    const monthEnd = addMonths(monthStart, 1);
-    monthEnd.setDate(monthEnd.getDate() - 1);
-
-    const monthEntries = await fetchLedgerEntriesSummary(
-      bookId,
-      toIsoDate(monthStart),
-      toIsoDate(monthEnd),
-      { ascending: true, orderBy: "occurred_on" },
-    );
+    const todayIsoDate = toIsoDate(today);
 
     return {
       monthKey: getMonthKey(today),
-      summary: buildLedgerWidgetSummary(monthEntries, toIsoDate(today)),
+      summary: await fetchLedgerWidgetSummary(bookId, todayIsoDate),
     };
   }
 

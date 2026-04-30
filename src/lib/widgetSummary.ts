@@ -4,8 +4,43 @@ import type { LedgerEntry } from "../types/ledger";
 import type { LedgerWidgetSummary } from "../types/widget";
 import { formatAmountNumber } from "../utils/amount";
 import { formatEntryMetaDate } from "../utils/calendar";
+import { supabase } from "./supabase";
 
 const EMPTY_AMOUNT_LABEL = `0${KRW_CURRENCY_SUFFIX}`;
+
+type LedgerWidgetSummaryRpcRow = {
+  month_expense_amount: number | string;
+  month_income_amount: number | string;
+  recent_entries: unknown;
+  today_expense_amount: number | string;
+  today_income_amount: number | string;
+};
+
+type LedgerWidgetRecentEntryRpcRow = {
+  amount: number | string;
+  content: string;
+  date: string;
+  type: LedgerEntry["type"];
+};
+
+export async function fetchLedgerWidgetSummary(
+  bookId: string,
+  todayIsoDate: string,
+): Promise<LedgerWidgetSummary> {
+  const { data, error } = await supabase
+    .rpc("get_ledger_widget_summary", {
+      p_book_id: bookId,
+      p_recent_limit: LedgerWidgetConfig.maxRecentEntries,
+      p_today: todayIsoDate,
+    })
+    .maybeSingle<LedgerWidgetSummaryRpcRow>();
+
+  if (error) {
+    throw error;
+  }
+
+  return mapLedgerWidgetSummaryRpcRow(data, todayIsoDate);
+}
 
 export function buildLedgerWidgetSummary(
   entries: LedgerEntry[],
@@ -48,6 +83,57 @@ function formatWidgetAmount(amount: number): string {
   }
 
   return `${formatAmountNumber(amount)}${KRW_CURRENCY_SUFFIX}`;
+}
+
+function mapLedgerWidgetSummaryRpcRow(
+  row: LedgerWidgetSummaryRpcRow | null,
+  todayIsoDate: string,
+): LedgerWidgetSummary {
+  const monthIncomeAmount = toAmountNumber(row?.month_income_amount);
+  const monthExpenseAmount = toAmountNumber(row?.month_expense_amount);
+  const recentEntries = Array.isArray(row?.recent_entries) ? row.recent_entries : [];
+
+  return {
+    todayIncomeLabel: formatWidgetAmount(toAmountNumber(row?.today_income_amount)),
+    todayExpenseLabel: formatWidgetAmount(toAmountNumber(row?.today_expense_amount)),
+    monthIncomeAmount,
+    monthIncomeLabel: formatWidgetAmount(monthIncomeAmount),
+    monthExpenseAmount,
+    monthExpenseLabel: formatWidgetAmount(monthExpenseAmount),
+    recentEntries: recentEntries
+      .filter(isLedgerWidgetRecentEntryRpcRow)
+      .slice(0, LedgerWidgetConfig.maxRecentEntries)
+      .map((entry) => ({
+        amountLabel: formatWidgetAmount(toAmountNumber(entry.amount)),
+        dateLabel: formatEntryMetaDate(entry.date || todayIsoDate),
+        title: entry.content,
+        type: entry.type,
+      })),
+  };
+}
+
+function isLedgerWidgetRecentEntryRpcRow(value: unknown): value is LedgerWidgetRecentEntryRpcRow {
+  const candidate = value as Partial<LedgerWidgetRecentEntryRpcRow> | null;
+  return (
+    typeof candidate === "object" &&
+    candidate !== null &&
+    (typeof candidate.amount === "number" || typeof candidate.amount === "string") &&
+    typeof candidate.content === "string" &&
+    typeof candidate.date === "string" &&
+    (candidate.type === "income" || candidate.type === "expense")
+  );
+}
+
+function toAmountNumber(value: number | string | null | undefined): number {
+  if (typeof value === "number") {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    return Number(value) || 0;
+  }
+
+  return 0;
 }
 
 function compareLedgerEntriesByRecentDate(left: LedgerEntry, right: LedgerEntry): number {

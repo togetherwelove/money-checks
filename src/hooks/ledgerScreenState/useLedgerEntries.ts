@@ -91,21 +91,49 @@ export function useLedgerEntries(
     }
     setEntriesError(null);
 
-    void Promise.all(
-      missingPreloadMonths.map((month) => loadLedgerMonthEntries(activeBookId, month)),
-    )
-      .then((nextEntriesByMonth) => {
+    const visibleMonthKey = getMonthKey(visibleMonth);
+    const blockingMonths = missingPreloadMonths.filter(
+      (month) => getMonthKey(month) === visibleMonthKey,
+    );
+    const backgroundMonths = missingPreloadMonths.filter(
+      (month) => getMonthKey(month) !== visibleMonthKey,
+    );
+
+    const loadMonthsIntoCache = async (months: Date[]) => {
+      if (months.length === 0) {
+        return;
+      }
+
+      const nextEntriesByMonth = await Promise.all(
+        months.map((month) => loadLedgerMonthEntries(activeBookId, month)),
+      );
+      if (!isMounted) {
+        return;
+      }
+
+      setEntryCache((currentCache) =>
+        months.reduce(
+          (nextCache, month, index) =>
+            setMonthEntriesInCache(nextCache, month, nextEntriesByMonth[index] ?? []),
+          currentCache,
+        ),
+      );
+    };
+
+    void loadMonthsIntoCache(blockingMonths)
+      .then(() => {
         if (!isMounted) {
           return;
         }
 
-        setEntryCache((currentCache) =>
-          missingPreloadMonths.reduce(
-            (nextCache, month, index) =>
-              setMonthEntriesInCache(nextCache, month, nextEntriesByMonth[index] ?? []),
-            currentCache,
-          ),
-        );
+        setIsLoadingEntries(false);
+        void loadMonthsIntoCache(backgroundMonths).catch((error) => {
+          logAppError("LedgerEntries", error, {
+            activeBookId,
+            step: "preload_entries",
+            visibleMonth: visibleMonth.toISOString(),
+          });
+        });
       })
       .catch((error) => {
         logAppError("LedgerEntries", error, {

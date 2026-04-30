@@ -3,7 +3,7 @@ import { addMonths, getMonthKey, parseIsoDate } from "../../utils/calendar";
 import { removeRealtimeLedgerEntry, upsertRealtimeLedgerEntry } from "./realtimeEntryUpdates";
 
 export type LedgerEntryCache = Record<string, LedgerEntry[]>;
-const CALENDAR_PRELOAD_MONTH_OFFSETS = [-2, -1, 0, 1, 2] as const;
+const CALENDAR_PRELOAD_MONTH_OFFSETS = [-1, 0, 1] as const;
 const CALENDAR_VISIBLE_WINDOW_OFFSETS = [-1, 0, 1] as const;
 
 export function getVisibleWindowMonthKeys(visibleMonth: Date): string[] {

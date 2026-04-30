@@ -1,12 +1,11 @@
 import { useEffect, useMemo } from "react";
 
-import { fetchLedgerEntriesSummary } from "../lib/ledgerEntries";
 import { logAppError } from "../lib/logAppError";
 import { clearLedgerWidgetSummary, updateLedgerWidgetSummary } from "../lib/nativeWidget";
 import { storeActiveLedgerWidgetBookId } from "../lib/widgetPushPayload";
-import { buildLedgerWidgetSummary } from "../lib/widgetSummary";
+import { fetchLedgerWidgetSummary } from "../lib/widgetSummary";
 import type { LedgerEntry } from "../types/ledger";
-import { addMonths, startOfMonth, toIsoDate } from "../utils/calendar";
+import { toIsoDate } from "../utils/calendar";
 
 export function useLedgerWidgetSync(activeBookId: string | null, entries: LedgerEntry[]) {
   const entrySignature = useMemo(
@@ -30,21 +29,12 @@ export function useLedgerWidgetSync(activeBookId: string | null, entries: Ledger
 
       storeActiveLedgerWidgetBookId(activeBookId);
       const today = new Date();
-      const monthStart = startOfMonth(today);
-      const monthEnd = addMonths(monthStart, 1);
-      monthEnd.setDate(monthEnd.getDate() - 1);
-
-      const monthEntries = await fetchLedgerEntriesSummary(
-        activeBookId,
-        toIsoDate(monthStart),
-        toIsoDate(monthEnd),
-        { ascending: true, orderBy: "occurred_on" },
-      );
+      const summary = await fetchLedgerWidgetSummary(activeBookId, toIsoDate(today));
       if (isCancelled) {
         return;
       }
 
-      await updateLedgerWidgetSummary(buildLedgerWidgetSummary(monthEntries, toIsoDate(today)));
+      await updateLedgerWidgetSummary(summary);
     }
 
     void syncWidgetSummary().catch((error) => {
