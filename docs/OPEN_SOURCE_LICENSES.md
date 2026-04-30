@@ -13,8 +13,8 @@
 
 ## 요약
 
-- 총 패키지 수: 887
-- 라이선스 종류: 19
+- 총 패키지 수: 898
+- 라이선스 종류: 20
 
 | 라이선스 | 패키지 수 |
 | --- | ---: |
@@ -24,14 +24,15 @@
 | 0BSD | 3 |
 | Apache 2.0 | 1 |
 | Apache-2.0 | 35 |
+| Beerware | 1 |
 | BlueOak-1.0.0 | 11 |
 | BSD-2-Clause | 17 |
 | BSD-3-Clause | 29 |
 | BUSL-1.1 | 2 |
 | CC-BY-4.0 | 1 |
 | CC0-1.0 | 1 |
-| ISC | 48 |
-| MIT | 728 |
+| ISC | 49 |
+| MIT | 737 |
 | MIT OR Apache-2.0 | 2 |
 | MPL-2.0 | 2 |
 | Python-2.0 | 1 |
@@ -357,6 +358,7 @@
 | call-bind-apply-helpers | 1.0.2 | MIT |  | <https://github.com/ljharb/call-bind-apply-helpers#readme> |
 | call-bound | 1.0.4 | MIT |  | <https://github.com/ljharb/call-bound#readme> |
 | camelcase | 5.3.1, 6.3.0 | MIT |  | <https://github.com/sindresorhus/camelcase#readme> |
+| camelize | 1.0.1 | MIT |  | <https://github.com/ljharb/camelize> |
 | caniuse-lite | 1.0.30001787 | CC-BY-4.0 |  | <https://github.com/browserslist/caniuse-lite#readme> |
 | cardinal | 2.1.1 | MIT |  | <https://github.com/thlorenz/cardinal#readme> |
 | cfb | 1.2.2 | Apache-2.0 |  | <http://sheetjs.com/> |
@@ -395,8 +397,10 @@
 | cross-spawn | 7.0.6 | MIT |  | <https://github.com/moxystudio/node-cross-spawn> |
 | crypt | 0.0.2 | BSD-3-Clause |  | <https://github.com/pvorb/node-crypt#readme> |
 | crypto-random-string | 2.0.0 | MIT |  | <https://github.com/sindresorhus/crypto-random-string#readme> |
+| css-color-keywords | 1.0.0 | ISC |  | <https://github.com/sonicdoe/css-color-keywords#readme> |
 | css-in-js-utils | 3.1.0 | MIT |  | <https://github.com/robinweser/css-in-js-utils#readme> |
 | css-select | 5.2.2 | BSD-2-Clause |  | <https://github.com/fb55/css-select#readme> |
+| css-to-react-native | 3.2.0 | MIT |  | <https://github.com/styled-components/css-to-react-native#readme> |
 | css-tree | 1.1.3 | MIT |  | <https://github.com/csstree/csstree#readme> |
 | css-what | 6.2.2 | BSD-2-Clause |  | <https://github.com/fb55/css-what#readme> |
 | csstype | 3.2.3 | MIT |  | <https://github.com/frenic/csstype#readme> |
@@ -433,7 +437,7 @@
 | electron-to-chromium | 1.5.334 | ISC |  | <https://github.com/Kilian/electron-to-chromium#readme> |
 | emoji-regex | 8.0.0, 9.2.2 | MIT |  | <https://mths.be/emoji-regex> |
 | encodeurl | 1.0.2, 2.0.0 | MIT |  | <https://github.com/pillarjs/encodeurl#readme> |
-| entities | 4.5.0 | BSD-2-Clause |  | <https://github.com/fb55/entities#readme> |
+| entities | 2.0.3, 4.5.0 | BSD-2-Clause |  | <https://github.com/fb55/entities#readme> |
 | env-editor | 0.4.2 | MIT |  | <https://github.com/sindresorhus/env-editor#readme> |
 | env-paths | 2.2.0 | MIT |  | <https://github.com/sindresorhus/env-paths#readme> |
 | env-string | 1.0.1 | MIT |  | <https://github.com/mafintosh/env-string> |
@@ -489,6 +493,7 @@
 | expo-sharing | 14.0.8 | MIT | 예 | <https://docs.expo.dev/versions/latest/sdk/sharing/> |
 | expo-sqlite | 16.0.10 | MIT | 예 | <https://docs.expo.dev/versions/latest/sdk/sqlite/> |
 | expo-status-bar | 3.0.9 | MIT | 예 | <https://docs.expo.dev/versions/latest/sdk/status-bar/> |
+| expo-task-manager | 14.0.9 | MIT | 예 | <https://docs.expo.dev/versions/latest/sdk/task-manager/> |
 | expo-updates-interface | 2.0.0 | MIT |  | <https://docs.expo.dev> |
 | expo-web-browser | 15.0.10 | MIT | 예 | <https://docs.expo.dev/versions/latest/sdk/webbrowser/> |
 | exponential-backoff | 3.1.3 | Apache-2.0 |  | <https://github.com/coveooss/exponential-backoff#readme> |
@@ -621,6 +626,7 @@
 | lightningcss-win32-x64-msvc | 1.32.0 | MPL-2.0 |  | <https://github.com/parcel-bundler/lightningcss#readme> |
 | lilconfig | 3.1.3 | MIT |  | <https://github.com/antonk52/lilconfig#readme> |
 | lines-and-columns | 1.2.4 | MIT |  | <https://github.com/eventualbuddha/lines-and-columns#readme> |
+| linkify-it | 2.2.0 | MIT |  | <https://github.com/markdown-it/linkify-it#readme> |
 | locate-path | 5.0.0 | MIT |  | <https://github.com/sindresorhus/locate-path#readme> |
 | lodash.clonedeep | 4.5.0 | MIT |  | <https://lodash.com/> |
 | lodash.debounce | 4.0.8 | MIT |  | <https://lodash.com/> |
@@ -637,10 +643,12 @@
 | make-dir | 4.0.0 | MIT |  | <https://github.com/sindresorhus/make-dir#readme> |
 | make-error | 1.3.6 | ISC |  | <https://github.com/JsCommunity/make-error> |
 | makeerror | 1.0.12 | BSD-3-Clause |  | <https://github.com/daaku/nodejs-makeerror#readme> |
+| markdown-it | 10.0.0 | MIT |  | <https://github.com/markdown-it/markdown-it#readme> |
 | marky | 1.3.0 | Apache-2.0 |  | <https://github.com/nolanlawson/marky#readme> |
 | math-intrinsics | 1.1.0 | MIT |  | <https://github.com/es-shims/math-intrinsics#readme> |
 | md5 | 2.3.0 | BSD-3-Clause |  | <https://github.com/pvorb/node-md5#readme> |
 | mdn-data | 2.0.14 | CC0-1.0 |  | <https://developer.mozilla.org> |
+| mdurl | 1.0.1 | MIT |  | <https://github.com/markdown-it/mdurl#readme> |
 | memoize-one | 5.2.1, 6.0.0 | MIT |  | <https://github.com/alexreardon/memoize-one#readme> |
 | merge-stream | 2.0.0 | MIT |  | <https://github.com/grncdr/merge-stream#readme> |
 | merge2 | 1.4.1 | MIT |  | <https://github.com/teambition/merge2> |
@@ -752,11 +760,13 @@
 | react-native | 0.81.5 | MIT | 예 | <https://reactnative.dev/> |
 | react-native-collapsible | 1.6.2 | MIT | 예 | <https://github.com/oblador/react-native-collapsible> |
 | react-native-draggable-flatlist | 4.0.3 | MIT | 예 | <https://github.com/computerjazz/react-native-draggable-flatlist#readme> |
+| react-native-fit-image | 1.5.5 | Beerware |  | <https://github.com/huiseoul/react-native-fit-image#readme> |
 | react-native-gesture-handler | 2.28.0 | MIT | 예 | <https://github.com/software-mansion/react-native-gesture-handler#readme> |
 | react-native-google-mobile-ads | 16.3.2 | Apache-2.0 | 예 | <https://github.com/invertase/react-native-google-mobile-ads#readme> |
 | react-native-iphone-x-helper | 1.3.1 | MIT |  | <https://github.com/ptelad/react-native-iphone-x-helper#readme> |
 | react-native-is-edge-to-edge | 1.3.1 | MIT |  | <https://github.com/zoontek/react-native-edge-to-edge> |
 | react-native-keyboard-aware-scroll-view | 0.9.5 | MIT | 예 | <https://github.com/APSL/react-native-keyboard-aware-scroll-view#readme> |
+| react-native-markdown-display | 7.0.2 | MIT | 예 | <https://github.com/iamacup/react-native-markdown-display/> |
 | react-native-pager-view | 6.9.1 | MIT | 예 | <https://github.com/callstack/react-native-pager-view#readme> |
 | react-native-purchases | 10.0.0 | MIT | 예 | <https://github.com/revenuecat/react-native-purchases#readme> |
 | react-native-purchases-ui | 10.0.0 | MIT | 예 | <https://github.com/revenuecat/react-native-purchases#readme> |
@@ -872,12 +882,14 @@
 | type-fest | 0.21.3, 0.7.1 | (MIT OR CC0-1.0) |  | <https://github.com/sindresorhus/type-fest#readme> |
 | typescript | 5.9.3 | Apache-2.0 | 예 | <https://www.typescriptlang.org/> |
 | ua-parser-js | 0.7.41, 1.0.41 | MIT |  | <https://uaparser.dev> |
+| uc.micro | 1.0.6 | MIT |  | <https://github.com/markdown-it/uc.micro#readme> |
 | undici | 6.24.1 | MIT |  | <https://undici.nodejs.org> |
 | undici-types | 7.18.2 | MIT |  | <https://undici.nodejs.org> |
 | unicode-canonical-property-names-ecmascript | 2.0.1 | MIT |  | <https://github.com/mathiasbynens/unicode-canonical-property-names-ecmascript> |
 | unicode-match-property-ecmascript | 2.0.0 | MIT |  | <https://github.com/mathiasbynens/unicode-match-property-ecmascript> |
 | unicode-match-property-value-ecmascript | 2.2.1 | MIT |  | <https://github.com/mathiasbynens/unicode-match-property-value-ecmascript> |
 | unicode-property-aliases-ecmascript | 2.2.0 | MIT |  | <https://github.com/mathiasbynens/unicode-property-aliases-ecmascript> |
+| unimodules-app-loader | 6.0.8 | MIT |  | <https://github.com/expo/expo/tree/main/packages/unimodules-app-loader> |
 | unique-string | 2.0.0 | MIT |  | <https://github.com/sindresorhus/unique-string#readme> |
 | universalify | 1.0.0, 2.0.1 | MIT |  | <https://github.com/RyanZim/universalify#readme> |
 | unpipe | 1.0.0 | MIT |  | <https://github.com/stream-utils/unpipe#readme> |
