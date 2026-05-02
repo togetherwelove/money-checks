@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 
-import { appPlatform } from "../lib/appPlatform";
 import { logAppError } from "../lib/logAppError";
 import {
   sendPendingJoinRequestNotification,
@@ -10,6 +9,7 @@ import {
 import {
   type NotificationPermissionState,
   readPushNotificationPermission,
+  registerNotificationActionCategories,
   requestPushNotificationPermission,
   syncPushRegistration,
 } from "../lib/notifications/pushNotifications";
@@ -37,6 +37,7 @@ type LedgerNotificationsState = {
   permissionLabel: string;
   permissionState: NotificationPermissionState;
   preferenceGroups: NotificationPreferenceGroup[];
+  registerActionCategories: () => Promise<void>;
   requestNotifications: () => Promise<boolean>;
   sendPendingJoinRequestNotification: () => Promise<void>;
   sendPushNotificationToBookMembers: (
@@ -103,7 +104,7 @@ export function useLedgerNotifications(userId: string): LedgerNotificationsState
     });
   }, [permission, userId]);
 
-  const isSupported = appPlatform.supportsPushNotifications && permission !== "unsupported";
+  const isSupported = permission !== "unsupported";
 
   const requestNotifications = async () => {
     try {
@@ -208,11 +209,12 @@ export function useLedgerNotifications(userId: string): LedgerNotificationsState
     permissionLabel: getPermissionLabel(permission),
     permissionState: permission,
     preferenceGroups,
+    registerActionCategories: registerNotificationActionCategories,
     requestNotifications,
     sendPendingJoinRequestNotification: sendPendingJoinRequestNotificationInternal,
     sendPushNotificationToBookMembers: sendPushNotificationToBookMembersInternal,
     sendPushNotificationToUsers: sendPushNotificationToUsersInternal,
-    showNotificationSettings: appPlatform.showsNotificationSettings && permission !== "unsupported",
+    showNotificationSettings: permission !== "unsupported",
     statusMessage: getStatusMessage(permission),
     updatePreference: updateEventPreference,
     updateThresholdEnabled,

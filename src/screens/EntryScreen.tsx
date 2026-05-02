@@ -56,7 +56,6 @@ export function EntryScreen({
   } = state;
   const activeBookId = state.activeBook?.id ?? null;
   const editingEntry = entries.find((entry) => entry.id === editingEntryId) ?? null;
-  const pickerMode = appPlatform.entryDatePickerMode;
 
   useEffect(() => {
     let isMounted = true;
@@ -118,7 +117,7 @@ export function EntryScreen({
   };
 
   const handleOpenDatePicker = () => {
-    if (pickerMode === "native" && appPlatform.usesAndroidDatePickerDialog) {
+    if (appPlatform.usesAndroidDatePickerDialog) {
       DateTimePickerAndroid.open({
         mode: "date",
         value: parseIsoDate(selectedDate),
@@ -213,9 +212,7 @@ export function EntryScreen({
         />
       </KeyboardAwareScrollView>
       <EntryDatePickerModal
-        entries={entries}
         isOpen={isDatePickerOpen}
-        mode={pickerMode}
         onClose={() => setIsDatePickerOpen(false)}
         onSelectDate={applySelectedDate}
         selectedDate={selectedDate}

@@ -3,6 +3,8 @@ const MONTHLY_SUMMARY_EVENT_TYPE = "month_end_summary";
 const MONTHLY_SUMMARY_SEND_DAY = 1;
 const MONTHLY_SUMMARY_SEND_HOUR = 9;
 const EXPO_PUSH_TOKEN_PATTERN = /^(ExponentPushToken|ExpoPushToken)\[[^\]]+\]$/;
+const MONTHLY_SUMMARY_CATEGORY_ID = "monthly_summary";
+const MONTHLY_SUMMARY_ACTION_ROUTE = "charts";
 
 type SummaryDeliveryRequest = {
   triggeredAt?: string;
@@ -34,6 +36,8 @@ type LedgerEntryRow = {
 
 type ExpoPushMessage = {
   body: string;
+  categoryId?: string;
+  data?: Record<string, unknown>;
   sound: "default";
   title: string;
   to: string;
@@ -160,6 +164,10 @@ export async function handleSendMonthlySummaryNotificationsRequest(
         body: JSON.stringify(
           pushTokens.map((token) => ({
             body: pushContent.body,
+            categoryId: MONTHLY_SUMMARY_CATEGORY_ID,
+            data: {
+              actionRoute: MONTHLY_SUMMARY_ACTION_ROUTE,
+            },
             sound: "default",
             title: pushContent.title,
             to: token,

@@ -1,12 +1,6 @@
-import { Platform } from "react-native";
-
 import { ToastUi } from "../constants/toast";
 
 export function showNativeToast(message: string) {
-  if (Platform.OS === "web") {
-    return;
-  }
-
   const RootToast = require("react-native-root-toast").default as {
     durations: { SHORT: number };
     positions: { BOTTOM: number };

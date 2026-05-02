@@ -1,22 +1,26 @@
 import { DEFAULT_MEMBER_DISPLAY_NAME } from "../constants/ledgerDisplay";
-import type { LedgerBook } from "../types/ledgerBook";
+import type { AccessibleLedgerBook, LedgerBook } from "../types/ledgerBook";
 import type {
   JoinSharedLedgerBookResult,
   LedgerBookJoinRequest,
 } from "../types/ledgerBookJoinRequest";
 import type { LedgerBookMember } from "../types/ledgerBookMember";
 import type {
+  AccessibleLedgerBookRow,
   LedgerBookJoinRequestProfileRow,
   LedgerBookMemberProfileRow,
   LedgerBookRow,
 } from "../types/supabase";
-import { mapLedgerBookRow } from "../utils/ledgerBookMapper";
+import { mapAccessibleLedgerBookRow, mapLedgerBookRow } from "../utils/ledgerBookMapper";
 import { logAppError, logAppWarning } from "./logAppError";
 import { supabase } from "./supabase";
 
 const GET_ACCESSIBLE_LEDGER_BOOK_FUNCTION = "get_accessible_ledger_book";
+const GET_ACCESSIBLE_LEDGER_BOOKS_FUNCTION = "get_accessible_ledger_books";
 const GET_ACTIVE_LEDGER_BOOK_FUNCTION = "get_active_ledger_book";
 const ENSURE_OWN_PERSONAL_LEDGER_BOOK_FUNCTION = "ensure_own_personal_ledger_book";
+const CREATE_OWNED_LEDGER_BOOK_FUNCTION = "create_owned_ledger_book";
+const SWITCH_ACTIVE_LEDGER_BOOK_FUNCTION = "switch_active_ledger_book";
 const UPDATE_ACTIVE_LEDGER_BOOK_NAME_FUNCTION = "update_active_ledger_book_name";
 
 export async function fetchLedgerBookById(bookId: string): Promise<LedgerBook> {
@@ -60,6 +64,47 @@ export async function fetchActiveLedgerBook(userId: string): Promise<LedgerBook 
   }
 
   return mapLedgerBookRow(activeBook);
+}
+
+export async function fetchAccessibleLedgerBooks(): Promise<AccessibleLedgerBook[]> {
+  const { data, error } = await supabase
+    .rpc(GET_ACCESSIBLE_LEDGER_BOOKS_FUNCTION)
+    .returns<AccessibleLedgerBookRow[]>();
+
+  if (error) {
+    throw error;
+  }
+
+  const bookRows = Array.isArray(data) ? data : [];
+  return bookRows.filter(isAccessibleLedgerBookRow).map(mapAccessibleLedgerBookRow);
+}
+
+export async function createOwnedLedgerBook(nextName: string): Promise<LedgerBook> {
+  const { data, error } = await supabase
+    .rpc(CREATE_OWNED_LEDGER_BOOK_FUNCTION, { next_name: nextName })
+    .returns<LedgerBookRow[]>();
+
+  const createdBook = resolveLedgerBookRow(data);
+
+  if (error || !createdBook) {
+    throw error ?? new Error("Failed to create the ledger book.");
+  }
+
+  return mapLedgerBookRow(createdBook);
+}
+
+export async function switchActiveLedgerBook(bookId: string): Promise<LedgerBook> {
+  const { data, error } = await supabase
+    .rpc(SWITCH_ACTIVE_LEDGER_BOOK_FUNCTION, { target_book_id: bookId })
+    .returns<LedgerBookRow[]>();
+
+  const switchedBook = resolveLedgerBookRow(data);
+
+  if (error || !switchedBook) {
+    throw error ?? new Error("Failed to switch the active ledger book.");
+  }
+
+  return mapLedgerBookRow(switchedBook);
 }
 
 export async function updateActiveLedgerBookName(nextName: string): Promise<LedgerBook> {
@@ -187,5 +232,18 @@ function isLedgerBookRow(value: unknown): value is LedgerBookRow {
     typeof candidate.name === "string" &&
     typeof candidate.owner_id === "string" &&
     typeof candidate.share_code === "string"
+  );
+}
+
+function isAccessibleLedgerBookRow(value: unknown): value is AccessibleLedgerBookRow {
+  if (!isLedgerBookRow(value)) {
+    return false;
+  }
+
+  const candidate = value as Partial<AccessibleLedgerBookRow>;
+  return (
+    candidate.member_role === "owner" ||
+    candidate.member_role === "editor" ||
+    candidate.member_role === "viewer"
   );
 }

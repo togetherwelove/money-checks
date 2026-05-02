@@ -13,6 +13,7 @@ type LedgerWidgetPushPayload = {
 };
 
 type SerializedLedgerWidgetPushPayload = {
+  actionRoute?: string;
   bookId: string;
   kind: typeof WIDGET_PUSH_KIND;
   monthKey: string;

@@ -10,7 +10,6 @@ import {
   buildSelectedYearPeriod,
 } from "../lib/annualReport/annualReportPeriods";
 import { confirmAndDownloadAnnualReport } from "../lib/annualReport/downloadAnnualReport";
-import { appPlatform } from "../lib/appPlatform";
 import { fetchLedgerEntries, fetchLedgerEntryDateBounds } from "../lib/ledgerEntries";
 import type { LedgerBook } from "../types/ledgerBook";
 
@@ -55,25 +54,7 @@ export function useAnnualLedgerReportAction({
       }
 
       const selectedYear = visibleMonth.getFullYear();
-      if (appPlatform.isWeb) {
-        const reportPeriod = selectAnnualReportPeriodOnWeb(
-          dateBounds.firstDate,
-          dateBounds.lastDate,
-          selectedYear,
-        );
-        if (reportPeriod) {
-          await runDownloadReportForPeriod(
-            activeBook.id,
-            bookName,
-            reportPeriod,
-            onBeforeDownloadReport,
-            setIsDownloading,
-          );
-        }
-        return;
-      }
-
-      await selectAnnualReportPeriodOnNative(
+      await selectAnnualReportPeriod(
         dateBounds.firstDate,
         dateBounds.lastDate,
         selectedYear,
@@ -129,33 +110,7 @@ export function useAnnualLedgerReportAction({
   };
 }
 
-function selectAnnualReportPeriodOnWeb(firstDate: string, lastDate: string, selectedYear: number) {
-  const selectedValue = window.prompt(
-    `1. ${AnnualReportCopy.firstToLastOption}\n2. ${buildSelectedYearOptionLabel(selectedYear)}\n3. ${AnnualReportCopy.customRangeOption}`,
-    "2",
-  );
-
-  if (selectedValue === "1") {
-    return buildFirstToLastPeriod(firstDate, lastDate);
-  }
-
-  if (selectedValue === "2") {
-    return buildSelectedYearPeriod(selectedYear);
-  }
-
-  if (selectedValue === "3") {
-    const startDate = window.prompt(AnnualReportCopy.rangeStartLabel, firstDate);
-    const endDate = window.prompt(AnnualReportCopy.rangeEndLabel, lastDate);
-    if (!startDate || !endDate || startDate > endDate) {
-      return null;
-    }
-    return buildCustomRangePeriod(startDate, endDate);
-  }
-
-  return null;
-}
-
-async function selectAnnualReportPeriodOnNative(
+async function selectAnnualReportPeriod(
   firstDate: string,
   lastDate: string,
   selectedYear: number,

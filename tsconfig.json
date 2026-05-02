@@ -1,7 +1,7 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "moduleSuffixes": [".web", ".native", ""],
+    "moduleSuffixes": [".native", ""],
     "strict": true,
     "types": ["vitest/globals"]
   },

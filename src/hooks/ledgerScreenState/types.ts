@@ -7,7 +7,7 @@ import type {
   MonthlyInsights,
   MonthlyLedgerSummary,
 } from "../../types/ledger";
-import type { LedgerBook } from "../../types/ledgerBook";
+import type { AccessibleLedgerBook, LedgerBook } from "../../types/ledgerBook";
 import type {
   JoinSharedLedgerBookAttempt,
   LedgerBookJoinRequest,
@@ -24,6 +24,7 @@ export type ChartMonthData = {
 
 export type LedgerScreenState = {
   activeBook: LedgerBook | null;
+  accessibleBooks: AccessibleLedgerBook[];
   currentChartMonth: ChartMonthData;
   draft: LedgerEntryDraft;
   editingEntryId: string | null;
@@ -34,6 +35,7 @@ export type LedgerScreenState = {
   isLoading: boolean;
   isLoadingSelectedDateEntries: boolean;
   isRefreshing: boolean;
+  createLedgerBook: (nextName: string) => Promise<boolean>;
   joinSharedLedgerBookByCode: (shareCode: string) => Promise<JoinSharedLedgerBookAttempt>;
   leaveSharedLedgerBook: () => Promise<boolean>;
   monthlyLedger: MonthlyLedgerSummary;
@@ -53,6 +55,7 @@ export type LedgerScreenState = {
   selectedEntries: LedgerEntry[];
   selectedDateNote: string;
   setVisibleMonth: (nextMonth: Date) => void;
+  switchLedgerBook: (bookId: string) => Promise<boolean>;
   visibleMonth: Date;
   handleDeleteSelectedDateNote: () => Promise<void>;
   handleDeleteEntry: (entryId: string) => Promise<void>;

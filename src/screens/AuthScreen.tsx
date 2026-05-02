@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { ScreenSlideTransition } from "../components/ScreenSlideTransition";
+import { AuthLandingCard } from "../components/authScreen/AuthLandingCard";
 import { EmailSignInCard } from "../components/authScreen/EmailSignInCard";
+import { AuthLandingCopy } from "../constants/authLanding";
 import { AppColors } from "../constants/colors";
 import { EmailAuthCopy } from "../constants/emailAuth";
 import { AppLayout } from "../constants/layout";
+import { LegalLinks } from "../constants/legal";
 import { AppMessages } from "../constants/messages";
 import {
   canUseAppleSignIn,
@@ -19,6 +22,7 @@ import {
   isGoogleSignInCancelled,
   signInWithGoogle,
 } from "../lib/auth/googleSignIn";
+import { showNativeToast } from "../lib/nativeToast";
 import { SignUpScreen } from "./SignUpScreen";
 
 type AuthScreenProps = {
@@ -28,7 +32,7 @@ type AuthScreenProps = {
 export function AuthScreen({ initialErrorMessage = null }: AuthScreenProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [screen, setScreen] = useState<"sign-in" | "sign-up">("sign-in");
+  const [screen, setScreen] = useState<"landing" | "email-sign-in" | "sign-up">("landing");
   const showAppleSignIn = canUseAppleSignIn();
   const showGoogleSignIn = canUseGoogleSignIn();
 
@@ -72,13 +76,21 @@ export function AuthScreen({ initialErrorMessage = null }: AuthScreenProps) {
     }
   };
 
+  const handleOpenLegalLink = async (url: string) => {
+    try {
+      await Linking.openURL(url);
+    } catch {
+      showNativeToast(AuthLandingCopy.legalLinkError);
+    }
+  };
+
   return (
     <ScreenSlideTransition screenKey={screen}>
       {screen === "sign-up" ? (
         <SignUpScreen
           onBackToSignIn={() => {
             setPassword("");
-            setScreen("sign-in");
+            setScreen("landing");
           }}
         />
       ) : (
@@ -92,19 +104,46 @@ export function AuthScreen({ initialErrorMessage = null }: AuthScreenProps) {
             <Text style={styles.title}>{EmailAuthCopy.signIn.title}</Text>
           </View>
 
-          <EmailSignInCard
-            email={email}
-            onAppleSignIn={showAppleSignIn ? handleAppleSignIn : null}
-            onGoogleSignIn={showGoogleSignIn ? handleGoogleSignIn : null}
-            onChangeEmail={setEmail}
-            onChangePassword={setPassword}
-            onOpenSignUp={() => {
-              setPassword("");
-              setScreen("sign-up");
-            }}
-            onSubmit={handleSubmit}
-            password={password}
-          />
+          {screen === "email-sign-in" ? (
+            <>
+              <EmailSignInCard
+                email={email}
+                onChangeEmail={setEmail}
+                onChangePassword={setPassword}
+                onOpenSignUp={() => {
+                  setPassword("");
+                  setScreen("sign-up");
+                }}
+                onSubmit={handleSubmit}
+                password={password}
+              />
+              <Pressable
+                onPress={() => {
+                  setPassword("");
+                  setScreen("landing");
+                }}
+                style={styles.backLinkButton}
+              >
+                <Text style={styles.backLinkText}>{AuthLandingCopy.backToMethodsAction}</Text>
+              </Pressable>
+            </>
+          ) : (
+            <AuthLandingCard
+              onAppleSignIn={showAppleSignIn ? handleAppleSignIn : null}
+              onEmailSignIn={() => setScreen("email-sign-in")}
+              onEmailSignUp={() => {
+                setPassword("");
+                setScreen("sign-up");
+              }}
+              onGoogleSignIn={showGoogleSignIn ? handleGoogleSignIn : null}
+              onOpenPrivacyPolicy={() => {
+                void handleOpenLegalLink(LegalLinks.privacyPolicyUrl);
+              }}
+              onOpenTermsOfUse={() => {
+                void handleOpenLegalLink(LegalLinks.termsOfUseUrl);
+              }}
+            />
+          )}
 
           <View style={styles.supportCard}>
             <Text style={styles.supportLabel}>{EmailAuthCopy.supportLabel}</Text>
@@ -149,6 +188,16 @@ const styles = StyleSheet.create({
   supportCard: {
     alignItems: "center",
     paddingHorizontal: 8,
+  },
+  backLinkButton: {
+    alignSelf: "center",
+    paddingVertical: 4,
+  },
+  backLinkText: {
+    color: AppColors.mutedStrongText,
+    fontSize: 13,
+    fontWeight: "700",
+    textDecorationLine: "underline",
   },
   supportLabel: {
     color: AppColors.mutedStrongText,

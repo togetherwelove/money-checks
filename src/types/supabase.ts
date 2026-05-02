@@ -44,6 +44,10 @@ export type LedgerBookRow = {
   share_code: string;
 };
 
+export type AccessibleLedgerBookRow = LedgerBookRow & {
+  member_role: "editor" | "owner" | "viewer";
+};
+
 export type LedgerBookMemberRow = {
   book_id: string;
   role: "editor" | "owner" | "viewer";

@@ -1,7 +1,15 @@
 root = true
 
-[*.{js,jsx,ts,tsx,json}]
+[*.{js,jsx,ts,tsx,json,cjs,mjs}]
 charset = utf-8
+end_of_line = lf
+indent_size = 2
+indent_style = space
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{ps1,psm1}]
+charset = utf-8-bom
 end_of_line = lf
 indent_size = 2
 indent_style = space

@@ -6,41 +6,26 @@ import { AppColors } from "../constants/colors";
 import { CommonActionCopy } from "../constants/commonActions";
 import { AppLayout } from "../constants/layout";
 import { ModalActionRowStyle } from "../constants/uiStyles";
-import type { LedgerEntry } from "../types/ledger";
-import {
-  addMonths,
-  buildMonthlyLedger,
-  getMonthKey,
-  parseIsoDate,
-  toIsoDate,
-} from "../utils/calendar";
+import { parseIsoDate, toIsoDate } from "../utils/calendar";
 import { ActionButton } from "./ActionButton";
-import { IconActionButton } from "./IconActionButton";
-import { MonthCalendar } from "./MonthCalendar";
-import { WeekdayHeader } from "./WeekdayHeader";
 
-const ENTRY_DATE_PICKER_TITLE = "날짜 선택";
+const ENTRY_DATE_PICKER_TITLE = "?좎쭨 ?좏깮";
 
 type EntryDatePickerModalProps = {
-  entries: LedgerEntry[];
   isOpen: boolean;
-  mode: "native" | "web-calendar";
   onClose: () => void;
   onSelectDate: (isoDate: string) => void;
   selectedDate: string;
 };
 
 export function EntryDatePickerModal({
-  entries,
   isOpen,
-  mode,
   onClose,
   onSelectDate,
   selectedDate,
 }: EntryDatePickerModalProps) {
   const selectedDateValue = useMemo(() => parseIsoDate(selectedDate), [selectedDate]);
   const [draftDate, setDraftDate] = useState(selectedDateValue);
-  const [visibleMonth, setVisibleMonth] = useState(() => new Date(selectedDateValue));
 
   useEffect(() => {
     if (!isOpen) {
@@ -48,13 +33,7 @@ export function EntryDatePickerModal({
     }
 
     setDraftDate(selectedDateValue);
-    setVisibleMonth(new Date(selectedDateValue));
   }, [isOpen, selectedDateValue]);
-
-  const monthSummary = useMemo(
-    () => buildMonthlyLedger(getMonthKey(visibleMonth), entries).days,
-    [entries, visibleMonth],
-  );
 
   if (!isOpen) {
     return null;
@@ -71,58 +50,29 @@ export function EntryDatePickerModal({
               <Text style={styles.closeText}>{CommonActionCopy.close}</Text>
             </Pressable>
           </View>
-          {mode === "native" ? (
-            <>
-              <DateTimePicker
-                display="inline"
-                locale="ko-KR"
-                mode="date"
-                onChange={(_event, nextDate) => {
-                  if (!nextDate) {
-                    return;
-                  }
-                  setDraftDate(nextDate);
-                }}
-                value={draftDate}
-              />
-              <View style={styles.actionRow}>
-                <ActionButton
-                  label={CommonActionCopy.confirm}
-                  onPress={() => {
-                    onSelectDate(toIsoDate(draftDate));
-                    onClose();
-                  }}
-                  size="inline"
-                  variant="primary"
-                />
-              </View>
-            </>
-          ) : (
-            <>
-              <View style={styles.monthRow}>
-                <IconActionButton
-                  icon="chevron-left"
-                  onPress={() => setVisibleMonth((currentMonth) => addMonths(currentMonth, -1))}
-                />
-                <Text style={styles.monthLabel}>
-                  {visibleMonth.getFullYear()}년 {visibleMonth.getMonth() + 1}월
-                </Text>
-                <IconActionButton
-                  icon="chevron-right"
-                  onPress={() => setVisibleMonth((currentMonth) => addMonths(currentMonth, 1))}
-                />
-              </View>
-              <WeekdayHeader />
-              <MonthCalendar
-                days={monthSummary}
-                onSelectDate={(isoDate) => {
-                  onSelectDate(isoDate);
-                  onClose();
-                }}
-                selectedDate={selectedDate}
-              />
-            </>
-          )}
+          <DateTimePicker
+            display="inline"
+            locale="ko-KR"
+            mode="date"
+            onChange={(_event, nextDate) => {
+              if (!nextDate) {
+                return;
+              }
+              setDraftDate(nextDate);
+            }}
+            value={draftDate}
+          />
+          <View style={styles.actionRow}>
+            <ActionButton
+              label={CommonActionCopy.confirm}
+              onPress={() => {
+                onSelectDate(toIsoDate(draftDate));
+                onClose();
+              }}
+              size="inline"
+              variant="primary"
+            />
+          </View>
         </View>
       </View>
     </Modal>
@@ -161,16 +111,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
   },
-  monthRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-  },
   actionRow: ModalActionRowStyle,
-  monthLabel: {
-    color: AppColors.text,
-    fontSize: 14,
-    fontWeight: "800",
-  },
 });

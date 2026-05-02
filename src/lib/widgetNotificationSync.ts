@@ -1,7 +1,6 @@
 import * as Notifications from "expo-notifications";
 import * as TaskManager from "expo-task-manager";
 
-import { appPlatform } from "./appPlatform";
 import { logAppError } from "./logAppError";
 import { updateLedgerWidgetSummary } from "./nativeWidget";
 import { parseLedgerWidgetPushPayload, readActiveLedgerWidgetBookId } from "./widgetPushPayload";
@@ -18,7 +17,7 @@ type NotificationTaskBody = {
   };
 };
 
-if (appPlatform.isNative && !TaskManager.isTaskDefined(LEDGER_WIDGET_NOTIFICATION_TASK)) {
+if (!TaskManager.isTaskDefined(LEDGER_WIDGET_NOTIFICATION_TASK)) {
   TaskManager.defineTask(LEDGER_WIDGET_NOTIFICATION_TASK, async ({ data }) => {
     await applyLedgerWidgetNotificationData(
       (data as NotificationTaskBody | undefined)?.notification?.request?.content?.data,
@@ -28,10 +27,6 @@ if (appPlatform.isNative && !TaskManager.isTaskDefined(LEDGER_WIDGET_NOTIFICATIO
 }
 
 export async function registerLedgerWidgetNotificationSync(): Promise<() => void> {
-  if (!appPlatform.isNative) {
-    return () => {};
-  }
-
   await Notifications.registerTaskAsync(LEDGER_WIDGET_NOTIFICATION_TASK);
   const subscription = Notifications.addNotificationReceivedListener((notification) => {
     void applyLedgerWidgetNotificationData(

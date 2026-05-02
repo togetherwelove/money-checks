@@ -27,7 +27,6 @@ import { DateMemoUi } from "../constants/dateMemo";
 import { AppLayout } from "../constants/layout";
 import { AppMessages } from "../constants/messages";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
-import { appPlatform } from "../lib/appPlatform";
 import type { LedgerEntry } from "../types/ledger";
 import {
   addMonths,
@@ -211,13 +210,7 @@ function KeyboardAwareContent({
         {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
         <CalendarToolbar
           monthLabel={formatMonthYear(visibleMonth)}
-          onMoveNextMonth={
-            appPlatform.isWeb ? () => moveMonth(visibleMonth, 1, setVisibleMonth) : null
-          }
-          onMovePreviousMonth={
-            appPlatform.isWeb ? () => moveMonth(visibleMonth, -1, setVisibleMonth) : null
-          }
-          onPressMonthLabel={appPlatform.isWeb ? null : onOpenMonthPicker}
+          onPressMonthLabel={onOpenMonthPicker}
           onSelectToday={() => {
             onSelectCalendarDate(todayIsoDate);
           }}

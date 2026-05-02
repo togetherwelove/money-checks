@@ -2,7 +2,6 @@ import "react-native-url-polyfill/auto";
 
 import { createClient } from "@supabase/supabase-js";
 
-import { appPlatform } from "./appPlatform";
 import { authStorage } from "./supabaseStorage";
 
 export const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? "";

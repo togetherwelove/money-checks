@@ -13,7 +13,7 @@
 
 ## 요약
 
-- 총 패키지 수: 898
+- 총 패키지 수: 893
 - 라이선스 종류: 20
 
 | 라이선스 | 패키지 수 |
@@ -32,7 +32,7 @@
 | CC-BY-4.0 | 1 |
 | CC0-1.0 | 1 |
 | ISC | 49 |
-| MIT | 737 |
+| MIT | 732 |
 | MIT OR Apache-2.0 | 2 |
 | MPL-2.0 | 2 |
 | Python-2.0 | 1 |
@@ -466,7 +466,6 @@
 | expo-application | 7.0.8 | MIT |  | <https://docs.expo.dev/versions/latest/sdk/application/> |
 | expo-asset | 12.0.12 | MIT |  | <https://docs.expo.dev/versions/latest/sdk/asset/> |
 | expo-auth-session | 7.0.10 | MIT | 예 | <https://docs.expo.dev/versions/latest/sdk/auth-session> |
-| expo-camera | 17.0.10 | MIT | 예 | <https://docs.expo.dev/versions/latest/sdk/camera/> |
 | expo-clipboard | 8.0.8 | MIT | 예 | <https://docs.expo.dev/versions/latest/sdk/clipboard> |
 | expo-constants | 18.0.13 | MIT | 예 | <https://docs.expo.dev/versions/latest/sdk/constants/> |
 | expo-crypto | 15.0.8 | MIT | 예 | <https://docs.expo.dev/versions/latest/sdk/crypto/> |
@@ -492,10 +491,9 @@
 | expo-server | 1.0.5 | MIT |  | <https://github.com/expo/expo/tree/main/packages/expo-server#readme> |
 | expo-sharing | 14.0.8 | MIT | 예 | <https://docs.expo.dev/versions/latest/sdk/sharing/> |
 | expo-sqlite | 16.0.10 | MIT | 예 | <https://docs.expo.dev/versions/latest/sdk/sqlite/> |
-| expo-status-bar | 3.0.9 | MIT | 예 | <https://docs.expo.dev/versions/latest/sdk/status-bar/> |
 | expo-task-manager | 14.0.9 | MIT | 예 | <https://docs.expo.dev/versions/latest/sdk/task-manager/> |
 | expo-updates-interface | 2.0.0 | MIT |  | <https://docs.expo.dev> |
-| expo-web-browser | 15.0.10 | MIT | 예 | <https://docs.expo.dev/versions/latest/sdk/webbrowser/> |
+| expo-web-browser | 15.0.10 | MIT |  | <https://docs.expo.dev/versions/latest/sdk/webbrowser/> |
 | exponential-backoff | 3.1.3 | Apache-2.0 |  | <https://github.com/coveooss/exponential-backoff#readme> |
 | fast-deep-equal | 3.1.3 | MIT |  | <https://github.com/epoberezkin/fast-deep-equal#readme> |
 | fast-fifo | 1.3.2 | MIT |  | <https://github.com/mafintosh/fast-fifo> |
@@ -754,12 +752,10 @@
 | rc | 1.2.8 | (BSD-2-Clause OR MIT OR Apache-2.0) |  | <https://github.com/dominictarr/rc#readme> |
 | react | 19.1.0 | MIT | 예 | <https://react.dev/> |
 | react-devtools-core | 6.1.5 | MIT |  | <https://github.com/facebook/react#readme> |
-| react-dom | 18.3.1, 19.1.0 | MIT |  | <https://react.dev/> |
+| react-dom | 19.1.0 | MIT |  | <https://react.dev/> |
 | react-freeze | 1.0.4 | MIT |  | <https://github.com/software-mansion/react-freeze#readme> |
 | react-is | 16.13.1, 18.3.1, 19.2.5 | MIT |  | <https://react.dev/> |
 | react-native | 0.81.5 | MIT | 예 | <https://reactnative.dev/> |
-| react-native-collapsible | 1.6.2 | MIT | 예 | <https://github.com/oblador/react-native-collapsible> |
-| react-native-draggable-flatlist | 4.0.3 | MIT | 예 | <https://github.com/computerjazz/react-native-draggable-flatlist#readme> |
 | react-native-fit-image | 1.5.5 | Beerware |  | <https://github.com/huiseoul/react-native-fit-image#readme> |
 | react-native-gesture-handler | 2.28.0 | MIT | 예 | <https://github.com/software-mansion/react-native-gesture-handler#readme> |
 | react-native-google-mobile-ads | 16.3.2 | Apache-2.0 | 예 | <https://github.com/invertase/react-native-google-mobile-ads#readme> |
@@ -769,13 +765,12 @@
 | react-native-markdown-display | 7.0.2 | MIT | 예 | <https://github.com/iamacup/react-native-markdown-display/> |
 | react-native-pager-view | 6.9.1 | MIT | 예 | <https://github.com/callstack/react-native-pager-view#readme> |
 | react-native-purchases | 10.0.0 | MIT | 예 | <https://github.com/revenuecat/react-native-purchases#readme> |
-| react-native-purchases-ui | 10.0.0 | MIT | 예 | <https://github.com/revenuecat/react-native-purchases#readme> |
 | react-native-reanimated | 4.1.7 | MIT | 예 | <https://docs.swmansion.com/react-native-reanimated> |
 | react-native-root-siblings | 5.0.1 | MIT | 예 | <https://github.com/magicismight/react-native-root-siblings#readme> |
 | react-native-root-toast | 4.0.1 | MIT | 예 | <https://github.com/magicismight/react-native-root-toast#readme> |
 | react-native-safe-area-context | 5.6.2 | MIT | 예 | <https://github.com/AppAndFlow/react-native-safe-area-context#readme> |
 | react-native-screens | 4.24.0 | MIT |  | <https://github.com/software-mansion/react-native-screens#readme> |
-| react-native-svg | 15.12.1, 15.15.4 | MIT | 예 | <https://github.com/react-native-community/react-native-svg> |
+| react-native-svg | 15.12.1 | MIT | 예 | <https://github.com/react-native-community/react-native-svg> |
 | react-native-url-polyfill | 3.0.0 | MIT | 예 | <https://github.com/charpeni/react-native-url-polyfill> |
 | react-native-web | 0.21.2 | MIT |  | <https://github.com/necolas/react-native-web#readme> |
 | react-native-worklets | 0.5.1 | MIT | 예 | <https://docs.swmansion.com/react-native-worklets> |
@@ -806,7 +801,7 @@
 | safe-regex-test | 1.1.0 | MIT |  | <https://github.com/ljharb/safe-regex-test#readme> |
 | safer-buffer | 2.1.2 | MIT |  | <https://github.com/ChALkeR/safer-buffer#readme> |
 | sax | 1.6.0 | BlueOak-1.0.0 |  | <https://github.com/isaacs/sax-js#readme> |
-| scheduler | 0.23.2, 0.26.0 | MIT |  | <https://react.dev/> |
+| scheduler | 0.26.0 | MIT |  | <https://react.dev/> |
 | semver | 6.3.1, 7.5.2, 7.5.4, 7.7.2, 7.7.4 | ISC |  | <https://github.com/npm/node-semver#readme> |
 | send | 0.19.2 | MIT |  | <https://github.com/pillarjs/send#readme> |
 | serialize-error | 2.1.0 | MIT |  | <https://github.com/sindresorhus/serialize-error#readme> |

@@ -5,11 +5,14 @@ import { AppMessages } from "../../constants/messages";
 import { isMissingUserRecordError } from "../../lib/auth/missingUserRecordError";
 import { signOutFromApp } from "../../lib/auth/signOut";
 import {
+  createOwnedLedgerBook,
+  fetchAccessibleLedgerBooks,
   fetchActiveLedgerBook,
   fetchLedgerBookById,
   leaveActiveLedgerBook,
   removeMemberFromActiveLedgerBook,
   requestLedgerBookJoinByCode,
+  switchActiveLedgerBook,
   updateActiveLedgerBookName,
 } from "../../lib/ledgerBooks";
 import { logAppError } from "../../lib/logAppError";
@@ -19,7 +22,7 @@ import {
 } from "../../lib/sharedLedgerExitIntent";
 import { resolveSharedLedgerJoinErrorMessage } from "../../lib/sharedLedgerJoinError";
 import { supabase } from "../../lib/supabase";
-import type { LedgerBook } from "../../types/ledgerBook";
+import type { AccessibleLedgerBook, LedgerBook } from "../../types/ledgerBook";
 import type { JoinSharedLedgerBookAttempt } from "../../types/ledgerBookJoinRequest";
 import type { LedgerBookRow, ProfileRow } from "../../types/supabase";
 import { mapLedgerBookRow } from "../../utils/ledgerBookMapper";
@@ -35,12 +38,15 @@ function createRealtimeChannelName(prefix: string, identifier: string) {
 type ActiveLedgerBookState = {
   activeBook: LedgerBook | null;
   activeBookError: string | null;
+  accessibleBooks: AccessibleLedgerBook[];
+  createLedgerBook: (nextName: string) => Promise<boolean>;
   isLoadingBook: boolean;
   joinSharedLedgerBookByCode: (shareCode: string) => Promise<JoinSharedLedgerBookAttempt>;
   leaveSharedLedgerBook: () => Promise<boolean>;
   removeSharedLedgerMember: (targetUserId: string) => Promise<boolean>;
   renameActiveLedgerBook: (nextName: string) => Promise<boolean>;
   refreshSharedLedgerBook: () => Promise<void>;
+  switchLedgerBook: (bookId: string) => Promise<boolean>;
 };
 
 export function useActiveLedgerBook(
@@ -48,6 +54,7 @@ export function useActiveLedgerBook(
   trackBusyTask: BusyTaskTracker,
 ): ActiveLedgerBookState {
   const [activeBook, setActiveBook] = useState<LedgerBook | null>(null);
+  const [accessibleBooks, setAccessibleBooks] = useState<AccessibleLedgerBook[]>([]);
   const [activeBookError, setActiveBookError] = useState<string | null>(null);
   const [isLoadingBook, setIsLoadingBook] = useState(true);
 
@@ -58,6 +65,7 @@ export function useActiveLedgerBook(
     try {
       const nextBook = await fetchActiveLedgerBook(userId);
       setActiveBook(nextBook);
+      setAccessibleBooks(await fetchAccessibleLedgerBooks());
     } catch (error) {
       logAppError("ActiveLedgerBook", error, { step: "refresh_active_book", userId });
       if (isMissingUserRecordError(error)) {
@@ -79,8 +87,10 @@ export function useActiveLedgerBook(
 
       try {
         const nextBook = await fetchActiveLedgerBook(userId);
+        const nextBooks = await fetchAccessibleLedgerBooks();
         if (isMounted) {
           setActiveBook(nextBook);
+          setAccessibleBooks(nextBooks);
         }
       } catch (error) {
         logAppError("ActiveLedgerBook", error, { step: "load_active_book", userId });
@@ -122,8 +132,10 @@ export function useActiveLedgerBook(
 
       try {
         const nextBook = await fetchLedgerBookById(nextActiveBookId);
+        const nextBooks = await fetchAccessibleLedgerBooks();
         if (isMounted) {
           setActiveBook(nextBook);
+          setAccessibleBooks(nextBooks);
         }
       } catch (error) {
         logAppError("ActiveLedgerBook", error, {
@@ -177,6 +189,11 @@ export function useActiveLedgerBook(
         (payload) => {
           const changedBook = payload.new as LedgerBookRow;
           setActiveBook(mapLedgerBookRow(changedBook));
+          setAccessibleBooks((currentBooks) =>
+            currentBooks.map((book) =>
+              book.id === changedBook.id ? { ...book, ...mapLedgerBookRow(changedBook) } : book,
+            ),
+          );
         },
       )
       .subscribe();
@@ -206,6 +223,7 @@ export function useActiveLedgerBook(
       if (joinResult === "joined") {
         joinedBook = await fetchActiveLedgerBook(userId);
         setActiveBook(joinedBook);
+        setAccessibleBooks(await fetchAccessibleLedgerBooks());
       }
 
       return {
@@ -242,6 +260,7 @@ export function useActiveLedgerBook(
         return fetchActiveLedgerBook(userId);
       });
       setActiveBook(nextBook);
+      setAccessibleBooks(await fetchAccessibleLedgerBooks());
       return Boolean(nextBook);
     } catch (error) {
       logAppError("ActiveLedgerBook", error, {
@@ -280,6 +299,9 @@ export function useActiveLedgerBook(
     try {
       const nextBook = await trackBusyTask(() => updateActiveLedgerBookName(nextName));
       setActiveBook(nextBook);
+      setAccessibleBooks((currentBooks) =>
+        currentBooks.map((book) => (book.id === nextBook.id ? { ...book, ...nextBook } : book)),
+      );
       return true;
     } catch (error) {
       logAppError("ActiveLedgerBook", error, {
@@ -296,14 +318,63 @@ export function useActiveLedgerBook(
     await trackBusyTask(loadActiveBook);
   };
 
+  const createLedgerBook = async (nextName: string) => {
+    setActiveBookError(null);
+    const previousBook = activeBook;
+    setActiveBook(null);
+
+    try {
+      const nextBook = await trackBusyTask(() => createOwnedLedgerBook(nextName));
+      setActiveBook(nextBook);
+      setAccessibleBooks(await fetchAccessibleLedgerBooks());
+      return true;
+    } catch (error) {
+      setActiveBook(previousBook);
+      logAppError("ActiveLedgerBook", error, {
+        nextName,
+        step: "create_ledger_book",
+        userId,
+      });
+      return false;
+    }
+  };
+
+  const switchLedgerBook = async (bookId: string) => {
+    if (bookId === activeBook?.id) {
+      return true;
+    }
+
+    setActiveBookError(null);
+    const previousBook = activeBook;
+    setActiveBook(null);
+
+    try {
+      const nextBook = await trackBusyTask(() => switchActiveLedgerBook(bookId));
+      setActiveBook(nextBook);
+      setAccessibleBooks(await fetchAccessibleLedgerBooks());
+      return true;
+    } catch (error) {
+      setActiveBook(previousBook);
+      logAppError("ActiveLedgerBook", error, {
+        bookId,
+        step: "switch_ledger_book",
+        userId,
+      });
+      return false;
+    }
+  };
+
   return {
     activeBook,
     activeBookError,
+    accessibleBooks,
+    createLedgerBook,
     isLoadingBook,
     joinSharedLedgerBookByCode,
     leaveSharedLedgerBook,
     removeSharedLedgerMember,
     renameActiveLedgerBook,
     refreshSharedLedgerBook,
+    switchLedgerBook,
   };
 }

@@ -125,6 +125,50 @@ export const sharedLedgerPanelStyles = StyleSheet.create({
   actionRow: {
     paddingTop: 2,
   },
+  ledgerBookList: {
+    gap: 6,
+  },
+  ledgerBookItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+    borderRadius: 14,
+    backgroundColor: AppColors.background,
+  },
+  ledgerBookItemContent: {
+    flex: 1,
+    gap: 5,
+  },
+  ledgerBookItemName: {
+    color: AppColors.text,
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  badgeRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 4,
+  },
+  activeBadge: {
+    backgroundColor: AppColors.accentSoft,
+  },
+  activeBadgeText: {
+    color: AppColors.accent,
+  },
+  createBookRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  createBookInput: {
+    ...FormInputTextStyle,
+    flex: 1,
+  },
   leaveSection: {
     gap: 8,
     paddingTop: 4,

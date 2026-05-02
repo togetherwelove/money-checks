@@ -1,15 +1,13 @@
 import type { AppStorage } from "./appStorage.shared";
 
-function getAppStorage(): Storage | null {
-  return typeof globalThis.localStorage === "undefined" ? null : globalThis.localStorage;
-}
+const fallbackStorage = new Map<string, string>();
 
 export const appStorage: AppStorage = {
-  getItem: (key) => getAppStorage()?.getItem(key) ?? null,
+  getItem: (key) => fallbackStorage.get(key) ?? null,
   removeItem: (key) => {
-    getAppStorage()?.removeItem(key);
+    fallbackStorage.delete(key);
   },
   setItem: (key, value) => {
-    getAppStorage()?.setItem(key, value);
+    fallbackStorage.set(key, value);
   },
 };

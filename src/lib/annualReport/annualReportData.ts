@@ -1,14 +1,9 @@
 import type { LedgerEntry, LedgerEntryType } from "../../types/ledger";
-import {
-  formatCurrency,
-  formatMonthYear,
-  getMonthKey,
-  parseIsoDate,
-  startOfMonth,
-} from "../../utils/calendar";
+import { formatMonthYear, getMonthKey, parseIsoDate, startOfMonth } from "../../utils/calendar";
 
 export type AnnualReportMonthRow = {
   balance: number;
+  count: number;
   expense: number;
   income: number;
   monthKey: string;
@@ -18,8 +13,17 @@ export type AnnualReportMonthRow = {
 export type AnnualReportCategoryRow = {
   amount: number;
   category: string;
+  count: number;
   share: number;
   type: LedgerEntryType;
+};
+
+export type AnnualReportMemberRow = {
+  balance: number;
+  count: number;
+  expense: number;
+  income: number;
+  memberName: string;
 };
 
 export type AnnualReportData = {
@@ -28,6 +32,7 @@ export type AnnualReportData = {
   expenseCategories: AnnualReportCategoryRow[];
   generatedAtLabel: string;
   incomeCategories: AnnualReportCategoryRow[];
+  memberRows: AnnualReportMemberRow[];
   monthlyRows: AnnualReportMonthRow[];
   periodLabel: string;
   totalExpense: number;
@@ -51,16 +56,12 @@ export function buildAnnualReportData(
     expenseCategories: buildCategoryRows(entries, "expense"),
     generatedAtLabel: new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium" }).format(new Date()),
     incomeCategories: buildCategoryRows(entries, "income"),
+    memberRows: buildMemberRows(entries),
     monthlyRows,
     periodLabel,
     totalExpense,
     totalIncome,
   };
-}
-
-export function formatSignedReportAmount(amount: number, type: LedgerEntryType): string {
-  const prefix = type === "income" ? "+" : "-";
-  return `${prefix} ${formatCurrency(amount)}`;
 }
 
 function buildMonthRows(entries: LedgerEntry[], dateFrom: string, dateTo: string) {
@@ -77,6 +78,7 @@ function buildMonthRows(entries: LedgerEntry[], dateFrom: string, dateTo: string
 
     rows.push({
       balance: income - expense,
+      count: monthEntries.length,
       expense,
       income,
       monthKey,
@@ -96,12 +98,14 @@ function buildCategoryRows(
   const filteredEntries = entries.filter((entry) => entry.type === type);
   const totalAmount = filteredEntries.reduce((sum, entry) => sum + entry.amount, 0);
   const amountByCategory = new Map<string, number>();
+  const countByCategory = new Map<string, number>();
 
   for (const entry of filteredEntries) {
     amountByCategory.set(
       entry.category,
       (amountByCategory.get(entry.category) ?? 0) + entry.amount,
     );
+    countByCategory.set(entry.category, (countByCategory.get(entry.category) ?? 0) + 1);
   }
 
   return [...amountByCategory.entries()]
@@ -109,6 +113,7 @@ function buildCategoryRows(
     .map(([category, amount]) => ({
       amount,
       category,
+      count: countByCategory.get(category) ?? 0,
       share: totalAmount ? amount / totalAmount : 0,
       type,
     }));
@@ -118,4 +123,29 @@ function sumAmountByType(entries: LedgerEntry[], type: LedgerEntryType) {
   return entries
     .filter((entry) => entry.type === type)
     .reduce((sum, entry) => sum + entry.amount, 0);
+}
+
+function buildMemberRows(entries: LedgerEntry[]): AnnualReportMemberRow[] {
+  const amountByMember = new Map<string, { count: number; income: number; expense: number }>();
+
+  for (const entry of entries) {
+    const memberName = entry.targetMemberName || entry.authorName || "사용자";
+    const currentAmount = amountByMember.get(memberName) ?? { count: 0, income: 0, expense: 0 };
+    amountByMember.set(memberName, {
+      count: currentAmount.count + 1,
+      income: entry.type === "income" ? currentAmount.income + entry.amount : currentAmount.income,
+      expense:
+        entry.type === "expense" ? currentAmount.expense + entry.amount : currentAmount.expense,
+    });
+  }
+
+  return [...amountByMember.entries()]
+    .map(([memberName, amount]) => ({
+      balance: amount.income - amount.expense,
+      count: amount.count,
+      expense: amount.expense,
+      income: amount.income,
+      memberName,
+    }))
+    .sort((left, right) => right.income + right.expense - (left.income + left.expense));
 }

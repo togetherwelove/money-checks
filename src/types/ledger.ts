@@ -12,6 +12,7 @@ export type LedgerEntryPhotoAttachment = {
 export type LedgerEntry = {
   authorId?: string;
   authorName?: string;
+  createdAt?: string;
   id: string;
   date: string;
   type: LedgerEntryType;
@@ -26,6 +27,7 @@ export type LedgerEntry = {
   sourceType?: string;
   targetMemberId?: string;
   targetMemberName?: string;
+  updatedAt?: string;
 };
 
 export type LedgerEntryDraft = {

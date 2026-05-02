@@ -60,7 +60,12 @@ const config: ExpoConfig = {
     "expo-secure-store",
     "expo-apple-authentication",
     ["expo-image-picker", imagePickerPermissionConfig],
-    "expo-notifications",
+    [
+      "expo-notifications",
+      {
+        enableBackgroundRemoteNotifications: true,
+      },
+    ],
     [
       "react-native-google-mobile-ads",
       {

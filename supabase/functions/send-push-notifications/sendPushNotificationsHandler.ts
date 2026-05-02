@@ -3,6 +3,18 @@ const ANDROID_NOTIFICATION_CHANNEL_ID = "ledger-updates";
 const DEFAULT_NOTIFICATION_ENABLED = true;
 const DEFAULT_REQUESTER_DISPLAY_NAME = "사용자";
 const EXPO_PUSH_TOKEN_PATTERN = /^(ExponentPushToken|ExpoPushToken)\[[^\]]+\]$/;
+const NOTIFICATION_ACTION_ROUTES = {
+  allEntries: "all-entries",
+  calendar: "calendar",
+  charts: "charts",
+  share: "share",
+} as const;
+const NOTIFICATION_CATEGORY_IDS = {
+  entryChange: "ledger_entry_change",
+  expenseThreshold: "expense_threshold",
+  joinRequest: "ledger_join_request",
+  ledgerBookUpdate: "ledger_book_update",
+} as const;
 const JOIN_REQUEST_NOTIFICATION_TITLE = "새 참여 요청";
 const JOIN_REQUEST_NOTIFICATION_BODY = "{requesterName}님이 {bookName} 참여를 요청했어요.";
 
@@ -120,19 +132,24 @@ type JoinRequestOwnerNotification = {
 
 type ExpoPushMessage = {
   body: string;
+  categoryId?: string;
   channelId?: string;
-  data?: WidgetPushData;
+  data?: Record<string, unknown>;
   sound: "default";
   title: string;
   to: string;
 };
 
 type WidgetPushData = {
+  actionRoute?: NotificationActionRoute;
   bookId: string;
   kind: "ledger_widget_summary";
   monthKey: string;
   summary: string;
 };
+
+type NotificationActionRoute =
+  (typeof NOTIFICATION_ACTION_ROUTES)[keyof typeof NOTIFICATION_ACTION_ROUTES];
 
 export async function handleSendPushNotificationsRequest(
   request: Request,
@@ -210,6 +227,10 @@ async function buildPushMessages(
 
     return resolveExpoPushMessages(adminClient, joinRequestNotification.targetUserIds, {
       body: joinRequestNotification.body,
+      categoryId: NOTIFICATION_CATEGORY_IDS.joinRequest,
+      data: {
+        actionRoute: NOTIFICATION_ACTION_ROUTES.share,
+      },
       title: joinRequestNotification.title,
     });
   }
@@ -404,7 +425,14 @@ async function filterRecipientsByPreference(
 async function resolveExpoPushMessages(
   adminClient: SendPushNotificationsAdminClient,
   targetUserIds: string[],
-  content: { body: string; title: string; widgetData?: WidgetPushData },
+  content: {
+    body: string;
+    categoryId?: string;
+    data?: Record<string, unknown>;
+    eventType?: NotificationEventType;
+    title: string;
+    widgetData?: WidgetPushData;
+  },
 ): Promise<ExpoPushMessage[]> {
   const pushDeviceTokensQuery = adminClient.from("push_device_tokens") as {
     select: (columns: string) => {
@@ -423,12 +451,74 @@ async function resolveExpoPushMessages(
     .filter((row) => EXPO_PUSH_TOKEN_PATTERN.test(row.expo_push_token))
     .map((row) => ({
       body: content.body,
-      ...("widgetData" in content && content.widgetData ? { data: content.widgetData } : {}),
+      ...resolveExpoPushCategoryAndData(content),
       ...(row.platform === "android" ? { channelId: ANDROID_NOTIFICATION_CHANNEL_ID } : {}),
       sound: "default",
       title: content.title,
       to: row.expo_push_token,
     }));
+}
+
+function resolveExpoPushCategoryAndData(content: {
+  categoryId?: string;
+  data?: Record<string, unknown>;
+  eventType?: NotificationEventType;
+  widgetData?: WidgetPushData;
+}): { categoryId?: string; data?: Record<string, unknown> } {
+  const categoryId = content.categoryId ?? resolveCategoryIdForEvent(content.eventType);
+  const actionRoute = resolveActionRouteForEvent(content.eventType);
+  const data = {
+    ...content.data,
+    ...content.widgetData,
+    ...(actionRoute ? { actionRoute } : {}),
+  };
+
+  return {
+    ...(categoryId ? { categoryId } : {}),
+    ...(Object.keys(data).length > 0 ? { data } : {}),
+  };
+}
+
+function resolveCategoryIdForEvent(eventType?: NotificationEventType): string | null {
+  if (
+    eventType === "other_member_created_entry" ||
+    eventType === "other_member_updated_entry" ||
+    eventType === "other_member_deleted_entry"
+  ) {
+    return NOTIFICATION_CATEGORY_IDS.entryChange;
+  }
+
+  if (eventType === "expense_limit_exceeded") {
+    return NOTIFICATION_CATEGORY_IDS.expenseThreshold;
+  }
+
+  if (
+    eventType === "member_joined_book" ||
+    eventType === "member_left_book" ||
+    eventType === "member_removed_from_book"
+  ) {
+    return NOTIFICATION_CATEGORY_IDS.ledgerBookUpdate;
+  }
+
+  return null;
+}
+
+function resolveActionRouteForEvent(
+  eventType?: NotificationEventType,
+): NotificationActionRoute | null {
+  if (
+    eventType === "other_member_created_entry" ||
+    eventType === "other_member_updated_entry" ||
+    eventType === "other_member_deleted_entry"
+  ) {
+    return NOTIFICATION_ACTION_ROUTES.allEntries;
+  }
+
+  if (eventType === "expense_limit_exceeded") {
+    return NOTIFICATION_ACTION_ROUTES.charts;
+  }
+
+  return null;
 }
 
 async function assertBookAccess(

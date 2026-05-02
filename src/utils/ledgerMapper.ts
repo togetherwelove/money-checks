@@ -6,6 +6,7 @@ export function mapLedgerEntryRow(row: LedgerEntryRow, authorName?: string): Led
   return {
     authorId: row.user_id,
     authorName,
+    createdAt: row.created_at,
     id: row.id,
     date: row.occurred_on,
     type: row.entry_type,
@@ -19,5 +20,6 @@ export function mapLedgerEntryRow(row: LedgerEntryRow, authorName?: string): Led
     photoAttachments: [],
     sourceType: row.source_type,
     targetMemberId: resolveLedgerEntryTargetMemberId(row),
+    updatedAt: row.updated_at,
   };
 }

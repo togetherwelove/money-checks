@@ -1,7 +1,6 @@
 import { Alert } from "react-native";
 
 import { SharedLedgerJoinConfirmationCopy } from "../constants/sharedLedgerJoinConfirmation";
-import { appPlatform } from "./appPlatform";
 import { fetchLedgerEntryDateBounds } from "./ledgerEntries";
 import { logAppError } from "./logAppError";
 
@@ -16,10 +15,6 @@ export async function confirmSharedLedgerJoinWithExistingEntries(
     const dateBounds = await fetchLedgerEntryDateBounds(activeBookId);
     if (!dateBounds) {
       return true;
-    }
-
-    if (appPlatform.isWeb) {
-      return window.confirm(SharedLedgerJoinConfirmationCopy.message);
     }
 
     return new Promise<boolean>((resolve) => {

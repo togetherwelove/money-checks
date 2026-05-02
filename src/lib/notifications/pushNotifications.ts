@@ -5,6 +5,7 @@ import * as Notifications from "expo-notifications";
 import { AppColors } from "../../constants/colors";
 import { PushNotificationCopy } from "../../notifications/config/pushNotificationCopy";
 import { appPlatform } from "../appPlatform";
+import { NotificationActionCategoryDefinitions } from "./notificationActions";
 import { syncPushDeviceToken } from "./pushDeviceTokens";
 
 export type NotificationPermissionState = "default" | "denied" | "granted" | "unsupported";
@@ -19,7 +20,7 @@ Notifications.setNotificationHandler({
 });
 
 export function isPushNotificationSupported(): boolean {
-  return appPlatform.isNative && Device.isDevice;
+  return Device.isDevice;
 }
 
 export async function readPushNotificationPermission(): Promise<NotificationPermissionState> {
@@ -78,6 +79,14 @@ export async function syncPushRegistration(userId: string): Promise<void> {
   ).data;
 
   await syncPushDeviceToken(expoPushToken, appPlatform.isIOS ? "ios" : "android", userId);
+}
+
+export async function registerNotificationActionCategories(): Promise<void> {
+  await Promise.all(
+    NotificationActionCategoryDefinitions.map((category) =>
+      Notifications.setNotificationCategoryAsync(category.identifier, [...category.actions]),
+    ),
+  );
 }
 
 function mapExpoPermissionStatus(

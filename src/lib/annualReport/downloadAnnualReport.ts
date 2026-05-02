@@ -2,11 +2,10 @@ import { Alert } from "react-native";
 
 import { AnnualReportCopy, buildAnnualReportConfirmMessage } from "../../constants/annualReport";
 import { CommonActionCopy } from "../../constants/commonActions";
-import { appPlatform } from "../appPlatform";
 import { showNativeToast } from "../nativeToast";
 import { buildAnnualReportData } from "./annualReportData";
 import type { AnnualReportPeriod } from "./annualReportPeriods";
-import { buildAnnualReportFileName, buildAnnualReportWorkbook } from "./annualReportWorkbook";
+import { buildAnnualReportFileName, writeAnnualReportWorkbook } from "./annualReportWorkbook";
 
 type DownloadAnnualReportParams = {
   bookName: string;
@@ -25,21 +24,9 @@ export async function confirmAndDownloadAnnualReport(params: DownloadAnnualRepor
   await onBeforeDownload?.();
 
   const report = buildAnnualReportData(bookName, entries, period.dateFrom, period.dateTo);
-  const workbook = buildAnnualReportWorkbook(report);
-  const fileName = buildAnnualReportFileName(
-    bookName,
-    period.dateFrom,
-    period.dateTo,
-    period.fileNameSuffix,
-  );
+  const fileName = buildAnnualReportFileName(bookName, period.dateFrom, period.dateTo);
+  const workbookBytes = writeAnnualReportWorkbook(report);
 
-  if (appPlatform.isWeb) {
-    const XLSX = await import("xlsx");
-    XLSX.writeFile(workbook, fileName, { bookType: "xlsx" });
-    return true;
-  }
-
-  const XLSX = await import("xlsx");
   const fileSystem = (await import("expo-file-system")) as unknown as {
     File: new (
       ...segments: string[]
@@ -54,10 +41,9 @@ export async function confirmAndDownloadAnnualReport(params: DownloadAnnualRepor
   };
   const Sharing = await import("expo-sharing");
   const reportFile = new fileSystem.File(fileSystem.Paths.cache, fileName);
-  const workbookBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
 
   reportFile.create({ overwrite: true });
-  reportFile.write(new Uint8Array(workbookBuffer));
+  reportFile.write(workbookBytes);
 
   if (await Sharing.isAvailableAsync()) {
     await Sharing.shareAsync(reportFile.uri, {
@@ -73,9 +59,6 @@ export async function confirmAndDownloadAnnualReport(params: DownloadAnnualRepor
 
 async function confirmAnnualReportDownload(bookName: string, periodLabel: string) {
   const message = `${buildAnnualReportConfirmMessage(bookName)}\n\n${periodLabel}`;
-  if (appPlatform.isWeb) {
-    return window.confirm(message);
-  }
 
   return new Promise<boolean>((resolve) => {
     Alert.alert(AnnualReportCopy.confirmTitle, message, [

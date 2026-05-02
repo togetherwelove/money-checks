@@ -18,21 +18,24 @@ import {
   createMemberRemovedFromBookEvent,
 } from "../notifications/domain/notificationEventFactories";
 import type { NotificationEvent } from "../notifications/domain/notificationEvents";
-import type { LedgerBook } from "../types/ledgerBook";
+import type { AccessibleLedgerBook, LedgerBook } from "../types/ledgerBook";
 import type {
   JoinSharedLedgerBookAttempt,
   LedgerBookJoinRequest,
 } from "../types/ledgerBookJoinRequest";
 import type { LedgerBookMember } from "../types/ledgerBookMember";
+import { LedgerBookManagementCard } from "./sharedLedgerPanel/LedgerBookManagementCard";
 import { SharedLedgerBookCard } from "./sharedLedgerPanel/SharedLedgerBookCard";
 import { SharedLedgerJoinCard } from "./sharedLedgerPanel/SharedLedgerJoinCard";
 import { isJoinRequestBlockedByActiveSharedLedger } from "./sharedLedgerPanel/joinRequestBlock";
 import { sharedLedgerPanelStyles as styles } from "./sharedLedgerPanel/sharedLedgerPanelStyles";
 
 type SharedLedgerPanelProps = {
+  accessibleBooks: AccessibleLedgerBook[];
   activeBook: LedgerBook | null;
   currentUserId: string;
   members: LedgerBookMember[];
+  onCreateLedgerBook: (nextName: string) => Promise<boolean>;
   onOpenSubscription: () => void;
   onApproveJoinRequest: (requestId: string) => Promise<boolean>;
   onBeforeCopyShareCode: () => Promise<boolean>;
@@ -41,6 +44,7 @@ type SharedLedgerPanelProps = {
   onLeaveSharedLedgerBook: () => Promise<boolean>;
   onJoinSharedLedgerBook: (shareCode: string) => Promise<JoinSharedLedgerBookAttempt>;
   onRenameActiveLedgerBook: (nextName: string) => Promise<boolean>;
+  onSwitchLedgerBook: (bookId: string) => Promise<boolean>;
   onSendPendingJoinRequestNotification: () => Promise<void>;
   onSendPushNotificationToBookMembers: (
     bookId: string,
@@ -57,9 +61,11 @@ type SharedLedgerPanelProps = {
 };
 
 export function SharedLedgerPanel({
+  accessibleBooks,
   activeBook,
   currentUserId,
   members,
+  onCreateLedgerBook,
   onOpenSubscription,
   onApproveJoinRequest,
   onBeforeCopyShareCode,
@@ -68,6 +74,7 @@ export function SharedLedgerPanel({
   onLeaveSharedLedgerBook,
   onJoinSharedLedgerBook,
   onRenameActiveLedgerBook,
+  onSwitchLedgerBook,
   onSendPendingJoinRequestNotification,
   onSendPushNotificationToBookMembers,
   onSendPushNotificationToUsers,
@@ -208,6 +215,15 @@ export function SharedLedgerPanel({
 
   return (
     <View style={styles.panel}>
+      <LedgerBookManagementCard
+        accessibleBooks={accessibleBooks}
+        activeBook={activeBook}
+        currentUserId={currentUserId}
+        onCreateLedgerBook={onCreateLedgerBook}
+        onOpenSubscription={onOpenSubscription}
+        onSwitchLedgerBook={onSwitchLedgerBook}
+        subscriptionTier={subscriptionTier}
+      />
       <SharedLedgerBookCard
         activeBook={activeBook}
         bookName={displayedBookName}

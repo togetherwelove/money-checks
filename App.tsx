@@ -6,6 +6,7 @@ import {
   createNavigationContainerRef,
 } from "@react-navigation/native";
 import type { Session } from "@supabase/supabase-js";
+import * as Notifications from "expo-notifications";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { InteractionManager, StatusBar, StyleSheet, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -56,6 +57,7 @@ import {
 import { logAppError } from "./src/lib/logAppError";
 import { buildAppMenuSections } from "./src/lib/menuItems";
 import { showNativeToast } from "./src/lib/nativeToast";
+import { resolveNotificationActionRoute } from "./src/lib/notifications/notificationActions";
 import { fetchOwnProfileDisplayName, updateOwnProfileDisplayName } from "./src/lib/profiles";
 import { openSubscriptionManagement } from "./src/lib/subscription/openSubscriptionManagement";
 import { isSubscriptionPurchaseCancelled } from "./src/lib/subscription/subscriptionError";
@@ -173,10 +175,6 @@ function SignedInApp({ session }: { session: Session }) {
   });
 
   useEffect(() => {
-    if (!appPlatform.isNative) {
-      return;
-    }
-
     void ensureMobileAdsInitialized().then(() => {
       preloadInterstitialAd();
     });
@@ -432,10 +430,7 @@ function SignedInApp({ session }: { session: Session }) {
     }
   };
 
-  const handleBeforeCopyShareCode = () =>
-    appPlatform.isNative
-      ? showInterstitialAd(AdInterstitialPlacement.shareCodeCopy)
-      : Promise.resolve(true);
+  const handleBeforeCopyShareCode = () => showInterstitialAd(AdInterstitialPlacement.shareCodeCopy);
 
   const handleSaveEntry = async () => {
     const currentEntries = ledgerState.entries;
@@ -521,6 +516,50 @@ function SignedInApp({ session }: { session: Session }) {
       widget,
     );
   };
+
+  useEffect(() => {
+    void notifications.registerActionCategories().catch((error) => {
+      logAppError("App", error, {
+        step: "register_notification_action_categories",
+      });
+    });
+  }, [notifications.registerActionCategories]);
+
+  useEffect(() => {
+    const handleNotificationResponse = (response: Notifications.NotificationResponse) => {
+      const targetScreen = resolveNotificationActionRoute(
+        response.actionIdentifier,
+        response.notification.request.content.data,
+      );
+
+      if (targetScreen === "calendar") {
+        returnToCalendarRoot();
+        return;
+      }
+
+      navigateToStackScreen(targetScreen);
+    };
+
+    const subscription = Notifications.addNotificationResponseReceivedListener(
+      handleNotificationResponse,
+    );
+
+    void Notifications.getLastNotificationResponseAsync()
+      .then((response) => {
+        if (response) {
+          handleNotificationResponse(response);
+        }
+      })
+      .catch((error) => {
+        logAppError("App", error, {
+          step: "get_last_notification_response",
+        });
+      });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [navigateToStackScreen, returnToCalendarRoot]);
 
   useEffect(() => {
     if (authOnboarding.step !== "nickname") {

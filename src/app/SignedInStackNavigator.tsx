@@ -175,9 +175,11 @@ export function SignedInStackNavigator({
       <Stack.Screen name="share">
         {() => (
           <ShareLedgerScreen
+            accessibleBooks={ledgerState.accessibleBooks}
             activeBook={ledgerState.activeBook}
             onApproveJoinRequest={ledgerState.approveLedgerJoinRequest}
             onBeforeCopyShareCode={onBeforeCopyShareCode}
+            onCreateLedgerBook={ledgerState.createLedgerBook}
             onJoinSharedLedgerBook={ledgerState.joinSharedLedgerBookByCode}
             onLeaveSharedLedgerBook={ledgerState.leaveSharedLedgerBook}
             onOpenSubscription={onOpenSubscription}
@@ -187,6 +189,7 @@ export function SignedInStackNavigator({
             onSendPendingJoinRequestNotification={onSendPendingJoinRequestNotification}
             onSendPushNotificationToBookMembers={onSendPushNotificationToBookMembers}
             onSendPushNotificationToUsers={onSendPushNotificationToUsers}
+            onSwitchLedgerBook={ledgerState.switchLedgerBook}
             pendingJoinRequests={ledgerState.pendingJoinRequests}
             subscriptionTier={subscriptionTier}
             userId={userId}

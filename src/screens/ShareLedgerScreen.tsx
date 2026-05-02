@@ -13,6 +13,7 @@ import { fetchProfileDisplayName } from "../lib/profiles";
 import { supabase } from "../lib/supabase";
 import type { NotificationEvent } from "../notifications/domain/notificationEvents";
 import type { LedgerBook } from "../types/ledgerBook";
+import type { AccessibleLedgerBook } from "../types/ledgerBook";
 import type {
   JoinSharedLedgerBookAttempt,
   LedgerBookJoinRequest,
@@ -21,10 +22,12 @@ import type { LedgerBookMember } from "../types/ledgerBookMember";
 import type { LedgerBookMemberRow } from "../types/supabase";
 
 type ShareLedgerScreenProps = {
+  accessibleBooks: AccessibleLedgerBook[];
   activeBook: LedgerBook | null;
   onOpenSubscription: () => void;
   onApproveJoinRequest: (requestId: string) => Promise<boolean>;
   onBeforeCopyShareCode: () => Promise<boolean>;
+  onCreateLedgerBook: (nextName: string) => Promise<boolean>;
   onJoinSharedLedgerBook: (shareCode: string) => Promise<JoinSharedLedgerBookAttempt>;
   onLeaveSharedLedgerBook: () => Promise<boolean>;
   onRenameActiveLedgerBook: (nextName: string) => Promise<boolean>;
@@ -41,16 +44,19 @@ type ShareLedgerScreenProps = {
     targetUserIds: string[],
     bookId?: string,
   ) => Promise<void>;
+  onSwitchLedgerBook: (bookId: string) => Promise<boolean>;
   pendingJoinRequests: LedgerBookJoinRequest[];
   subscriptionTier: SubscriptionTier;
   userId: string;
 };
 
 export function ShareLedgerScreen({
+  accessibleBooks,
   activeBook,
   onOpenSubscription,
   onApproveJoinRequest,
   onBeforeCopyShareCode,
+  onCreateLedgerBook,
   onLeaveSharedLedgerBook,
   onJoinSharedLedgerBook,
   onRemoveSharedLedgerMember,
@@ -59,6 +65,7 @@ export function ShareLedgerScreen({
   onSendPendingJoinRequestNotification,
   onSendPushNotificationToBookMembers,
   onSendPushNotificationToUsers,
+  onSwitchLedgerBook,
   pendingJoinRequests,
   subscriptionTier,
   userId,
@@ -131,9 +138,11 @@ export function ShareLedgerScreen({
   return (
     <KeyboardAwareScrollView contentContainerStyle={styles.content} style={styles.screen}>
       <SharedLedgerPanel
+        accessibleBooks={accessibleBooks}
         activeBook={activeBook}
         currentUserId={userId}
         members={members}
+        onCreateLedgerBook={onCreateLedgerBook}
         onOpenSubscription={onOpenSubscription}
         onApproveJoinRequest={onApproveJoinRequest}
         onBeforeCopyShareCode={onBeforeCopyShareCode}
@@ -142,6 +151,7 @@ export function ShareLedgerScreen({
         onJoinSharedLedgerBook={onJoinSharedLedgerBook}
         onRejectJoinRequest={onRejectJoinRequest}
         onRenameActiveLedgerBook={onRenameActiveLedgerBook}
+        onSwitchLedgerBook={onSwitchLedgerBook}
         onSendPendingJoinRequestNotification={onSendPendingJoinRequestNotification}
         onSendPushNotificationToBookMembers={onSendPushNotificationToBookMembers}
         onSendPushNotificationToUsers={onSendPushNotificationToUsers}

@@ -7,7 +7,9 @@ export type SubscriptionTier = (typeof SubscriptionTiers)[keyof typeof Subscript
 
 export const SubscriptionConfig = {
   freeSharedMemberLimit: 2,
+  freeOwnedLedgerBookLimit: 1,
   monthlyPackageIdentifier: "monthly",
+  plusOwnedLedgerBookLimit: 3,
   plusEntitlementId: "plus",
 } as const;
 

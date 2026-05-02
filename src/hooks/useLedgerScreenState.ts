@@ -1,6 +1,6 @@
 import type { Session } from "@supabase/supabase-js";
 import type { Dispatch, SetStateAction } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { MonthPage } from "../components/monthCalendarPager/monthCalendarPagerUtils";
 import { buildInstallmentSettlementEntry, buildLedgerEntriesFromDraft } from "../lib/installments";
@@ -39,6 +39,7 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
   const [visibleMonth, setVisibleMonth] = useState(actualToday);
   const [selectedDate, setSelectedDate] = useState(() => toIsoDate(new Date()));
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
+  const previousActiveBookId = useRef<string | null>(null);
   const [draft, setDraft] = useState<LedgerEntryDraft>(() =>
     createDraft(toIsoDate(new Date()), session.user.id),
   );
@@ -47,12 +48,15 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
   const {
     activeBook,
     activeBookError,
+    accessibleBooks,
+    createLedgerBook,
     isLoadingBook,
     joinSharedLedgerBookByCode,
     leaveSharedLedgerBook,
     removeSharedLedgerMember,
     renameActiveLedgerBook,
     refreshSharedLedgerBook,
+    switchLedgerBook,
   } = useActiveLedgerBook(session.user.id, trackBusyTask);
   const { approveLedgerJoinRequest, pendingJoinRequests, rejectLedgerJoinRequest } =
     useLedgerJoinRequests(activeBook, session.user.id, trackBusyTask);
@@ -121,6 +125,17 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
     [dateNoteByDate, entryCache, visibleMonth],
   );
   const selectedDateNote = dateNoteByDate.get(selectedDate)?.note ?? "";
+
+  useEffect(() => {
+    const nextActiveBookId = activeBook?.id ?? null;
+    if (previousActiveBookId.current === nextActiveBookId) {
+      return;
+    }
+
+    previousActiveBookId.current = nextActiveBookId;
+    setEditingEntryId(null);
+    setDraft(createDraft(selectedDate, session.user.id));
+  }, [activeBook?.id, selectedDate, session.user.id]);
 
   const resetEditor = (isoDate: string) => {
     setSelectedDate(isoDate);
@@ -297,6 +312,7 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
 
   return {
     activeBook,
+    accessibleBooks,
     currentChartMonth,
     draft,
     editingEntryId,
@@ -307,6 +323,7 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
     isLoadingSelectedDateEntries,
     isRefreshing,
     joinSharedLedgerBookByCode,
+    createLedgerBook,
     leaveSharedLedgerBook,
     currentMonthPage,
     monthlyLedger,
@@ -326,6 +343,7 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
     selectedDateNote,
     selectedEntries,
     setVisibleMonth,
+    switchLedgerBook,
     visibleMonth,
     handleDeleteSelectedDateNote,
     handleDeleteEntry,

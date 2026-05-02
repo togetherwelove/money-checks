@@ -75,6 +75,10 @@ export async function promptCardSmsClipboardImport({
     );
     return true;
   } catch (error) {
+    if (isClipboardReadDeniedError(error)) {
+      return false;
+    }
+
     logAppError("CardSmsClipboardImport", error, {
       step: "read_clipboard",
     });
@@ -119,4 +123,16 @@ function buildCardSmsClipboardPromptMessage(draft: CardSmsClipboardDraft): strin
     `${formatAmountInput(draft.amount)}원`,
     `${draft.content}`,
   ].join(PROMPT_MESSAGE_SEPARATOR);
+}
+
+function isClipboardReadDeniedError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  const normalizedMessage = error.message.toLowerCase();
+  return (
+    normalizedMessage.includes("clipboard") &&
+    (normalizedMessage.includes("denied") || normalizedMessage.includes("not allowed"))
+  );
 }
