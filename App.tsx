@@ -26,6 +26,7 @@ import { SessionLoadingScreen } from "./src/components/SessionLoadingScreen";
 import { AnnualReportRangePickerModal } from "./src/components/annualReport/AnnualReportRangePickerModal";
 import { NativeYearPickerModal } from "./src/components/calendarPicker/NativeYearPickerModal";
 import { AdInterstitialPlacement } from "./src/constants/ads";
+import { AppleAuthConfig } from "./src/constants/appleAuth";
 import { AppColors } from "./src/constants/colors";
 import { EntryRegistrationCopy } from "./src/constants/entryRegistration";
 import { AppMessages } from "./src/constants/messages";
@@ -49,7 +50,10 @@ import { ensureMobileAdsInitialized } from "./src/lib/ads/mobileAds";
 import { showsBackNavigationAction } from "./src/lib/appHeaderTitle";
 import { appPlatform } from "./src/lib/appPlatform";
 import { getAppScreenLabel } from "./src/lib/appScreenLabels";
-import { resolveSessionAuthProviderLabel } from "./src/lib/authProvider";
+import {
+  resolveSessionAuthProvider,
+  resolveSessionAuthProviderLabel,
+} from "./src/lib/authProvider";
 import {
   type CardSmsClipboardDraft,
   promptCardSmsClipboardImport,
@@ -58,7 +62,11 @@ import { logAppError } from "./src/lib/logAppError";
 import { buildAppMenuSections } from "./src/lib/menuItems";
 import { showNativeToast } from "./src/lib/nativeToast";
 import { resolveNotificationActionRoute } from "./src/lib/notifications/notificationActions";
-import { fetchOwnProfileDisplayName, updateOwnProfileDisplayName } from "./src/lib/profiles";
+import {
+  fetchOwnProfileDisplayName,
+  syncOwnProfileDisplayNameIfMissing,
+  updateOwnProfileDisplayName,
+} from "./src/lib/profiles";
 import { openSubscriptionManagement } from "./src/lib/subscription/openSubscriptionManagement";
 import { isSubscriptionPurchaseCancelled } from "./src/lib/subscription/subscriptionError";
 import { registerLedgerWidgetNotificationSync } from "./src/lib/widgetNotificationSync";
@@ -122,10 +130,13 @@ function SignedInApp({ session }: { session: Session }) {
   const [isNicknameScreenReady, setIsNicknameScreenReady] = useState(false);
   const [isYearPickerOpen, setIsYearPickerOpen] = useState(false);
   const [blockingTaskCount, setBlockingTaskCount] = useState(0);
-  const fallbackDisplayName = resolveFallbackDisplayName(
+  const authProvider = resolveSessionAuthProvider(session);
+  const metadataDisplayName = resolveFallbackDisplayName(
     session.user.user_metadata,
     session.user.email,
   );
+  const fallbackDisplayName =
+    metadataDisplayName || (authProvider === "apple" ? AppleAuthConfig.defaultDisplayName : "");
   const accountProviderLabel = resolveSessionAuthProviderLabel(session);
   const notifications = useLedgerNotifications(session.user.id);
   const subscription = useSubscriptionPlan(session.user.id);
@@ -173,6 +184,22 @@ function SignedInApp({ session }: { session: Session }) {
     permissionState: notifications.permissionState,
     userId: session.user.id,
   });
+
+  useEffect(() => {
+    if (authProvider !== "apple" || metadataDisplayName) {
+      return;
+    }
+
+    void syncOwnProfileDisplayNameIfMissing(
+      session.user.id,
+      AppleAuthConfig.defaultDisplayName,
+    ).catch((error) => {
+      logAppError("App", error, {
+        step: "sync_apple_default_display_name",
+        userId: session.user.id,
+      });
+    });
+  }, [authProvider, metadataDisplayName, session.user.id]);
 
   useEffect(() => {
     void ensureMobileAdsInitialized().then(() => {

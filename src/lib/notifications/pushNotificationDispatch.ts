@@ -1,27 +1,22 @@
-import { buildNotificationContent } from "../../notifications/content/buildNotificationContent";
 import type { NotificationEvent } from "../../notifications/domain/notificationEvents";
 import type { LedgerWidgetSummary } from "../../types/widget";
 import { supabase, supabasePublishableKey, supabaseUrl } from "../supabase";
 import { buildLedgerWidgetPushPayload } from "../widgetPushPayload";
 
 type BookMembersPushRequest = {
-  body: string;
   bookId: string;
-  eventType: NotificationEvent["type"];
+  event: NotificationEvent;
   excludeUserIds?: string[];
   route: "book-members";
-  title: string;
   widget?: PushWidgetSummaryPayload;
   widgetData?: SerializedLedgerWidgetPushPayload;
 };
 
 type DirectTargetsPushRequest = {
-  body: string;
   bookId?: string;
-  eventType: NotificationEvent["type"];
+  event: NotificationEvent;
   route: "direct-targets";
   targetUserIds: string[];
-  title: string;
   widget?: PushWidgetSummaryPayload;
   widgetData?: SerializedLedgerWidgetPushPayload;
 };
@@ -50,14 +45,11 @@ export async function sendPushNotificationToBookMembers(
   excludeUserIds: string[],
   widget?: PushWidgetSummaryPayload,
 ): Promise<void> {
-  const notificationContent = buildNotificationContent(event);
   await sendPushNotification({
-    body: notificationContent.body,
     bookId,
-    eventType: event.type,
+    event,
     excludeUserIds,
     route: "book-members",
-    title: notificationContent.title,
     widget,
   });
 }
@@ -67,30 +59,19 @@ export async function sendPushNotificationToUsers(
   targetUserIds: string[],
   bookId?: string,
 ): Promise<void> {
-  const notificationContent = buildNotificationContent(event);
-  await sendPushNotificationContentToUsers(
-    notificationContent.title,
-    notificationContent.body,
-    targetUserIds,
-    event.type,
-    bookId,
-  );
+  await sendPushNotificationContentToUsers(targetUserIds, event, bookId);
 }
 
 export async function sendPushNotificationContentToUsers(
-  title: string,
-  body: string,
   targetUserIds: string[],
-  eventType: NotificationEvent["type"],
+  event: NotificationEvent,
   bookId?: string,
 ): Promise<void> {
   await sendPushNotification({
-    body,
     bookId,
-    eventType,
+    event,
     route: "direct-targets",
     targetUserIds,
-    title,
   });
 }
 

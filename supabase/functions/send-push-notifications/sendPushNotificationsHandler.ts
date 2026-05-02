@@ -1,7 +1,7 @@
 const EXPO_PUSH_API_URL = "https://exp.host/--/api/v2/push/send";
 const ANDROID_NOTIFICATION_CHANNEL_ID = "ledger-updates";
 const DEFAULT_NOTIFICATION_ENABLED = true;
-const DEFAULT_REQUESTER_DISPLAY_NAME = "사용자";
+const DEFAULT_REQUESTER_DISPLAY_NAME = "User";
 const EXPO_PUSH_TOKEN_PATTERN = /^(ExponentPushToken|ExpoPushToken)\[[^\]]+\]$/;
 const NOTIFICATION_ACTION_ROUTES = {
   allEntries: "all-entries",
@@ -15,13 +15,22 @@ const NOTIFICATION_CATEGORY_IDS = {
   joinRequest: "ledger_join_request",
   ledgerBookUpdate: "ledger_book_update",
 } as const;
-const JOIN_REQUEST_NOTIFICATION_TITLE = "새 참여 요청";
-const JOIN_REQUEST_NOTIFICATION_BODY = "{requesterName}님이 {bookName} 참여를 요청했어요.";
+const JOIN_REQUEST_NOTIFICATION_TITLE = "Join request";
+const JOIN_REQUEST_NOTIFICATION_BODY = "{requesterName} requested access to {bookName}.";
 
 const REQUIRED_NOTIFICATION_EVENTS = new Set([
   "member_joined_book",
   "member_left_book",
   "member_removed_from_book",
+]);
+const NOTIFICATION_EVENT_TYPES = new Set([
+  "expense_limit_exceeded",
+  "member_joined_book",
+  "member_left_book",
+  "member_removed_from_book",
+  "other_member_created_entry",
+  "other_member_deleted_entry",
+  "other_member_updated_entry",
 ]);
 
 const corsHeaders = {
@@ -34,6 +43,8 @@ type AuthenticatedUser = {
 };
 
 type BookMemberRole = "editor" | "owner" | "viewer";
+type LedgerEntryType = "expense" | "income";
+type NotificationThresholdPeriod = "day" | "week" | "month";
 type NotificationEventType =
   | "expense_limit_exceeded"
   | "member_joined_book"
@@ -42,24 +53,34 @@ type NotificationEventType =
   | "other_member_created_entry"
   | "other_member_deleted_entry"
   | "other_member_updated_entry";
+type NotificationEvent = {
+  type: NotificationEventType;
+  actorName?: string;
+  amount?: number;
+  bookName?: string;
+  category?: string;
+  date?: string;
+  entryType?: LedgerEntryType;
+  note?: string;
+  period?: NotificationThresholdPeriod;
+  targetName?: string;
+  thresholdAmount?: number;
+  totalAmount?: number;
+};
 
 type BookMembersPushRequest = {
-  body: string;
   bookId: string;
-  eventType: NotificationEventType;
+  event: NotificationEvent;
   excludeUserIds?: string[];
   route: "book-members";
-  title: string;
   widgetData?: WidgetPushData;
 };
 
 type DirectTargetsPushRequest = {
-  body: string;
   bookId?: string;
-  eventType: NotificationEventType;
+  event: NotificationEvent;
   route: "direct-targets";
   targetUserIds: string[];
-  title: string;
   widgetData?: WidgetPushData;
 };
 
@@ -140,6 +161,13 @@ type ExpoPushMessage = {
   to: string;
 };
 
+type ExpoPushContent = {
+  body: string;
+  categoryId?: string;
+  data?: Record<string, unknown>;
+  title: string;
+};
+
 type WidgetPushData = {
   actionRoute?: NotificationActionRoute;
   bookId: string;
@@ -180,6 +208,10 @@ export async function handleSendPushNotificationsRequest(
     }
 
     const payload = (await request.json()) as PushNotificationRequest;
+    if (!isValidPushNotificationRequest(payload)) {
+      return createJsonResponse(400, { error: "Invalid push notification request." });
+    }
+
     const pushMessages = await buildPushMessages(adminClient, payload, senderUserId);
     if (pushMessages.length === 0) {
       return createJsonResponse(200, { sentCount: 0, success: true });
@@ -243,13 +275,17 @@ async function buildPushMessages(
   const filteredUserIds = await filterRecipientsByPreference(
     adminClient,
     targetUserIds,
-    payload.eventType,
+    payload.event.type,
   );
   if (filteredUserIds.length === 0) {
     return [];
   }
 
-  return resolveExpoPushMessages(adminClient, filteredUserIds, payload);
+  return resolveExpoPushMessages(
+    adminClient,
+    filteredUserIds,
+    buildExpoPushContent(payload.event, payload.widgetData),
+  );
 }
 
 async function resolveAuthenticatedUserId(
@@ -291,8 +327,24 @@ async function resolveTargetUserIds(
   }
 
   const senderRole = await assertBookAccess(adminClient, payload.bookId, senderUserId);
-  if (payload.eventType === "member_removed_from_book" && senderRole !== "owner") {
-    throw new Error("Only the owner can send member removal notifications.");
+  const members = await fetchLedgerBookMembers(adminClient, payload.bookId);
+  const memberUserIds = new Set(members.map((member) => member.user_id));
+
+  if (payload.event.type === "member_removed_from_book") {
+    if (senderRole !== "owner") {
+      throw new Error("Only the owner can send member removal notifications.");
+    }
+
+    if (payload.targetUserIds.length > 1) {
+      throw new Error("Member removal notifications can target one user at a time.");
+    }
+  }
+
+  const unauthorizedTargetUserIds = payload.targetUserIds.filter(
+    (targetUserId) => !memberUserIds.has(targetUserId),
+  );
+  if (unauthorizedTargetUserIds.length > 0) {
+    throw new Error("Direct target notifications can only target book members.");
   }
 
   return payload.targetUserIds;
@@ -425,14 +477,7 @@ async function filterRecipientsByPreference(
 async function resolveExpoPushMessages(
   adminClient: SendPushNotificationsAdminClient,
   targetUserIds: string[],
-  content: {
-    body: string;
-    categoryId?: string;
-    data?: Record<string, unknown>;
-    eventType?: NotificationEventType;
-    title: string;
-    widgetData?: WidgetPushData;
-  },
+  content: ExpoPushContent,
 ): Promise<ExpoPushMessage[]> {
   const pushDeviceTokensQuery = adminClient.from("push_device_tokens") as {
     select: (columns: string) => {
@@ -451,7 +496,8 @@ async function resolveExpoPushMessages(
     .filter((row) => EXPO_PUSH_TOKEN_PATTERN.test(row.expo_push_token))
     .map((row) => ({
       body: content.body,
-      ...resolveExpoPushCategoryAndData(content),
+      ...(content.categoryId ? { categoryId: content.categoryId } : {}),
+      ...(content.data && Object.keys(content.data).length > 0 ? { data: content.data } : {}),
       ...(row.platform === "android" ? { channelId: ANDROID_NOTIFICATION_CHANNEL_ID } : {}),
       sound: "default",
       title: content.title,
@@ -459,23 +505,79 @@ async function resolveExpoPushMessages(
     }));
 }
 
-function resolveExpoPushCategoryAndData(content: {
-  categoryId?: string;
-  data?: Record<string, unknown>;
-  eventType?: NotificationEventType;
-  widgetData?: WidgetPushData;
-}): { categoryId?: string; data?: Record<string, unknown> } {
-  const categoryId = content.categoryId ?? resolveCategoryIdForEvent(content.eventType);
-  const actionRoute = resolveActionRouteForEvent(content.eventType);
+function buildExpoPushContent(
+  event: NotificationEvent,
+  widgetData?: WidgetPushData,
+): ExpoPushContent {
+  const notificationContent = buildNotificationContent(event);
+  const categoryId = resolveCategoryIdForEvent(event.type);
+  const actionRoute = resolveActionRouteForEvent(event.type);
   const data = {
-    ...content.data,
-    ...content.widgetData,
+    ...widgetData,
     ...(actionRoute ? { actionRoute } : {}),
   };
 
   return {
+    ...notificationContent,
     ...(categoryId ? { categoryId } : {}),
     ...(Object.keys(data).length > 0 ? { data } : {}),
+  };
+}
+
+function buildNotificationContent(event: NotificationEvent): { body: string; title: string } {
+  const actorName = readText(event.actorName, "Member");
+  const bookName = readText(event.bookName, "shared ledger");
+  const category = readText(event.category, "uncategorized");
+  const amountLabel = typeof event.amount === "number" ? formatCurrency(event.amount) : "0";
+  const totalAmountLabel =
+    typeof event.totalAmount === "number" ? formatCurrency(event.totalAmount) : "0";
+  const periodLabel = event.period ?? "period";
+
+  if (event.type === "expense_limit_exceeded") {
+    return {
+      body: `${periodLabel} expense total reached ${totalAmountLabel}.`,
+      title: "Expense limit exceeded",
+    };
+  }
+
+  if (event.type === "member_joined_book") {
+    return {
+      body: `${actorName} joined ${bookName}.`,
+      title: "Shared ledger member joined",
+    };
+  }
+
+  if (event.type === "member_left_book") {
+    return {
+      body: `${actorName} left ${bookName}.`,
+      title: "Shared ledger member left",
+    };
+  }
+
+  if (event.type === "member_removed_from_book") {
+    return {
+      body: `${actorName} removed you from ${bookName}.`,
+      title: "Removed from shared ledger",
+    };
+  }
+
+  if (event.type === "other_member_deleted_entry") {
+    return {
+      body: `${actorName} deleted ${category} ${amountLabel}.`,
+      title: "Entry deleted",
+    };
+  }
+
+  if (event.type === "other_member_updated_entry") {
+    return {
+      body: `${actorName} updated ${category} ${amountLabel}.`,
+      title: "Entry updated",
+    };
+  }
+
+  return {
+    body: `${actorName} added ${category} ${amountLabel}.`,
+    title: "Entry added",
   };
 }
 
@@ -572,6 +674,39 @@ async function fetchLedgerBookMembers(
   return data as LedgerBookMemberRow[];
 }
 
+function isValidPushNotificationRequest(value: PushNotificationRequest): boolean {
+  if (!value || typeof value !== "object" || !("route" in value)) {
+    return false;
+  }
+
+  if (value.route === "latest-join-request-owner") {
+    return true;
+  }
+
+  if (value.route !== "book-members" && value.route !== "direct-targets") {
+    return false;
+  }
+
+  if (!isNotificationEvent((value as { event?: unknown }).event)) {
+    return false;
+  }
+
+  if (value.route === "book-members") {
+    return typeof (value as BookMembersPushRequest).bookId === "string";
+  }
+
+  return Array.isArray((value as DirectTargetsPushRequest).targetUserIds);
+}
+
+function isNotificationEvent(value: unknown): value is NotificationEvent {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const candidate = value as Partial<NotificationEvent>;
+  return typeof candidate.type === "string" && NOTIFICATION_EVENT_TYPES.has(candidate.type);
+}
+
 function extractBearerToken(authHeader: string | null): string | null {
   if (!authHeader?.startsWith("Bearer ")) {
     return null;
@@ -580,11 +715,20 @@ function extractBearerToken(authHeader: string | null): string | null {
   return authHeader.slice("Bearer ".length).trim();
 }
 
+function readText(value: string | undefined, fallback: string): string {
+  return value?.trim() || fallback;
+}
+
+function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat("ko-KR").format(amount);
+}
+
 function createJsonResponse(status: number, body: Record<string, unknown>): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
       ...corsHeaders,
+      "Cache-Control": "no-store",
       "Content-Type": "application/json",
     },
   });

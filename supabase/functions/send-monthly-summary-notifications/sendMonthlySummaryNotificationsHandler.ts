@@ -5,10 +5,8 @@ const MONTHLY_SUMMARY_SEND_HOUR = 9;
 const EXPO_PUSH_TOKEN_PATTERN = /^(ExponentPushToken|ExpoPushToken)\[[^\]]+\]$/;
 const MONTHLY_SUMMARY_CATEGORY_ID = "monthly_summary";
 const MONTHLY_SUMMARY_ACTION_ROUTE = "charts";
-
-type SummaryDeliveryRequest = {
-  triggeredAt?: string;
-};
+const MONTHLY_SUMMARY_FUNCTION_NAME = "send-monthly-summary-notifications";
+const MONTHLY_SUMMARY_MINIMUM_INVOCATION_INTERVAL = "55 minutes";
 
 type SummaryUserPreferenceRow = {
   enabled_by_event: Record<string, boolean> | null;
@@ -45,6 +43,13 @@ type ExpoPushMessage = {
 
 type SendMonthlySummaryNotificationsAdminClient = {
   from: (tableName: string) => unknown;
+  rpc: (
+    functionName: "try_acquire_function_invocation_lock",
+    args: {
+      minimum_interval: string;
+      target_function_name: string;
+    },
+  ) => Promise<{ data: boolean | null; error: Error | null }>;
 };
 
 type SendMonthlySummaryNotificationsHandlerOptions = {
@@ -115,9 +120,15 @@ export async function handleSendMonthlySummaryNotificationsRequest(
       return createJsonResponse(401, { error: "Unauthorized" });
     }
 
-    const payload = (await request.json().catch(() => ({}))) as SummaryDeliveryRequest;
-    const triggeredAt = resolveTriggeredAt(payload.triggeredAt);
+    const triggeredAt = new Date();
     const adminClient = options.createAdminClient();
+    const acquiredRunSlot = await acquireMonthlySummaryRunSlot(adminClient);
+    if (!acquiredRunSlot) {
+      return createJsonResponse(429, {
+        error: "Monthly summary cron was invoked too recently.",
+        success: false,
+      });
+    }
 
     const preferences = await fetchSummaryUserPreferences(adminClient);
     let scannedUserCount = 0;
@@ -205,6 +216,21 @@ export async function handleSendMonthlySummaryNotificationsRequest(
     console.error("[send-monthly-summary-notifications] unexpected error", error);
     return createJsonResponse(500, { error: "Failed to send monthly summary notifications." });
   }
+}
+
+async function acquireMonthlySummaryRunSlot(
+  adminClient: SendMonthlySummaryNotificationsAdminClient,
+): Promise<boolean> {
+  const { data, error } = await adminClient.rpc("try_acquire_function_invocation_lock", {
+    minimum_interval: MONTHLY_SUMMARY_MINIMUM_INVOCATION_INTERVAL,
+    target_function_name: MONTHLY_SUMMARY_FUNCTION_NAME,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return data === true;
 }
 
 async function fetchSummaryUserPreferences(
@@ -349,11 +375,6 @@ async function markMonthlySummarySent(
   if (error) {
     throw error;
   }
-}
-
-function resolveTriggeredAt(triggeredAtText?: string): Date {
-  const triggeredAt = triggeredAtText ? new Date(triggeredAtText) : new Date();
-  return Number.isNaN(triggeredAt.getTime()) ? new Date() : triggeredAt;
 }
 
 function resolveScheduleState(

@@ -1,5 +1,4 @@
-import type { SubscriptionTier } from "../constants/subscription";
-import type { ProfileDisplayRow, ProfileSubscriptionRow } from "../types/supabase";
+import type { ProfileDisplayRow } from "../types/supabase";
 import { isValidDisplayName, normalizeDisplayNameCandidate } from "../utils/displayName";
 import {
   getCachedProfileDisplayName,
@@ -43,18 +42,15 @@ export async function updateOwnProfileDisplayName(
     throw new Error(INVALID_DISPLAY_NAME_ERROR);
   }
 
-  const { data, error } = await supabase
-    .from(PROFILE_TABLE)
-    .update({ display_name: displayName.trim() })
-    .eq("id", userId)
-    .select("id, display_name")
-    .single<ProfileDisplayRow>();
+  const { data, error } = await supabase.rpc("update_own_profile_display_name", {
+    next_display_name: displayName,
+  });
 
-  if (error || !data) {
+  if (error || typeof data !== "string") {
     throw error ?? new Error("Failed to update profile display name.");
   }
 
-  const nextDisplayName = data.display_name ?? "";
+  const nextDisplayName = data;
   setCachedProfileDisplayName(userId, nextDisplayName);
   return nextDisplayName;
 }
@@ -72,22 +68,4 @@ export async function syncOwnProfileDisplayNameIfMissing(
   }
 
   return updateOwnProfileDisplayName(userId, normalizedFallbackDisplayName);
-}
-
-export async function updateOwnSubscriptionTier(
-  userId: string,
-  subscriptionTier: SubscriptionTier,
-): Promise<SubscriptionTier> {
-  const { data, error } = await supabase
-    .from(PROFILE_TABLE)
-    .update({ subscription_tier: subscriptionTier })
-    .eq("id", userId)
-    .select("id, subscription_tier")
-    .single<ProfileSubscriptionRow>();
-
-  if (error || !data) {
-    throw error ?? new Error("Failed to update subscription tier.");
-  }
-
-  return data.subscription_tier ?? subscriptionTier;
 }

@@ -1,7 +1,7 @@
 import * as AppleAuthentication from "expo-apple-authentication";
 import * as Crypto from "expo-crypto";
 
-import { AppleAuthCopy } from "../../constants/appleAuth";
+import { AppleAuthConfig, AppleAuthCopy } from "../../constants/appleAuth";
 import { appPlatform } from "../appPlatform";
 import { syncOwnProfileDisplayNameIfMissing } from "../profiles";
 import { supabase } from "../supabase";
@@ -47,6 +47,13 @@ async function persistAppleDisplayName(
 ) {
   const appleDisplayName = resolveAppleDisplayName(credential);
   if (!appleDisplayName) {
+    if (userId) {
+      try {
+        await syncOwnProfileDisplayNameIfMissing(userId, AppleAuthConfig.defaultDisplayName);
+      } catch (profileError) {
+        console.error("[appleSignIn] Failed to sync Apple default display name", profileError);
+      }
+    }
     return;
   }
 

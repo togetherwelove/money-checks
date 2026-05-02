@@ -6,6 +6,7 @@ function createEntry(
   type: "expense" | "income",
   amount: number,
   category: string,
+  targetMemberName?: string,
 ): LedgerEntry {
   return {
     amount,
@@ -15,6 +16,7 @@ function createEntry(
     id: `${date}-${type}-${amount}-${category}`,
     note: "",
     photoAttachments: [],
+    targetMemberName,
     type,
   };
 }
@@ -29,6 +31,9 @@ describe("buildMonthlyInsights", () => {
       createEntry("2026-03-06", "expense", 90000, "식비"),
       createEntry("2026-03-16", "expense", 10000, "카페"),
     ];
+
+    entries[1].targetMemberName = "A";
+    entries[2].targetMemberName = "B";
 
     const insights = buildMonthlyInsights("2026-04", entries);
 
@@ -48,6 +53,30 @@ describe("buildMonthlyInsights", () => {
       { amount: 40000, category: "식비", share: 40000 / 60000 },
       { amount: 20000, category: "교통", share: 20000 / 60000 },
     ]);
+    expect(insights.memberExpenses).toEqual([
+      { amount: 40000, memberName: "A", share: 40000 / 60000 },
+      { amount: 20000, memberName: "B", share: 20000 / 60000 },
+    ]);
+    expect(insights.trendMonths.map((month) => month.key)).toEqual([
+      "2025-11",
+      "2025-12",
+      "2026-01",
+      "2026-02",
+      "2026-03",
+      "2026-04",
+    ]);
+    expect(insights.trendMonths.at(-2)).toMatchObject({
+      expenseAmount: 100000,
+      incomeAmount: 250000,
+      isCurrentMonth: false,
+      key: "2026-03",
+    });
+    expect(insights.trendMonths.at(-1)).toMatchObject({
+      expenseAmount: 60000,
+      incomeAmount: 300000,
+      isCurrentMonth: true,
+      key: "2026-04",
+    });
   });
 
   it("returns empty category data and same direction when there is no delta", () => {
@@ -62,5 +91,6 @@ describe("buildMonthlyInsights", () => {
       previousAmount: 0,
     });
     expect(insights.categoryExpenses).toEqual([]);
+    expect(insights.memberExpenses).toEqual([]);
   });
 });

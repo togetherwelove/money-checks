@@ -1,23 +1,38 @@
-import { EMPTY_CATEGORY_LABEL, formatMonthLabel } from "../constants/ledgerDisplay";
+import {
+  DEFAULT_MEMBER_DISPLAY_NAME,
+  EMPTY_CATEGORY_LABEL,
+  formatMonthLabel,
+} from "../constants/ledgerDisplay";
 import type {
   LedgerEntry,
   MonthlyCategoryExpense,
   MonthlyChangeDirection,
   MonthlyComparisonMetric,
   MonthlyInsights,
+  MonthlyMemberExpense,
+  MonthlyTrendPoint,
 } from "../types/ledger";
 import { addMonths } from "./calendar";
+
+export const MONTHLY_TREND_MONTH_COUNT = 6;
+
+type MonthlyTrendInput = {
+  entries: LedgerEntry[];
+  month: Date;
+};
 
 export function buildMonthlyInsights(monthKey: string, entries: LedgerEntry[]): MonthlyInsights {
   const currentMonthDate = parseMonthKey(monthKey);
   const previousMonthDate = addMonths(currentMonthDate, -1);
   const currentMonthEntries = filterEntriesByMonth(entries, monthKey);
   const previousMonthEntries = filterEntriesByMonth(entries, toMonthKey(previousMonthDate));
+  const trendMonths = buildTrendInputsFromEntryList(currentMonthDate, entries);
 
   return buildMonthlyInsightsFromMonths(
     currentMonthDate,
     currentMonthEntries,
     previousMonthEntries,
+    trendMonths,
   );
 }
 
@@ -25,6 +40,11 @@ export function buildMonthlyInsightsFromMonths(
   currentMonthDate: Date,
   currentMonthEntries: LedgerEntry[],
   previousMonthEntries: LedgerEntry[],
+  trendMonths = buildDefaultTrendInputs(
+    currentMonthDate,
+    currentMonthEntries,
+    previousMonthEntries,
+  ),
 ): MonthlyInsights {
   const previousMonthDate = addMonths(currentMonthDate, -1);
 
@@ -34,6 +54,8 @@ export function buildMonthlyInsightsFromMonths(
     expenseComparison: buildComparisonMetric(currentMonthEntries, previousMonthEntries, "expense"),
     incomeComparison: buildComparisonMetric(currentMonthEntries, previousMonthEntries, "income"),
     previousMonthLabel: formatMonthLabel(previousMonthDate),
+    memberExpenses: buildMemberExpenses(currentMonthEntries),
+    trendMonths: buildTrendMonths(currentMonthDate, trendMonths),
   };
 }
 
@@ -76,10 +98,81 @@ function buildCategoryExpenses(entries: LedgerEntry[]): MonthlyCategoryExpense[]
     }));
 }
 
+function buildMemberExpenses(entries: LedgerEntry[]): MonthlyMemberExpense[] {
+  const expenseEntries = entries.filter((entry) => entry.type === "expense");
+  const totalExpense = expenseEntries.reduce((sum, entry) => sum + entry.amount, 0);
+  if (!totalExpense) {
+    return [];
+  }
+
+  const amountByMember = new Map<string, number>();
+  for (const entry of expenseEntries) {
+    const memberName =
+      entry.targetMemberName?.trim() || entry.authorName?.trim() || DEFAULT_MEMBER_DISPLAY_NAME;
+    amountByMember.set(memberName, (amountByMember.get(memberName) ?? 0) + entry.amount);
+  }
+
+  return [...amountByMember.entries()]
+    .sort((left, right) => right[1] - left[1])
+    .map(([memberName, amount]) => ({
+      amount,
+      memberName,
+      share: amount / totalExpense,
+    }));
+}
+
+function buildTrendMonths(
+  currentMonthDate: Date,
+  trendInputs: MonthlyTrendInput[],
+): MonthlyTrendPoint[] {
+  return trendInputs.map(({ entries, month }) => ({
+    expenseAmount: sumEntriesByType(entries, "expense"),
+    incomeAmount: sumEntriesByType(entries, "income"),
+    isCurrentMonth: toMonthKey(month) === toMonthKey(currentMonthDate),
+    key: toMonthKey(month),
+    monthLabel: formatMonthLabel(month),
+  }));
+}
+
 function sumEntriesByType(entries: LedgerEntry[], type: "expense" | "income"): number {
   return entries
     .filter((entry) => entry.type === type)
     .reduce((sum, entry) => sum + entry.amount, 0);
+}
+
+function buildTrendInputsFromEntryList(
+  currentMonthDate: Date,
+  entries: LedgerEntry[],
+): MonthlyTrendInput[] {
+  return getTrendMonths(currentMonthDate).map((month) => ({
+    entries: filterEntriesByMonth(entries, toMonthKey(month)),
+    month,
+  }));
+}
+
+function buildDefaultTrendInputs(
+  currentMonthDate: Date,
+  currentMonthEntries: LedgerEntry[],
+  previousMonthEntries: LedgerEntry[],
+): MonthlyTrendInput[] {
+  return getTrendMonths(currentMonthDate).map((month) => {
+    const monthKey = toMonthKey(month);
+    if (monthKey === toMonthKey(currentMonthDate)) {
+      return { entries: currentMonthEntries, month };
+    }
+
+    if (monthKey === toMonthKey(addMonths(currentMonthDate, -1))) {
+      return { entries: previousMonthEntries, month };
+    }
+
+    return { entries: [], month };
+  });
+}
+
+export function getTrendMonths(currentMonthDate: Date): Date[] {
+  return Array.from({ length: MONTHLY_TREND_MONTH_COUNT }, (_, index) =>
+    addMonths(currentMonthDate, index - MONTHLY_TREND_MONTH_COUNT + 1),
+  );
 }
 
 function resolveDirection(deltaAmount: number): MonthlyChangeDirection {

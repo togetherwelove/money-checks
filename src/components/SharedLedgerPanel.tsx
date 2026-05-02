@@ -168,10 +168,7 @@ export function SharedLedgerPanel({
   };
 
   const handleKickMember = async (targetUserId: string) => {
-    const didKick = await onKickMember(targetUserId);
-    showNativeToast(didKick ? AppMessages.accountKickSuccess : AppMessages.accountKickError);
-
-    if (didKick && activeBook) {
+    if (activeBook) {
       const actorName = await resolveCurrentActorName();
       await onSendPushNotificationToUsers(
         createMemberRemovedFromBookEvent(actorName, activeBook.name),
@@ -179,6 +176,9 @@ export function SharedLedgerPanel({
         activeBook.id,
       );
     }
+
+    const didKick = await onKickMember(targetUserId);
+    showNativeToast(didKick ? AppMessages.accountKickSuccess : AppMessages.accountKickError);
 
     return didKick;
   };

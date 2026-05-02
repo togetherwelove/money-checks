@@ -94,6 +94,8 @@ describe("buildMonthlyComparisonSummary", () => {
         direction: "increase",
         previousAmount: 250000,
       },
+      memberExpenses: [],
+      trendMonths: [],
       previousMonthLabel: "3월",
     };
     const summaryLines = buildPreviousMonthSummaryLines(insights);

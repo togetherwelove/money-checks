@@ -1,10 +1,7 @@
-import { Feather } from "@expo/vector-icons";
-import { useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../../constants/colors";
-import { AppLayout } from "../../constants/layout";
-import { MonthlyInsightCopy } from "../../constants/monthlyInsights";
+import { MonthlyInsightChartCopy } from "../../constants/monthlyInsightCharts";
 import {
   type MonthlyComparisonTone,
   buildMonthlyComparisonSummary,
@@ -25,18 +22,19 @@ type ComparisonCardProps = {
 export function MonthlyComparisonSection({ insights }: MonthlyComparisonSectionProps) {
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{MonthlyInsightCopy.comparisonTitle}</Text>
-      <View style={styles.row}>
-        <ComparisonCard
+      <Text style={styles.sectionTitle}>{MonthlyInsightChartCopy.previousComparisonTitle}</Text>
+      <View style={styles.card}>
+        <ComparisonRow
           comparison={insights.incomeComparison}
           previousMonthLabel={insights.previousMonthLabel}
-          title={MonthlyInsightCopy.incomeTitle}
+          title={MonthlyInsightChartCopy.incomeLabel}
           variant="income"
         />
-        <ComparisonCard
+        <View style={styles.divider} />
+        <ComparisonRow
           comparison={insights.expenseComparison}
           previousMonthLabel={insights.previousMonthLabel}
-          title={MonthlyInsightCopy.expenseTitle}
+          title={MonthlyInsightChartCopy.expenseLabel}
           variant="expense"
         />
       </View>
@@ -44,35 +42,24 @@ export function MonthlyComparisonSection({ insights }: MonthlyComparisonSectionP
   );
 }
 
-function ComparisonCard({ comparison, previousMonthLabel, title, variant }: ComparisonCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+function ComparisonRow({ comparison, previousMonthLabel, title, variant }: ComparisonCardProps) {
   const summary = buildMonthlyComparisonSummary(comparison, previousMonthLabel, variant);
 
   return (
-    <Pressable onPress={() => setIsExpanded((current) => !current)} style={styles.card}>
-      <View style={styles.cardHeader}>
+    <View style={styles.comparisonRow}>
+      <View style={styles.labelColumn}>
         <Text style={styles.cardTitle}>{title}</Text>
-        <Feather
-          color={AppColors.mutedText}
-          name={isExpanded ? "chevron-up" : "chevron-down"}
-          size={14}
-        />
+        <Text style={styles.previousAmount}>{summary.previousAmountLabel}</Text>
       </View>
-      <Text style={[styles.currentAmount, resolveToneStyle(summary.tone)]}>
-        {summary.currentAmountLabel}
-      </Text>
-      <Text style={[styles.deltaLabel, resolveToneStyle(summary.tone)]}>
-        {summary.summaryMessage}
-      </Text>
-      {isExpanded ? (
-        <View style={styles.expandedContent}>
-          <Text style={styles.previousAmount}>{summary.previousAmountLabel}</Text>
-          {summary.changeRateLabel ? (
-            <Text style={styles.changeRateLabel}>{summary.changeRateLabel}</Text>
-          ) : null}
-        </View>
-      ) : null}
-    </Pressable>
+      <View style={styles.amountColumn}>
+        <Text style={[styles.currentAmount, resolveToneStyle(summary.tone)]}>
+          {summary.currentAmountLabel}
+        </Text>
+        <Text style={[styles.deltaLabel, resolveToneStyle(summary.tone)]}>
+          {summary.changeRateLabel ?? summary.summaryMessage}
+        </Text>
+      </View>
+    </View>
   );
 }
 
@@ -93,37 +80,41 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
   },
-  row: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: AppLayout.cardGap,
-  },
   card: {
-    flex: 1,
     borderWidth: 1,
     borderColor: AppColors.border,
     borderRadius: 16,
     backgroundColor: AppColors.surface,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    gap: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    gap: 10,
   },
-  cardHeader: {
+  amountColumn: {
+    alignItems: "flex-end",
+    gap: 2,
+  },
+  comparisonRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 8,
+    gap: 12,
   },
-  expandedContent: {
-    gap: 4,
+  divider: {
+    height: 1,
+    backgroundColor: AppColors.border,
+  },
+  labelColumn: {
+    flex: 1,
+    minWidth: 0,
+    gap: 3,
   },
   cardTitle: {
-    color: AppColors.mutedText,
-    fontSize: 11,
-    fontWeight: "600",
+    color: AppColors.text,
+    fontSize: 13,
+    fontWeight: "800",
   },
   currentAmount: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "800",
   },
   previousAmount: {
@@ -132,13 +123,8 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   deltaLabel: {
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  changeRateLabel: {
-    color: AppColors.mutedText,
     fontSize: 11,
-    fontWeight: "600",
+    fontWeight: "700",
   },
   incomeText: {
     color: AppColors.income,

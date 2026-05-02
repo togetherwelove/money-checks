@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { type SubscriptionTier, SubscriptionTiers } from "../constants/subscription";
 import { logAppError } from "../lib/logAppError";
-import { updateOwnSubscriptionTier } from "../lib/profiles";
 import {
   addSubscriptionTierListener,
   configureSubscriptionClient,
@@ -26,26 +25,6 @@ export function useSubscriptionPlan(userId: string): SubscriptionPlanState {
   const [hasAvailablePlusPackage, setHasAvailablePlusPackage] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [plusPriceLabel, setPlusPriceLabel] = useState<string | null>(null);
-  const lastSyncedTierRef = useRef<SubscriptionTier | null>(null);
-  const syncProfileTier = useCallback(
-    async (nextTier: SubscriptionTier) => {
-      if (lastSyncedTierRef.current === nextTier) {
-        return;
-      }
-
-      try {
-        await updateOwnSubscriptionTier(userId, nextTier);
-        lastSyncedTierRef.current = nextTier;
-      } catch (error) {
-        logAppError("SubscriptionPlan", error, {
-          nextTier,
-          step: "sync_subscription_tier",
-          userId,
-        });
-      }
-    },
-    [userId],
-  );
 
   useEffect(() => {
     let isMounted = true;
@@ -61,7 +40,6 @@ export function useSubscriptionPlan(userId: string): SubscriptionPlanState {
         setCurrentTier(nextSnapshot.tier);
         setHasAvailablePlusPackage(nextSnapshot.hasAvailablePlusPackage);
         setPlusPriceLabel(nextSnapshot.plusPriceLabel);
-        void syncProfileTier(nextSnapshot.tier);
       } catch (error) {
         if (isMounted) {
           setCurrentTier(SubscriptionTiers.free);
@@ -87,14 +65,13 @@ export function useSubscriptionPlan(userId: string): SubscriptionPlanState {
       }
 
       setCurrentTier(nextTier);
-      void syncProfileTier(nextTier);
     });
 
     return () => {
       isMounted = false;
       removeListener();
     };
-  }, [syncProfileTier, userId]);
+  }, [userId]);
 
   return {
     currentTier,
@@ -108,7 +85,6 @@ export function useSubscriptionPlan(userId: string): SubscriptionPlanState {
       setCurrentTier(nextSnapshot.tier);
       setHasAvailablePlusPackage(nextSnapshot.hasAvailablePlusPackage);
       setPlusPriceLabel(nextSnapshot.plusPriceLabel);
-      void syncProfileTier(nextSnapshot.tier);
       return nextSnapshot.tier;
     },
     restorePurchases: async () => {
@@ -117,7 +93,6 @@ export function useSubscriptionPlan(userId: string): SubscriptionPlanState {
       setCurrentTier(nextSnapshot.tier);
       setHasAvailablePlusPackage(nextSnapshot.hasAvailablePlusPackage);
       setPlusPriceLabel(nextSnapshot.plusPriceLabel);
-      void syncProfileTier(nextSnapshot.tier);
       return nextSnapshot.tier;
     },
   };

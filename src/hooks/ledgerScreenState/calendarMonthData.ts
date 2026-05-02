@@ -5,7 +5,7 @@ import {
 import type { LedgerDayNote, MonthlyInsights, MonthlyLedgerSummary } from "../../types/ledger";
 import { addMonths, buildMonthlyLedger, getMonthKey } from "../../utils/calendar";
 import { formatMonthYear } from "../../utils/calendar";
-import { buildMonthlyInsightsFromMonths } from "../../utils/monthlyInsights";
+import { buildMonthlyInsightsFromMonths, getTrendMonths } from "../../utils/monthlyInsights";
 import type { LedgerEntryCache } from "./ledgerEntryCache";
 import { getMonthEntries } from "./ledgerEntryCache";
 import type { ChartMonthData } from "./types";
@@ -32,6 +32,10 @@ export function getMonthlyInsightsFromCache(
     targetMonth,
     getMonthEntries(entryCache, targetMonth),
     getMonthEntries(entryCache, addMonths(targetMonth, -1)),
+    getTrendMonths(targetMonth).map((month) => ({
+      entries: getMonthEntries(entryCache, month),
+      month,
+    })),
   );
 }
 
