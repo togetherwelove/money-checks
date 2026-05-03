@@ -4,7 +4,7 @@ import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import { AppMessages } from "../constants/messages";
 
-const APP_ICON_SOURCE = require("../../asset/icon.png");
+const APP_ICON_SOURCE = require("../../assets/app/icon.png");
 const LOGO_SIZE = 128;
 const CONTENT_GAP = AppLayout.cardGap * 2;
 

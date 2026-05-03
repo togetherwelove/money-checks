@@ -9,6 +9,7 @@ node_modules/
 .codex-logs/
 .eas-build-state/
 .tmp-glance-aar/
+store-assets/
 android/release-signing.properties
 android/*.keystore
 android/*.jks
