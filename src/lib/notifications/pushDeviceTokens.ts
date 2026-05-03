@@ -3,6 +3,7 @@ import { appStorage } from "../appStorage";
 import { supabase } from "../supabase";
 
 const PUSH_DEVICE_TOKEN_STORAGE_KEY = "moneychecks.push-device-token.current";
+const SYNC_PUSH_DEVICE_TOKEN_FUNCTION = "sync_push_device_token";
 const PUSH_DEVICE_TOKENS_TABLE = "push_device_tokens";
 
 export async function syncPushDeviceToken(
@@ -12,22 +13,11 @@ export async function syncPushDeviceToken(
 ): Promise<void> {
   const previousPushToken = readStoredPushDeviceToken();
 
-  if (previousPushToken && previousPushToken !== expoPushToken) {
-    await supabase
-      .from(PUSH_DEVICE_TOKENS_TABLE)
-      .delete()
-      .eq("expo_push_token", previousPushToken)
-      .eq("user_id", userId);
-  }
-
-  const { error } = await supabase.from(PUSH_DEVICE_TOKENS_TABLE).upsert(
-    {
-      expo_push_token: expoPushToken,
-      platform,
-      user_id: userId,
-    },
-    { onConflict: "expo_push_token" },
-  );
+  const { error } = await supabase.rpc(SYNC_PUSH_DEVICE_TOKEN_FUNCTION, {
+    next_expo_push_token: expoPushToken,
+    next_platform: platform,
+    previous_expo_push_token: previousPushToken,
+  });
 
   if (error) {
     throw error;

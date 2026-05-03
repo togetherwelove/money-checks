@@ -26,6 +26,7 @@ export const MonthCalendarPageView = memo(MonthCalendarPageViewComponent);
 
 const styles = StyleSheet.create({
   page: {
+    flex: 1,
     width: "100%",
   },
 });

@@ -40,11 +40,7 @@ export const KeyboardAwareScrollView = forwardRef<
       ref={ref}
       enableAutomaticScroll
       enableOnAndroid
-      contentContainerStyle={[
-        styles.content,
-        centerContent && styles.centerContent,
-        contentContainerStyle,
-      ]}
+      contentContainerStyle={[centerContent && styles.centerContent, contentContainerStyle]}
       extraScrollHeight={extraScrollHeight}
       keyboardDismissMode={
         Platform.OS === "ios" ? KeyboardLayout.dismissMode.ios : KeyboardLayout.dismissMode.android
@@ -63,9 +59,6 @@ export const KeyboardAwareScrollView = forwardRef<
 const styles = StyleSheet.create({
   scroll: {
     flex: 1,
-  },
-  content: {
-    paddingBottom: KeyboardLayout.bottomInset,
   },
   centerContent: {
     flexGrow: 1,

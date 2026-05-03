@@ -149,8 +149,8 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.background,
   },
   content: {
-    padding: AppLayout.screenPadding,
-    paddingBottom: 24,
+    flexGrow: 1,
+    paddingHorizontal: AppLayout.screenPadding,
   },
   card: {
     ...SurfaceCardStyle,

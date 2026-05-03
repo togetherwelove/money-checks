@@ -6,7 +6,6 @@ import {
   MonthlyInsightChartLayout,
 } from "../../constants/monthlyInsightCharts";
 import type { MonthlyTrendPoint } from "../../types/ledger";
-import { formatCurrency } from "../../utils/calendar";
 
 type MonthlyTrendBarChartProps = {
   trendMonths: MonthlyTrendPoint[];
@@ -17,8 +16,6 @@ export function MonthlyTrendBarChart({ trendMonths }: MonthlyTrendBarChartProps)
     ...trendMonths.flatMap((point) => [point.incomeAmount, point.expenseAmount]),
     0,
   );
-  const currentMonth = trendMonths.find((point) => point.isCurrentMonth);
-
   return (
     <View style={styles.section}>
       <View style={styles.headerRow}>
@@ -50,16 +47,6 @@ export function MonthlyTrendBarChart({ trendMonths }: MonthlyTrendBarChartProps)
             </View>
           ))}
         </View>
-        {currentMonth ? (
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryText}>
-              {MonthlyInsightChartCopy.incomeLabel} {formatCurrency(currentMonth.incomeAmount)}
-            </Text>
-            <Text style={styles.summaryText}>
-              {MonthlyInsightChartCopy.expenseLabel} {formatCurrency(currentMonth.expenseAmount)}
-            </Text>
-          </View>
-        ) : null}
       </View>
     </View>
   );
@@ -166,16 +153,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     color: AppColors.text,
     fontSize: 13,
-    fontWeight: "700",
-  },
-  summaryRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  summaryText: {
-    color: AppColors.mutedText,
-    fontSize: 12,
     fontWeight: "700",
   },
 });

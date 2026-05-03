@@ -17,6 +17,10 @@ const NOTIFICATION_CATEGORY_IDS = {
 } as const;
 const JOIN_REQUEST_NOTIFICATION_TITLE = "Join request";
 const JOIN_REQUEST_NOTIFICATION_BODY = "{requesterName} requested access to {bookName}.";
+const PUSH_NOTIFICATION_FUNCTION_NAME = "send-push-notifications";
+const PUSH_NOTIFICATION_MINIMUM_INVOCATION_INTERVAL = "10 seconds";
+const PUSH_NOTIFICATION_MAX_TARGET_USER_COUNT = 20;
+const PUSH_NOTIFICATION_MAX_EXCLUDED_USER_COUNT = 20;
 
 const REQUIRED_NOTIFICATION_EVENTS = new Set([
   "member_joined_book",
@@ -137,6 +141,13 @@ export type SendPushNotificationsAdminClient = {
     ) => Promise<{ data: { user: AuthenticatedUser | null }; error: Error | null }>;
   };
   from: (tableName: string) => unknown;
+  rpc: (
+    functionName: "try_acquire_function_invocation_lock",
+    args: {
+      minimum_interval: string;
+      target_function_name: string;
+    },
+  ) => Promise<{ data: boolean | null; error: Error | null }>;
 };
 
 type SendPushNotificationsHandlerOptions = {
@@ -212,6 +223,18 @@ export async function handleSendPushNotificationsRequest(
       return createJsonResponse(400, { error: "Invalid push notification request." });
     }
 
+    const acquiredSendSlot = await acquirePushNotificationSendSlot(
+      adminClient,
+      payload,
+      senderUserId,
+    );
+    if (!acquiredSendSlot) {
+      return createJsonResponse(429, {
+        error: "Push notification request was invoked too recently.",
+        success: false,
+      });
+    }
+
     const pushMessages = await buildPushMessages(adminClient, payload, senderUserId);
     if (pushMessages.length === 0) {
       return createJsonResponse(200, { sentCount: 0, success: true });
@@ -241,6 +264,41 @@ export async function handleSendPushNotificationsRequest(
     console.error("[send-push-notifications] unexpected error", error);
     return createJsonResponse(500, { error: "Failed to send push notifications." });
   }
+}
+
+async function acquirePushNotificationSendSlot(
+  adminClient: SendPushNotificationsAdminClient,
+  payload: PushNotificationRequest,
+  senderUserId: string,
+): Promise<boolean> {
+  const { data, error } = await adminClient.rpc("try_acquire_function_invocation_lock", {
+    minimum_interval: PUSH_NOTIFICATION_MINIMUM_INVOCATION_INTERVAL,
+    target_function_name: buildPushNotificationLockName(payload, senderUserId),
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return data === true;
+}
+
+function buildPushNotificationLockName(
+  payload: PushNotificationRequest,
+  senderUserId: string,
+): string {
+  if (payload.route === "latest-join-request-owner") {
+    return [PUSH_NOTIFICATION_FUNCTION_NAME, payload.route, senderUserId].join(":");
+  }
+
+  const bookKey = "bookId" in payload && payload.bookId ? payload.bookId : "self";
+  return [
+    PUSH_NOTIFICATION_FUNCTION_NAME,
+    payload.route,
+    senderUserId,
+    bookKey,
+    payload.event.type,
+  ].join(":");
 }
 
 async function buildPushMessages(
@@ -692,10 +750,26 @@ function isValidPushNotificationRequest(value: PushNotificationRequest): boolean
   }
 
   if (value.route === "book-members") {
-    return typeof (value as BookMembersPushRequest).bookId === "string";
+    const request = value as BookMembersPushRequest;
+    return (
+      typeof request.bookId === "string" &&
+      isStringArrayWithinLimit(
+        request.excludeUserIds ?? [],
+        PUSH_NOTIFICATION_MAX_EXCLUDED_USER_COUNT,
+      )
+    );
   }
 
-  return Array.isArray((value as DirectTargetsPushRequest).targetUserIds);
+  const request = value as DirectTargetsPushRequest;
+  return isStringArrayWithinLimit(request.targetUserIds, PUSH_NOTIFICATION_MAX_TARGET_USER_COUNT);
+}
+
+function isStringArrayWithinLimit(value: unknown, maxLength: number): value is string[] {
+  return (
+    Array.isArray(value) &&
+    value.length <= maxLength &&
+    value.every((item) => typeof item === "string")
+  );
 }
 
 function isNotificationEvent(value: unknown): value is NotificationEvent {

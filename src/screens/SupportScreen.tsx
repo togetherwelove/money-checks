@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.background,
   },
   content: {
-    padding: AppLayout.screenPadding,
+    paddingHorizontal: AppLayout.screenPadding,
     gap: SupportUi.contentGap,
   },
   packageList: {

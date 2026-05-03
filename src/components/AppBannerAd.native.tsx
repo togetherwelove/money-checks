@@ -2,6 +2,7 @@ import { StyleSheet, View } from "react-native";
 import { BannerAd, BannerAdSize } from "react-native-google-mobile-ads";
 
 import { AdMobTestUnitIds } from "../constants/ads";
+import { AppColors } from "../constants/colors";
 import { AdMobConfig } from "../constants/subscription";
 import { logAdMobLoadError } from "../lib/ads/adMobLoadError";
 import { appPlatform } from "../lib/appPlatform";
@@ -45,6 +46,12 @@ export function AppBannerAd() {
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
+    backgroundColor: AppColors.surfaceMuted,
+    borderBottomColor: AppColors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderTopColor: AppColors.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
     justifyContent: "center",
+    width: "100%",
   },
 });

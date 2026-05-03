@@ -3,6 +3,7 @@ import {
   Alert,
   InteractionManager,
   Keyboard,
+  type LayoutChangeEvent,
   StyleSheet,
   Text,
   TextInput,
@@ -35,6 +36,8 @@ import { InstallmentPickerModal } from "./InstallmentPickerModal";
 const AMOUNT_INPUT_FOCUS_DELAY_MS = 120;
 const CONTENT_INPUT_FOCUS_DELAY_MS = 80;
 
+type EntryInputName = "amount" | "content" | "note";
+
 type LedgerEntryFormProps = {
   draft: LedgerEntryDraft;
   editingEntryId: string | null;
@@ -43,6 +46,8 @@ type LedgerEntryFormProps = {
   onChangeInstallmentMonths: (installmentMonths: number) => void;
   onPickPhotoAttachments: () => void | Promise<void>;
   onCategoryDraggingChange?: (isDragging: boolean) => void;
+  onInputBlur?: (() => void) | null;
+  onInputFocus?: ((input: TextInput | null, inputHeight: number) => void) | null;
   onRemovePhotoAttachment: (attachmentId: string) => void;
   onSaveEntry: () => void | Promise<void>;
   onSelectType: (type: LedgerEntryType) => void;
@@ -58,6 +63,8 @@ export function LedgerEntryForm({
   onChangeInstallmentMonths,
   onPickPhotoAttachments,
   onCategoryDraggingChange,
+  onInputBlur = null,
+  onInputFocus = null,
   onRemovePhotoAttachment,
   onSaveEntry,
   onSelectType,
@@ -67,6 +74,12 @@ export function LedgerEntryForm({
   const categories = CATEGORY_OPTIONS[draft.type];
   const amountInputRef = useRef<TextInput>(null);
   const contentInputRef = useRef<TextInput>(null);
+  const noteInputRef = useRef<TextInput>(null);
+  const inputHeightsRef = useRef<Record<EntryInputName, number>>({
+    amount: 0,
+    content: 0,
+    note: 0,
+  });
   const amountFocusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isInstallmentPickerOpen, setIsInstallmentPickerOpen] = useState(false);
 
@@ -99,6 +112,14 @@ export function LedgerEntryForm({
     };
   }, []);
 
+  const handleInputLayout = (inputName: EntryInputName, event: LayoutChangeEvent) => {
+    inputHeightsRef.current[inputName] = event.nativeEvent.layout.height;
+  };
+
+  const handleInputFocus = (inputName: EntryInputName, input: TextInput | null) => {
+    onInputFocus?.(input, inputHeightsRef.current[inputName]);
+  };
+
   return (
     <View style={styles.form}>
       <EntryDirectionSelector onSelectType={onSelectType} selectedType={draft.type} />
@@ -108,7 +129,10 @@ export function LedgerEntryForm({
           ref={amountInputRef}
           submitBehavior="blurAndSubmit"
           keyboardType="number-pad"
+          onBlur={onInputBlur ?? undefined}
           onChangeText={(value) => onChangeDraft("amount", value)}
+          onFocus={() => handleInputFocus("amount", amountInputRef.current)}
+          onLayout={(event) => handleInputLayout("amount", event)}
           onSubmitEditing={() => Keyboard.dismiss()}
           placeholder={AppMessages.editorAmount}
           style={styles.input}
@@ -151,7 +175,10 @@ export function LedgerEntryForm({
         <TextInput
           ref={contentInputRef}
           submitBehavior="blurAndSubmit"
+          onBlur={onInputBlur ?? undefined}
           onChangeText={(value) => onChangeDraft("content", value)}
+          onFocus={() => handleInputFocus("content", contentInputRef.current)}
+          onLayout={(event) => handleInputLayout("content", event)}
           onSubmitEditing={() => {
             Keyboard.dismiss();
             void handlePressSaveEntry();
@@ -165,8 +192,12 @@ export function LedgerEntryForm({
       <View style={styles.fieldGroup}>
         <Text style={styles.label}>{EntryRegistrationCopy.noteLabel}</Text>
         <TextInput
+          ref={noteInputRef}
           multiline
+          onBlur={onInputBlur ?? undefined}
           onChangeText={(value) => onChangeDraft("note", value)}
+          onFocus={() => handleInputFocus("note", noteInputRef.current)}
+          onLayout={(event) => handleInputLayout("note", event)}
           placeholder={EntryRegistrationCopy.noteLabel}
           style={styles.multilineInput}
           textAlignVertical="top"

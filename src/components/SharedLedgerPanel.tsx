@@ -27,7 +27,6 @@ import type { LedgerBookMember } from "../types/ledgerBookMember";
 import { LedgerBookManagementCard } from "./sharedLedgerPanel/LedgerBookManagementCard";
 import { SharedLedgerBookCard } from "./sharedLedgerPanel/SharedLedgerBookCard";
 import { SharedLedgerJoinCard } from "./sharedLedgerPanel/SharedLedgerJoinCard";
-import { isJoinRequestBlockedByActiveSharedLedger } from "./sharedLedgerPanel/joinRequestBlock";
 import { sharedLedgerPanelStyles as styles } from "./sharedLedgerPanel/sharedLedgerPanelStyles";
 
 type SharedLedgerPanelProps = {
@@ -97,21 +96,14 @@ export function SharedLedgerPanel({
     canEditBookName,
     onSaveBookName: onRenameActiveLedgerBook,
   });
-  const isJoinBlocked = isJoinRequestBlockedByActiveSharedLedger({
-    activeBook,
-    currentUserId,
-    members,
-  });
+  const sharedMemberLimit =
+    subscriptionTier === SubscriptionTiers.plus
+      ? SubscriptionConfig.plusSharedMemberLimit
+      : SubscriptionConfig.freeSharedMemberLimit;
   const shouldShowSharedMemberLimitNotice =
-    currentMemberRole === "owner" &&
-    subscriptionTier === SubscriptionTiers.free &&
-    members.length >= SubscriptionConfig.freeSharedMemberLimit;
+    currentMemberRole === "owner" && members.length >= sharedMemberLimit;
 
   const handleJoin = async () => {
-    if (isJoinBlocked) {
-      return;
-    }
-
     const nextShareCode = shareCodeInput.trim();
     if (!nextShareCode) {
       return;
@@ -220,7 +212,6 @@ export function SharedLedgerPanel({
         activeBook={activeBook}
         currentUserId={currentUserId}
         onCreateLedgerBook={onCreateLedgerBook}
-        onOpenSubscription={onOpenSubscription}
         onSwitchLedgerBook={onSwitchLedgerBook}
         subscriptionTier={subscriptionTier}
       />
@@ -244,7 +235,6 @@ export function SharedLedgerPanel({
       />
       <SharedLedgerJoinCard
         canLeaveSharedBook={canLeaveSharedBook}
-        isJoinBlocked={isJoinBlocked}
         onChangeShareCodeInput={(value) => {
           setShareCodeInput(value.toUpperCase());
         }}

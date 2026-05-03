@@ -2,7 +2,7 @@ import { ICON_ACTION_BUTTON_COMPACT_SIZE } from "../components/IconActionButton"
 
 export const DateNavigationToolbarLayout = {
   compactBottomPadding: 2,
-  defaultBottomPadding: 12,
+  defaultBottomPadding: 8,
   defaultMinHeight: ICON_ACTION_BUTTON_COMPACT_SIZE,
   defaultTopPadding: 8,
   indicatorSize: 4,

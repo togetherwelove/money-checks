@@ -19,6 +19,7 @@ type LedgerEntryListItemProps = {
 const ENTRY_META_SEPARATOR = " · ";
 const FALLBACK_CATEGORY_ICON_NAME: CategoryIconName = "grid";
 const CATEGORY_ICON_SIZE = 16;
+const ENTRY_ATTACHMENT_ICON_SIZE = 12;
 const ENTRY_ROW_GAP = 8;
 
 export function LedgerEntryListItem({
@@ -54,15 +55,28 @@ export function LedgerEntryListItem({
               {formatCurrency(entry.amount)}
             </Text>
           </View>
-          <Text style={styles.entryMeta}>
-            {buildEntryMeta({
-              entry,
-              installmentProgressLabel,
-              noteLabel,
-              showsDate,
-              showsInstallmentStatusLine,
-            })}
-          </Text>
+          <View style={styles.entryMetaRow}>
+            <Text style={styles.entryMeta} numberOfLines={1}>
+              {buildEntryMainMeta({
+                entry,
+                noteLabel,
+                showsDate,
+              })}
+            </Text>
+            {entry.photoAttachments.length > 0 ? (
+              <Feather
+                color={AppColors.mutedText}
+                name="paperclip"
+                size={ENTRY_ATTACHMENT_ICON_SIZE}
+              />
+            ) : null}
+            {!showsInstallmentStatusLine && installmentProgressLabel ? (
+              <Text style={styles.entryMeta} numberOfLines={1}>
+                {ENTRY_META_SEPARATOR}
+                {installmentProgressLabel}
+              </Text>
+            ) : null}
+          </View>
           {showsInstallmentStatusLine && installmentProgressLabel ? (
             <Text style={styles.entryStatus}>{installmentProgressLabel}</Text>
           ) : null}
@@ -75,18 +89,14 @@ export function LedgerEntryListItem({
   );
 }
 
-function buildEntryMeta({
+function buildEntryMainMeta({
   entry,
-  installmentProgressLabel,
   noteLabel,
   showsDate,
-  showsInstallmentStatusLine,
 }: {
   entry: LedgerEntry;
-  installmentProgressLabel: string | null;
   noteLabel: string;
   showsDate: boolean;
-  showsInstallmentStatusLine: boolean;
 }) {
   const parts: string[] = [];
 
@@ -104,10 +114,6 @@ function buildEntryMeta({
 
   if (noteLabel) {
     parts.push(noteLabel);
-  }
-
-  if (!showsInstallmentStatusLine && installmentProgressLabel) {
-    parts.push(installmentProgressLabel);
   }
 
   return parts.join(ENTRY_META_SEPARATOR);
@@ -146,6 +152,11 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
+  entryMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
   entryPrimaryRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -168,6 +179,7 @@ const styles = StyleSheet.create({
     color: AppColors.expense,
   },
   entryMeta: {
+    flexShrink: 1,
     color: AppColors.mutedText,
     fontSize: 12,
   },

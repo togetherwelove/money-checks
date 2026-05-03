@@ -14,72 +14,67 @@ type ChartMonthPagerProps = {
   previousMonth: ChartMonthData;
 };
 
-type PagerViewRef = PagerView & {
-  setPageWithoutAnimation?: (pageIndex: number) => void;
-};
-
 export function ChartMonthPager({
   currentMonth,
   nextMonth,
   onMoveMonth,
   previousMonth,
 }: ChartMonthPagerProps) {
-  const pagerViewRef = useRef<PagerViewRef | null>(null);
-  const currentMonthKeyRef = useRef<string | null>(null);
-  const isResettingRef = useRef(false);
+  const currentMonthKey = currentMonth.key;
+  const currentMonthKeyRef = useRef(currentMonthKey);
   const pendingMonthOffsetRef = useRef<-1 | 0 | 1>(0);
   const [isInteractionLocked, setIsInteractionLocked] = useState(false);
 
   useEffect(() => {
-    if (currentMonthKeyRef.current === null) {
-      currentMonthKeyRef.current = currentMonth.key;
+    if (currentMonthKeyRef.current === currentMonthKey) {
       return;
     }
 
-    if (currentMonthKeyRef.current === currentMonth.key) {
+    currentMonthKeyRef.current = currentMonthKey;
+    pendingMonthOffsetRef.current = 0;
+    setIsInteractionLocked(false);
+  }, [currentMonthKey]);
+
+  function handlePageSelected(pageIndex: number) {
+    const monthOffset = resolveMonthOffsetFromPageIndex(pageIndex);
+    if (monthOffset === 0 || pendingMonthOffsetRef.current !== 0) {
       return;
     }
 
-    currentMonthKeyRef.current = currentMonth.key;
-    isResettingRef.current = true;
+    pendingMonthOffsetRef.current = monthOffset;
     setIsInteractionLocked(true);
-    pagerViewRef.current?.setPageWithoutAnimation?.(CURRENT_PAGE_INDEX);
-    requestAnimationFrame(() => {
-      pendingMonthOffsetRef.current = 0;
-      isResettingRef.current = false;
-      setIsInteractionLocked(false);
-    });
-  }, [currentMonth.key]);
+    onMoveMonth(monthOffset);
+  }
 
   return (
     <PagerView
+      key={currentMonthKey}
       initialPage={CURRENT_PAGE_INDEX}
       orientation="horizontal"
       overdrag={false}
-      ref={pagerViewRef}
       scrollEnabled={!isInteractionLocked}
       style={styles.pager}
       onPageSelected={(event) => {
-        if (isResettingRef.current) {
-          return;
-        }
-
-        const monthOffset =
-          event.nativeEvent.position === 0 ? -1 : event.nativeEvent.position === 2 ? 1 : 0;
-        if (monthOffset === 0 || pendingMonthOffsetRef.current !== 0) {
-          return;
-        }
-
-        pendingMonthOffsetRef.current = monthOffset;
-        setIsInteractionLocked(true);
-        onMoveMonth(monthOffset);
+        handlePageSelected(event.nativeEvent.position);
       }}
     >
-      <ChartMonthPageContent key={previousMonth.key} month={previousMonth} />
-      <ChartMonthPageContent key={currentMonth.key} month={currentMonth} />
-      <ChartMonthPageContent key={nextMonth.key} month={nextMonth} />
+      <ChartMonthPageContent month={previousMonth} />
+      <ChartMonthPageContent month={currentMonth} />
+      <ChartMonthPageContent month={nextMonth} />
     </PagerView>
   );
+}
+
+function resolveMonthOffsetFromPageIndex(pageIndex: number): -1 | 0 | 1 {
+  if (pageIndex === 0) {
+    return -1;
+  }
+
+  if (pageIndex === 2) {
+    return 1;
+  }
+
+  return 0;
 }
 
 const styles = StyleSheet.create({

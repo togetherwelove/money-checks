@@ -15,6 +15,8 @@ import { mapLedgerEntryRow } from "../../utils/ledgerMapper";
 import { loadLedgerMonthEntries } from "./helpers";
 import {
   type LedgerEntryCache,
+  getCalendarBackgroundPreloadMonths,
+  getCalendarPagePreloadMonths,
   getCalendarPreloadMonths,
   getVisibleWindowEntries,
   hasCachedMonth,
@@ -44,9 +46,21 @@ export function useLedgerEntries(
   const [isRefreshing, setIsRefreshing] = useState(false);
   const cachedBookIdRef = useRef<string | null>(activeBookId);
   const preloadMonths = useMemo(() => getCalendarPreloadMonths(visibleMonth), [visibleMonth]);
-  const missingPreloadMonths = useMemo(
-    () => preloadMonths.filter((month) => !hasCachedMonth(entryCache, month)),
-    [entryCache, preloadMonths],
+  const pagePreloadMonths = useMemo(
+    () => getCalendarPagePreloadMonths(visibleMonth),
+    [visibleMonth],
+  );
+  const backgroundPreloadMonths = useMemo(
+    () => getCalendarBackgroundPreloadMonths(visibleMonth),
+    [visibleMonth],
+  );
+  const missingPagePreloadMonths = useMemo(
+    () => pagePreloadMonths.filter((month) => !hasCachedMonth(entryCache, month)),
+    [entryCache, pagePreloadMonths],
+  );
+  const missingBackgroundPreloadMonths = useMemo(
+    () => backgroundPreloadMonths.filter((month) => !hasCachedMonth(entryCache, month)),
+    [backgroundPreloadMonths, entryCache],
   );
   const hasVisibleMonthCached = useMemo(
     () => hasCachedMonth(entryCache, visibleMonth),
@@ -78,26 +92,17 @@ export function useLedgerEntries(
       };
     }
 
-    if (missingPreloadMonths.length === 0) {
+    if (missingPagePreloadMonths.length === 0 && missingBackgroundPreloadMonths.length === 0) {
       setIsLoadingEntries(false);
       return () => {
         isMounted = false;
       };
     }
 
-    const shouldBlockOnLoad = !hasVisibleMonthCached;
-    if (shouldBlockOnLoad) {
+    if (!hasVisibleMonthCached) {
       setIsLoadingEntries(true);
     }
     setEntriesError(null);
-
-    const visibleMonthKey = getMonthKey(visibleMonth);
-    const blockingMonths = missingPreloadMonths.filter(
-      (month) => getMonthKey(month) === visibleMonthKey,
-    );
-    const backgroundMonths = missingPreloadMonths.filter(
-      (month) => getMonthKey(month) !== visibleMonthKey,
-    );
 
     const loadMonthsIntoCache = async (months: Date[]) => {
       if (months.length === 0) {
@@ -120,14 +125,14 @@ export function useLedgerEntries(
       );
     };
 
-    void loadMonthsIntoCache(blockingMonths)
+    void loadMonthsIntoCache(missingPagePreloadMonths)
       .then(() => {
         if (!isMounted) {
           return;
         }
 
         setIsLoadingEntries(false);
-        void loadMonthsIntoCache(backgroundMonths).catch((error) => {
+        void loadMonthsIntoCache(missingBackgroundPreloadMonths).catch((error) => {
           logAppError("LedgerEntries", error, {
             activeBookId,
             step: "preload_entries",
@@ -154,7 +159,13 @@ export function useLedgerEntries(
     return () => {
       isMounted = false;
     };
-  }, [activeBookId, hasVisibleMonthCached, missingPreloadMonths, visibleMonth]);
+  }, [
+    activeBookId,
+    hasVisibleMonthCached,
+    missingBackgroundPreloadMonths,
+    missingPagePreloadMonths,
+    visibleMonth,
+  ]);
 
   useEffect(() => {
     if (!activeBookId) {

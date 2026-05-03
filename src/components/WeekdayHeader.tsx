@@ -20,6 +20,9 @@ export function WeekdayHeader() {
 const styles = StyleSheet.create({
   weekdays: {
     flexDirection: "row",
+    borderBottomColor: AppColors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingBottom: 4,
   },
   weekdayCell: {
     width: CELL_WIDTH,

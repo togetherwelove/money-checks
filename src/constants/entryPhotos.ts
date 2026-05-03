@@ -1,5 +1,7 @@
 export const ENTRY_PHOTO_BUCKET = "receipt-files";
+export const ENTRY_PHOTO_COMPRESSION_QUALITY = 0.72;
 export const ENTRY_PHOTO_LIMIT = 5;
+export const ENTRY_PHOTO_MAX_PIXEL_LENGTH = 2048;
 export const ENTRY_PHOTO_RANDOM_MAX = 1_000_000_000;
 export const ENTRY_PHOTO_CARD_GAP = 4;
 export const ENTRY_PHOTO_CARD_MARGIN = 2;

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { LedgerEntry } from "../../types/ledger";
 import {
+  getCalendarPreloadMonths,
   getVisibleWindowEntries,
   hasCachedMonth,
   mergeEntriesIntoCache,
@@ -44,6 +45,20 @@ const juneEntry: LedgerEntry = {
 };
 
 describe("ledgerEntryCache", () => {
+  it("preloads the full calendar pager data window before background months", () => {
+    expect(getCalendarPreloadMonths(new Date(2026, 4, 1)).map(toMonthKey)).toEqual([
+      "2026-03",
+      "2026-04",
+      "2026-05",
+      "2026-06",
+      "2026-07",
+      "2025-11",
+      "2025-12",
+      "2026-01",
+      "2026-02",
+    ]);
+  });
+
   it("merges fetched entries by month and returns the visible 3-month window", () => {
     const cache = mergeEntriesIntoCache({}, [aprilEntry, mayEntry, juneEntry]);
 
@@ -75,3 +90,7 @@ describe("ledgerEntryCache", () => {
     ).toEqual(["may-1"]);
   });
 });
+
+function toMonthKey(month: Date): string {
+  return `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, "0")}`;
+}

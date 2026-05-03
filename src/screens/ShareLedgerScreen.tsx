@@ -21,6 +21,13 @@ import type {
 import type { LedgerBookMember } from "../types/ledgerBookMember";
 import type { LedgerBookMemberRow } from "../types/supabase";
 
+let shareMembersRealtimeChannelSequence = 0;
+
+function createShareMembersRealtimeChannelName(bookId: string) {
+  shareMembersRealtimeChannelSequence += 1;
+  return `share-members-${bookId}-${shareMembersRealtimeChannelSequence}`;
+}
+
 type ShareLedgerScreenProps = {
   accessibleBooks: AccessibleLedgerBook[];
   activeBook: LedgerBook | null;
@@ -71,18 +78,19 @@ export function ShareLedgerScreen({
   userId,
 }: ShareLedgerScreenProps) {
   const [members, setMembers] = useState<LedgerBookMember[]>([]);
+  const activeBookId = activeBook?.id ?? null;
 
   useEffect(() => {
     let isMounted = true;
 
     const loadMembers = async () => {
-      if (!activeBook) {
+      if (!activeBookId) {
         setMembers([]);
         return;
       }
 
       try {
-        const nextMembers = await fetchLedgerBookMembers(activeBook.id);
+        const nextMembers = await fetchLedgerBookMembers(activeBookId);
         if (isMounted) {
           setMembers(nextMembers);
         }
@@ -95,21 +103,21 @@ export function ShareLedgerScreen({
 
     void loadMembers();
 
-    if (!activeBook) {
+    if (!activeBookId) {
       return () => {
         isMounted = false;
       };
     }
 
     const channel = supabase
-      .channel(`share-members-${activeBook.id}`)
+      .channel(createShareMembersRealtimeChannelName(activeBookId))
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
           table: "ledger_book_members",
-          filter: `book_id=eq.${activeBook.id}`,
+          filter: `book_id=eq.${activeBookId}`,
         },
         (payload) => {
           void handleMemberChange(
@@ -123,7 +131,7 @@ export function ShareLedgerScreen({
       isMounted = false;
       void supabase.removeChannel(channel);
     };
-  }, [activeBook]);
+  }, [activeBookId]);
 
   const handleKickMember = async (targetUserId: string) => {
     const didKick = await onRemoveSharedLedgerMember(targetUserId);
@@ -216,8 +224,7 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.background,
   },
   content: {
-    padding: AppLayout.screenPadding,
+    paddingHorizontal: AppLayout.screenPadding,
     gap: AppLayout.cardGap,
-    paddingBottom: 24,
   },
 });

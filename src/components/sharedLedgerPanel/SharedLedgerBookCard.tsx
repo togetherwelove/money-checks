@@ -90,50 +90,48 @@ export function SharedLedgerBookCard({
   return (
     <View style={[styles.section, styles.primarySection]}>
       <View style={styles.sectionHeader}>
-        <View style={styles.headerContent}>
-          {canEditBookName ? (
-            isEditingBookName ? (
-              <View style={styles.bookNameEditRow}>
-                <TextInput
-                  autoCapitalize="words"
-                  autoComplete="off"
-                  autoCorrect={false}
-                  importantForAutofill="no"
-                  onChangeText={onChangeBookName}
-                  onSubmitEditing={handleSaveBookNamePress}
-                  placeholder={LedgerBookNicknameCopy.inputPlaceholder}
-                  returnKeyType="done"
-                  spellCheck={false}
-                  style={styles.bookNameHeaderInput}
-                  submitBehavior="blurAndSubmit"
-                  textContentType="none"
-                  value={bookNameInput}
-                />
-                <View style={styles.bookNameActionSlot}>
-                  <Text onPress={handleCancelEditingBookName} style={styles.bookNameCancelAction}>
-                    {LedgerBookNicknameCopy.cancelAction}
-                  </Text>
-                </View>
-              </View>
-            ) : (
-              <View style={styles.bookNameRow}>
-                <Text numberOfLines={1} style={styles.bookName}>
-                  {bookName ?? LedgerBookNicknameCopy.defaultName}
+        {canEditBookName ? (
+          isEditingBookName ? (
+            <View style={styles.bookNameEditRow}>
+              <TextInput
+                autoCapitalize="words"
+                autoComplete="off"
+                autoCorrect={false}
+                importantForAutofill="no"
+                onChangeText={onChangeBookName}
+                onSubmitEditing={handleSaveBookNamePress}
+                placeholder={LedgerBookNicknameCopy.inputPlaceholder}
+                returnKeyType="done"
+                spellCheck={false}
+                style={styles.bookNameHeaderInput}
+                submitBehavior="blurAndSubmit"
+                textContentType="none"
+                value={bookNameInput}
+              />
+              <View style={styles.bookNameActionSlot}>
+                <Text onPress={handleCancelEditingBookName} style={styles.bookNameCancelAction}>
+                  {LedgerBookNicknameCopy.cancelAction}
                 </Text>
-                <IconActionButton
-                  accessibilityLabel={LedgerBookNicknameCopy.editActionAccessibilityLabel}
-                  icon="edit-3"
-                  onPress={handleStartEditingBookName}
-                  size="compact"
-                />
               </View>
-            )
+            </View>
           ) : (
-            <Text numberOfLines={1} style={styles.bookName}>
-              {bookName ?? AppMessages.accountBookFallback}
-            </Text>
-          )}
-        </View>
+            <View style={styles.bookNameRow}>
+              <Text numberOfLines={1} style={styles.bookName}>
+                {bookName ?? LedgerBookNicknameCopy.defaultName}
+              </Text>
+              <IconActionButton
+                accessibilityLabel={LedgerBookNicknameCopy.editActionAccessibilityLabel}
+                icon="edit-3"
+                onPress={handleStartEditingBookName}
+                size="compact"
+              />
+            </View>
+          )
+        ) : (
+          <Text numberOfLines={1} style={[styles.bookName, styles.bookNameHeaderTitle]}>
+            {bookName ?? AppMessages.accountBookFallback}
+          </Text>
+        )}
         {isSharedBook ? (
           <View style={[styles.stateBadge, styles.sharedBadge]}>
             <Text style={[styles.stateBadgeText, styles.sharedBadgeText]}>
@@ -166,20 +164,29 @@ export function SharedLedgerBookCard({
         <Text style={styles.helpText}>{AppMessages.accountShareCodeHint}</Text>
       </View>
       {activeBook ? (
-        <LedgerBookMembers
-          currentUserId={currentUserId}
-          members={members}
-          onKickMember={onKickMember}
-          onOpenSubscription={onOpenSubscription}
-          shouldShowSharedMemberLimitNotice={shouldShowSharedMemberLimitNotice}
-        />
+        <View
+          style={[
+            styles.sectionContent,
+            !isOwner || !pendingJoinRequests.length ? styles.sectionBottomInset : null,
+          ]}
+        >
+          <LedgerBookMembers
+            currentUserId={currentUserId}
+            members={members}
+            onKickMember={onKickMember}
+            onOpenSubscription={onOpenSubscription}
+            shouldShowSharedMemberLimitNotice={shouldShowSharedMemberLimitNotice}
+          />
+        </View>
       ) : null}
-      {isOwner ? (
-        <LedgerBookJoinRequests
-          onApproveRequest={onApproveJoinRequest}
-          onRejectRequest={onRejectJoinRequest}
-          requests={pendingJoinRequests}
-        />
+      {isOwner && pendingJoinRequests.length ? (
+        <View style={[styles.sectionContent, styles.sectionBottomInset]}>
+          <LedgerBookJoinRequests
+            onApproveRequest={onApproveJoinRequest}
+            onRejectRequest={onRejectJoinRequest}
+            requests={pendingJoinRequests}
+          />
+        </View>
       ) : null}
     </View>
   );

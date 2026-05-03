@@ -78,8 +78,7 @@ export function ChartScreen({ showsBannerAd, state }: ChartScreenProps) {
 const styles = StyleSheet.create({
   bannerSection: {
     paddingHorizontal: AppLayout.screenPadding,
-    paddingBottom: AppLayout.compactGap,
-    paddingTop: AppLayout.screenPadding,
+    paddingBottom: 0,
   },
   pagerLayer: {
     flex: 1,

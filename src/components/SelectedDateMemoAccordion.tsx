@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { GestureResponderEvent } from "react-native";
+import type { GestureResponderEvent, LayoutChangeEvent } from "react-native";
 import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
@@ -14,6 +14,8 @@ type SelectedDateMemoAccordionProps = {
   onBeginEditing?: ((input: TextInput | null) => void) | null;
   onCollapse?: (() => void) | null;
   onDelete: () => Promise<void>;
+  onEditingChange?: ((isEditing: boolean) => void) | null;
+  onHeightChange?: ((height: number) => void) | null;
   onSave: (note: string) => Promise<void>;
 };
 
@@ -23,6 +25,8 @@ export function SelectedDateMemoAccordion({
   onBeginEditing = null,
   onCollapse = null,
   onDelete,
+  onEditingChange = null,
+  onHeightChange = null,
   onSave,
 }: SelectedDateMemoAccordionProps) {
   const [draftNote, setDraftNote] = useState(note);
@@ -48,6 +52,10 @@ export function SelectedDateMemoAccordion({
       onBeginEditing?.(inputRef.current);
     });
   }, [isEditing, onBeginEditing]);
+
+  useEffect(() => {
+    onEditingChange?.(isEditing);
+  }, [isEditing, onEditingChange]);
 
   if (!isExpanded) {
     return null;
@@ -92,8 +100,12 @@ export function SelectedDateMemoAccordion({
     savedNoteRef.current = trimmedDraftNote;
   };
 
+  const handlePanelLayout = (event: LayoutChangeEvent) => {
+    onHeightChange?.(event.nativeEvent.layout.height);
+  };
+
   return (
-    <View style={styles.panel}>
+    <View onLayout={handlePanelLayout} style={styles.panel}>
       {isEditing ? (
         <TextInput
           ref={inputRef}

@@ -200,8 +200,6 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     paddingHorizontal: AppLayout.screenPadding,
-    paddingTop: 24,
-    paddingBottom: 24,
   },
   salesContent: {
     flexGrow: 1,

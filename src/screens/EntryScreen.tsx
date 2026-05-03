@@ -1,7 +1,7 @@
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import type { ComponentRef } from "react";
-import { useEffect, useRef, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { StyleSheet, Text, type TextInput, View, findNodeHandle } from "react-native";
 
 import { AppBannerAd } from "../components/AppBannerAd";
 import { EntryDatePickerModal } from "../components/EntryDatePickerModal";
@@ -10,6 +10,7 @@ import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { LedgerEditorPanel } from "../components/LedgerEditorPanel";
 import { AppColors } from "../constants/colors";
 import { ENTRY_PHOTO_LIMIT, EntryPhotoCopy } from "../constants/entryPhotos";
+import { KeyboardLayout } from "../constants/keyboard";
 import { AppLayout } from "../constants/layout";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
 import { appPlatform } from "../lib/appPlatform";
@@ -29,6 +30,10 @@ type EntryScreenProps = {
   state: LedgerScreenState;
 };
 
+type KeyboardAwareScrollViewRef = ComponentRef<typeof KeyboardAwareScrollView> & {
+  scrollToFocusedInput?: (nodeHandle: number) => void;
+};
+
 export function EntryScreen({
   currentUserId,
   onSaveEntry,
@@ -41,6 +46,7 @@ export function EntryScreen({
   const scrollViewRef = useRef<ComponentRef<typeof KeyboardAwareScrollView>>(null);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isCategoryDragging, setIsCategoryDragging] = useState(false);
+  const [focusedInputHeight, setFocusedInputHeight] = useState(0);
   const [members, setMembers] = useState<LedgerBookMember[]>([]);
   const {
     draft,
@@ -174,11 +180,34 @@ export function EntryScreen({
     );
   };
 
+  const handleEntryInputFocus = (input: TextInput | null, inputHeight: number) => {
+    setFocusedInputHeight(inputHeight);
+
+    const inputNodeHandle = input ? findNodeHandle(input) : null;
+    const keyboardAwareScrollView = scrollViewRef.current as KeyboardAwareScrollViewRef | null;
+    if (!inputNodeHandle || !keyboardAwareScrollView?.scrollToFocusedInput) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      keyboardAwareScrollView.scrollToFocusedInput?.(inputNodeHandle);
+    });
+  };
+
+  const entryKeyboardExtraScrollHeight =
+    resolveFocusedInputKeyboardExtraScrollHeight(focusedInputHeight);
+  const contentBottomPadding = entryKeyboardExtraScrollHeight;
+  const contentContainerStyle = useMemo(
+    () => [styles.content, { paddingBottom: contentBottomPadding }],
+    [contentBottomPadding],
+  );
+
   return (
     <>
       <KeyboardAwareScrollView
         ref={scrollViewRef}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={contentContainerStyle}
+        extraScrollHeight={entryKeyboardExtraScrollHeight}
         scrollEnabled={!isCategoryDragging}
         style={styles.screen}
       >
@@ -197,6 +226,8 @@ export function EntryScreen({
           onCategoryDraggingChange={setIsCategoryDragging}
           onChangeDraft={updateDraftField}
           onChangeInstallmentMonths={updateDraftInstallmentMonths}
+          onInputBlur={() => setFocusedInputHeight(0)}
+          onInputFocus={handleEntryInputFocus}
           onPickPhotoAttachments={handlePickPhotoAttachments}
           onRemovePhotoAttachment={handleRemovePhotoAttachment}
           onSaveEntry={onSaveEntry}
@@ -221,6 +252,18 @@ export function EntryScreen({
   );
 }
 
+function resolveFocusedInputKeyboardExtraScrollHeight(inputHeight: number) {
+  if (inputHeight <= 0) {
+    return 0;
+  }
+
+  const measuredExtraHeight = inputHeight * KeyboardLayout.focusedInputExtraScrollHeightRatio;
+  return Math.min(
+    KeyboardLayout.focusedInputExtraScrollHeightMax,
+    Math.max(KeyboardLayout.focusedInputExtraScrollHeightMin, measuredExtraHeight),
+  );
+}
+
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
@@ -228,9 +271,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: AppLayout.screenPadding,
-    paddingBottom: 24,
     gap: AppLayout.cardGap,
-    paddingTop: AppLayout.screenPadding,
   },
   error: {
     color: AppColors.expense,

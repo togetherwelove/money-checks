@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppColors } from "../../constants/colors";
 import { AppLayout } from "../../constants/layout";
@@ -10,19 +11,36 @@ type ChartMonthPageContentProps = {
 };
 
 export function ChartMonthPageContent({ month }: ChartMonthPageContentProps) {
+  const safeAreaInsets = useSafeAreaInsets();
+  const contentPaddingBottom = AppLayout.chartPageBottomPadding + safeAreaInsets.bottom;
+
   return (
-    <View style={styles.content}>
-      <Text style={styles.title}>{month.title}</Text>
-      <MonthlyInsightsSection insights={month.monthlyInsights} />
+    <View style={styles.page}>
+      <ScrollView
+        contentContainerStyle={[styles.content, { paddingBottom: contentPaddingBottom }]}
+        nestedScrollEnabled
+        showsVerticalScrollIndicator={false}
+        style={styles.scroll}
+      >
+        <Text style={styles.title}>{month.title}</Text>
+        <MonthlyInsightsSection insights={month.monthlyInsights} />
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  page: {
+    flex: 1,
+    minHeight: 0,
+  },
+  scroll: {
+    flex: 1,
+    minHeight: 0,
+  },
   content: {
-    padding: AppLayout.screenPadding,
+    paddingHorizontal: AppLayout.screenPadding,
     gap: AppLayout.cardGap,
-    paddingBottom: 24,
   },
   title: {
     color: AppColors.text,

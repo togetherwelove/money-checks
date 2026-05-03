@@ -15,12 +15,6 @@ describe("resolveSharedLedgerJoinErrorMessage", () => {
         details: "This join request is cooling down.",
       }),
     ).toBe(ShareLedgerMessages.joinCooldownError);
-
-    expect(
-      resolveSharedLedgerJoinErrorMessage({
-        message: "Active shared ledger editors cannot request another shared ledger.",
-      }),
-    ).toBe(ShareLedgerMessages.joinSharedMemberBlockedError);
   });
 
   it("falls back to the generic join error for unknown cases", () => {

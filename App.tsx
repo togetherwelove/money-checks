@@ -114,7 +114,7 @@ function SignedOutAppShell({ children }: { children: React.ReactNode }) {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={AppColors.background} />
       <SafeAreaView edges={["top"]} style={styles.signedOutSafeArea} />
-      <SafeAreaView edges={["left", "right", "bottom"]} style={styles.signedOutBodySafeArea}>
+      <SafeAreaView edges={["left", "right"]} style={styles.signedOutBodySafeArea}>
         <View style={styles.signedOutBody}>{children}</View>
       </SafeAreaView>
     </View>
@@ -676,7 +676,7 @@ function SignedInApp({ session }: { session: Session }) {
           />
         </View>
       </SafeAreaView>
-      <SafeAreaView edges={["left", "right", "bottom"]} style={styles.bodySafeArea}>
+      <SafeAreaView edges={["left", "right"]} style={styles.bodySafeArea}>
         <View style={styles.body}>
           <NavigationContainer
             onReady={syncCurrentRouteState}

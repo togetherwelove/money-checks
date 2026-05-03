@@ -51,7 +51,5 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: AppLayout.screenPadding,
-    paddingTop: AppLayout.screenPadding,
-    paddingBottom: 24,
   },
 });

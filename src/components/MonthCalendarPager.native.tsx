@@ -14,10 +14,6 @@ import {
   resolveMonthOffsetFromPageIndex,
 } from "./monthCalendarPager/monthCalendarScrollSnap";
 
-type PagerViewRef = PagerView & {
-  setPageWithoutAnimation?: (pageIndex: number) => void;
-};
-
 export function MonthCalendarPager({
   currentPage,
   nextPage,
@@ -26,81 +22,95 @@ export function MonthCalendarPager({
   previousPage,
   selectedDate,
 }: MonthCalendarPagerProps) {
-  const pagerViewRef = useRef<PagerViewRef | null>(null);
   const isReadyRef = useRef(false);
-  const isResettingRef = useRef(false);
-  const resetFrameCountRef = useRef(0);
+  const heightAnimationRevisionRef = useRef(0);
   const pendingMonthOffsetRef = useRef<-1 | 0 | 1>(0);
   const currentPageKeyRef = useRef<string | null>(null);
+  const currentPageHeightRef = useRef(currentPage.height);
   const viewportHeight = useRef(new Animated.Value(currentPage.height)).current;
   const [isInteractionLocked, setIsInteractionLocked] = useState(false);
+  const currentPageKey = currentPage.key;
+  const currentPageHeight = currentPage.height;
 
   useEffect(() => {
     if (!isReadyRef.current) {
-      isReadyRef.current = true;
-      currentPageKeyRef.current = currentPage.key;
-      viewportHeight.setValue(currentPage.height);
+      initializeCurrentPage(currentPageKey, currentPageHeight);
       return;
     }
 
-    if (currentPageKeyRef.current === currentPage.key) {
+    if (currentPageKeyRef.current === currentPageKey) {
+      updateCurrentPageHeight(currentPageHeight);
       return;
     }
 
-    currentPageKeyRef.current = currentPage.key;
-    isResettingRef.current = true;
-    resetFrameCountRef.current += 1;
-    const resetFrameCount = resetFrameCountRef.current;
-    setIsInteractionLocked(true);
-    pagerViewRef.current?.setPageWithoutAnimation?.(CURRENT_PAGE_INDEX);
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        if (resetFrameCountRef.current !== resetFrameCount) {
-          return;
-        }
+    finishMonthTransition(currentPageKey, currentPageHeight);
+  }, [currentPageHeight, currentPageKey]);
 
-        animateViewportHeight(viewportHeight, currentPage.height, () => {
-          pendingMonthOffsetRef.current = 0;
-          isResettingRef.current = false;
-          setIsInteractionLocked(false);
-        });
-      });
+  function initializeCurrentPage(pageKey: string, pageHeight: number) {
+    isReadyRef.current = true;
+    currentPageKeyRef.current = pageKey;
+    currentPageHeightRef.current = pageHeight;
+    viewportHeight.setValue(pageHeight);
+  }
+
+  function updateCurrentPageHeight(pageHeight: number) {
+    animateCurrentPageHeight(pageHeight, isInteractionLocked ? completeMonthTransition : undefined);
+  }
+
+  function animateCurrentPageHeight(pageHeight: number, onComplete?: () => void) {
+    const animationRevision = heightAnimationRevisionRef.current + 1;
+    heightAnimationRevisionRef.current = animationRevision;
+
+    if (currentPageHeightRef.current === pageHeight) {
+      onComplete?.();
+      return;
+    }
+
+    currentPageHeightRef.current = pageHeight;
+    animateViewportHeight(viewportHeight, pageHeight, () => {
+      if (heightAnimationRevisionRef.current === animationRevision) {
+        onComplete?.();
+      }
     });
-  }, [currentPage.height, currentPage.key, viewportHeight]);
+  }
+
+  function finishMonthTransition(pageKey: string, pageHeight: number) {
+    currentPageKeyRef.current = pageKey;
+    animateCurrentPageHeight(pageHeight, completeMonthTransition);
+  }
+
+  function completeMonthTransition() {
+    pendingMonthOffsetRef.current = 0;
+    setIsInteractionLocked(false);
+  }
+
+  function handlePageSelected(pageIndex: number) {
+    const monthOffset = resolveMonthOffsetFromPageIndex(pageIndex);
+    if (monthOffset === 0 || pendingMonthOffsetRef.current !== 0) {
+      return;
+    }
+
+    pendingMonthOffsetRef.current = monthOffset;
+    setIsInteractionLocked(true);
+    onMoveMonth(monthOffset);
+  }
 
   return (
     <Animated.View style={[styles.viewport, { height: viewportHeight }]}>
       <PagerView
+        key={currentPageKey}
         initialPage={CURRENT_PAGE_INDEX}
-        orientation="vertical"
+        orientation="horizontal"
         overdrag={false}
-        ref={pagerViewRef}
         scrollEnabled={!isInteractionLocked}
         style={styles.pager}
         onPageSelected={(event) => {
-          if (isResettingRef.current) {
-            return;
-          }
-          const monthOffset = resolveMonthOffsetFromPageIndex(event.nativeEvent.position);
-          if (monthOffset === 0 || pendingMonthOffsetRef.current !== 0) {
-            return;
-          }
-          pendingMonthOffsetRef.current = monthOffset;
-          setIsInteractionLocked(true);
-          onMoveMonth(monthOffset);
+          handlePageSelected(event.nativeEvent.position);
         }}
       >
-        <MonthPageSlot
-          key={previousPage.key}
-          page={previousPage}
-          {...{ onSelectDate, selectedDate }}
-        />
-        <MonthPageSlot
-          key={currentPage.key}
-          page={currentPage}
-          {...{ onSelectDate, selectedDate }}
-        />
-        <MonthPageSlot key={nextPage.key} page={nextPage} {...{ onSelectDate, selectedDate }} />
+        <MonthPageSlot page={previousPage} {...{ onSelectDate, selectedDate }} />
+        <MonthPageSlot page={currentPage} {...{ onSelectDate, selectedDate }} />
+        <MonthPageSlot page={nextPage} {...{ onSelectDate, selectedDate }} />
       </PagerView>
     </Animated.View>
   );

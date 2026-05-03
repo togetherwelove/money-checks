@@ -6,10 +6,13 @@ export const SubscriptionTiers = {
 export type SubscriptionTier = (typeof SubscriptionTiers)[keyof typeof SubscriptionTiers];
 
 export const SubscriptionConfig = {
+  freeAccessibleLedgerBookLimit: 1,
   freeSharedMemberLimit: 2,
   freeOwnedLedgerBookLimit: 1,
   monthlyPackageIdentifier: "monthly",
+  plusAccessibleLedgerBookLimit: 3,
   plusOwnedLedgerBookLimit: 3,
+  plusSharedMemberLimit: 5,
   plusEntitlementId: "plus",
 } as const;
 
@@ -28,7 +31,7 @@ export const AdMobConfig = {
 
 export const SubscriptionMessages = {
   freePlanLabel: "Free 플랜",
-  heroDescription: "알뜰에서 더욱 편하게\n공유 멤버 확장과 광고 제거,\n가계부 관리를 한 번에",
+  heroDescription: "알뜰에서 광고로 불편함 없이\n하나 이상의 가계부를 관리하고,\n더 많은 공유 멤버와 함께하세요.",
   heroPriceLabel: "￦770원/월",
   inactiveRestoreMessage: "활성화된 알뜰 plus가 없어요.",
   monthlyPriceSuffix: "/월",
@@ -44,6 +47,7 @@ export const SubscriptionMessages = {
   restoreError: "구매 내역을 복원하지 못했어요.",
   restoreSuccess: "구매 내역을 복원했어요.",
   screenTitle: "알뜰 plus",
-  sharedLedgerLimitDescription: "Free 플랜은 본인을 포함해 최대 2명까지만 공유할 수 있어요.",
+  sharedLedgerLimitDescription:
+    "Free 플랜 한도에 도달했어요.",
   statusLabel: "현재 플랜",
 } as const;

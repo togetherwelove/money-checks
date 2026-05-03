@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
+import { AppLayout } from "../constants/layout";
 import { AppMessages } from "../constants/messages";
 import { useLedgerCategoryIconMap } from "../hooks/useLedgerCategoryIconMap";
 import type { LedgerEntry } from "../types/ledger";
@@ -40,7 +41,7 @@ export function LedgerEntryList({ entries, onDeleteEntry, onEditEntry }: LedgerE
 
 const styles = StyleSheet.create({
   list: {
-    gap: 8,
+    gap: AppLayout.listItemGap,
   },
   emptyState: {
     flex: 1,

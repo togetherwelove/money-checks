@@ -1,9 +1,10 @@
 import { useIsFocused } from "@react-navigation/native";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ComponentRef } from "react";
 import {
   ActivityIndicator,
   Alert,
+  ScrollView,
   StyleSheet,
   Text,
   type TextInput,
@@ -33,7 +34,6 @@ import {
   formatCurrency,
   formatLedgerListHeaderDate,
   formatMonthYear,
-  getMonthKey,
   toIsoDate,
 } from "../utils/calendar";
 
@@ -65,6 +65,8 @@ export function HomeScreen({
   const todayIsoDate = toIsoDate(new Date());
   const isScreenFocused = useIsFocused();
   const [isDateMemoExpanded, setIsDateMemoExpanded] = useState(false);
+  const [isDateMemoEditing, setIsDateMemoEditing] = useState(false);
+  const [dateMemoPanelHeight, setDateMemoPanelHeight] = useState(0);
   const [calendarFocusRevision, setCalendarFocusRevision] = useState(0);
   const wasScreenFocusedRef = useRef(isScreenFocused);
   const scrollViewRef = useRef<ComponentRef<typeof KeyboardAwareScrollView>>(null);
@@ -80,7 +82,6 @@ export function HomeScreen({
     setVisibleMonth,
     visibleMonth,
   } = state;
-  const calendarMonthKeyRef = useRef(getMonthKey(visibleMonth));
   const selectedDateLabel = formatLedgerListHeaderDate(selectedDate);
 
   useEffect(() => {
@@ -88,19 +89,18 @@ export function HomeScreen({
   }, [selectedDateNote]);
 
   useEffect(() => {
+    if (!isDateMemoExpanded) {
+      setIsDateMemoEditing(false);
+      setDateMemoPanelHeight(0);
+    }
+  }, [isDateMemoExpanded]);
+
+  useEffect(() => {
     if (!wasScreenFocusedRef.current && isScreenFocused) {
       setCalendarFocusRevision((currentRevision) => currentRevision + 1);
     }
     wasScreenFocusedRef.current = isScreenFocused;
   }, [isScreenFocused]);
-
-  useEffect(() => {
-    const nextMonthKey = getMonthKey(visibleMonth);
-    if (calendarMonthKeyRef.current !== nextMonthKey) {
-      calendarMonthKeyRef.current = nextMonthKey;
-      setCalendarFocusRevision((currentRevision) => currentRevision + 1);
-    }
-  }, [visibleMonth]);
 
   const handleBeginDateMemoEditing = (input: TextInput | null) => {
     const inputNodeHandle = input ? findNodeHandle(input) : null;
@@ -115,11 +115,22 @@ export function HomeScreen({
     });
   };
 
+  const dateMemoKeyboardExtraScrollHeight = resolveDateMemoKeyboardExtraScrollHeight(
+    isDateMemoEditing,
+    dateMemoPanelHeight,
+  );
+  const contentBottomPadding = dateMemoKeyboardExtraScrollHeight;
+  const contentContainerStyle = useMemo(
+    () => [styles.content, { paddingBottom: contentBottomPadding }],
+    [contentBottomPadding],
+  );
+
   return (
     <KeyboardAwareScrollView
       ref={scrollViewRef}
-      contentContainerStyle={styles.content}
-      extraScrollHeight={DateMemoUi.keyboardExtraScrollHeight}
+      contentContainerStyle={contentContainerStyle}
+      extraScrollHeight={dateMemoKeyboardExtraScrollHeight}
+      scrollEnabled={false}
       showsVerticalScrollIndicator={false}
       style={styles.screen}
     >
@@ -133,6 +144,8 @@ export function HomeScreen({
         onDeleteSelectedEntry={onDeleteSelectedEntry}
         onDeleteSelectedDateNote={handleDeleteSelectedDateNote}
         onEditSelectedEntry={onEditSelectedEntry}
+        onDateMemoEditingChange={setIsDateMemoEditing}
+        onDateMemoHeightChange={setDateMemoPanelHeight}
         onOpenCharts={onOpenCharts}
         onOpenEntry={onOpenEntry}
         onOpenMonthPicker={onOpenMonthPicker}
@@ -163,6 +176,8 @@ function KeyboardAwareContent({
   onDeleteSelectedEntry,
   onDeleteSelectedDateNote,
   onEditSelectedEntry,
+  onDateMemoEditingChange,
+  onDateMemoHeightChange,
   onOpenCharts,
   onOpenEntry,
   onOpenMonthPicker,
@@ -188,6 +203,8 @@ function KeyboardAwareContent({
   onDeleteSelectedEntry: (entry: LedgerEntry) => Promise<void>;
   onDeleteSelectedDateNote: () => Promise<void>;
   onEditSelectedEntry: (entry: LedgerEntry) => void;
+  onDateMemoEditingChange: (isEditing: boolean) => void;
+  onDateMemoHeightChange: (height: number) => void;
   onOpenCharts: () => void;
   onOpenEntry: () => void;
   onOpenMonthPicker: () => void;
@@ -205,34 +222,41 @@ function KeyboardAwareContent({
   visibleMonth: Date;
 }) {
   return (
-    <>
+    <View style={styles.screenContent}>
       <View style={styles.fixedSection}>
         {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
-        <CalendarToolbar
-          monthLabel={formatMonthYear(visibleMonth)}
-          onPressMonthLabel={onOpenMonthPicker}
-          onSelectToday={() => {
-            onSelectCalendarDate(todayIsoDate);
-          }}
-          showMoveToCurrent={selectedDate !== todayIsoDate}
-        />
-        <WeekdayHeader />
-        <MonthCalendarPager
-          key={calendarFocusRevision}
-          currentPage={state.currentMonthPage}
-          nextPage={state.nextMonthPage}
-          onMoveMonth={(monthOffset) => moveMonth(visibleMonth, monthOffset, setVisibleMonth)}
-          onSelectDate={onSelectCalendarDate}
-          previousPage={state.previousMonthPage}
-          selectedDate={selectedDate}
-        />
-        <View style={styles.summarySection}>
-          {showsBannerAd ? <AppBannerAd /> : null}
-          <MonthlySummary
-            totalExpense={formatCurrency(monthlyLedger.totalExpense)}
-            totalIncome={formatCurrency(monthlyLedger.totalIncome)}
+        <View style={styles.monthHeaderSection}>
+          <CalendarToolbar
+            monthLabel={formatMonthYear(visibleMonth)}
+            onPressMonthLabel={onOpenMonthPicker}
+            onSelectToday={() => {
+              onSelectCalendarDate(todayIsoDate);
+            }}
+            showMoveToCurrent={selectedDate !== todayIsoDate}
           />
+          <View style={styles.summarySection}>
+            <MonthlySummary
+              balanceAmount={monthlyLedger.balance}
+              totalExpense={formatCurrency(monthlyLedger.totalExpense)}
+              totalIncome={formatCurrency(monthlyLedger.totalIncome)}
+            />
+          </View>
         </View>
+        <View style={styles.calendarAdSection}>
+          <WeekdayHeader />
+          <MonthCalendarPager
+            key={calendarFocusRevision}
+            currentPage={state.currentMonthPage}
+            nextPage={state.nextMonthPage}
+            onMoveMonth={(monthOffset) => moveMonth(visibleMonth, monthOffset, setVisibleMonth)}
+            onSelectDate={onSelectCalendarDate}
+            previousPage={state.previousMonthPage}
+            selectedDate={selectedDate}
+          />
+          {showsBannerAd ? <AppBannerAd /> : null}
+        </View>
+      </View>
+      <View style={styles.transactionSection}>
         <View style={styles.selectionRow}>
           <View style={styles.selectedDateInfo}>
             <Text style={styles.selectedDate}>{selectedDateLabel}</Text>
@@ -246,46 +270,55 @@ function KeyboardAwareContent({
             <IconActionButton icon="plus" onPress={onOpenEntry} size="compact" />
           </View>
         </View>
+        <ScrollView
+          contentContainerStyle={styles.transactionScrollContent}
+          nestedScrollEnabled
+          showsVerticalScrollIndicator={false}
+          style={styles.transactionScroll}
+        >
+          {isLoadingSelectedDateEntries && selectedEntries.length === 0 ? (
+            <ActivityIndicatorContainer />
+          ) : (
+            <>
+              <SelectedDateMemoAccordion
+                key={selectedDate}
+                isExpanded={isDateMemoExpanded}
+                note={selectedDateNote}
+                onBeginEditing={handleBeginDateMemoEditing}
+                onCollapse={() => setIsDateMemoExpanded(false)}
+                onDelete={onDeleteSelectedDateNote}
+                onEditingChange={onDateMemoEditingChange}
+                onHeightChange={onDateMemoHeightChange}
+                onSave={onSaveSelectedDateNote}
+              />
+              <LedgerEntryList
+                entries={selectedEntries}
+                onDeleteEntry={(entry) => {
+                  Alert.alert(
+                    AppMessages.editorDeleteConfirmTitle,
+                    AppMessages.editorDeleteConfirmMessage,
+                    [
+                      {
+                        style: "cancel",
+                        text: CommonActionCopy.cancel,
+                      },
+                      {
+                        onPress: () => {
+                          void onDeleteSelectedEntry(entry);
+                        },
+                        style: "destructive",
+                        text: AppMessages.editorDeleteConfirmAction,
+                      },
+                    ],
+                  );
+                }}
+                onEditEntry={onEditSelectedEntry}
+              />
+            </>
+          )}
+        </ScrollView>
       </View>
-      {isLoadingSelectedDateEntries && selectedEntries.length === 0 ? (
-        <ActivityIndicatorContainer />
-      ) : (
-        <>
-          <SelectedDateMemoAccordion
-            key={selectedDate}
-            isExpanded={isDateMemoExpanded}
-            note={selectedDateNote}
-            onBeginEditing={handleBeginDateMemoEditing}
-            onCollapse={() => setIsDateMemoExpanded(false)}
-            onDelete={onDeleteSelectedDateNote}
-            onSave={onSaveSelectedDateNote}
-          />
-          <LedgerEntryList
-            entries={selectedEntries}
-            onDeleteEntry={(entry) => {
-              Alert.alert(
-                AppMessages.editorDeleteConfirmTitle,
-                AppMessages.editorDeleteConfirmMessage,
-                [
-                  {
-                    style: "cancel",
-                    text: CommonActionCopy.cancel,
-                  },
-                  {
-                    onPress: () => {
-                      void onDeleteSelectedEntry(entry);
-                    },
-                    style: "destructive",
-                    text: AppMessages.editorDeleteConfirmAction,
-                  },
-                ],
-              );
-            }}
-            onEditEntry={onEditSelectedEntry}
-          />
-        </>
-      )}
-    </>
+    </View>
   );
 }
 
@@ -303,6 +336,18 @@ function moveMonth(
   setVisibleMonth(addMonths(visibleMonth, monthOffset));
 }
 
+function resolveDateMemoKeyboardExtraScrollHeight(isEditing: boolean, panelHeight: number) {
+  if (!isEditing || panelHeight <= 0) {
+    return 0;
+  }
+
+  const measuredExtraHeight = panelHeight * DateMemoUi.keyboardExtraScrollHeightRatio;
+  return Math.min(
+    DateMemoUi.keyboardExtraScrollHeightMax,
+    Math.max(DateMemoUi.keyboardExtraScrollHeightMin, measuredExtraHeight),
+  );
+}
+
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
@@ -311,12 +356,32 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     paddingHorizontal: AppLayout.screenPadding,
-    paddingBottom: DateMemoUi.keyboardExtraScrollHeight,
+  },
+  screenContent: {
+    flex: 1,
+    minHeight: 0,
+    gap: AppLayout.cardGap,
   },
   fixedSection: {
     gap: AppLayout.cardGap,
-    paddingTop: AppLayout.screenPadding,
-    paddingBottom: AppLayout.cardGap,
+  },
+  monthHeaderSection: {
+    gap: AppLayout.calendarGap,
+  },
+  calendarAdSection: {
+    gap: AppLayout.calendarGap,
+  },
+  transactionSection: {
+    flex: 1,
+    minHeight: 0,
+    gap: AppLayout.compactGap,
+  },
+  transactionScroll: {
+    flex: 1,
+    minHeight: 0,
+  },
+  transactionScrollContent: {
+    gap: AppLayout.compactGap,
   },
   summarySection: {
     gap: AppLayout.compactGap,

@@ -8,6 +8,7 @@ import type { CalendarDay } from "../types/ledger";
 import { formatAmountNumber } from "../utils/amount";
 import { parseIsoDate } from "../utils/calendar";
 import {
+  CALENDAR_DAYS_PER_WEEK,
   CALENDAR_DAY_CELL_MIN_HEIGHT,
   CALENDAR_ROW_HEIGHT,
   CALENDAR_ROW_PADDING,
@@ -21,6 +22,8 @@ type MonthCalendarProps = {
 };
 
 const CELL_WIDTH = "14.2857%";
+const CALENDAR_DAY_HORIZONTAL_PADDING = 0;
+const CALENDAR_DAY_VERTICAL_PADDING = CALENDAR_ROW_PADDING;
 
 function MonthCalendarComponent({ days, onSelectDate, selectedDate }: MonthCalendarProps) {
   const visibleDays = useMemo(() => getVisibleCalendarDays(days), [days]);
@@ -34,8 +37,8 @@ function MonthCalendarComponent({ days, onSelectDate, selectedDate }: MonthCalen
   return (
     <View style={styles.container}>
       <View style={styles.grid}>
-        {visibleDays.map((day) => (
-          <View key={day.isoDate} style={styles.daySlot}>
+        {visibleDays.map((day, index) => (
+          <View key={day.isoDate} style={[styles.daySlot, getWeekDividerStyle(index)]}>
             {day.isCurrentMonth ? (
               <DayCell
                 day={day}
@@ -69,7 +72,6 @@ const DayCell = memo(function DayCell({
 }) {
   const hasEntry = day.income > 0 || day.expense > 0;
   const hasDateMemo = day.note.trim().length > 0;
-  const isAdjacentMonth = !day.isCurrentMonth;
   const dayOfWeek = parseIsoDate(day.isoDate).getDay();
   const isSunday = dayOfWeek === 0;
   const isSaturday = dayOfWeek === 6;
@@ -79,10 +81,7 @@ const DayCell = memo(function DayCell({
   }, [day.isoDate, onSelectDate]);
 
   return (
-    <Pressable
-      onPress={handlePress}
-      style={[styles.dayCell, isAdjacentMonth && styles.adjacentMonthCell]}
-    >
+    <Pressable onPress={handlePress} style={styles.dayCell}>
       {hasDateMemo ? <View style={styles.memoIndicator} /> : null}
       <View style={styles.dayContent}>
         <Text
@@ -92,7 +91,6 @@ const DayCell = memo(function DayCell({
             shouldApplyWeekendTint && isSaturday && styles.saturdayNumber,
             day.isToday && styles.todayNumber,
             isSelected && styles.selectedNumber,
-            isAdjacentMonth && styles.adjacentMonthText,
           ]}
         >
           {day.dayNumber}
@@ -104,11 +102,7 @@ const DayCell = memo(function DayCell({
                 adjustsFontSizeToFit
                 minimumFontScale={CalendarDayUi.amountMinimumScale}
                 numberOfLines={1}
-                style={[
-                  styles.amountText,
-                  styles.incomeText,
-                  isAdjacentMonth && styles.mutedAmount,
-                ]}
+                style={[styles.amountText, styles.incomeText]}
               >
                 +{formatCalendarDayAmount(day.income)}
               </Text>
@@ -118,11 +112,7 @@ const DayCell = memo(function DayCell({
                 adjustsFontSizeToFit
                 minimumFontScale={CalendarDayUi.amountMinimumScale}
                 numberOfLines={1}
-                style={[
-                  styles.amountText,
-                  styles.expenseText,
-                  isAdjacentMonth && styles.mutedAmount,
-                ]}
+                style={[styles.amountText, styles.expenseText]}
               >
                 -{formatCalendarDayAmount(day.expense)}
               </Text>
@@ -134,6 +124,10 @@ const DayCell = memo(function DayCell({
   );
 });
 
+function getWeekDividerStyle(dayIndex: number) {
+  return dayIndex >= CALENDAR_DAYS_PER_WEEK ? styles.weekDivider : null;
+}
+
 const styles = StyleSheet.create({
   container: {
     width: "100%",
@@ -144,22 +138,21 @@ const styles = StyleSheet.create({
   },
   daySlot: {
     width: CELL_WIDTH,
-    paddingHorizontal: 1,
-    paddingVertical: CALENDAR_ROW_PADDING,
+    paddingHorizontal: CALENDAR_DAY_HORIZONTAL_PADDING,
+    paddingVertical: CALENDAR_DAY_VERTICAL_PADDING,
   },
   dayCell: {
     position: "relative",
     minHeight: CALENDAR_DAY_CELL_MIN_HEIGHT,
     paddingHorizontal: 2,
     paddingVertical: 2,
-    backgroundColor: AppColors.surface,
-    borderRadius: 10,
-  },
-  adjacentMonthCell: {
-    backgroundColor: AppColors.background,
   },
   emptyDayCell: {
-    backgroundColor: AppColors.background,
+    minHeight: CALENDAR_DAY_CELL_MIN_HEIGHT,
+  },
+  weekDivider: {
+    borderTopColor: AppColors.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
   dayContent: {
     flex: 1,
@@ -202,9 +195,6 @@ const styles = StyleSheet.create({
     color: CalendarDayUi.saturdayTextColor,
     opacity: CalendarDayUi.weekendTextOpacity,
   },
-  adjacentMonthText: {
-    color: AppColors.mutedStrongText,
-  },
   amounts: {
     width: "100%",
     alignItems: "center",
@@ -217,9 +207,6 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
     fontWeight: "600",
     textAlign: "center",
-  },
-  mutedAmount: {
-    opacity: 0.7,
   },
   incomeText: {
     color: AppColors.income,

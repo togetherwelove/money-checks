@@ -9,6 +9,7 @@ export const ICON_ACTION_BUTTON_COMPACT_SIZE = 28;
 
 type IconActionButtonProps = {
   accessibilityLabel?: string;
+  disabled?: boolean;
   icon: keyof typeof Feather.glyphMap;
   isActive?: boolean;
   onPress: () => void;
@@ -17,6 +18,7 @@ type IconActionButtonProps = {
 
 export function IconActionButton({
   accessibilityLabel,
+  disabled = false,
   icon,
   isActive = false,
   onPress,
@@ -25,11 +27,13 @@ export function IconActionButton({
   return (
     <Pressable
       accessibilityLabel={accessibilityLabel}
+      disabled={disabled}
       onPress={onPress}
       style={[
         styles.button,
         size === "compact" ? styles.compactButton : null,
         isActive && styles.activeButton,
+        disabled && styles.disabledButton,
       ]}
     >
       <Feather
@@ -55,5 +59,8 @@ const styles = StyleSheet.create({
   },
   activeButton: {
     opacity: 1,
+  },
+  disabledButton: {
+    opacity: 0.45,
   },
 });

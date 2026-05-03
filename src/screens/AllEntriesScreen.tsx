@@ -222,7 +222,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: AppColors.background,
     paddingHorizontal: AppLayout.screenPadding,
-    paddingVertical: AppLayout.screenPadding,
   },
   content: {
     flex: 1,

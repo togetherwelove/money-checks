@@ -239,9 +239,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: AppLayout.screenPadding,
-    paddingTop: AppLayout.screenPadding,
     gap: AppLayout.cardGap,
-    paddingBottom: 24,
   },
   card: {
     ...SurfaceCardStyle,
