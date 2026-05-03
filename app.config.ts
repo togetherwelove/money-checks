@@ -59,6 +59,8 @@ const config: ExpoConfig = {
     "expo-font",
     "expo-secure-store",
     "expo-apple-authentication",
+    "expo-mail-composer",
+    "expo-sharing",
     ["expo-image-picker", imagePickerPermissionConfig],
     [
       "expo-notifications",

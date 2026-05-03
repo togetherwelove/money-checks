@@ -118,10 +118,12 @@ export const NotificationActionCategoryDefinitions = [
 
 export function resolveNotificationActionRoute(
   actionIdentifier: string,
-  data: Record<string, unknown>,
+  data: Record<string, unknown> | undefined,
 ): LedgerAppScreen {
   const payloadRoute =
-    typeof data.actionRoute === "string" ? resolveNotificationPayloadRoute(data.actionRoute) : null;
+    typeof data?.actionRoute === "string"
+      ? resolveNotificationPayloadRoute(data.actionRoute)
+      : null;
 
   if (payloadRoute) {
     return payloadRoute;

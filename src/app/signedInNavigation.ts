@@ -9,7 +9,6 @@ export type SignedInStackParamList = {
   entry: undefined;
   help: undefined;
   "notification-settings": undefined;
-  "open-source-licenses": undefined;
   share: undefined;
   subscription: undefined;
   support: undefined;
@@ -29,7 +28,6 @@ export function isSignedInStackScreen(value: string | undefined): value is Ledge
     value === "entry" ||
     value === "help" ||
     value === "notification-settings" ||
-    value === "open-source-licenses" ||
     value === "share" ||
     value === "subscription" ||
     value === "support"

@@ -1,0 +1,14 @@
+.expo/
+.vscode/
+.supabase/
+dist/
+node_modules/
+.env
+.env.*
+*.log
+.codex-logs/
+.eas-build-state/
+.tmp-glance-aar/
+android/release-signing.properties
+android/*.keystore
+android/*.jks

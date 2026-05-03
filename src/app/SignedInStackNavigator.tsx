@@ -18,7 +18,6 @@ import { EntryScreen } from "../screens/EntryScreen";
 import { HelpScreen } from "../screens/HelpScreen";
 import { HomeScreen } from "../screens/HomeScreen";
 import { NotificationSettingsScreen } from "../screens/NotificationSettingsScreen";
-import { OpenSourceLicensesScreen } from "../screens/OpenSourceLicensesScreen";
 import { ShareLedgerScreen } from "../screens/ShareLedgerScreen";
 import { SubscriptionScreen } from "../screens/SubscriptionScreen";
 import { SupportContactScreen } from "../screens/SupportContactScreen";
@@ -255,7 +254,6 @@ export function SignedInStackNavigator({
         )}
       </Stack.Screen>
       <Stack.Screen name="help" component={HelpScreen} />
-      <Stack.Screen name="open-source-licenses" component={OpenSourceLicensesScreen} />
       <Stack.Screen name="contact-support">
         {() => <SupportContactScreen email={email} />}
       </Stack.Screen>
