@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Alert,
-  InteractionManager,
   Keyboard,
   type LayoutChangeEvent,
   StyleSheet,
@@ -23,6 +22,7 @@ import {
   FormMultilineInputTextStyle,
   SurfaceCardStyle,
 } from "../constants/uiStyles";
+import { scheduleIdleTask } from "../lib/idleScheduler";
 import { formatInstallmentLabel } from "../lib/installments";
 import { showNativeToast } from "../lib/nativeToast";
 import type { LedgerEntryDraft, LedgerEntryType } from "../types/ledger";
@@ -95,7 +95,7 @@ export function LedgerEntryForm({
 
   useEffect(() => {
     let isCancelled = false;
-    const interactionTask = InteractionManager.runAfterInteractions(() => {
+    const idleTask = scheduleIdleTask(() => {
       amountFocusTimeoutRef.current = setTimeout(() => {
         if (!isCancelled) {
           amountInputRef.current?.focus();
@@ -108,7 +108,7 @@ export function LedgerEntryForm({
       if (amountFocusTimeoutRef.current) {
         clearTimeout(amountFocusTimeoutRef.current);
       }
-      interactionTask.cancel();
+      idleTask.cancel();
     };
   }, []);
 
@@ -152,12 +152,17 @@ export function LedgerEntryForm({
         entryType={draft.type}
         onDraggingChange={onCategoryDraggingChange}
         onSelectCategory={(category) => {
-          onChangeDraft("category", category);
+          onChangeDraft("category", category?.label ?? "");
+          onChangeDraft("categoryId", category?.id ?? "");
+          if (!category) {
+            return;
+          }
+
           setTimeout(() => {
             contentInputRef.current?.focus();
           }, CONTENT_INPUT_FOCUS_DELAY_MS);
         }}
-        selectedCategory={draft.category}
+        selectedCategoryId={draft.categoryId}
         title={EntryRegistrationCopy.categoryLabel}
       />
       <View style={styles.fieldGroup}>
@@ -298,7 +303,7 @@ function resolveDraftValidationMessage(draft: LedgerEntryDraft): string | null {
     return EntryRegistrationCopy.contentRequiredError;
   }
 
-  if (!draft.category.trim()) {
+  if (!draft.categoryId.trim()) {
     return EntryRegistrationCopy.categoryRequiredError;
   }
 

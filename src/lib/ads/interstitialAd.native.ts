@@ -8,6 +8,7 @@ import {
 import { appPlatform } from "../appPlatform";
 import { logAppError, logAppWarning } from "../logAppError";
 import { logAdMobLoadError } from "./adMobLoadError";
+import { getAdRequestOptions } from "./adRequestOptions";
 
 let interstitialAd: InterstitialAd | null = null;
 let interstitialAdDisposers: Array<() => void> = [];
@@ -105,7 +106,7 @@ function waitForInterstitialDismissal(currentInterstitialAd: InterstitialAd): Pr
 }
 
 function createInterstitialAd(adUnitId: string) {
-  const nextInterstitialAd = InterstitialAd.createForAdRequest(adUnitId);
+  const nextInterstitialAd = InterstitialAd.createForAdRequest(adUnitId, getAdRequestOptions());
 
   interstitialAdDisposers = [
     nextInterstitialAd.addAdEventListener(AdEventType.LOADED, () => {

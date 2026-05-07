@@ -1,9 +1,7 @@
-import type { NotificationPermissionState } from "./notifications/pushNotifications";
-
 const NICKNAME_ONBOARDING_KEY_PREFIX = "moneychecks.auth-onboarding.nickname.v1";
 const PERMISSION_ONBOARDING_KEY_PREFIX = "moneychecks.auth-onboarding.permission.v1";
 
-export type AuthOnboardingStep = "nickname" | "notification-permission" | null;
+export type AuthOnboardingStep = "nickname" | null;
 export type StoredAuthOnboardingState = {
   hasCompletedNicknameOnboarding: boolean;
   hasCompletedPermissionOnboarding: boolean;
@@ -15,10 +13,7 @@ type AuthOnboardingStorage = {
 
 type ResolveAuthOnboardingStepOptions = {
   hasCompletedNicknameOnboarding: boolean;
-  hasCompletedPermissionOnboarding: boolean;
   hasResolvedDisplayName: boolean;
-  isNotificationSupported: boolean;
-  permissionState: NotificationPermissionState;
 };
 
 export function resolveAuthOnboardingStep(
@@ -26,14 +21,6 @@ export function resolveAuthOnboardingStep(
 ): AuthOnboardingStep {
   if (!options.hasCompletedNicknameOnboarding && !options.hasResolvedDisplayName) {
     return "nickname";
-  }
-
-  if (
-    options.isNotificationSupported &&
-    options.permissionState === "default" &&
-    !options.hasCompletedPermissionOnboarding
-  ) {
-    return "notification-permission";
   }
 
   return null;

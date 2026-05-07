@@ -15,7 +15,6 @@ import {
 import { AppBannerAd } from "../components/AppBannerAd";
 import { CalendarToolbar } from "../components/CalendarToolbar";
 import { DateMemoToggleButton } from "../components/DateMemoToggleButton";
-import { IconActionButton } from "../components/IconActionButton";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { LedgerEntryList } from "../components/LedgerEntryList";
 import { MonthCalendarPager } from "../components/MonthCalendarPager";
@@ -38,10 +37,8 @@ import {
 } from "../utils/calendar";
 
 type HomeScreenProps = {
-  onDeleteSelectedEntry: (entry: LedgerEntry) => Promise<void>;
+  onDeleteSelectedEntry: (entry: LedgerEntry) => Promise<boolean>;
   onEditSelectedEntry: (entry: LedgerEntry) => void;
-  onOpenCharts: () => void;
-  onOpenEntry: () => void;
   onOpenMonthPicker: () => void;
   onSelectCalendarDate: (isoDate: string) => void;
   showsBannerAd: boolean;
@@ -55,8 +52,6 @@ type KeyboardAwareScrollViewRef = ComponentRef<typeof KeyboardAwareScrollView> &
 export function HomeScreen({
   onDeleteSelectedEntry,
   onEditSelectedEntry,
-  onOpenCharts,
-  onOpenEntry,
   onOpenMonthPicker,
   onSelectCalendarDate,
   showsBannerAd,
@@ -146,8 +141,6 @@ export function HomeScreen({
         onEditSelectedEntry={onEditSelectedEntry}
         onDateMemoEditingChange={setIsDateMemoEditing}
         onDateMemoHeightChange={setDateMemoPanelHeight}
-        onOpenCharts={onOpenCharts}
-        onOpenEntry={onOpenEntry}
         onOpenMonthPicker={onOpenMonthPicker}
         onSaveSelectedDateNote={handleSaveSelectedDateNote}
         onSelectCalendarDate={onSelectCalendarDate}
@@ -178,8 +171,6 @@ function KeyboardAwareContent({
   onEditSelectedEntry,
   onDateMemoEditingChange,
   onDateMemoHeightChange,
-  onOpenCharts,
-  onOpenEntry,
   onOpenMonthPicker,
   onSaveSelectedDateNote,
   onSelectCalendarDate,
@@ -200,13 +191,11 @@ function KeyboardAwareContent({
   isDateMemoExpanded: boolean;
   isLoadingSelectedDateEntries: boolean;
   monthlyLedger: LedgerScreenState["monthlyLedger"];
-  onDeleteSelectedEntry: (entry: LedgerEntry) => Promise<void>;
+  onDeleteSelectedEntry: (entry: LedgerEntry) => Promise<boolean>;
   onDeleteSelectedDateNote: () => Promise<void>;
   onEditSelectedEntry: (entry: LedgerEntry) => void;
   onDateMemoEditingChange: (isEditing: boolean) => void;
   onDateMemoHeightChange: (height: number) => void;
-  onOpenCharts: () => void;
-  onOpenEntry: () => void;
   onOpenMonthPicker: () => void;
   onSaveSelectedDateNote: (note: string) => Promise<void>;
   onSelectCalendarDate: (isoDate: string) => void;
@@ -266,8 +255,6 @@ function KeyboardAwareContent({
               isExpanded={isDateMemoExpanded}
               onPress={() => setIsDateMemoExpanded((currentValue) => !currentValue)}
             />
-            <IconActionButton icon="pie-chart" onPress={onOpenCharts} size="compact" />
-            <IconActionButton icon="plus" onPress={onOpenEntry} size="compact" />
           </View>
         </View>
         <ScrollView
@@ -398,11 +385,10 @@ const styles = StyleSheet.create({
   selectionRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
     gap: AppLayout.compactGap,
   },
   selectedDateInfo: {
-    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     minWidth: 0,

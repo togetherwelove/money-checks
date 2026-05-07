@@ -8,28 +8,24 @@ import {
   readStoredAuthOnboardingState,
   resolveAuthOnboardingStep,
 } from "../lib/authOnboarding";
-import type { NotificationPermissionState } from "../lib/notifications/pushNotifications";
 import { fetchOwnProfileDisplayName } from "../lib/profiles";
 import { normalizeDisplayNameCandidate } from "../utils/displayName";
 
 type AuthOnboardingState = {
   completeNicknameOnboarding: (displayName: string) => void;
   completePermissionOnboarding: () => void;
+  hasCompletedPermissionOnboarding: boolean;
   isLoading: boolean;
   step: AuthOnboardingStep;
 };
 
 type UseAuthOnboardingOptions = {
   fallbackDisplayName: string;
-  isNotificationSupported: boolean;
-  permissionState: NotificationPermissionState;
   userId: string;
 };
 
 export function useAuthOnboarding({
   fallbackDisplayName,
-  isNotificationSupported,
-  permissionState,
   userId,
 }: UseAuthOnboardingOptions): AuthOnboardingState {
   const initialStoredState = readStoredAuthOnboardingState(appStorage, userId);
@@ -95,18 +91,9 @@ export function useAuthOnboarding({
     () =>
       resolveAuthOnboardingStep({
         hasCompletedNicknameOnboarding,
-        hasCompletedPermissionOnboarding,
         hasResolvedDisplayName: Boolean(profileDisplayName),
-        isNotificationSupported,
-        permissionState,
       }),
-    [
-      hasCompletedNicknameOnboarding,
-      hasCompletedPermissionOnboarding,
-      profileDisplayName,
-      isNotificationSupported,
-      permissionState,
-    ],
+    [hasCompletedNicknameOnboarding, profileDisplayName],
   );
 
   const completeNicknameOnboarding = useCallback(
@@ -126,6 +113,7 @@ export function useAuthOnboarding({
   return {
     completeNicknameOnboarding,
     completePermissionOnboarding,
+    hasCompletedPermissionOnboarding,
     isLoading,
     step,
   };

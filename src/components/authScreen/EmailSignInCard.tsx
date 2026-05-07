@@ -9,6 +9,7 @@ type EmailSignInCardProps = {
   email: string;
   onChangeEmail: (value: string) => void;
   onChangePassword: (value: string) => void;
+  onOpenPasswordReset: () => void;
   onOpenSignUp: () => void;
   onSubmit: () => void | Promise<void>;
   password: string;
@@ -18,6 +19,7 @@ export function EmailSignInCard({
   email,
   onChangeEmail,
   onChangePassword,
+  onOpenPasswordReset,
   onOpenSignUp,
   onSubmit,
   password,
@@ -64,9 +66,15 @@ export function EmailSignInCard({
           variant="primary"
         />
       </View>
-      <Pressable onPress={onOpenSignUp} style={styles.linkButton}>
-        <Text style={styles.linkText}>{EmailAuthCopy.signIn.openSignUpAction}</Text>
-      </Pressable>
+      <View style={styles.linkRow}>
+        <Pressable onPress={onOpenPasswordReset} style={styles.linkButton}>
+          <Text style={styles.linkText}>{EmailAuthCopy.signIn.forgotPasswordAction}</Text>
+        </Pressable>
+        <Text style={styles.linkDivider}>·</Text>
+        <Pressable onPress={onOpenSignUp} style={styles.linkButton}>
+          <Text style={styles.linkText}>{EmailAuthCopy.signIn.openSignUpAction}</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -84,9 +92,20 @@ const styles = StyleSheet.create({
   actionGroup: {
     gap: 8,
   },
+  linkRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
   linkButton: {
-    alignSelf: "center",
     paddingVertical: 4,
+  },
+  linkDivider: {
+    color: AppColors.mutedText,
+    fontSize: 13,
+    fontWeight: "600",
   },
   linkText: {
     color: AppColors.mutedStrongText,

@@ -1,25 +1,24 @@
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import {
   NavigationContainer,
-  type NavigationState,
   StackActions,
   createNavigationContainerRef,
 } from "@react-navigation/native";
 import type { Session } from "@supabase/supabase-js";
 import * as Notifications from "expo-notifications";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { InteractionManager, StatusBar, StyleSheet, Text, View } from "react-native";
+import "./src/i18n";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { AppState, StatusBar, StyleSheet, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { RootSiblingParent } from "react-native-root-siblings";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 import { SignedInStackNavigator } from "./src/app/SignedInStackNavigator";
 import { type SignedInStackParamList, isSignedInStackScreen } from "./src/app/signedInNavigation";
-import { AllEntriesAction } from "./src/components/AllEntriesAction";
-import { AnnualReportDownloadAction } from "./src/components/AnnualReportDownloadAction";
+import { AppFooterTabBar } from "./src/components/AppFooterTabBar";
 import { AppHeader } from "./src/components/AppHeader";
 import { AppMenuDrawer } from "./src/components/AppMenuDrawer";
-import { BackActionButton } from "./src/components/BackActionButton";
 import { BlockingOverlay } from "./src/components/BlockingOverlay";
 import { OnboardingTransitionScreen } from "./src/components/OnboardingTransitionScreen";
 import { SessionLoadingScreen } from "./src/components/SessionLoadingScreen";
@@ -27,37 +26,53 @@ import { AnnualReportRangePickerModal } from "./src/components/annualReport/Annu
 import { NativeYearPickerModal } from "./src/components/calendarPicker/NativeYearPickerModal";
 import { AdInterstitialPlacement } from "./src/constants/ads";
 import { AppleAuthConfig } from "./src/constants/appleAuth";
+import { AuthOnboardingTiming } from "./src/constants/authOnboarding";
+import { CardSmsClipboardCopy } from "./src/constants/cardSmsClipboard";
 import { AppColors } from "./src/constants/colors";
 import { EntryRegistrationCopy } from "./src/constants/entryRegistration";
+import { EXPENSE_CATEGORY_LABELS } from "./src/constants/expenseCategories";
+import { INCOME_CATEGORY_LABELS } from "./src/constants/incomeCategories";
 import { AppMessages } from "./src/constants/messages";
 import { SubscriptionMessages, SubscriptionTiers } from "./src/constants/subscription";
 import { SubscriptionManagementMessages } from "./src/constants/subscriptionManagement";
 import { SupportMessages, type SupportPackageIdentifier } from "./src/constants/support";
 import { useAnnualLedgerReportAction } from "./src/hooks/useAnnualLedgerReportAction";
 import { useAuthOnboarding } from "./src/hooks/useAuthOnboarding";
-import { useCardSmsClipboardAutoPrompt } from "./src/hooks/useCardSmsClipboardAutoPrompt";
 import { useGoogleAuthRedirectCompletion } from "./src/hooks/useGoogleAuthRedirectCompletion";
-import { useLedgerCategoryLabels } from "./src/hooks/useLedgerCategoryLabels";
+import { useLedgerCategories } from "./src/hooks/useLedgerCategories";
 import { useLedgerNotifications } from "./src/hooks/useLedgerNotifications";
 import { useLedgerScreenState } from "./src/hooks/useLedgerScreenState";
 import { useLedgerWidgetDeepLinks } from "./src/hooks/useLedgerWidgetDeepLinks";
 import { useLedgerWidgetSync } from "./src/hooks/useLedgerWidgetSync";
+import { usePasswordRecoveryRedirect } from "./src/hooks/usePasswordRecoveryRedirect";
 import { useSubscriptionPlan } from "./src/hooks/useSubscriptionPlan";
 import { useSupabaseSession } from "./src/hooks/useSupabaseSession";
 import { useSupportPackages } from "./src/hooks/useSupportPackages";
+import { applyAdTrackingPermissionToAdRequests } from "./src/lib/ads/adRequestOptions";
 import { preloadInterstitialAd, showInterstitialAd } from "./src/lib/ads/interstitialAd";
 import { ensureMobileAdsInitialized } from "./src/lib/ads/mobileAds";
-import { showsBackNavigationAction } from "./src/lib/appHeaderTitle";
+import {
+  type AdTrackingPermissionState,
+  isAdTrackingPermissionSupported,
+  openAdTrackingSettings,
+  readAdTrackingPermissionState,
+  requestAdTrackingPermission,
+  requestAdTrackingPermissionIfNeeded,
+} from "./src/lib/ads/trackingTransparency";
 import { appPlatform } from "./src/lib/appPlatform";
 import { getAppScreenLabel } from "./src/lib/appScreenLabels";
+import { installAppTextDefaults } from "./src/lib/appTextDefaults";
 import {
   resolveSessionAuthProvider,
   resolveSessionAuthProviderLabel,
 } from "./src/lib/authProvider";
 import {
   type CardSmsClipboardDraft,
-  promptCardSmsClipboardImport,
+  formatCardSmsClipboardDraftActionLabel,
+  readCardSmsClipboardDraft,
 } from "./src/lib/cardSmsClipboardImport";
+import { type FooterTabScreen, buildFooterTabs, isFooterTabScreen } from "./src/lib/footerTabs";
+import { scheduleIdleTask } from "./src/lib/idleScheduler";
 import { logAppError } from "./src/lib/logAppError";
 import { buildAppMenuSections } from "./src/lib/menuItems";
 import { showNativeToast } from "./src/lib/nativeToast";
@@ -65,6 +80,7 @@ import { resolveNotificationActionRoute } from "./src/lib/notifications/notifica
 import {
   fetchOwnProfileDisplayName,
   syncOwnProfileDisplayNameIfMissing,
+  syncOwnProfilePreferredLocale,
   updateOwnProfileDisplayName,
 } from "./src/lib/profiles";
 import { openSubscriptionManagement } from "./src/lib/subscription/openSubscriptionManagement";
@@ -78,14 +94,24 @@ import {
 } from "./src/notifications/domain/notificationEventFactories";
 import { AuthScreen } from "./src/screens/AuthScreen";
 import { NicknameSetupScreen } from "./src/screens/NicknameSetupScreen";
-import { PermissionOnboardingScreen } from "./src/screens/PermissionOnboardingScreen";
+import { PasswordResetScreen } from "./src/screens/PasswordResetScreen";
 import type { LedgerAppScreen } from "./src/types/app";
-import type { LedgerEntry } from "./src/types/ledger";
+import type { CategoryDefinition } from "./src/types/category";
+import type { LedgerEntry, LedgerEntryDraft } from "./src/types/ledger";
 import { getMonthKey, parseIsoDate, toIsoDate } from "./src/utils/calendar";
+import { createDraft } from "./src/utils/ledgerEntries";
 import { resolveFallbackDisplayName } from "./src/utils/sessionDisplayName";
+
+installAppTextDefaults();
 
 export default function App() {
   useGoogleAuthRedirectCompletion();
+  const [isPasswordRecoverySession, setIsPasswordRecoverySession] = useState(false);
+  usePasswordRecoveryRedirect({
+    onRecoverySession: useCallback(() => {
+      setIsPasswordRecoverySession(true);
+    }, []),
+  });
   const { errorMessage, isLoading, session } = useSupabaseSession();
 
   return (
@@ -95,6 +121,10 @@ export default function App() {
           {isLoading ? (
             <SignedOutAppShell>
               <SessionLoadingScreen />
+            </SignedOutAppShell>
+          ) : isPasswordRecoverySession && session ? (
+            <SignedOutAppShell>
+              <PasswordResetScreen onComplete={() => setIsPasswordRecoverySession(false)} />
             </SignedOutAppShell>
           ) : !session ? (
             <SignedOutAppShell>
@@ -122,14 +152,25 @@ function SignedOutAppShell({ children }: { children: React.ReactNode }) {
 }
 
 function SignedInApp({ session }: { session: Session }) {
+  const { i18n, t } = useTranslation();
   const navigationRef = useRef(createNavigationContainerRef<SignedInStackParamList>()).current;
   const clipboardImportBaseDate = useRef(new Date()).current;
+  const lastSyncedScreenRef = useRef<LedgerAppScreen>("calendar");
+  const hasScheduledInitialPermissionRequestRef = useRef(false);
+  const hasStartedInitialPermissionRequestRef = useRef(false);
+  const permissionRequestTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [currentScreen, setCurrentScreen] = useState<LedgerAppScreen>("calendar");
-  const [previousScreen, setPreviousScreen] = useState<LedgerAppScreen | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNicknameScreenReady, setIsNicknameScreenReady] = useState(false);
   const [isYearPickerOpen, setIsYearPickerOpen] = useState(false);
+  const [entryActionMenuDraft, setEntryActionMenuDraft] = useState<CardSmsClipboardDraft | null>(
+    null,
+  );
+  const [badgedFooterScreens, setBadgedFooterScreens] = useState<FooterTabScreen[]>([]);
   const [blockingTaskCount, setBlockingTaskCount] = useState(0);
+  const [adTrackingPermissionState, setAdTrackingPermissionState] =
+    useState<AdTrackingPermissionState>("unavailable");
+  const [isMobileAdsReady, setIsMobileAdsReady] = useState(false);
   const authProvider = resolveSessionAuthProvider(session);
   const metadataDisplayName = resolveFallbackDisplayName(
     session.user.user_metadata,
@@ -140,6 +181,10 @@ function SignedInApp({ session }: { session: Session }) {
   const accountProviderLabel = resolveSessionAuthProviderLabel(session);
   const notifications = useLedgerNotifications(session.user.id);
   const subscription = useSubscriptionPlan(session.user.id);
+  const shouldServeAdMobAds =
+    !subscription.isLoading && subscription.currentTier === SubscriptionTiers.free;
+  const showsAdMobAds = shouldServeAdMobAds && isMobileAdsReady;
+  const showAdTrackingPermissionCard = shouldServeAdMobAds && isAdTrackingPermissionSupported();
   const supportPackages = useSupportPackages(session.user.id);
   const ledgerState = useLedgerScreenState(session);
   useLedgerWidgetSync(ledgerState.activeBook?.id ?? null, ledgerState.entries);
@@ -160,10 +205,18 @@ function SignedInApp({ session }: { session: Session }) {
       removeListener?.();
     };
   }, []);
-  const visibleCategoryLabels = useLedgerCategoryLabels();
+  const visibleCategories = useLedgerCategories();
+  const visibleCategoryLabels = useMemo(
+    () => visibleCategories.map((category) => category.label),
+    [visibleCategories],
+  );
   const annualReport = useAnnualLedgerReportAction({
     activeBook: ledgerState.activeBook,
     onBeforeDownloadReport: async () => {
+      if (!showsAdMobAds) {
+        return;
+      }
+
       await showInterstitialAd(AdInterstitialPlacement.annualReportDownload);
     },
     visibleMonth: ledgerState.visibleMonth,
@@ -180,8 +233,6 @@ function SignedInApp({ session }: { session: Session }) {
   }, []);
   const authOnboarding = useAuthOnboarding({
     fallbackDisplayName,
-    isNotificationSupported: notifications.isSupported,
-    permissionState: notifications.permissionState,
     userId: session.user.id,
   });
 
@@ -202,10 +253,83 @@ function SignedInApp({ session }: { session: Session }) {
   }, [authProvider, metadataDisplayName, session.user.id]);
 
   useEffect(() => {
-    void ensureMobileAdsInitialized().then(() => {
-      preloadInterstitialAd();
+    if (!isAdTrackingPermissionSupported()) {
+      return;
+    }
+
+    const syncAdTrackingPermissionState = () => {
+      void readAdTrackingPermissionState()
+        .then((nextPermissionState) => {
+          setAdTrackingPermissionState(nextPermissionState);
+          applyAdTrackingPermissionToAdRequests(nextPermissionState);
+        })
+        .catch((error) => {
+          logAppError("App", error, {
+            step: "read_ad_tracking_permission_state",
+          });
+        });
+    };
+
+    syncAdTrackingPermissionState();
+
+    const appStateSubscription = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active") {
+        syncAdTrackingPermissionState();
+      }
     });
+
+    return () => {
+      appStateSubscription.remove();
+    };
   }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    if (!shouldServeAdMobAds) {
+      setIsMobileAdsReady(false);
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    setIsMobileAdsReady(false);
+
+    void requestAdTrackingPermissionIfNeeded()
+      .then(async (nextPermissionState) => {
+        applyAdTrackingPermissionToAdRequests(nextPermissionState);
+        if (isMounted) {
+          setAdTrackingPermissionState(nextPermissionState);
+        }
+
+        await ensureMobileAdsInitialized();
+
+        if (isMounted) {
+          setIsMobileAdsReady(true);
+          preloadInterstitialAd();
+        }
+      })
+      .catch((error) => {
+        logAppError("App", error, {
+          step: "initialize_mobile_ads_with_tracking_permission",
+        });
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [shouldServeAdMobAds]);
+
+  useEffect(() => {
+    const currentLanguage = i18n.language.startsWith("en") ? "en" : "ko";
+    void syncOwnProfilePreferredLocale(currentLanguage).catch((error) => {
+      logAppError("App", error, {
+        language: currentLanguage,
+        step: "sync_profile_preferred_locale",
+        userId: session.user.id,
+      });
+    });
+  }, [i18n.language, session.user.id]);
 
   const syncCurrentRouteState = useCallback(() => {
     if (!navigationRef.isReady()) {
@@ -217,11 +341,15 @@ function SignedInApp({ session }: { session: Session }) {
     const activeRouteName = isSignedInStackScreen(activeRoute?.name)
       ? activeRoute.name
       : "calendar";
-    const resolvedPreviousRoute = resolvePreviousRouteName(rootState);
+    const previousActiveScreen = lastSyncedScreenRef.current;
 
+    if (previousActiveScreen === "entry" && activeRouteName !== "entry") {
+      ledgerState.resetEditor(ledgerState.selectedDate);
+    }
+
+    lastSyncedScreenRef.current = activeRouteName;
     setCurrentScreen(activeRouteName);
-    setPreviousScreen(resolvedPreviousRoute);
-  }, [navigationRef]);
+  }, [ledgerState, navigationRef]);
 
   const returnToCalendarRoot = useCallback(() => {
     if (!navigationRef.isReady()) {
@@ -236,42 +364,71 @@ function SignedInApp({ session }: { session: Session }) {
     navigationRef.navigate("calendar");
   }, [navigationRef]);
 
+  const updateFooterNotificationBadges = useCallback(
+    (resolveNextScreens: (currentScreens: FooterTabScreen[]) => FooterTabScreen[]) => {
+      setBadgedFooterScreens((currentScreens) => {
+        const nextScreens = resolveNextScreens(currentScreens);
+        void Notifications.setBadgeCountAsync(nextScreens.length).catch((error) => {
+          logAppError("App", error, {
+            step: "set_notification_badge_count",
+          });
+        });
+        return nextScreens;
+      });
+    },
+    [],
+  );
+
+  const markFooterNotificationBadge = useCallback(
+    (targetScreen: LedgerAppScreen) => {
+      const footerBadgeScreen = resolveFooterNotificationBadgeScreen(targetScreen);
+      if (!footerBadgeScreen) {
+        return;
+      }
+
+      updateFooterNotificationBadges((currentScreens) =>
+        currentScreens.includes(footerBadgeScreen)
+          ? currentScreens
+          : [...currentScreens, footerBadgeScreen],
+      );
+    },
+    [updateFooterNotificationBadges],
+  );
+
+  const clearFooterNotificationBadge = useCallback(
+    (targetScreen: LedgerAppScreen) => {
+      const footerBadgeScreen = resolveFooterNotificationBadgeScreen(targetScreen);
+      if (!footerBadgeScreen) {
+        return;
+      }
+
+      updateFooterNotificationBadges((currentScreens) =>
+        currentScreens.filter((screen) => screen !== footerBadgeScreen),
+      );
+    },
+    [updateFooterNotificationBadges],
+  );
+
   const navigateToStackScreen = useCallback(
     (screen: Exclude<LedgerAppScreen, "calendar">) => {
       if (!navigationRef.isReady()) {
         return;
       }
 
+      clearFooterNotificationBadge(screen);
       navigationRef.navigate(screen);
     },
-    [navigationRef],
+    [clearFooterNotificationBadge, navigationRef],
   );
 
   const handleOpenCalendar = useCallback(() => {
+    clearFooterNotificationBadge("calendar");
     returnToCalendarRoot();
-  }, [returnToCalendarRoot]);
+  }, [clearFooterNotificationBadge, returnToCalendarRoot]);
 
   const navigateToEntryFromCalendar = useCallback(() => {
     navigateToStackScreen("entry");
   }, [navigateToStackScreen]);
-
-  const handleApplyCardSmsClipboardDraft = useCallback(
-    (clipboardDraft: CardSmsClipboardDraft) => {
-      if (clipboardDraft.date) {
-        ledgerState.handleSelectDate(clipboardDraft.date);
-      }
-
-      ledgerState.updateDraftType(clipboardDraft.type);
-      ledgerState.updateDraftField("amount", clipboardDraft.amount);
-      ledgerState.updateDraftField("content", clipboardDraft.content);
-      if (clipboardDraft.category && visibleCategoryLabels.includes(clipboardDraft.category)) {
-        ledgerState.updateDraftField("category", clipboardDraft.category);
-      }
-
-      navigateToEntryFromCalendar();
-    },
-    [ledgerState, navigateToEntryFromCalendar, visibleCategoryLabels],
-  );
 
   const shouldIgnoreCardSmsClipboardDraft = useCallback(
     (clipboardDraft: CardSmsClipboardDraft) => {
@@ -287,27 +444,93 @@ function SignedInApp({ session }: { session: Session }) {
     [ledgerState.entries, ledgerState.selectedDate],
   );
 
-  const handleOpenEntryFromCalendar = useCallback(async () => {
-    const didPromptCardSmsImport = await promptCardSmsClipboardImport({
-      baseDate: clipboardImportBaseDate,
-      onApply: handleApplyCardSmsClipboardDraft,
-      onSkip: navigateToEntryFromCalendar,
-      shouldIgnoreDraft: shouldIgnoreCardSmsClipboardDraft,
-    });
+  const readAvailableCardSmsClipboardDraft = useCallback(
+    () =>
+      readCardSmsClipboardDraft({
+        baseDate: clipboardImportBaseDate,
+        shouldIgnoreDraft: shouldIgnoreCardSmsClipboardDraft,
+      }),
+    [clipboardImportBaseDate, shouldIgnoreCardSmsClipboardDraft],
+  );
 
-    if (!didPromptCardSmsImport) {
+  const handleSaveCardSmsClipboardDraft = useCallback(
+    async (clipboardDraft: CardSmsClipboardDraft) => {
+      const currentEntries = ledgerState.entries;
+      const draftToSave = buildCardSmsClipboardLedgerEntryDraft({
+        clipboardDraft,
+        fallbackDate: ledgerState.selectedDate,
+        userId: session.user.id,
+        visibleCategories,
+      });
+      let savedEntries: LedgerEntry[] = [];
+
+      try {
+        savedEntries = await ledgerState.handleSaveDraftEntry(draftToSave);
+      } catch (error) {
+        logAppError("App", error, {
+          step: "save_card_sms_clipboard_entry",
+        });
+        showNativeToast(resolveLedgerSaveErrorMessage(error));
+        return;
+      }
+
+      if (savedEntries.length === 0) {
+        return;
+      }
+
+      void runEntrySaveSideEffects(savedEntries, currentEntries, "create", draftToSave.date);
+    },
+    [ledgerState, session.user.id, visibleCategories],
+  );
+
+  const handleImportCardSmsClipboardDraft = useCallback(async () => {
+    const clipboardDraft = await readAvailableCardSmsClipboardDraft();
+    if (!clipboardDraft) {
+      setEntryActionMenuDraft(null);
       navigateToEntryFromCalendar();
+      return;
     }
+
+    setEntryActionMenuDraft(null);
+    void handleSaveCardSmsClipboardDraft(clipboardDraft);
   }, [
-    clipboardImportBaseDate,
-    handleApplyCardSmsClipboardDraft,
+    handleSaveCardSmsClipboardDraft,
     navigateToEntryFromCalendar,
-    shouldIgnoreCardSmsClipboardDraft,
+    readAvailableCardSmsClipboardDraft,
   ]);
 
+  const handleOpenEntryFromCalendar = useCallback(async () => {
+    const clipboardDraft = await readAvailableCardSmsClipboardDraft();
+    if (!clipboardDraft) {
+      setEntryActionMenuDraft(null);
+      navigateToEntryFromCalendar();
+      return;
+    }
+
+    setEntryActionMenuDraft(clipboardDraft);
+  }, [navigateToEntryFromCalendar, readAvailableCardSmsClipboardDraft]);
+
+  const handleDismissEntryActionMenu = useCallback(() => {
+    setEntryActionMenuDraft(null);
+  }, []);
+
+  const handleOpenManualEntryFromActionMenu = useCallback(() => {
+    setEntryActionMenuDraft(null);
+    navigateToEntryFromCalendar();
+  }, [navigateToEntryFromCalendar]);
+
+  const handleApplyEntryActionMenuDraft = useCallback(() => {
+    if (!entryActionMenuDraft) {
+      return;
+    }
+
+    setEntryActionMenuDraft(null);
+    void handleSaveCardSmsClipboardDraft(entryActionMenuDraft);
+  }, [entryActionMenuDraft, handleSaveCardSmsClipboardDraft]);
+
   const handleOpenClipboardImportFromWidget = useCallback(() => {
-    void handleOpenEntryFromCalendar();
-  }, [handleOpenEntryFromCalendar]);
+    void handleImportCardSmsClipboardDraft();
+  }, [handleImportCardSmsClipboardDraft]);
 
   useLedgerWidgetDeepLinks({
     enabled: !authOnboarding.isLoading && authOnboarding.step === null,
@@ -315,35 +538,6 @@ function SignedInApp({ session }: { session: Session }) {
     onOpenEntry: navigateToEntryFromCalendar,
   });
 
-  useCardSmsClipboardAutoPrompt({
-    baseDate: clipboardImportBaseDate,
-    enabled:
-      !authOnboarding.isLoading && authOnboarding.step === null && currentScreen === "calendar",
-    onApply: handleApplyCardSmsClipboardDraft,
-    onSkip: navigateToEntryFromCalendar,
-    shouldIgnoreDraft: shouldIgnoreCardSmsClipboardDraft,
-  });
-
-  const handleBackNavigation = useCallback(() => {
-    if (currentScreen === "entry") {
-      ledgerState.resetEditor(ledgerState.selectedDate);
-    }
-
-    if (navigationRef.isReady() && navigationRef.canGoBack()) {
-      navigationRef.goBack();
-      return;
-    }
-
-    returnToCalendarRoot();
-  }, [currentScreen, ledgerState, navigationRef, returnToCalendarRoot]);
-  const handleToggleCharts = useCallback(() => {
-    if (currentScreen === "charts" && navigationRef.isReady() && navigationRef.canGoBack()) {
-      navigationRef.goBack();
-      return;
-    }
-
-    navigateToStackScreen("charts");
-  }, [currentScreen, navigationRef, navigateToStackScreen]);
   const handleOpenAllEntries = useCallback(() => {
     navigateToStackScreen("all-entries");
   }, [navigateToStackScreen]);
@@ -351,7 +545,71 @@ function SignedInApp({ session }: { session: Session }) {
   const handleOpenSubscription = useCallback(() => {
     navigateToStackScreen("subscription");
   }, [navigateToStackScreen]);
-  const menuSections = buildAppMenuSections(notifications.showNotificationSettings);
+  const menuSections = buildAppMenuSections(notifications.showNotificationSettings, t, {
+    showAnnualReportDownload: Boolean(annualReport.bookName),
+  });
+  const footerTabs = buildFooterTabs(t);
+  const entryActionMenuActions = useMemo(() => {
+    if (!entryActionMenuDraft) {
+      return [];
+    }
+
+    return [
+      {
+        label: CardSmsClipboardCopy.directEntryAction,
+        onPress: handleOpenManualEntryFromActionMenu,
+      },
+      {
+        label: formatCardSmsClipboardDraftActionLabel(entryActionMenuDraft),
+        onPress: handleApplyEntryActionMenuDraft,
+      },
+    ];
+  }, [entryActionMenuDraft, handleApplyEntryActionMenuDraft, handleOpenManualEntryFromActionMenu]);
+  const showsFooterTabBar = currentScreen !== "entry";
+  const activeFooterScreen =
+    showsFooterTabBar && isFooterTabScreen(currentScreen) ? currentScreen : null;
+  const handleSelectFooterTab = useCallback(
+    (targetScreen: FooterTabScreen) => {
+      if (targetScreen !== "entry") {
+        setEntryActionMenuDraft(null);
+      }
+
+      if (targetScreen === currentScreen) {
+        return;
+      }
+
+      if (targetScreen === "calendar") {
+        ledgerState.resetEditor(ledgerState.selectedDate);
+        returnToCalendarRoot();
+        return;
+      }
+
+      if (targetScreen === "entry") {
+        void handleOpenEntry();
+        return;
+      }
+
+      if (targetScreen === "all-entries") {
+        handleOpenAllEntries();
+        return;
+      }
+
+      if (targetScreen === "share" && ledgerState.activeBook?.ownerId === session.user.id) {
+        void ledgerState.refreshSharedLedgerBook();
+      }
+
+      navigateToStackScreen(targetScreen);
+    },
+    [
+      currentScreen,
+      handleOpenAllEntries,
+      handleOpenEntry,
+      ledgerState,
+      navigateToStackScreen,
+      returnToCalendarRoot,
+      session.user.id,
+    ],
+  );
   const handleOpenYearPicker = () => {
     if (currentScreen !== "calendar") {
       return;
@@ -384,11 +642,6 @@ function SignedInApp({ session }: { session: Session }) {
     } catch {
       return false;
     }
-  };
-
-  const handleCompletePermissionOnboarding = async () => {
-    await notifications.requestNotifications();
-    authOnboarding.completePermissionOnboarding();
   };
 
   const handlePurchasePlus = async () => {
@@ -457,7 +710,34 @@ function SignedInApp({ session }: { session: Session }) {
     }
   };
 
-  const handleBeforeCopyShareCode = () => showInterstitialAd(AdInterstitialPlacement.shareCodeCopy);
+  const handleRequestAdTrackingPermission = useCallback(() => {
+    void requestAdTrackingPermission()
+      .then((nextPermissionState) => {
+        setAdTrackingPermissionState(nextPermissionState);
+        applyAdTrackingPermissionToAdRequests(nextPermissionState);
+      })
+      .catch((error) => {
+        logAppError("App", error, {
+          step: "request_ad_tracking_permission",
+        });
+      });
+  }, []);
+
+  const handleOpenAdTrackingSettings = useCallback(() => {
+    void openAdTrackingSettings().catch((error) => {
+      logAppError("App", error, {
+        step: "open_ad_tracking_settings",
+      });
+    });
+  }, []);
+
+  const handleBeforeCopyShareCode = async () => {
+    if (!showsAdMobAds) {
+      return;
+    }
+
+    await showInterstitialAd(AdInterstitialPlacement.shareCodeCopy);
+  };
 
   const handleSaveEntry = async () => {
     const currentEntries = ledgerState.entries;
@@ -485,6 +765,7 @@ function SignedInApp({ session }: { session: Session }) {
       savedEntries,
       currentEntries,
       wasEditingEntry ? "update" : "create",
+      ledgerState.draft.date,
     );
   };
 
@@ -525,39 +806,45 @@ function SignedInApp({ session }: { session: Session }) {
   };
 
   const handleDeleteEntryFromCalendar = async (entry: LedgerEntry) => {
-    await ledgerState.handleDeleteEntry(entry.id);
-
-    if (!ledgerState.activeBook) {
-      return;
+    try {
+      await ledgerState.handleDeleteEntry(entry.id);
+    } catch (error) {
+      logAppError("App", error, {
+        entryId: entry.id,
+        step: "delete_entry",
+      });
+      showNativeToast(AppMessages.editorDeleteError);
+      return false;
     }
 
-    const actorName = await resolveCurrentActorName();
-    const widget = await resolveCurrentLedgerWidgetPushSummary(ledgerState.activeBook.id);
-    await notifications.sendPushNotificationToBookMembers(
-      ledgerState.activeBook.id,
-      createOtherMemberDeletedEntryEvent(
-        { actorName, bookName: ledgerState.activeBook.name },
-        { ...entry, authorId: session.user.id, authorName: actorName },
-      ),
-      [session.user.id],
-      widget,
-    );
+    void runEntryDeleteSideEffects(entry);
+    return true;
   };
 
   useEffect(() => {
-    void notifications.registerActionCategories().catch((error) => {
+    const currentLanguage = i18n.language.startsWith("en") ? "en" : "ko";
+
+    void notifications.registerActionCategories(currentLanguage).catch((error) => {
       logAppError("App", error, {
+        language: currentLanguage,
         step: "register_notification_action_categories",
       });
     });
-  }, [notifications.registerActionCategories]);
+  }, [i18n.language, notifications.registerActionCategories]);
 
   useEffect(() => {
+    const handleNotificationReceived = (notification: Notifications.Notification) => {
+      const targetScreen = resolveNotificationActionRoute("", notification.request.content.data);
+      markFooterNotificationBadge(targetScreen);
+    };
+
     const handleNotificationResponse = (response: Notifications.NotificationResponse) => {
       const targetScreen = resolveNotificationActionRoute(
         response.actionIdentifier,
         response.notification.request.content.data,
       );
+
+      clearFooterNotificationBadge(targetScreen);
 
       if (targetScreen === "calendar") {
         returnToCalendarRoot();
@@ -567,7 +854,10 @@ function SignedInApp({ session }: { session: Session }) {
       navigateToStackScreen(targetScreen);
     };
 
-    const subscription = Notifications.addNotificationResponseReceivedListener(
+    const receivedSubscription = Notifications.addNotificationReceivedListener(
+      handleNotificationReceived,
+    );
+    const responseSubscription = Notifications.addNotificationResponseReceivedListener(
       handleNotificationResponse,
     );
 
@@ -584,9 +874,15 @@ function SignedInApp({ session }: { session: Session }) {
       });
 
     return () => {
-      subscription.remove();
+      receivedSubscription.remove();
+      responseSubscription.remove();
     };
-  }, [navigateToStackScreen, returnToCalendarRoot]);
+  }, [
+    clearFooterNotificationBadge,
+    markFooterNotificationBadge,
+    navigateToStackScreen,
+    returnToCalendarRoot,
+  ]);
 
   useEffect(() => {
     if (authOnboarding.step !== "nickname") {
@@ -595,19 +891,91 @@ function SignedInApp({ session }: { session: Session }) {
     }
 
     let timerId: ReturnType<typeof setTimeout> | null = null;
-    const interactionTask = InteractionManager.runAfterInteractions(() => {
+    const idleTask = scheduleIdleTask(() => {
       timerId = setTimeout(() => {
         setIsNicknameScreenReady(true);
-      }, 220);
+      }, AuthOnboardingTiming.nicknameTransitionDelayMs);
     });
 
     return () => {
-      interactionTask.cancel();
+      idleTask.cancel();
       if (timerId) {
         clearTimeout(timerId);
       }
     };
   }, [authOnboarding.step]);
+
+  useEffect(
+    () => () => {
+      if (permissionRequestTimeoutRef.current) {
+        clearTimeout(permissionRequestTimeoutRef.current);
+        permissionRequestTimeoutRef.current = null;
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (
+      authOnboarding.hasCompletedPermissionOnboarding ||
+      notifications.permissionState === "default" ||
+      notifications.permissionState === "unsupported"
+    ) {
+      return;
+    }
+
+    authOnboarding.completePermissionOnboarding();
+  }, [
+    authOnboarding.completePermissionOnboarding,
+    authOnboarding.hasCompletedPermissionOnboarding,
+    notifications.permissionState,
+  ]);
+
+  useEffect(() => {
+    if (
+      authOnboarding.isLoading ||
+      authOnboarding.step !== null ||
+      authOnboarding.hasCompletedPermissionOnboarding ||
+      !notifications.isSupported ||
+      notifications.permissionState !== "default" ||
+      ledgerState.isLoading ||
+      hasScheduledInitialPermissionRequestRef.current
+    ) {
+      return;
+    }
+
+    hasScheduledInitialPermissionRequestRef.current = true;
+    const idleTask = scheduleIdleTask(() => {
+      permissionRequestTimeoutRef.current = setTimeout(() => {
+        permissionRequestTimeoutRef.current = null;
+        hasStartedInitialPermissionRequestRef.current = true;
+        void notifications
+          .requestNotifications()
+          .finally(authOnboarding.completePermissionOnboarding);
+      }, AuthOnboardingTiming.permissionRequestDelayMs);
+    });
+
+    return () => {
+      idleTask.cancel();
+      if (permissionRequestTimeoutRef.current) {
+        clearTimeout(permissionRequestTimeoutRef.current);
+        permissionRequestTimeoutRef.current = null;
+      }
+
+      if (!hasStartedInitialPermissionRequestRef.current) {
+        hasScheduledInitialPermissionRequestRef.current = false;
+      }
+    };
+  }, [
+    authOnboarding.completePermissionOnboarding,
+    authOnboarding.hasCompletedPermissionOnboarding,
+    authOnboarding.isLoading,
+    authOnboarding.step,
+    ledgerState.isLoading,
+    notifications.isSupported,
+    notifications.permissionState,
+    notifications.requestNotifications,
+  ]);
 
   if (authOnboarding.isLoading) {
     return (
@@ -629,17 +997,6 @@ function SignedInApp({ session }: { session: Session }) {
     );
   }
 
-  if (authOnboarding.step === "notification-permission") {
-    return (
-      <SignedOutAppShell>
-        <PermissionOnboardingScreen
-          onAllow={handleCompletePermissionOnboarding}
-          onSkip={authOnboarding.completePermissionOnboarding}
-        />
-      </SignedOutAppShell>
-    );
-  }
-
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={AppColors.surface} />
@@ -647,29 +1004,13 @@ function SignedInApp({ session }: { session: Session }) {
         <View style={styles.headerShell}>
           <AppHeader
             isMenuOpen={isMenuOpen}
-            leadingAction={
-              showsBackNavigationAction(currentScreen) ? (
-                <BackActionButton onPress={handleBackNavigation} />
-              ) : annualReport.bookName ? (
-                <AnnualReportDownloadAction
-                  onPress={() => {
-                    void annualReport.handleDownloadReport();
-                  }}
-                />
-              ) : null
-            }
             showsPlusBadge={
               currentScreen === "calendar" && subscription.currentTier === SubscriptionTiers.plus
             }
             titleLabel={
               currentScreen === "calendar"
                 ? annualReport.bookName
-                : getAppScreenLabel(currentScreen)
-            }
-            trailingAction={
-              currentScreen === "calendar" || currentScreen === "charts" ? (
-                <AllEntriesAction onPress={handleOpenAllEntries} />
-              ) : null
+                : getAppScreenLabel(currentScreen, t)
             }
             yearLabel={null}
             onOpenMenu={() => setIsMenuOpen((currentValue) => !currentValue)}
@@ -678,71 +1019,91 @@ function SignedInApp({ session }: { session: Session }) {
       </SafeAreaView>
       <SafeAreaView edges={["left", "right"]} style={styles.bodySafeArea}>
         <View style={styles.body}>
-          <NavigationContainer
-            onReady={syncCurrentRouteState}
-            onStateChange={syncCurrentRouteState}
-            ref={navigationRef}
-          >
-            <SignedInStackNavigator
-              accountProviderLabel={accountProviderLabel}
-              email={session.user.email ?? ""}
-              fallbackDisplayName={fallbackDisplayName}
-              hasAvailablePlusPackage={subscription.hasAvailablePlusPackage}
-              isPlusActive={subscription.isPlusActive}
-              ledgerState={ledgerState}
-              notificationPreferenceGroups={notifications.preferenceGroups}
-              notificationPermissionLabel={notifications.permissionLabel}
-              notificationStatusMessage={notifications.statusMessage}
-              onBeforeCopyShareCode={handleBeforeCopyShareCode}
-              onChangeNotificationThreshold={notifications.updateThresholdValue}
-              onChangeNotificationThresholdEnabled={notifications.updateThresholdEnabled}
-              onDeleteSelectedEntry={handleDeleteEntryFromCalendar}
-              onEditSelectedEntryFromAllEntries={handleEditEntryFromAllEntries}
-              onEditSelectedEntryFromCalendar={handleEditEntryFromCalendar}
-              onOpenCharts={handleToggleCharts}
-              onOpenEntry={handleOpenEntry}
-              onOpenMonthPicker={handleOpenYearPicker}
-              onOpenSubscription={handleOpenSubscription}
-              onOpenSubscriptionManagement={handleOpenSubscriptionManagement}
-              onPurchasePlus={handlePurchasePlus}
-              onPurchaseSupportPackage={handlePurchaseSupportPackage}
-              onRestorePurchases={handleRestorePurchases}
-              onSaveEntry={handleSaveEntry}
-              onSelectCalendarDate={(isoDate) => {
-                ledgerState.handleSelectDate(isoDate);
-                handleOpenCalendar();
-              }}
-              onSendPendingJoinRequestNotification={
-                notifications.sendPendingJoinRequestNotification
-              }
-              onSendPushNotificationToBookMembers={notifications.sendPushNotificationToBookMembers}
-              onSendPushNotificationToUsers={notifications.sendPushNotificationToUsers}
-              onSettleInstallmentEntry={handleSettleInstallmentEntry}
-              onToggleNotificationPreference={notifications.updatePreference}
-              plusPriceLabel={subscription.plusPriceLabel}
-              showNotificationSettings={notifications.showNotificationSettings}
-              showsBannerAd={subscription.currentTier === SubscriptionTiers.free}
-              subscriptionTier={subscription.currentTier}
-              supportPackages={supportPackages.packages}
-              supportPackagesLoading={supportPackages.isLoading}
-              trackBlockingTask={trackBlockingTask}
-              userId={session.user.id}
-            />
-          </NavigationContainer>
+          <View style={styles.navigationShell}>
+            <NavigationContainer
+              onReady={syncCurrentRouteState}
+              onStateChange={syncCurrentRouteState}
+              ref={navigationRef}
+            >
+              <SignedInStackNavigator
+                accountProviderLabel={accountProviderLabel}
+                adTrackingPermissionState={adTrackingPermissionState}
+                email={session.user.email ?? ""}
+                fallbackDisplayName={fallbackDisplayName}
+                hasAvailablePlusPackage={subscription.hasAvailablePlusPackage}
+                isPlusActive={subscription.isPlusActive}
+                ledgerState={ledgerState}
+                notificationPreferenceGroups={notifications.preferenceGroups}
+                notificationPermissionLabel={notifications.permissionLabel}
+                notificationPermissionState={notifications.permissionState}
+                notificationStatusMessage={notifications.statusMessage}
+                onBeforeCopyShareCode={handleBeforeCopyShareCode}
+                onChangeNotificationThreshold={notifications.updateThresholdValue}
+                onChangeNotificationThresholdEnabled={notifications.updateThresholdEnabled}
+                onDeleteSelectedEntry={handleDeleteEntryFromCalendar}
+                onEditSelectedEntryFromAllEntries={handleEditEntryFromAllEntries}
+                onEditSelectedEntryFromCalendar={handleEditEntryFromCalendar}
+                onOpenMonthPicker={handleOpenYearPicker}
+                onOpenAdTrackingSettings={handleOpenAdTrackingSettings}
+                onOpenSubscription={handleOpenSubscription}
+                onOpenSubscriptionManagement={handleOpenSubscriptionManagement}
+                onPurchasePlus={handlePurchasePlus}
+                onPurchaseSupportPackage={handlePurchaseSupportPackage}
+                onRequestAdTrackingPermission={handleRequestAdTrackingPermission}
+                onRequestNotificationPermission={notifications.requestNotifications}
+                onRestorePurchases={handleRestorePurchases}
+                onSaveEntry={handleSaveEntry}
+                onSelectCalendarDate={(isoDate) => {
+                  ledgerState.handleSelectDate(isoDate);
+                  handleOpenCalendar();
+                }}
+                onSendPendingJoinRequestNotification={
+                  notifications.sendPendingJoinRequestNotification
+                }
+                onSendPushNotificationToBookMembers={
+                  notifications.sendPushNotificationToBookMembers
+                }
+                onSendPushNotificationToUsers={notifications.sendPushNotificationToUsers}
+                onSettleInstallmentEntry={handleSettleInstallmentEntry}
+                onToggleNotificationPreference={notifications.updatePreference}
+                plusPriceLabel={subscription.plusPriceLabel}
+                showAdTrackingPermissionCard={showAdTrackingPermissionCard}
+                showNotificationSettings={notifications.showNotificationSettings}
+                showsBannerAd={showsAdMobAds}
+                subscriptionTier={subscription.currentTier}
+                supportPackages={supportPackages.packages}
+                supportPackagesLoading={supportPackages.isLoading}
+                trackBlockingTask={trackBlockingTask}
+                userId={session.user.id}
+              />
+            </NavigationContainer>
+          </View>
+          {showsFooterTabBar ? (
+            <SafeAreaView edges={["bottom"]} style={styles.footerSafeArea}>
+              <AppFooterTabBar
+                activeScreen={activeFooterScreen}
+                badgedScreens={badgedFooterScreens}
+                isPrimaryActionMenuOpen={entryActionMenuDraft !== null}
+                onDismissPrimaryActionMenu={handleDismissEntryActionMenu}
+                onSelectTab={handleSelectFooterTab}
+                primaryActionMenuActions={entryActionMenuActions}
+                tabs={footerTabs}
+              />
+            </SafeAreaView>
+          ) : null}
         </View>
         <AppMenuDrawer
           isOpen={isMenuOpen}
           onClose={() => setIsMenuOpen(false)}
+          onOpen={() => setIsMenuOpen(true)}
+          onSelectAction={(action) => {
+            setIsMenuOpen(false);
+            if (action === "annual-report-download") {
+              void annualReport.handleDownloadReport();
+            }
+          }}
           onSelectItem={(targetScreen) => {
             setIsMenuOpen(false);
-            if (targetScreen === "calendar") {
-              ledgerState.resetEditor(ledgerState.selectedDate);
-              returnToCalendarRoot();
-              return;
-            }
-            if (targetScreen === "share" && ledgerState.activeBook?.ownerId === session.user.id) {
-              void ledgerState.refreshSharedLedgerBook();
-            }
             navigateToStackScreen(targetScreen);
           }}
           sections={menuSections}
@@ -822,11 +1183,10 @@ function SignedInApp({ session }: { session: Session }) {
     savedEntries: LedgerEntry[],
     currentEntries: LedgerEntry[],
     changeType: "create" | "update",
+    targetDate: string,
   ) {
     try {
-      const currentMonthEntries = savedEntries.filter(
-        (entry) => entry.date === ledgerState.selectedDate,
-      );
+      const currentMonthEntries = savedEntries.filter((entry) => entry.date === targetDate);
       const lastCurrentMonthEntry = currentMonthEntries[currentMonthEntries.length - 1];
 
       if (lastCurrentMonthEntry) {
@@ -848,15 +1208,99 @@ function SignedInApp({ session }: { session: Session }) {
       });
     }
   }
+
+  async function runEntryDeleteSideEffects(deletedEntry: LedgerEntry) {
+    const activeBook = ledgerState.activeBook;
+    if (!activeBook) {
+      return;
+    }
+
+    try {
+      const actorName = await resolveCurrentActorName();
+      const widget = await resolveCurrentLedgerWidgetPushSummary(activeBook.id);
+      await notifications.sendPushNotificationToBookMembers(
+        activeBook.id,
+        createOtherMemberDeletedEntryEvent(
+          { actorName, bookName: activeBook.name },
+          { ...deletedEntry, authorId: session.user.id, authorName: actorName },
+        ),
+        [session.user.id],
+        widget,
+      );
+    } catch (error) {
+      logAppError("App", error, {
+        entryId: deletedEntry.id,
+        step: "run_entry_delete_side_effects",
+      });
+    }
+  }
 }
 
-function resolvePreviousRouteName(state: NavigationState | undefined): LedgerAppScreen | null {
-  if (!state || state.routes.length < 2) {
+function buildCardSmsClipboardLedgerEntryDraft({
+  clipboardDraft,
+  fallbackDate,
+  userId,
+  visibleCategories,
+}: {
+  clipboardDraft: CardSmsClipboardDraft;
+  fallbackDate: string;
+  userId: string;
+  visibleCategories: readonly CategoryDefinition[];
+}): LedgerEntryDraft {
+  const draftDate = clipboardDraft.date ?? fallbackDate;
+  const draftCategory =
+    resolveCardSmsClipboardCategory(clipboardDraft, visibleCategories) ??
+    resolveCardSmsClipboardFallbackCategory(clipboardDraft.type, visibleCategories);
+
+  return {
+    ...createDraft(draftDate, userId),
+    amount: clipboardDraft.amount,
+    category: draftCategory.label,
+    categoryId: draftCategory.id,
+    content: clipboardDraft.content,
+    type: clipboardDraft.type,
+  };
+}
+
+function resolveCardSmsClipboardCategory(
+  clipboardDraft: CardSmsClipboardDraft,
+  visibleCategories: readonly CategoryDefinition[],
+): CategoryDefinition | null {
+  if (!clipboardDraft.category) {
     return null;
   }
 
-  const previousRoute = state.routes[state.index - 1];
-  return isSignedInStackScreen(previousRoute?.name) ? previousRoute.name : null;
+  return (
+    visibleCategories.find(
+      (category) =>
+        category.type === clipboardDraft.type && category.label === clipboardDraft.category,
+    ) ?? null
+  );
+}
+
+function resolveCardSmsClipboardFallbackCategory(
+  entryType: CardSmsClipboardDraft["type"],
+  visibleCategories: readonly CategoryDefinition[],
+): CategoryDefinition {
+  const fallbackLabel =
+    entryType === "income" ? INCOME_CATEGORY_LABELS.other : EXPENSE_CATEGORY_LABELS.other;
+  const typedCategories = visibleCategories.filter((category) => category.type === entryType);
+  const fallbackCategory =
+    typedCategories.find((category) => category.label === fallbackLabel) ?? typedCategories[0];
+
+  if (!fallbackCategory) {
+    throw new Error("Missing card SMS fallback category.");
+  }
+
+  return fallbackCategory;
+}
+
+function resolveFooterNotificationBadgeScreen(screen: LedgerAppScreen): FooterTabScreen | null {
+  if (screen === "all-entries" || screen === "share") {
+    return screen;
+  }
+
+  return null;
 }
 
 function resolveLedgerSaveErrorMessage(error: unknown): string {
@@ -913,6 +1357,13 @@ const styles = StyleSheet.create({
   body: {
     flex: 1,
     backgroundColor: AppColors.background,
+  },
+  navigationShell: {
+    flex: 1,
+    backgroundColor: AppColors.background,
+  },
+  footerSafeArea: {
+    backgroundColor: AppColors.surface,
   },
   signedOutSafeArea: {
     backgroundColor: AppColors.background,

@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text } from "react-native";
 
 import { AuthControls } from "../constants/authControls";
 import { AppColors } from "../constants/colors";
+import { OneLineTextFitProps } from "../constants/textLayout";
 
 type ActionButtonProps = {
   disabled?: boolean;
@@ -68,7 +69,12 @@ export function ActionButton({
       {labelContent ? (
         labelContent
       ) : (
-        <Text style={[styles.text, styles[`${size}Text`], styles[`${variant}Text`]]}>{label}</Text>
+        <Text
+          {...OneLineTextFitProps}
+          style={[styles.text, styles[`${size}Text`], styles[`${variant}Text`]]}
+        >
+          {label}
+        </Text>
       )}
     </Pressable>
   );

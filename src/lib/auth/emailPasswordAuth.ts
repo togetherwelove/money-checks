@@ -21,10 +21,14 @@ export async function signInWithEmailPassword(email: string, password: string): 
 export async function signUpWithEmailPassword(
   email: string,
   password: string,
+  captchaToken: string,
 ): Promise<EmailPasswordSignUpResult> {
   const normalizedEmail = normalizeEmail(email);
   const { data, error } = await supabase.auth.signUp({
     email: normalizedEmail,
+    options: {
+      captchaToken,
+    },
     password,
   });
 

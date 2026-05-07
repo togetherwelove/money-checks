@@ -1,6 +1,9 @@
+const SCREEN_PADDING = 8;
+
 export const AppLayout = {
   compactGap: 4,
-  screenPadding: 8,
+  screenPadding: SCREEN_PADDING,
+  screenTopPadding: SCREEN_PADDING,
   cardRadius: 20,
   cardGap: 10,
   cardContentPadding: 14,

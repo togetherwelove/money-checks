@@ -1,12 +1,15 @@
 import { DEFAULT_MEMBER_DISPLAY_NAME } from "../constants/ledgerDisplay";
 import type { AccessibleLedgerBook, LedgerBook } from "../types/ledgerBook";
 import type {
+  JoinSharedLedgerBookPreview,
+  JoinSharedLedgerBookResolution,
   JoinSharedLedgerBookResult,
   LedgerBookJoinRequest,
 } from "../types/ledgerBookJoinRequest";
 import type { LedgerBookMember } from "../types/ledgerBookMember";
 import type {
   AccessibleLedgerBookRow,
+  LedgerBookJoinPreviewRow,
   LedgerBookJoinRequestProfileRow,
   LedgerBookMemberProfileRow,
   LedgerBookRow,
@@ -22,6 +25,8 @@ const ENSURE_OWN_PERSONAL_LEDGER_BOOK_FUNCTION = "ensure_own_personal_ledger_boo
 const CREATE_OWNED_LEDGER_BOOK_FUNCTION = "create_owned_ledger_book";
 const SWITCH_ACTIVE_LEDGER_BOOK_FUNCTION = "switch_active_ledger_book";
 const UPDATE_ACTIVE_LEDGER_BOOK_NAME_FUNCTION = "update_active_ledger_book_name";
+const PREVIEW_LEDGER_BOOK_JOIN_FUNCTION = "preview_ledger_book_join_by_code";
+const REQUEST_LEDGER_BOOK_JOIN_FUNCTION = "request_ledger_book_join_by_code";
 
 export async function fetchLedgerBookById(bookId: string): Promise<LedgerBook> {
   const { data, error: bookError } = await supabase
@@ -121,11 +126,32 @@ export async function updateActiveLedgerBookName(nextName: string): Promise<Ledg
   return mapLedgerBookRow(updatedBook);
 }
 
+export async function previewLedgerBookJoinByCode(
+  shareCode: string,
+): Promise<JoinSharedLedgerBookPreview> {
+  const { data, error } = await supabase
+    .rpc(PREVIEW_LEDGER_BOOK_JOIN_FUNCTION, { input_code: shareCode })
+    .returns<LedgerBookJoinPreviewRow[]>();
+
+  const previewRow = Array.isArray(data) ? data[0] : null;
+  if (error || !isLedgerBookJoinPreviewRow(previewRow)) {
+    throw error ?? new Error("Failed to preview shared ledger book access.");
+  }
+
+  return {
+    status: previewRow.status,
+    targetBookId: previewRow.target_book_id,
+    targetBookName: previewRow.target_book_name,
+  };
+}
+
 export async function requestLedgerBookJoinByCode(
   shareCode: string,
+  joinResolution?: JoinSharedLedgerBookResolution,
 ): Promise<JoinSharedLedgerBookResult> {
-  const { data, error } = await supabase.rpc("request_ledger_book_join_by_code", {
+  const { data, error } = await supabase.rpc(REQUEST_LEDGER_BOOK_JOIN_FUNCTION, {
     input_code: shareCode,
+    join_resolution: joinResolution ?? "standard",
   });
 
   if (error || (data !== "joined" && data !== "requested")) {
@@ -169,7 +195,9 @@ export async function fetchPendingLedgerBookJoinRequests(
   const requestRows = Array.isArray(data) ? data : [];
 
   return requestRows.map((request) => ({
+    approvalStatus: request.approval_status,
     id: request.id,
+    joinResolution: request.join_resolution,
     requestedAt: request.created_at,
     requesterDisplayName: request.display_name?.trim() || DEFAULT_MEMBER_DISPLAY_NAME,
     requesterUserId: request.requester_user_id,
@@ -246,4 +274,13 @@ function isAccessibleLedgerBookRow(value: unknown): value is AccessibleLedgerBoo
     candidate.member_role === "editor" ||
     candidate.member_role === "viewer"
   );
+}
+
+function isLedgerBookJoinPreviewRow(value: unknown): value is LedgerBookJoinPreviewRow {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const candidate = value as Partial<LedgerBookJoinPreviewRow>;
+  return typeof candidate.status === "string";
 }

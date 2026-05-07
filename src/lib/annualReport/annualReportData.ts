@@ -1,5 +1,9 @@
+import { DEFAULT_MEMBER_DISPLAY_NAME } from "../../constants/ledgerDisplay";
+import { resolveStaticCopyLanguage } from "../../i18n/staticCopy";
 import type { LedgerEntry, LedgerEntryType } from "../../types/ledger";
 import { formatMonthYear, getMonthKey, parseIsoDate, startOfMonth } from "../../utils/calendar";
+
+const ANNUAL_REPORT_DATE_LOCALE = resolveStaticCopyLanguage() === "en" ? "en-US" : "ko-KR";
 
 export type AnnualReportMonthRow = {
   balance: number;
@@ -54,7 +58,9 @@ export function buildAnnualReportData(
     bookName,
     entries,
     expenseCategories: buildCategoryRows(entries, "expense"),
-    generatedAtLabel: new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium" }).format(new Date()),
+    generatedAtLabel: new Intl.DateTimeFormat(ANNUAL_REPORT_DATE_LOCALE, {
+      dateStyle: "medium",
+    }).format(new Date()),
     incomeCategories: buildCategoryRows(entries, "income"),
     memberRows: buildMemberRows(entries),
     monthlyRows,
@@ -129,7 +135,7 @@ function buildMemberRows(entries: LedgerEntry[]): AnnualReportMemberRow[] {
   const amountByMember = new Map<string, { count: number; income: number; expense: number }>();
 
   for (const entry of entries) {
-    const memberName = entry.targetMemberName || entry.authorName || "사용자";
+    const memberName = entry.targetMemberName || entry.authorName || DEFAULT_MEMBER_DISPLAY_NAME;
     const currentAmount = amountByMember.get(memberName) ?? { count: 0, income: 0, expense: 0 };
     amountByMember.set(memberName, {
       count: currentAmount.count + 1,

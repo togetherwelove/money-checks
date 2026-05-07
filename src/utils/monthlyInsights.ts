@@ -1,6 +1,7 @@
 import {
   DEFAULT_MEMBER_DISPLAY_NAME,
   EMPTY_CATEGORY_LABEL,
+  formatCompactMonthLabel,
   formatMonthLabel,
 } from "../constants/ledgerDisplay";
 import type {
@@ -130,7 +131,7 @@ function buildTrendMonths(
     incomeAmount: sumEntriesByType(entries, "income"),
     isCurrentMonth: toMonthKey(month) === toMonthKey(currentMonthDate),
     key: toMonthKey(month),
-    monthLabel: formatMonthLabel(month),
+    monthLabel: formatCompactMonthLabel(month),
   }));
 }
 

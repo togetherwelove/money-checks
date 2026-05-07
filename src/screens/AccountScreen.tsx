@@ -1,14 +1,26 @@
 import { type ReactNode, useEffect, useState } from "react";
-import { Alert, Keyboard, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  Alert,
+  Keyboard,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 
 import { ActionButton } from "../components/ActionButton";
-import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { TextLinkButton } from "../components/TextLinkButton";
+import { AccountLanguageCard } from "../components/accountScreen/AccountLanguageCard";
 import { AccountVersionFooter } from "../components/accountScreen/AccountVersionFooter";
+import { AdTrackingPermissionCard } from "../components/accountScreen/AdTrackingPermissionCard";
 import { DeleteAccountModal } from "../components/accountScreen/DeleteAccountModal";
+import { DeleteAccountSubscriptionWarningModal } from "../components/accountScreen/DeleteAccountSubscriptionWarningModal";
 import { AccountDeletionMessages } from "../constants/accountDeletionMessages";
 import { AppColors } from "../constants/colors";
 import { CommonActionCopy } from "../constants/commonActions";
+import { KeyboardLayout } from "../constants/keyboard";
 import { AppLayout } from "../constants/layout";
 import { AppMessages } from "../constants/messages";
 import {
@@ -26,6 +38,7 @@ import {
   SurfaceCardStyle,
 } from "../constants/uiStyles";
 import type { BusyTaskTracker } from "../hooks/ledgerScreenState/types";
+import type { AdTrackingPermissionState } from "../lib/ads/trackingTransparency";
 import { signOutFromApp } from "../lib/auth/signOut";
 import { showNativeToast } from "../lib/nativeToast";
 import { fetchOwnProfileDisplayName, updateOwnProfileDisplayName } from "../lib/profiles";
@@ -33,10 +46,14 @@ import { isValidDisplayName, normalizeDisplayNameCandidate } from "../utils/disp
 
 type AccountScreenProps = {
   accountProviderLabel: string;
+  adTrackingPermissionState: AdTrackingPermissionState;
   email: string;
   fallbackDisplayName: string;
+  onOpenAdTrackingSettings: () => void;
   onOpenSubscriptionManagement: () => Promise<void>;
+  onRequestAdTrackingPermission: () => void;
   onRestorePurchases: () => Promise<void>;
+  showAdTrackingPermissionCard: boolean;
   subscriptionTier: SubscriptionTier;
   trackBlockingTask: BusyTaskTracker;
   userId: string;
@@ -44,16 +61,21 @@ type AccountScreenProps = {
 
 export function AccountScreen({
   accountProviderLabel,
+  adTrackingPermissionState,
   email,
   fallbackDisplayName,
+  onOpenAdTrackingSettings,
   onOpenSubscriptionManagement,
+  onRequestAdTrackingPermission,
   onRestorePurchases,
+  showAdTrackingPermissionCard,
   subscriptionTier,
   trackBlockingTask,
   userId,
 }: AccountScreenProps) {
   const [displayName, setDisplayName] = useState(fallbackDisplayName);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleteSubscriptionWarningOpen, setIsDeleteSubscriptionWarningOpen] = useState(false);
   const [isSavingDisplayName, setIsSavingDisplayName] = useState(false);
 
   useEffect(() => {
@@ -134,81 +156,125 @@ export function AccountScreen({
     void onOpenSubscriptionManagement();
   };
 
+  const handleOpenDeleteFlow = () => {
+    if (subscriptionTier === SubscriptionTiers.plus) {
+      setIsDeleteSubscriptionWarningOpen(true);
+      return;
+    }
+
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleContinueDeleteFromSubscriptionWarning = () => {
+    setIsDeleteSubscriptionWarningOpen(false);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleManageSubscriptionFromDeleteWarning = () => {
+    setIsDeleteSubscriptionWarningOpen(false);
+    handleOpenSubscriptionManagement();
+  };
+
   return (
-    <KeyboardAwareScrollView contentContainerStyle={styles.content} style={styles.screen}>
-      <View style={[styles.card, styles.primaryCard]}>
-        <Text style={styles.cardTitle}>{AppMessages.accountSessionTitle}</Text>
-        <InfoRow label={AppMessages.accountEmail} value={email} />
-        <InfoRow label={AppMessages.accountProvider} value={accountProviderLabel} />
-        <InfoRow
-          action={
-            subscriptionTier === SubscriptionTiers.free ? (
-              <TextLinkButton
-                label={SubscriptionMessages.restoreAction}
-                onPress={handleRestorePurchases}
-              />
-            ) : subscriptionTier === SubscriptionTiers.plus ? (
-              <TextLinkButton
-                label={SubscriptionManagementMessages.actionLabel}
-                onPress={handleOpenSubscriptionManagement}
-              />
-            ) : null
-          }
-          label={SubscriptionMessages.statusLabel}
-          value={
-            subscriptionTier === SubscriptionTiers.plus ? (
-              <Text style={styles.value}>
-                <Text style={styles.plusLabelText}>plus</Text>{" "}
-                {SubscriptionPlusLabels.accountActiveSuffix}
-              </Text>
-            ) : (
-              SubscriptionMessages.freePlanLabel
-            )
-          }
-        />
-      </View>
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>{AppMessages.accountNicknameTitle}</Text>
-        <TextInput
-          autoCapitalize="words"
-          autoComplete="nickname"
-          autoCorrect={false}
-          editable={!isSavingDisplayName}
-          importantForAutofill="no"
-          onChangeText={(value) => {
-            setDisplayName(value);
-          }}
-          onSubmitEditing={handlePressSaveDisplayName}
-          placeholder={fallbackDisplayName || AppMessages.accountNicknamePlaceholder}
-          placeholderTextColor={AppColors.mutedText}
-          returnKeyType="done"
-          style={styles.inlineInput}
-          submitBehavior="blurAndSubmit"
-          textContentType="none"
-          value={displayName}
-        />
-      </View>
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>{AppMessages.accountActionTitle}</Text>
-        <View style={styles.actionRow}>
-          <ActionButton
-            label={AppMessages.authSignOut}
-            onPress={handleConfirmSignOut}
-            size="inline"
-            variant="secondary"
+    <>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardDismissMode={
+          Platform.OS === "ios"
+            ? KeyboardLayout.dismissMode.ios
+            : KeyboardLayout.dismissMode.android
+        }
+        keyboardShouldPersistTaps={KeyboardLayout.persistTaps}
+        style={styles.screen}
+      >
+        <View style={[styles.card, styles.primaryCard]}>
+          <Text style={styles.cardTitle}>{AppMessages.accountSessionTitle}</Text>
+          <InfoRow label={AppMessages.accountEmail} value={email} />
+          <InfoRow label={AppMessages.accountProvider} value={accountProviderLabel} />
+          <InfoRow
+            action={
+              subscriptionTier === SubscriptionTiers.free ? (
+                <TextLinkButton
+                  label={SubscriptionMessages.restoreAction}
+                  onPress={handleRestorePurchases}
+                />
+              ) : subscriptionTier === SubscriptionTiers.plus ? (
+                <TextLinkButton
+                  label={SubscriptionManagementMessages.actionLabel}
+                  onPress={handleOpenSubscriptionManagement}
+                />
+              ) : null
+            }
+            label={SubscriptionMessages.statusLabel}
+            value={
+              subscriptionTier === SubscriptionTiers.plus ? (
+                <Text style={styles.value}>
+                  <Text style={styles.plusLabelText}>plus</Text>{" "}
+                  {SubscriptionPlusLabels.accountActiveSuffix}
+                </Text>
+              ) : (
+                SubscriptionMessages.freePlanLabel
+              )
+            }
           />
         </View>
-        <View style={styles.deleteActionRow}>
-          <TextLinkButton
-            label={AccountDeletionMessages.openAction}
-            onPress={() => setIsDeleteModalOpen(true)}
-            tone="destructive"
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>{AppMessages.accountNicknameTitle}</Text>
+          <TextInput
+            autoCapitalize="words"
+            autoComplete="nickname"
+            autoCorrect={false}
+            editable={!isSavingDisplayName}
+            importantForAutofill="no"
+            onChangeText={(value) => {
+              setDisplayName(value);
+            }}
+            onSubmitEditing={handlePressSaveDisplayName}
+            placeholder={fallbackDisplayName || AppMessages.accountNicknamePlaceholder}
+            placeholderTextColor={AppColors.mutedText}
+            returnKeyType="done"
+            style={styles.inlineInput}
+            submitBehavior="blurAndSubmit"
+            textContentType="none"
+            value={displayName}
           />
         </View>
-      </View>
+        <AccountLanguageCard />
+        {showAdTrackingPermissionCard ? (
+          <AdTrackingPermissionCard
+            onOpenSettings={onOpenAdTrackingSettings}
+            onRequestPermission={onRequestAdTrackingPermission}
+            permissionState={adTrackingPermissionState}
+          />
+        ) : null}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>{AppMessages.accountActionTitle}</Text>
+          <View style={styles.actionRow}>
+            <ActionButton
+              label={AppMessages.authSignOut}
+              onPress={handleConfirmSignOut}
+              size="inline"
+              variant="secondary"
+            />
+          </View>
+          <View style={styles.deleteActionRow}>
+            <TextLinkButton
+              label={AccountDeletionMessages.openAction}
+              onPress={handleOpenDeleteFlow}
+              tone="destructive"
+            />
+          </View>
+        </View>
+        <AccountVersionFooter />
+      </ScrollView>
+      <DeleteAccountSubscriptionWarningModal
+        isOpen={isDeleteSubscriptionWarningOpen}
+        onClose={() => setIsDeleteSubscriptionWarningOpen(false)}
+        onContinueDelete={handleContinueDeleteFromSubscriptionWarning}
+        onOpenSubscriptionManagement={handleManageSubscriptionFromDeleteWarning}
+      />
       <DeleteAccountModal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} />
-      <AccountVersionFooter />
-    </KeyboardAwareScrollView>
+    </>
   );
 }
 
@@ -239,6 +305,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: AppLayout.screenPadding,
+    paddingTop: AppLayout.screenTopPadding,
     gap: AppLayout.cardGap,
   },
   card: {

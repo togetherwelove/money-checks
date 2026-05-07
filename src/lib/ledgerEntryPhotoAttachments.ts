@@ -166,6 +166,7 @@ export async function syncLedgerEntryPhotoAttachments(params: {
       amount: 0,
       book_id: "",
       category: "",
+      category_id: "",
       content: "",
       created_at: "",
       currency: "",
@@ -187,7 +188,9 @@ export async function syncLedgerEntryPhotoAttachments(params: {
   return attachmentMap.get(entryId) ?? [];
 }
 
-export async function deleteLedgerEntryPhotoAttachmentsForEntries(entryRows: LedgerEntryRow[]) {
+export async function deleteLedgerEntryPhotoAttachmentsForEntries(
+  entryRows: Pick<LedgerEntryRow, "id" | "installment_group_id">[],
+) {
   if (entryRows.length === 0) {
     return;
   }

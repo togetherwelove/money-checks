@@ -1,8 +1,8 @@
 import { Animated } from "react-native";
 
 import type { MonthlyLedgerSummary } from "../../types/ledger";
-import { CALENDAR_ROW_HEIGHT } from "./calendarLayout";
-import { getCalendarWeekCount } from "./calendarWeekCount";
+import { resolveCalendarWeekHeight } from "./calendarLayout";
+import { getVisibleCalendarWeeks } from "./calendarWeekCount";
 
 export type MonthPage = {
   height: number;
@@ -21,11 +21,18 @@ export function buildMonthPageFromSummary(
   summary: MonthlyLedgerSummary,
 ): MonthPage {
   return {
-    height: getCalendarWeekCount(summary.days) * CALENDAR_ROW_HEIGHT,
+    height: resolveCalendarHeight(summary.days),
     key: monthKey,
     signature: buildMonthPageSignature(summary),
     summary,
   };
+}
+
+function resolveCalendarHeight(days: MonthlyLedgerSummary["days"]): number {
+  return getVisibleCalendarWeeks(days).reduce(
+    (totalHeight, week) => totalHeight + resolveCalendarWeekHeight(week),
+    0,
+  );
 }
 
 function buildMonthPageSignature(summary: MonthlyLedgerSummary): string {

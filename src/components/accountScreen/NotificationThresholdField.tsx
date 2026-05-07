@@ -1,54 +1,56 @@
 import { StyleSheet, Switch, Text, TextInput, View } from "react-native";
 
 import { AppColors } from "../../constants/colors";
+import { AppTextBreakProps } from "../../constants/textLayout";
 import { NotificationThresholdAmountCopy } from "../../notifications/config/notificationCopy";
+import { NotificationThresholdAmountInput } from "../../notifications/config/notificationThresholdLimits";
 import type { NotificationThresholdField as NotificationThresholdFieldState } from "../../notifications/preferences/notificationPreferences";
 import { formatAmountInput } from "../../utils/amount";
 
 type NotificationThresholdFieldProps = {
   field: NotificationThresholdFieldState;
   isFirst?: boolean;
-  labelWidth?: number;
   onChangeEnabled: (enabled: boolean) => void;
-  onMeasureLabel?: (width: number) => void;
   onChangeValue: (value: string) => void;
 };
 
 export function NotificationThresholdField({
   field,
   isFirst = false,
-  labelWidth,
   onChangeEnabled,
-  onMeasureLabel,
   onChangeValue,
 }: NotificationThresholdFieldProps) {
   return (
     <View style={[styles.field, isFirst && styles.firstField]}>
       <View style={styles.inputWrap}>
-        <Text
-          onLayout={(event) => onMeasureLabel?.(event.nativeEvent.layout.width)}
-          style={[styles.label, labelWidth ? { width: labelWidth } : null]}
-        >
+        <Text {...AppTextBreakProps} style={[styles.label, styles.periodLabel]}>
           {field.label}
         </Text>
         <TextInput
           editable={field.enabled}
           inputMode="numeric"
           keyboardType="numeric"
+          maxLength={NotificationThresholdAmountInput.maxFormattedLength}
           onChangeText={onChangeValue}
           placeholder={NotificationThresholdAmountCopy.placeholder}
           style={[styles.input, !field.enabled && styles.disabledInput]}
           value={formatAmountInput(field.value)}
         />
-        <Text style={styles.currency}>{NotificationThresholdAmountCopy.currencyLabel}</Text>
-        <Text style={styles.label}>초과 시</Text>
+        <Text {...AppTextBreakProps} style={styles.currency}>
+          {NotificationThresholdAmountCopy.currencyLabel}
+        </Text>
+        <Text {...AppTextBreakProps} style={styles.label}>
+          {NotificationThresholdAmountCopy.exceededLabel}
+        </Text>
       </View>
-      <Switch
-        onValueChange={onChangeEnabled}
-        thumbColor={field.enabled ? AppColors.inverseText : AppColors.surface}
-        trackColor={{ false: AppColors.border, true: AppColors.primary }}
-        value={field.enabled}
-      />
+      <View style={styles.switchWrap}>
+        <Switch
+          onValueChange={onChangeEnabled}
+          thumbColor={field.enabled ? AppColors.inverseText : AppColors.surface}
+          trackColor={{ false: AppColors.border, true: AppColors.primary }}
+          value={field.enabled}
+        />
+      </View>
     </View>
   );
 }
@@ -71,10 +73,16 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
   },
+  periodLabel: {
+    width: NotificationThresholdAmountInput.periodLabelWidth,
+  },
   inputWrap: {
     alignItems: "center",
+    flex: 1,
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 4,
+    minWidth: 0,
   },
   currency: {
     color: AppColors.mutedText,
@@ -92,11 +100,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     height: 36,
-    minWidth: 75,
+    width: NotificationThresholdAmountInput.inputWidth,
     paddingHorizontal: 4,
     paddingVertical: 0,
   },
   disabledInput: {
     color: AppColors.mutedText,
+  },
+  switchWrap: {
+    alignItems: "flex-end",
+    flexShrink: 0,
   },
 });

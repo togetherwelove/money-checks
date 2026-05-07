@@ -13,6 +13,7 @@ export function mapLedgerEntryRow(row: LedgerEntryRow, authorName?: string): Led
     amount: Number(row.amount),
     content: row.content,
     category: row.category,
+    categoryId: row.category_id,
     installmentGroupId: row.installment_group_id,
     installmentMonths: row.installment_months,
     installmentOrder: row.installment_order,

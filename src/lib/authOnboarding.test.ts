@@ -5,10 +5,7 @@ describe("resolveAuthOnboardingStep", () => {
     expect(
       resolveAuthOnboardingStep({
         hasCompletedNicknameOnboarding: false,
-        hasCompletedPermissionOnboarding: false,
         hasResolvedDisplayName: false,
-        isNotificationSupported: true,
-        permissionState: "default",
       }),
     ).toBe("nickname");
   });
@@ -17,34 +14,16 @@ describe("resolveAuthOnboardingStep", () => {
     expect(
       resolveAuthOnboardingStep({
         hasCompletedNicknameOnboarding: false,
-        hasCompletedPermissionOnboarding: false,
         hasResolvedDisplayName: true,
-        isNotificationSupported: true,
-        permissionState: "default",
       }),
-    ).toBe("notification-permission");
+    ).toBeNull();
   });
 
-  it("shows permission onboarding after nickname when permission is still undecided", () => {
+  it("does not show permission onboarding after nickname", () => {
     expect(
       resolveAuthOnboardingStep({
         hasCompletedNicknameOnboarding: true,
-        hasCompletedPermissionOnboarding: false,
         hasResolvedDisplayName: false,
-        isNotificationSupported: true,
-        permissionState: "default",
-      }),
-    ).toBe("notification-permission");
-  });
-
-  it("skips permission onboarding when permission is already decided", () => {
-    expect(
-      resolveAuthOnboardingStep({
-        hasCompletedNicknameOnboarding: true,
-        hasCompletedPermissionOnboarding: false,
-        hasResolvedDisplayName: false,
-        isNotificationSupported: true,
-        permissionState: "granted",
       }),
     ).toBeNull();
   });
@@ -53,12 +32,9 @@ describe("resolveAuthOnboardingStep", () => {
     expect(
       resolveAuthOnboardingStep({
         hasCompletedNicknameOnboarding: true,
-        hasCompletedPermissionOnboarding: false,
         hasResolvedDisplayName: false,
-        isNotificationSupported: true,
-        permissionState: "default",
       }),
-    ).toBe("notification-permission");
+    ).toBeNull();
   });
 });
 

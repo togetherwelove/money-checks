@@ -1,6 +1,8 @@
 import { Alert, Pressable, StyleSheet, Switch, Text, View } from "react-native";
 
 import { AppColors } from "../../constants/colors";
+import { AppTextBreakProps } from "../../constants/textLayout";
+import { NotificationUiCopy } from "../../notifications/config/notificationCopy";
 import type { NotificationPreferenceItem } from "../../notifications/preferences/notificationPreferences";
 
 const HELP_ICON_SIZE = 18;
@@ -28,10 +30,12 @@ export function NotificationPreferenceRow({
     <View style={[styles.row, isFirst && styles.firstRow]}>
       <View style={styles.textBlock}>
         <View style={styles.labelRow}>
-          <Text style={styles.label}>{item.label}</Text>
+          <Text {...AppTextBreakProps} style={styles.label}>
+            {item.label}
+          </Text>
           {item.helpMessage ? (
             <Pressable
-              accessibilityLabel={`${item.label} 도움말`}
+              accessibilityLabel={`${item.label} ${NotificationUiCopy.helpAccessibilitySuffix}`}
               accessibilityRole="button"
               hitSlop={8}
               onPress={handlePressHelp}
@@ -42,12 +46,14 @@ export function NotificationPreferenceRow({
           ) : null}
         </View>
       </View>
-      <Switch
-        onValueChange={onToggle}
-        thumbColor={item.enabled ? AppColors.inverseText : AppColors.surface}
-        trackColor={{ false: AppColors.border, true: AppColors.primary }}
-        value={item.enabled}
-      />
+      <View style={styles.switchWrap}>
+        <Switch
+          onValueChange={onToggle}
+          thumbColor={item.enabled ? AppColors.inverseText : AppColors.surface}
+          trackColor={{ false: AppColors.border, true: AppColors.primary }}
+          value={item.enabled}
+        />
+      </View>
     </View>
   );
 }
@@ -67,16 +73,20 @@ const styles = StyleSheet.create({
   },
   textBlock: {
     flex: 1,
+    minWidth: 0,
   },
   labelRow: {
     alignItems: "center",
     flexDirection: "row",
     gap: 6,
+    minWidth: 0,
   },
   label: {
     color: AppColors.text,
+    flex: 1,
     fontSize: 13,
     fontWeight: "700",
+    minWidth: 0,
   },
   helpButton: {
     alignItems: "center",
@@ -85,6 +95,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     height: HELP_ICON_SIZE,
     justifyContent: "center",
+    flexShrink: 0,
     width: HELP_ICON_SIZE,
   },
   helpText: {
@@ -92,5 +103,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "800",
     lineHeight: 14,
+  },
+  switchWrap: {
+    alignItems: "flex-end",
+    flexShrink: 0,
   },
 });

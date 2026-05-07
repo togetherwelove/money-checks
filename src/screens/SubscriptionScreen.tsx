@@ -13,6 +13,7 @@ import { SubscriptionMessages } from "../constants/subscription";
 import { SubscriptionBenefitMessages } from "../constants/subscriptionBenefits";
 import { SubscriptionDetailCopy } from "../constants/subscriptionDetails";
 import { SubscriptionPlusLabels } from "../constants/subscriptionPlusLabels";
+import { AppTextBreakProps, OneLineTextFitProps } from "../constants/textLayout";
 import { BrandPlusTextStyle, CompactLabelTextStyle, SurfaceCardStyle } from "../constants/uiStyles";
 import { showNativeToast } from "../lib/nativeToast";
 
@@ -66,11 +67,7 @@ export function SubscriptionScreen({
       <KeyboardAwareScrollView contentContainerStyle={styles.content} style={styles.scrollView}>
         <View style={styles.salesContent}>
           <View style={styles.copySection}>
-            <Text
-              lineBreakStrategyIOS="hangul-word"
-              style={styles.description}
-              textBreakStrategy="highQuality"
-            >
+            <Text {...AppTextBreakProps} style={styles.description}>
               {SubscriptionMessages.heroDescription}
             </Text>
           </View>
@@ -93,7 +90,7 @@ export function SubscriptionScreen({
                 fullWidth
                 label={SubscriptionMessages.purchaseAction}
                 labelContent={
-                  <Text style={styles.purchaseButtonText}>
+                  <Text {...OneLineTextFitProps} style={styles.purchaseButtonText}>
                     {SubscriptionPlusLabels.purchaseActionPrefix}{" "}
                     <Text style={styles.purchaseButtonPlusText}>plus</Text>{" "}
                     {SubscriptionPlusLabels.purchaseActionSuffix}
@@ -200,6 +197,7 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     paddingHorizontal: AppLayout.screenPadding,
+    paddingTop: AppLayout.screenTopPadding,
   },
   salesContent: {
     flexGrow: 1,

@@ -211,6 +211,7 @@ export function EntryScreen({
         scrollEnabled={!isCategoryDragging}
         style={styles.screen}
       >
+        {showsBannerAd ? <AppBannerAd /> : null}
         {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
         <EntryDateToolbar
           dateLabel={formatSelectedDate(selectedDate)}
@@ -218,7 +219,6 @@ export function EntryScreen({
           onPressDateLabel={handleOpenDatePicker}
           showMoveToToday={selectedDate !== todayIsoDate}
         />
-        {showsBannerAd ? <AppBannerAd /> : null}
         <LedgerEditorPanel
           draft={draft}
           editingEntryId={editingEntryId}
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: AppLayout.screenPadding,
-    gap: AppLayout.cardGap,
+    paddingTop: AppLayout.screenTopPadding,
   },
   error: {
     color: AppColors.expense,

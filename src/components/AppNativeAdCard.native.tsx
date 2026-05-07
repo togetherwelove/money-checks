@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, View } from "react-native";
 import {
   NativeAd,
   NativeAdChoicesPlacement,
@@ -8,17 +8,21 @@ import {
   NativeAssetType,
 } from "react-native-google-mobile-ads";
 
-import { AdMobNativeConfig, AdMobTestUnitIds, NativeAdListConfig } from "../constants/ads";
+import {
+  AdMobNativeConfig,
+  AdMobTestUnitIds,
+  NativeAdCardUi,
+  NativeAdListConfig,
+} from "../constants/ads";
 import { AppColors } from "../constants/colors";
+import { OneLineTextFitProps } from "../constants/textLayout";
+import { getAdRequestOptions } from "../lib/ads/adRequestOptions";
 import { appPlatform } from "../lib/appPlatform";
 import { logAppError } from "../lib/logAppError";
 
 type AppNativeAdCardProps = {
   slotIndex: number;
 };
-
-const NATIVE_AD_VERTICAL_INSET = 6;
-const NATIVE_AD_ROW_GAP = 6;
 
 export function AppNativeAdCard({ slotIndex }: AppNativeAdCardProps) {
   const [nativeAd, setNativeAd] = useState<NativeAd | null>(null);
@@ -35,6 +39,7 @@ export function AppNativeAdCard({ slotIndex }: AppNativeAdCardProps) {
 
       try {
         activeNativeAd = await NativeAd.createForAdRequest(adUnitId, {
+          ...getAdRequestOptions(),
           adChoicesPlacement: NativeAdChoicesPlacement.TOP_RIGHT,
         });
         if (!isMounted) {
@@ -66,23 +71,51 @@ export function AppNativeAdCard({ slotIndex }: AppNativeAdCardProps) {
   }
 
   return (
-    <NativeAdView nativeAd={nativeAd} style={styles.entryRow}>
-      <View style={styles.content}>
-        <View style={styles.primaryRow}>
-          <Text style={styles.sponsoredLabel}>{NativeAdListConfig.sponsoredLabel}</Text>
-          <NativeAsset assetType={NativeAssetType.HEADLINE}>
-            <Text numberOfLines={1} style={styles.headline}>
-              {nativeAd.headline}
-            </Text>
-          </NativeAsset>
-        </View>
-        {nativeAd.body ? (
-          <NativeAsset assetType={NativeAssetType.BODY}>
-            <Text numberOfLines={1} style={styles.body}>
-              {nativeAd.body}
-            </Text>
+    <NativeAdView nativeAd={nativeAd}>
+      <View style={styles.entryRow}>
+        {nativeAd.icon ? (
+          <NativeAsset assetType={NativeAssetType.ICON}>
+            <Image source={{ uri: nativeAd.icon.url }} style={styles.icon} />
           </NativeAsset>
         ) : null}
+        <View style={styles.content}>
+          <View style={styles.primaryRow}>
+            <View style={styles.copyColumn}>
+              <View style={styles.headlineRow}>
+                <Text style={styles.sponsoredLabel}>{NativeAdListConfig.sponsoredLabel}</Text>
+                <NativeAsset assetType={NativeAssetType.HEADLINE}>
+                  <Text {...OneLineTextFitProps} style={styles.headline}>
+                    {nativeAd.headline}
+                  </Text>
+                </NativeAsset>
+              </View>
+              {nativeAd.advertiser ? (
+                <NativeAsset assetType={NativeAssetType.ADVERTISER}>
+                  <Text {...OneLineTextFitProps} style={styles.advertiser}>
+                    {nativeAd.advertiser}
+                  </Text>
+                </NativeAsset>
+              ) : null}
+            </View>
+            {nativeAd.callToAction ? (
+              <NativeAsset assetType={NativeAssetType.CALL_TO_ACTION}>
+                <Text
+                  {...OneLineTextFitProps}
+                  style={[styles.callToAction, styles.callToActionText]}
+                >
+                  {nativeAd.callToAction}
+                </Text>
+              </NativeAsset>
+            ) : null}
+          </View>
+          {nativeAd.body ? (
+            <NativeAsset assetType={NativeAssetType.BODY}>
+              <Text numberOfLines={2} style={styles.body}>
+                {nativeAd.body}
+              </Text>
+            </NativeAsset>
+          ) : null}
+        </View>
       </View>
     </NativeAdView>
   );
@@ -98,20 +131,39 @@ function resolveNativeAdUnitId() {
 
 const styles = StyleSheet.create({
   entryRow: {
-    flexDirection: "row",
+    alignItems: "center",
     borderBottomWidth: 1,
     borderColor: AppColors.border,
+    flexDirection: "row",
+    gap: NativeAdCardUi.primaryRowGap,
+    minHeight: NativeAdCardUi.minHeight,
+    paddingVertical: NativeAdCardUi.verticalInset,
   },
   content: {
     flex: 1,
-    paddingVertical: NATIVE_AD_VERTICAL_INSET,
+    gap: NativeAdCardUi.contentGap,
+    minWidth: 0,
+  },
+  copyColumn: {
+    flex: 1,
     minWidth: 0,
   },
   primaryRow: {
-    flexDirection: "row",
     alignItems: "center",
-    gap: NATIVE_AD_ROW_GAP,
+    flexDirection: "row",
+    gap: NativeAdCardUi.primaryRowGap,
     minWidth: 0,
+  },
+  headlineRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: NativeAdCardUi.advertiserGap,
+    minWidth: 0,
+  },
+  icon: {
+    borderRadius: NativeAdCardUi.iconBorderRadius,
+    height: NativeAdCardUi.iconSize,
+    width: NativeAdCardUi.iconSize,
   },
   sponsoredLabel: {
     color: AppColors.mutedText,
@@ -124,10 +176,27 @@ const styles = StyleSheet.create({
     color: AppColors.text,
     fontSize: 14,
     fontWeight: "600",
+    minWidth: 0,
+  },
+  advertiser: {
+    color: AppColors.mutedText,
+    fontSize: 11,
+    fontWeight: "600",
   },
   body: {
     color: AppColors.mutedText,
     fontSize: 12,
     lineHeight: 16,
+  },
+  callToAction: {
+    backgroundColor: AppColors.primary,
+    borderRadius: NativeAdCardUi.callToActionBorderRadius,
+    paddingHorizontal: NativeAdCardUi.callToActionPaddingHorizontal,
+    paddingVertical: NativeAdCardUi.callToActionPaddingVertical,
+  },
+  callToActionText: {
+    color: AppColors.inverseText,
+    fontSize: 12,
+    fontWeight: "800",
   },
 });

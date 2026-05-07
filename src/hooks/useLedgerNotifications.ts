@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
+import type { AppLanguage } from "../i18n/types";
 import { logAppError } from "../lib/logAppError";
 import {
   sendPendingJoinRequestNotification,
@@ -37,7 +38,7 @@ type LedgerNotificationsState = {
   permissionLabel: string;
   permissionState: NotificationPermissionState;
   preferenceGroups: NotificationPreferenceGroup[];
-  registerActionCategories: () => Promise<void>;
+  registerActionCategories: (language: AppLanguage) => Promise<void>;
   requestNotifications: () => Promise<boolean>;
   sendPendingJoinRequestNotification: () => Promise<void>;
   sendPushNotificationToBookMembers: (
@@ -52,7 +53,7 @@ type LedgerNotificationsState = {
     bookId?: string,
   ) => Promise<void>;
   showNotificationSettings: boolean;
-  statusMessage: string;
+  statusMessage: string | null;
   updatePreference: (
     eventTypes: NotificationEventType | readonly NotificationEventType[],
     enabled: boolean,
@@ -106,7 +107,7 @@ export function useLedgerNotifications(userId: string): LedgerNotificationsState
 
   const isSupported = permission !== "unsupported";
 
-  const requestNotifications = async () => {
+  const requestNotifications = useCallback(async () => {
     try {
       const nextPermission = await requestPushNotificationPermission(userId);
       setPermission(nextPermission);
@@ -119,7 +120,7 @@ export function useLedgerNotifications(userId: string): LedgerNotificationsState
       setPermission("granted");
       return true;
     }
-  };
+  }, [userId]);
 
   const notifySavedEntry = async (savedEntry: LedgerEntry, currentEntries: LedgerEntry[]) => {
     const nextEntries = upsertEntry(currentEntries, savedEntry);
@@ -238,9 +239,9 @@ function getPermissionLabel(permission: NotificationPermissionState): string {
   return PushNotificationCopy.permissionUnsupported;
 }
 
-function getStatusMessage(permission: NotificationPermissionState): string {
+function getStatusMessage(permission: NotificationPermissionState): string | null {
   if (permission === "granted") {
-    return PushNotificationCopy.statusEnabled;
+    return null;
   }
 
   if (permission === "denied") {
@@ -248,7 +249,7 @@ function getStatusMessage(permission: NotificationPermissionState): string {
   }
 
   if (permission === "default") {
-    return PushNotificationCopy.statusDefault;
+    return null;
   }
 
   return PushNotificationCopy.statusUnsupported;

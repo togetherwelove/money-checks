@@ -11,7 +11,6 @@ export type NotificationPreferences = {
 };
 
 export type NotificationPreferenceItem = {
-  description: string;
   enabled: boolean;
   eventTypes?: readonly NotificationEventType[];
   helpMessage?: string;
@@ -20,7 +19,6 @@ export type NotificationPreferenceItem = {
 };
 
 export type NotificationPreferenceGroup = {
-  description: string;
   id: NotificationPreferenceGroupId;
   items: NotificationPreferenceItem[];
   thresholdFields?: NotificationThresholdField[];
@@ -28,7 +26,6 @@ export type NotificationPreferenceGroup = {
 };
 
 export type NotificationThresholdField = {
-  description: string;
   enabled: boolean;
   key: NotificationThresholdKey;
   label: string;

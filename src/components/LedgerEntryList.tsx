@@ -4,6 +4,7 @@ import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import { AppMessages } from "../constants/messages";
 import { useLedgerCategoryIconMap } from "../hooks/useLedgerCategoryIconMap";
+import { useLedgerCategoryLabelMap } from "../hooks/useLedgerCategoryLabelMap";
 import type { LedgerEntry } from "../types/ledger";
 import { LedgerEntryListItem } from "./LedgerEntryListItem";
 
@@ -14,7 +15,8 @@ type LedgerEntryListProps = {
 };
 
 export function LedgerEntryList({ entries, onDeleteEntry, onEditEntry }: LedgerEntryListProps) {
-  const categoryIconByLabel = useLedgerCategoryIconMap();
+  const categoryIconByKey = useLedgerCategoryIconMap();
+  const categoryLabelById = useLedgerCategoryLabelMap();
 
   if (entries.length === 0) {
     return (
@@ -28,7 +30,8 @@ export function LedgerEntryList({ entries, onDeleteEntry, onEditEntry }: LedgerE
     <View style={styles.list}>
       {entries.map((entry) => (
         <LedgerEntryListItem
-          categoryIconByLabel={categoryIconByLabel}
+          categoryIconByKey={categoryIconByKey}
+          categoryLabelById={categoryLabelById}
           entry={entry}
           key={entry.id}
           onDeleteEntry={onDeleteEntry}

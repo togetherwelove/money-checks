@@ -10,6 +10,8 @@ import type {
 import type { AccessibleLedgerBook, LedgerBook } from "../../types/ledgerBook";
 import type {
   JoinSharedLedgerBookAttempt,
+  JoinSharedLedgerBookPreview,
+  JoinSharedLedgerBookResolution,
   LedgerBookJoinRequest,
 } from "../../types/ledgerBookJoinRequest";
 
@@ -36,7 +38,10 @@ export type LedgerScreenState = {
   isLoadingSelectedDateEntries: boolean;
   isRefreshing: boolean;
   createLedgerBook: (nextName: string) => Promise<boolean>;
-  joinSharedLedgerBookByCode: (shareCode: string) => Promise<JoinSharedLedgerBookAttempt>;
+  joinSharedLedgerBookByCode: (
+    shareCode: string,
+    joinResolution?: JoinSharedLedgerBookResolution,
+  ) => Promise<JoinSharedLedgerBookAttempt>;
   leaveSharedLedgerBook: () => Promise<boolean>;
   monthlyLedger: MonthlyLedgerSummary;
   monthlyInsights: MonthlyInsights;
@@ -45,6 +50,7 @@ export type LedgerScreenState = {
   pendingJoinRequests: LedgerBookJoinRequest[];
   previousMonthPage: MonthPage;
   previousChartMonth: ChartMonthData;
+  previewSharedLedgerBookJoinByCode: (shareCode: string) => Promise<JoinSharedLedgerBookPreview>;
   approveLedgerJoinRequest: (requestId: string) => Promise<boolean>;
   rejectLedgerJoinRequest: (requestId: string) => Promise<boolean>;
   removeSharedLedgerMember: (targetUserId: string) => Promise<boolean>;
@@ -60,6 +66,7 @@ export type LedgerScreenState = {
   handleDeleteSelectedDateNote: () => Promise<void>;
   handleDeleteEntry: (entryId: string) => Promise<void>;
   handleEditEntry: (entry: LedgerEntry) => void;
+  handleSaveDraftEntry: (draft: LedgerEntryDraft) => Promise<LedgerEntry[]>;
   handleSaveSelectedDateNote: (note: string) => Promise<void>;
   handleSaveEntry: () => Promise<LedgerEntry[]>;
   handleSettleInstallmentEntry: (entry: LedgerEntry) => Promise<LedgerEntry | null>;

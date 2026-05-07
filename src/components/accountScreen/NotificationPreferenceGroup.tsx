@@ -1,7 +1,7 @@
-import { useCallback, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../../constants/colors";
+import { OneLineTextFitProps } from "../../constants/textLayout";
 import { InsetPanelStyle } from "../../constants/uiStyles";
 import type { NotificationThresholdKey } from "../../notifications/domain/notificationEvents";
 import type { NotificationPreferenceGroup as NotificationPreferenceGroupState } from "../../notifications/preferences/notificationPreferences";
@@ -26,14 +26,13 @@ export function NotificationPreferenceGroup({
   onChangeThresholdValue,
   onToggle,
 }: NotificationPreferenceGroupProps) {
-  const [thresholdLabelWidth, setThresholdLabelWidth] = useState(0);
-  const handleMeasureThresholdLabel = useCallback((width: number) => {
-    setThresholdLabelWidth((currentWidth) => Math.max(currentWidth, Math.ceil(width)));
-  }, []);
-
   return (
     <View style={styles.group}>
-      <Text style={styles.title}>{group.title}</Text>
+      <View style={styles.headingBlock}>
+        <Text {...OneLineTextFitProps} style={styles.title}>
+          {group.title}
+        </Text>
+      </View>
       {group.thresholdFields?.length ? (
         <View style={styles.thresholdBlock}>
           {group.thresholdFields.map((field, index) => (
@@ -41,9 +40,7 @@ export function NotificationPreferenceGroup({
               field={field}
               isFirst={index === 0}
               key={field.key}
-              labelWidth={thresholdLabelWidth}
               onChangeEnabled={(enabled) => onChangeThresholdEnabled(field.key, enabled)}
-              onMeasureLabel={handleMeasureThresholdLabel}
               onChangeValue={(value) => onChangeThresholdValue(field.key, value)}
             />
           ))}
@@ -69,6 +66,9 @@ const styles = StyleSheet.create({
   group: {
     gap: 8,
     paddingTop: 6,
+  },
+  headingBlock: {
+    minWidth: 0,
   },
   title: {
     color: AppColors.text,

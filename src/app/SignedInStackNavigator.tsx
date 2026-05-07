@@ -4,6 +4,8 @@ import type { SubscriptionTier } from "../constants/subscription";
 import type { SupportPackageIdentifier } from "../constants/support";
 import type { BusyTaskTracker } from "../hooks/ledgerScreenState/types";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
+import type { AdTrackingPermissionState } from "../lib/ads/trackingTransparency";
+import type { NotificationPermissionState } from "../lib/notifications/pushNotifications";
 import type { SupportPackageSnapshot } from "../lib/subscription/supportClient";
 import type {
   NotificationEvent,
@@ -30,6 +32,7 @@ const Stack = createNativeStackNavigator<SignedInStackParamList>();
 
 type SignedInStackNavigatorProps = {
   accountProviderLabel: string;
+  adTrackingPermissionState: AdTrackingPermissionState;
   email: string;
   fallbackDisplayName: string;
   hasAvailablePlusPackage: boolean;
@@ -37,20 +40,22 @@ type SignedInStackNavigatorProps = {
   ledgerState: LedgerScreenState;
   notificationPreferenceGroups: NotificationPreferenceGroup[];
   notificationPermissionLabel: string;
-  notificationStatusMessage: string;
+  notificationPermissionState: NotificationPermissionState;
+  notificationStatusMessage: string | null;
   onChangeNotificationThresholdEnabled: (key: NotificationThresholdKey, enabled: boolean) => void;
   onChangeNotificationThreshold: (key: NotificationThresholdKey, value: string) => void;
-  onBeforeCopyShareCode: () => Promise<boolean>;
-  onDeleteSelectedEntry: (entry: LedgerEntry) => Promise<void>;
+  onBeforeCopyShareCode: () => Promise<void> | void;
+  onDeleteSelectedEntry: (entry: LedgerEntry) => Promise<boolean>;
   onEditSelectedEntryFromAllEntries: (entry: LedgerEntry) => void;
   onEditSelectedEntryFromCalendar: (entry: LedgerEntry) => void;
-  onOpenCharts: () => void;
-  onOpenEntry: () => void;
   onOpenMonthPicker: () => void;
   onOpenSubscription: () => void;
+  onOpenAdTrackingSettings: () => void;
   onOpenSubscriptionManagement: () => Promise<void>;
   onPurchaseSupportPackage: (identifier: SupportPackageIdentifier) => Promise<void>;
   onPurchasePlus: () => Promise<void>;
+  onRequestNotificationPermission: () => Promise<boolean>;
+  onRequestAdTrackingPermission: () => void;
   onRestorePurchases: () => Promise<void>;
   onSaveEntry: () => Promise<void>;
   onSelectCalendarDate: (isoDate: string) => void;
@@ -72,6 +77,7 @@ type SignedInStackNavigatorProps = {
     enabled: boolean,
   ) => void;
   plusPriceLabel: string | null;
+  showAdTrackingPermissionCard: boolean;
   showNotificationSettings: boolean;
   showsBannerAd: boolean;
   supportPackages: SupportPackageSnapshot[];
@@ -83,6 +89,7 @@ type SignedInStackNavigatorProps = {
 
 export function SignedInStackNavigator({
   accountProviderLabel,
+  adTrackingPermissionState,
   email,
   fallbackDisplayName,
   hasAvailablePlusPackage,
@@ -90,6 +97,7 @@ export function SignedInStackNavigator({
   ledgerState,
   notificationPreferenceGroups,
   notificationPermissionLabel,
+  notificationPermissionState,
   notificationStatusMessage,
   onChangeNotificationThresholdEnabled,
   onChangeNotificationThreshold,
@@ -97,13 +105,14 @@ export function SignedInStackNavigator({
   onDeleteSelectedEntry,
   onEditSelectedEntryFromAllEntries,
   onEditSelectedEntryFromCalendar,
-  onOpenCharts,
-  onOpenEntry,
   onOpenMonthPicker,
+  onOpenAdTrackingSettings,
   onOpenSubscription,
   onOpenSubscriptionManagement,
   onPurchaseSupportPackage,
   onPurchasePlus,
+  onRequestNotificationPermission,
+  onRequestAdTrackingPermission,
   onRestorePurchases,
   onSaveEntry,
   onSelectCalendarDate,
@@ -113,6 +122,7 @@ export function SignedInStackNavigator({
   onSettleInstallmentEntry,
   onToggleNotificationPreference,
   plusPriceLabel,
+  showAdTrackingPermissionCard,
   showNotificationSettings,
   showsBannerAd,
   supportPackages,
@@ -137,8 +147,6 @@ export function SignedInStackNavigator({
           <HomeScreen
             onDeleteSelectedEntry={onDeleteSelectedEntry}
             onEditSelectedEntry={onEditSelectedEntryFromCalendar}
-            onOpenCharts={onOpenCharts}
-            onOpenEntry={onOpenEntry}
             onOpenMonthPicker={onOpenMonthPicker}
             onSelectCalendarDate={onSelectCalendarDate}
             showsBannerAd={showsBannerAd}
@@ -169,7 +177,7 @@ export function SignedInStackNavigator({
         )}
       </Stack.Screen>
       <Stack.Screen name="charts">
-        {() => <ChartScreen showsBannerAd={showsBannerAd} state={ledgerState} />}
+        {() => <ChartScreen showsBannerAd={showsBannerAd} state={ledgerState} userId={userId} />}
       </Stack.Screen>
       <Stack.Screen name="share">
         {() => (
@@ -182,6 +190,7 @@ export function SignedInStackNavigator({
             onJoinSharedLedgerBook={ledgerState.joinSharedLedgerBookByCode}
             onLeaveSharedLedgerBook={ledgerState.leaveSharedLedgerBook}
             onOpenSubscription={onOpenSubscription}
+            onPreviewJoinSharedLedgerBook={ledgerState.previewSharedLedgerBookJoinByCode}
             onRejectJoinRequest={ledgerState.rejectLedgerJoinRequest}
             onRemoveSharedLedgerMember={ledgerState.removeSharedLedgerMember}
             onRenameActiveLedgerBook={ledgerState.renameActiveLedgerBook}
@@ -199,10 +208,14 @@ export function SignedInStackNavigator({
         {() => (
           <AccountScreen
             accountProviderLabel={accountProviderLabel}
+            adTrackingPermissionState={adTrackingPermissionState}
             email={email}
             fallbackDisplayName={fallbackDisplayName}
+            onOpenAdTrackingSettings={onOpenAdTrackingSettings}
             onOpenSubscriptionManagement={onOpenSubscriptionManagement}
+            onRequestAdTrackingPermission={onRequestAdTrackingPermission}
             onRestorePurchases={onRestorePurchases}
+            showAdTrackingPermissionCard={showAdTrackingPermissionCard}
             subscriptionTier={subscriptionTier}
             trackBlockingTask={trackBlockingTask}
             userId={userId}
@@ -214,19 +227,25 @@ export function SignedInStackNavigator({
           showNotificationSettings ? (
             <NotificationSettingsScreen
               notificationPermissionLabel={notificationPermissionLabel}
+              notificationPermissionState={notificationPermissionState}
               notificationPreferenceGroups={notificationPreferenceGroups}
               notificationStatusMessage={notificationStatusMessage}
               onChangeNotificationThresholdEnabled={onChangeNotificationThresholdEnabled}
               onChangeNotificationThreshold={onChangeNotificationThreshold}
+              onRequestNotificationPermission={onRequestNotificationPermission}
               onToggleNotificationPreference={onToggleNotificationPreference}
             />
           ) : (
             <AccountScreen
               accountProviderLabel={accountProviderLabel}
+              adTrackingPermissionState={adTrackingPermissionState}
               email={email}
               fallbackDisplayName={fallbackDisplayName}
+              onOpenAdTrackingSettings={onOpenAdTrackingSettings}
               onOpenSubscriptionManagement={onOpenSubscriptionManagement}
+              onRequestAdTrackingPermission={onRequestAdTrackingPermission}
               onRestorePurchases={onRestorePurchases}
+              showAdTrackingPermissionCard={showAdTrackingPermissionCard}
               subscriptionTier={subscriptionTier}
               trackBlockingTask={trackBlockingTask}
               userId={userId}

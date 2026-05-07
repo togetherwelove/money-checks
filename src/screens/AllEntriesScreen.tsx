@@ -21,15 +21,15 @@ import { AppMessages } from "../constants/messages";
 import { FormInputTextStyle } from "../constants/uiStyles";
 import type { BusyTaskTracker } from "../hooks/ledgerScreenState/types";
 import { useAllLedgerEntries } from "../hooks/useAllLedgerEntries";
+import { useLedgerCategories } from "../hooks/useLedgerCategories";
 import { useLedgerCategoryIconMap } from "../hooks/useLedgerCategoryIconMap";
-import { useLedgerCategoryLabels } from "../hooks/useLedgerCategoryLabels";
 import { buildAllEntriesFeedItems } from "../lib/allEntriesFeedItems";
 import type { LedgerEntry } from "../types/ledger";
 import type { LedgerBook } from "../types/ledgerBook";
 
 type AllEntriesScreenProps = {
   activeBook: LedgerBook | null;
-  onDeleteEntry: (entry: LedgerEntry) => Promise<void>;
+  onDeleteEntry: (entry: LedgerEntry) => Promise<boolean>;
   onEditEntry: (entry: LedgerEntry) => void;
   showsNativeAds: boolean;
   trackBlockingTask: BusyTaskTracker;
@@ -43,10 +43,14 @@ export function AllEntriesScreen({
   trackBlockingTask,
 }: AllEntriesScreenProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const deferredSearchQuery = useDeferredValue(searchQuery.trim());
-  const categoryLabels = useLedgerCategoryLabels();
-  const categoryIconByLabel = useLedgerCategoryIconMap();
+  const categories = useLedgerCategories();
+  const categoryIconByKey = useLedgerCategoryIconMap();
+  const categoryLabelById = useMemo(
+    () => new Map(categories.map((category) => [category.id, category.label])),
+    [categories],
+  );
   const {
     entries,
     errorMessage,
@@ -56,9 +60,10 @@ export function AllEntriesScreen({
     loadMoreEntries,
     refreshEntries,
     removeEntryFromFeed,
+    restoreEntryToFeed,
   } = useAllLedgerEntries({
     activeBookId: activeBook?.id ?? null,
-    selectedCategory,
+    selectedCategoryId,
     searchQuery: deferredSearchQuery,
     trackBlockingTask,
   });
@@ -96,41 +101,41 @@ export function AllEntriesScreen({
           style={styles.categoryFilterList}
         >
           <Pressable
-            onPress={() => setSelectedCategory(null)}
+            onPress={() => setSelectedCategoryId(null)}
             style={[
               styles.categoryFilterChip,
-              selectedCategory === null ? styles.activeCategoryFilterChip : null,
+              selectedCategoryId === null ? styles.activeCategoryFilterChip : null,
             ]}
           >
             <Text
               style={[
                 styles.categoryFilterLabel,
-                selectedCategory === null ? styles.activeCategoryFilterLabel : null,
+                selectedCategoryId === null ? styles.activeCategoryFilterLabel : null,
               ]}
             >
               {AllEntriesCopy.allCategoriesFilterLabel}
             </Text>
           </Pressable>
-          {categoryLabels.map((categoryLabel) => (
+          {categories.map((category) => (
             <Pressable
-              key={categoryLabel}
+              key={category.id}
               onPress={() =>
-                setSelectedCategory((currentCategory) =>
-                  currentCategory === categoryLabel ? null : categoryLabel,
+                setSelectedCategoryId((currentCategoryId) =>
+                  currentCategoryId === category.id ? null : category.id,
                 )
               }
               style={[
                 styles.categoryFilterChip,
-                selectedCategory === categoryLabel ? styles.activeCategoryFilterChip : null,
+                selectedCategoryId === category.id ? styles.activeCategoryFilterChip : null,
               ]}
             >
               <Text
                 style={[
                   styles.categoryFilterLabel,
-                  selectedCategory === categoryLabel ? styles.activeCategoryFilterLabel : null,
+                  selectedCategoryId === category.id ? styles.activeCategoryFilterLabel : null,
                 ]}
               >
-                {categoryLabel}
+                {category.label}
               </Text>
             </Pressable>
           ))}
@@ -178,7 +183,8 @@ export function AllEntriesScreen({
               <AppNativeAdCard slotIndex={item.slotIndex} />
             ) : (
               <LedgerEntryListItem
-                categoryIconByLabel={categoryIconByLabel}
+                categoryIconByKey={categoryIconByKey}
+                categoryLabelById={categoryLabelById}
                 entry={item.entry}
                 onDeleteEntry={(entry) => {
                   Alert.alert(
@@ -212,8 +218,11 @@ export function AllEntriesScreen({
   );
 
   async function handleDeleteEntry(entry: LedgerEntry) {
-    await onDeleteEntry(entry);
     removeEntryFromFeed(entry.id);
+    const didDelete = await onDeleteEntry(entry);
+    if (!didDelete) {
+      restoreEntryToFeed(entry);
+    }
   }
 }
 
@@ -222,6 +231,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: AppColors.background,
     paddingHorizontal: AppLayout.screenPadding,
+    paddingTop: AppLayout.screenTopPadding,
   },
   content: {
     flex: 1,

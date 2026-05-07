@@ -40,8 +40,8 @@ function buildTokenMap(event: NotificationEvent): Record<string, string> {
     entryTypeLabel,
     expenseSummary: event.expenseSummary ?? NotificationUiCopy.fallbackDateLabel,
     incomeSummary: event.incomeSummary ?? NotificationUiCopy.fallbackDateLabel,
-    noteSegment: note ? ` / 메모 ${note}` : "",
-    noteSentence: note ? ` 메모: ${note}` : "",
+    noteSegment: note ? `${NotificationUiCopy.noteSegmentPrefix}${note}` : "",
+    noteSentence: note ? `${NotificationUiCopy.noteSentencePrefix}${note}` : "",
     periodLabel: event.period
       ? NotificationThresholdPeriodCopy[event.period]
       : NotificationUiCopy.fallbackDateLabel,

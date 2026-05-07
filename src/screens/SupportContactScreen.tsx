@@ -151,6 +151,7 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     paddingHorizontal: AppLayout.screenPadding,
+    paddingTop: AppLayout.screenTopPadding,
   },
   card: {
     ...SurfaceCardStyle,

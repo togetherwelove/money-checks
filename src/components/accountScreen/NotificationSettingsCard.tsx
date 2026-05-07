@@ -1,8 +1,14 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Feather } from "@expo/vector-icons";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../../constants/colors";
+import { AppLayout } from "../../constants/layout";
+import { AppTextBreakProps } from "../../constants/textLayout";
 import { InsetPanelStyle, SupportingTextStyle, SurfaceCardStyle } from "../../constants/uiStyles";
-import { NotificationUiCopy } from "../../notifications/config/notificationCopy";
+import {
+  NotificationSettingsUi,
+  NotificationUiCopy,
+} from "../../notifications/config/notificationCopy";
 import type { NotificationThresholdKey } from "../../notifications/domain/notificationEvents";
 import type { NotificationPreferenceGroup as NotificationPreferenceGroupState } from "../../notifications/preferences/notificationPreferences";
 import { NotificationPreferenceGroup } from "./NotificationPreferenceGroup";
@@ -10,9 +16,10 @@ import { NotificationPreferenceGroup } from "./NotificationPreferenceGroup";
 type NotificationSettingsCardProps = {
   onChangeThresholdEnabled: (key: NotificationThresholdKey, enabled: boolean) => void;
   onChangeThresholdValue: (key: NotificationThresholdKey, value: string) => void;
+  onOpenDeviceNotificationSettings: () => void;
   permissionLabel: string;
   preferenceGroups: NotificationPreferenceGroupState[];
-  statusMessage: string;
+  statusMessage: string | null;
   onTogglePreference: (
     eventTypes:
       | NotificationPreferenceGroupState["items"][number]["type"]
@@ -24,6 +31,7 @@ type NotificationSettingsCardProps = {
 export function NotificationSettingsCard({
   onChangeThresholdEnabled,
   onChangeThresholdValue,
+  onOpenDeviceNotificationSettings,
   permissionLabel,
   preferenceGroups,
   statusMessage,
@@ -32,13 +40,32 @@ export function NotificationSettingsCard({
   return (
     <View style={styles.card}>
       <View style={styles.permissionList}>
-        <View style={styles.permissionRow}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={onOpenDeviceNotificationSettings}
+          style={({ pressed }) => [styles.permissionRow, pressed ? styles.pressedRow : null]}
+        >
           <View style={styles.textBlock}>
-            <Text style={styles.label}>{NotificationUiCopy.permissionSectionTitle}</Text>
-            <Text style={styles.statusText}>{statusMessage}</Text>
+            <Text {...AppTextBreakProps} style={styles.label}>
+              {NotificationUiCopy.permissionSectionTitle}
+            </Text>
+            {statusMessage ? (
+              <Text {...AppTextBreakProps} style={styles.statusText}>
+                {statusMessage}
+              </Text>
+            ) : null}
           </View>
-          <Text style={styles.value}>{permissionLabel}</Text>
-        </View>
+          <View style={styles.permissionAction}>
+            <Text {...AppTextBreakProps} numberOfLines={1} style={styles.value}>
+              {permissionLabel}
+            </Text>
+            <Feather
+              color={AppColors.mutedStrongText}
+              name="chevron-right"
+              size={NotificationSettingsUi.permissionChevronIconSize}
+            />
+          </View>
+        </Pressable>
       </View>
       <View style={styles.preferenceBlock}>
         {preferenceGroups.map((group) => (
@@ -71,9 +98,13 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 8,
   },
+  pressedRow: {
+    backgroundColor: AppColors.surfaceMuted,
+  },
   textBlock: {
     flex: 1,
     gap: 4,
+    minWidth: 0,
   },
   label: {
     color: AppColors.text,
@@ -82,8 +113,15 @@ const styles = StyleSheet.create({
   },
   value: {
     color: AppColors.text,
+    flexShrink: 1,
     fontSize: 14,
     fontWeight: "700",
+  },
+  permissionAction: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: AppLayout.compactGap,
+    flexShrink: 0,
   },
   statusText: SupportingTextStyle,
   preferenceBlock: {

@@ -1,13 +1,23 @@
 import type { Session } from "@supabase/supabase-js";
 
+import { selectStaticCopy } from "../i18n/staticCopy";
+
 export type AuthProvider = "apple" | "email" | "google";
 
-const AUTH_PROVIDER_LABELS = {
-  apple: "Apple",
-  email: "이메일",
-  google: "Google",
-  unknown: "알 수 없음",
-} as const;
+const AUTH_PROVIDER_LABELS = selectStaticCopy({
+  en: {
+    apple: "Apple",
+    email: "Email",
+    google: "Google",
+    unknown: "Unknown",
+  },
+  ko: {
+    apple: "Apple",
+    email: "이메일",
+    google: "Google",
+    unknown: "알 수 없음",
+  },
+} as const);
 
 function normalizeAuthProvider(provider: string | null | undefined): AuthProvider | null {
   if (provider === "apple" || provider === "email" || provider === "google") {

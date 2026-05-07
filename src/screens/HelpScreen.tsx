@@ -74,6 +74,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: AppLayout.screenPadding,
+    paddingTop: AppLayout.screenTopPadding,
     gap: AppLayout.cardGap,
   },
   description: {

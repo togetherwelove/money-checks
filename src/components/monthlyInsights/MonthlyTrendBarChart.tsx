@@ -5,6 +5,7 @@ import {
   MonthlyInsightChartCopy,
   MonthlyInsightChartLayout,
 } from "../../constants/monthlyInsightCharts";
+import { OneLineTextFitProps } from "../../constants/textLayout";
 import type { MonthlyTrendPoint } from "../../types/ledger";
 
 type MonthlyTrendBarChartProps = {
@@ -41,7 +42,10 @@ export function MonthlyTrendBarChart({ trendMonths }: MonthlyTrendBarChartProps)
                   maxAmount={maxAmount}
                 />
               </View>
-              <Text style={[styles.monthLabel, point.isCurrentMonth ? styles.activeMonth : null]}>
+              <Text
+                {...OneLineTextFitProps}
+                style={[styles.monthLabel, point.isCurrentMonth ? styles.activeMonth : null]}
+              >
                 {point.monthLabel}
               </Text>
             </View>
@@ -140,6 +144,7 @@ const styles = StyleSheet.create({
   monthColumn: {
     flex: 1,
     gap: 6,
+    minWidth: 0,
   },
   monthLabel: {
     color: AppColors.mutedText,

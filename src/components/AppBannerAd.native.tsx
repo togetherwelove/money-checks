@@ -5,6 +5,7 @@ import { AdMobTestUnitIds } from "../constants/ads";
 import { AppColors } from "../constants/colors";
 import { AdMobConfig } from "../constants/subscription";
 import { logAdMobLoadError } from "../lib/ads/adMobLoadError";
+import { getAdRequestOptions } from "../lib/ads/adRequestOptions";
 import { appPlatform } from "../lib/appPlatform";
 
 export function AppBannerAd() {
@@ -36,6 +37,7 @@ export function AppBannerAd() {
             step: "load_banner_ad",
           });
         }}
+        requestOptions={getAdRequestOptions()}
         size={BannerAdSize.BANNER}
         unitId={adUnitId}
       />

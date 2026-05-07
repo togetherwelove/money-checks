@@ -12,6 +12,7 @@ import {
   NotificationThresholdFieldLabels,
   isRequiredNotificationEvent,
 } from "../notifications/config/notificationCopy";
+import { clampNotificationThresholdAmount } from "../notifications/config/notificationThresholdLimits";
 import type {
   NotificationEventType,
   NotificationThresholdKey,
@@ -104,7 +105,9 @@ export function useNotificationPreferences(userId: string): NotificationPreferen
     },
     updateThresholdValue: (key, value) => {
       const sanitizedValue = sanitizeAmountInput(value);
-      const nextThreshold = sanitizedValue ? Number(sanitizedValue) : 0;
+      const nextThreshold = clampNotificationThresholdAmount(
+        sanitizedValue ? Number(sanitizedValue) : 0,
+      );
 
       setPreferences((currentPreferences) => {
         const nextPreferences = {
@@ -125,7 +128,6 @@ function buildPreferenceGroups(
   preferences: NotificationPreferences,
 ): NotificationPreferenceGroup[] {
   const thresholdFields = Object.entries(NotificationThresholdCopy).map(([key, fieldCopy]) => ({
-    description: fieldCopy.description,
     enabled:
       preferences.enabledThresholds[key as NotificationThresholdKey] ??
       NotificationDefaultThresholdEnabled[key as NotificationThresholdKey],
@@ -137,7 +139,6 @@ function buildPreferenceGroups(
   const entryChangeEventTypeSet = new Set<NotificationEventType>(NotificationEntryChangeEventTypes);
 
   return NotificationGroupOrder.map((groupId) => ({
-    description: NotificationGroupCopy[groupId].description,
     id: groupId,
     items:
       groupId === "threshold"
@@ -171,7 +172,6 @@ function buildNotificationPreferenceItems(
 
       hasAddedEntryChangePreference = true;
       preferenceItems.push({
-        description: NotificationEntryChangePreferenceCopy.description,
         enabled: NotificationEntryChangeEventTypes.every(
           (entryChangeEventType) => preferences.enabledByEvent[entryChangeEventType],
         ),
@@ -183,7 +183,6 @@ function buildNotificationPreferenceItems(
     }
 
     preferenceItems.push({
-      description: NotificationEventCopy[eventType].description,
       enabled: preferences.enabledByEvent[eventType],
       helpMessage: NotificationEventCopy[eventType].helpMessage,
       label: NotificationEventCopy[eventType].label,

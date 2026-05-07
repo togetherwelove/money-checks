@@ -4,12 +4,12 @@ import { AuthControls } from "../../constants/authControls";
 import { AppColors } from "../../constants/colors";
 import { AppLayout } from "../../constants/layout";
 import { LedgerBookNicknameCopy } from "../../constants/ledgerBookNickname";
+import { SharedLedgerPanelUi } from "../../constants/sharedLedgerPanel";
 import { FormInputTextStyle } from "../../constants/uiStyles";
 
 export const sharedLedgerPanelStyles = StyleSheet.create({
   panel: {
     gap: AppLayout.cardGap,
-    paddingVertical: 4,
   },
   section: {
     gap: 8,
@@ -37,10 +37,10 @@ export const sharedLedgerPanelStyles = StyleSheet.create({
   },
   sectionTitle: {
     color: AppColors.text,
-    fontSize: 15,
+    fontSize: SharedLedgerPanelUi.sectionTitleFontSize,
     fontWeight: "800",
     includeFontPadding: false,
-    lineHeight: AuthControls.inlineControlHeight,
+    lineHeight: SharedLedgerPanelUi.sectionTitleLineHeight,
   },
   sectionTitleRow: {
     flexDirection: "row",
@@ -49,15 +49,10 @@ export const sharedLedgerPanelStyles = StyleSheet.create({
     gap: 6,
     height: AuthControls.inlineControlHeight,
   },
-  sectionLabel: {
-    color: AppColors.mutedText,
-    fontSize: 11,
-    fontWeight: "600",
-  },
   bookName: {
     flexShrink: 1,
     color: AppColors.text,
-    fontSize: 18,
+    fontSize: SharedLedgerPanelUi.sectionTitleFontSize,
     fontWeight: "800",
   },
   bookNameHeaderTitle: {
@@ -90,24 +85,11 @@ export const sharedLedgerPanelStyles = StyleSheet.create({
     fontWeight: "700",
   },
   codeBlock: {
-    gap: 4,
-    padding: 12,
-    marginHorizontal: AppLayout.cardContentPadding,
-    borderRadius: 14,
-    backgroundColor: AppColors.surface,
+    gap: 8,
+    paddingHorizontal: AppLayout.cardContentPadding,
   },
   shareCodeRow: {
     flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    gap: 2,
-  },
-  shareCode: {
-    flexShrink: 1,
-    color: AppColors.primary,
-    fontSize: 22,
-    fontWeight: "800",
-    letterSpacing: 1.2,
   },
   helpText: {
     color: AppColors.mutedText,
@@ -148,6 +130,9 @@ export const sharedLedgerPanelStyles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: AppLayout.cardContentPadding,
   },
+  ledgerBookMembersBlock: {
+    paddingTop: AppLayout.cardContentPadding,
+  },
   ledgerBookItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -159,6 +144,10 @@ export const sharedLedgerPanelStyles = StyleSheet.create({
     borderColor: AppColors.border,
     borderRadius: 14,
     backgroundColor: AppColors.background,
+  },
+  activeLedgerBookItem: {
+    borderColor: AppColors.primary,
+    backgroundColor: AppColors.surfaceMuted,
   },
   ledgerBookItemContent: {
     flex: 1,
@@ -174,6 +163,25 @@ export const sharedLedgerPanelStyles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "600",
   },
+  ledgerBookItemMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SharedLedgerPanelUi.ledgerBookStatusMetaGap,
+    flexWrap: "wrap",
+  },
+  currentLedgerBadge: {
+    flexShrink: 0,
+    borderRadius: SharedLedgerPanelUi.ledgerBookStatusBadgeRadius,
+    backgroundColor: AppColors.surfaceStrong,
+    paddingHorizontal: SharedLedgerPanelUi.ledgerBookStatusBadgeHorizontalPadding,
+    paddingVertical: SharedLedgerPanelUi.ledgerBookStatusBadgeVerticalPadding,
+  },
+  currentLedgerBadgeText: {
+    color: AppColors.primary,
+    fontSize: 11,
+    fontWeight: "800",
+    lineHeight: SharedLedgerPanelUi.ledgerBookStatusBadgeLineHeight,
+  },
   createBookRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -187,6 +195,12 @@ export const sharedLedgerPanelStyles = StyleSheet.create({
   leaveSection: {
     gap: 8,
     paddingTop: 4,
+  },
+  subsection: {
+    gap: 8,
+    borderTopWidth: 1,
+    borderTopColor: AppColors.border,
+    paddingTop: AppLayout.cardContentPadding,
   },
   stateBadge: {
     flexShrink: 0,

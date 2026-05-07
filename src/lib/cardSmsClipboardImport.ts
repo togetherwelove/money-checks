@@ -1,6 +1,4 @@
 import * as Clipboard from "expo-clipboard";
-import type { MutableRefObject } from "react";
-import { Alert, type AlertButton } from "react-native";
 
 import { CardSmsClipboardCopy } from "../constants/cardSmsClipboard";
 import type { LedgerEntryType } from "../types/ledger";
@@ -16,40 +14,24 @@ export type CardSmsClipboardDraft = {
   type: LedgerEntryType;
 };
 
-const PROMPT_MESSAGE_SEPARATOR = "\n";
-
-type PromptCardSmsClipboardImportOptions = {
+type ReadCardSmsClipboardDraftOptions = {
   baseDate: Date;
-  lastPromptedClipboardRef?: MutableRefObject<string | null>;
-  onApply: (draft: CardSmsClipboardDraft) => void;
-  onSkip?: () => void;
   shouldIgnoreDraft?: (draft: CardSmsClipboardDraft) => boolean;
 };
 
-export async function promptCardSmsClipboardImport({
+export async function readCardSmsClipboardDraft({
   baseDate,
-  lastPromptedClipboardRef,
-  onApply,
-  onSkip,
   shouldIgnoreDraft,
-}: PromptCardSmsClipboardImportOptions): Promise<boolean> {
+}: ReadCardSmsClipboardDraftOptions): Promise<CardSmsClipboardDraft | null> {
   try {
     const clipboardText = await Clipboard.getStringAsync();
-    if (clipboardText === lastPromptedClipboardRef?.current) {
-      return false;
-    }
-
     if (!isLikelyCardSms(clipboardText)) {
-      return false;
+      return null;
     }
 
     const parsedSms = parseCardSms(clipboardText);
     if (!parsedSms.amount || !parsedSms.merchantName) {
-      return false;
-    }
-
-    if (lastPromptedClipboardRef) {
-      lastPromptedClipboardRef.current = clipboardText;
+      return null;
     }
 
     const nextDraft: CardSmsClipboardDraft = {
@@ -61,68 +43,45 @@ export async function promptCardSmsClipboardImport({
     };
 
     if (shouldIgnoreDraft?.(nextDraft)) {
-      return false;
+      return null;
     }
 
-    Alert.alert(
-      CardSmsClipboardCopy.promptTitle,
-      buildCardSmsClipboardPromptMessage(nextDraft),
-      buildCardSmsClipboardPromptActions({
-        draft: nextDraft,
-        onApply,
-        onSkip,
-      }),
-    );
-    return true;
+    return nextDraft;
   } catch (error) {
     if (isClipboardReadDeniedError(error)) {
-      return false;
+      return null;
     }
 
     logAppError("CardSmsClipboardImport", error, {
       step: "read_clipboard",
     });
-    return false;
+    return null;
   }
 }
 
-function buildCardSmsClipboardPromptActions({
-  draft,
-  onApply,
-  onSkip,
-}: {
-  draft: CardSmsClipboardDraft;
-  onApply: (draft: CardSmsClipboardDraft) => void;
-  onSkip?: () => void;
-}): AlertButton[] {
-  const promptActions: AlertButton[] = [
-    {
-      style: "cancel",
-      text: CardSmsClipboardCopy.cancelAction,
-    },
-  ];
+export function formatCardSmsClipboardDraftActionLabel(draft: CardSmsClipboardDraft): string {
+  const previewLabel = [
+    formatCardSmsClipboardDraftDateLabel(draft.date),
+    `${formatAmountInput(draft.amount)}${CardSmsClipboardCopy.amountCurrencySuffix}`,
+    truncateCardSmsPreviewContent(draft.content),
+  ].join(CardSmsClipboardCopy.previewSeparator);
 
-  if (onSkip) {
-    promptActions.push({
-      onPress: onSkip,
-      text: CardSmsClipboardCopy.skipAction,
-    });
-  }
-
-  promptActions.push({
-    onPress: () => onApply(draft),
-    text: CardSmsClipboardCopy.applyAction,
-  });
-
-  return promptActions;
+  return `${CardSmsClipboardCopy.applyAction}(${previewLabel}${CardSmsClipboardCopy.actionPreviewSuffix})`;
 }
 
-function buildCardSmsClipboardPromptMessage(draft: CardSmsClipboardDraft): string {
-  return [
-    `${draft.date ?? CardSmsClipboardCopy.unknownDateLabel}`,
-    `${formatAmountInput(draft.amount)}원`,
-    `${draft.content}`,
-  ].join(PROMPT_MESSAGE_SEPARATOR);
+function formatCardSmsClipboardDraftDateLabel(date: string | null): string {
+  return (
+    date?.replaceAll("-", CardSmsClipboardCopy.dateDisplaySeparator) ??
+    CardSmsClipboardCopy.fallbackDateLabel
+  );
+}
+
+function truncateCardSmsPreviewContent(content: string): string {
+  if (content.length <= CardSmsClipboardCopy.actionPreviewContentMaxLength) {
+    return content;
+  }
+
+  return `${content.slice(0, CardSmsClipboardCopy.actionPreviewContentMaxLength)}${CardSmsClipboardCopy.previewOmissionIndicator}`;
 }
 
 function isClipboardReadDeniedError(error: unknown): boolean {

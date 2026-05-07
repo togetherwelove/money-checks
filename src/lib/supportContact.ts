@@ -34,7 +34,7 @@ export async function composeSupportMail({
 
   await MailComposer.composeAsync({
     attachments: attachments.map((attachment) => attachment.uri),
-    body: [`가입 이메일: ${userEmail}`, "", body].join("\n"),
+    body: [`${SupportContactCopy.senderEmailLabel}: ${userEmail}`, "", body].join("\n"),
     recipients: [SupportContactCopy.developerEmail],
     subject,
   });

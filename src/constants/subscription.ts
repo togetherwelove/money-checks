@@ -1,3 +1,5 @@
+import { selectStaticCopy } from "../i18n/staticCopy";
+
 export const SubscriptionTiers = {
   free: "free",
   plus: "plus",
@@ -29,25 +31,49 @@ export const AdMobConfig = {
   iosBannerAdUnitId: process.env.EXPO_PUBLIC_ADMOB_IOS_BANNER_AD_UNIT_ID ?? "",
 } as const;
 
-export const SubscriptionMessages = {
-  freePlanLabel: "Free 플랜",
-  heroDescription: "알뜰에서 광고로 불편함 없이\n하나 이상의 가계부를 관리하고,\n더 많은 공유 멤버와 함께하세요.",
-  heroPriceLabel: "￦770원/월",
-  inactiveRestoreMessage: "활성화된 알뜰 plus가 없어요.",
-  monthlyPriceSuffix: "/월",
-  plusSummary: "현재 가입된 상태입니다.",
-  purchaseAction: "알뜰 plus 가입",
-  purchaseError: "알뜰 plus 가입을 처리하지 못했어요.",
-  purchaseInfoDefaultPeriodValue: "1개월마다",
-  purchaseInfoNameLabel: "구독명",
-  purchaseInfoPeriodLabel: "구독 기간",
-  purchaseInfoPriceLabel: "가격",
-  purchaseSuccess: "알뜰 plus가 활성화되었어요.",
-  restoreAction: "구매 복원",
-  restoreError: "구매 내역을 복원하지 못했어요.",
-  restoreSuccess: "구매 내역을 복원했어요.",
-  screenTitle: "알뜰 plus",
-  sharedLedgerLimitDescription:
-    "Free 플랜 한도에 도달했어요.",
-  statusLabel: "현재 플랜",
-} as const;
+export const SubscriptionMessages = selectStaticCopy({
+  en: {
+    freePlanLabel: "Free Plan",
+    heroDescription:
+      "Manage multiple ledgers without ads\nand invite more shared members\nwith Alttle plus.",
+    heroPriceLabel: "₩770/mo",
+    inactiveRestoreMessage: "No active Alttle plus subscription was found.",
+    monthlyPriceSuffix: "/mo",
+    plusSummary: "Your subscription is active.",
+    purchaseAction: "Join Alttle plus",
+    purchaseError: "Could not process Alttle plus.",
+    purchaseInfoDefaultPeriodValue: "Every month",
+    purchaseInfoNameLabel: "Subscription",
+    purchaseInfoPeriodLabel: "Period",
+    purchaseInfoPriceLabel: "Price",
+    purchaseSuccess: "Alttle plus is active.",
+    restoreAction: "Restore Purchases",
+    restoreError: "Could not restore purchases.",
+    restoreSuccess: "Purchases restored.",
+    screenTitle: "Alttle plus",
+    sharedLedgerLimitDescription: "You reached the Free plan limit.",
+    statusLabel: "Current Plan",
+  },
+  ko: {
+    freePlanLabel: "Free 플랜",
+    heroDescription:
+      "알뜰에서 광고로 불편함 없이\n하나 이상의 가계부를 관리하고,\n더 많은 공유 멤버와 함께하세요.",
+    heroPriceLabel: "￦770원/월",
+    inactiveRestoreMessage: "활성화된 알뜰 plus가 없어요.",
+    monthlyPriceSuffix: "/월",
+    plusSummary: "현재 구독 중이에요.",
+    purchaseAction: "알뜰 plus 구독",
+    purchaseError: "알뜰 plus 구독 처리가 잘 안됐어요.",
+    purchaseInfoDefaultPeriodValue: "1개월마다",
+    purchaseInfoNameLabel: "구독명",
+    purchaseInfoPeriodLabel: "구독 기간",
+    purchaseInfoPriceLabel: "가격",
+    purchaseSuccess: "알뜰 plus가 활성화되었어요.",
+    restoreAction: "구매 복원",
+    restoreError: "구매 내역을 복원하지 못했어요.",
+    restoreSuccess: "구매 내역을 복원했어요.",
+    screenTitle: "알뜰 plus",
+    sharedLedgerLimitDescription: "Free 플랜 한도에 도달했어요.",
+    statusLabel: "현재 플랜",
+  },
+} as const);

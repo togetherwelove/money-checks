@@ -1,7 +1,7 @@
 import { StyleSheet, Text, TextInput, View } from "react-native";
 
 import { AppColors } from "../../constants/colors";
-import { EmailAuthCopy } from "../../constants/emailAuth";
+import { EmailAuthCopy, EmailSignUpOtpUi } from "../../constants/emailAuth";
 import {
   FormInputTextStyle,
   FormLabelTextStyle,
@@ -10,6 +10,7 @@ import {
   SurfaceCardStyle,
 } from "../../constants/uiStyles";
 import { ActionButton } from "../ActionButton";
+import { TextLinkButton } from "../TextLinkButton";
 
 type EmailSignUpOtpCardProps = {
   email: string;
@@ -70,21 +71,20 @@ export function EmailSignUpOtpCard({
           size="large"
           variant="primary"
         />
-        <ActionButton
-          disabled={resendDisabled}
-          fullWidth
-          label={resendLabel}
-          onPress={onResend}
-          size="large"
-          variant="secondary"
-        />
-        <ActionButton
-          fullWidth
-          label={EmailAuthCopy.signUp.editCredentialsAction}
-          onPress={onEditCredentials}
-          size="large"
-          variant="secondary"
-        />
+        <View style={styles.secondaryActionRow}>
+          <ActionButton
+            disabled={resendDisabled}
+            label={resendLabel}
+            onPress={onResend}
+            size="inline"
+            variant="secondary"
+          />
+          <TextLinkButton
+            align="center"
+            label={EmailAuthCopy.signUp.editCredentialsAction}
+            onPress={onEditCredentials}
+          />
+        </View>
       </View>
       {statusMessage ? <Text style={styles.status}>{statusMessage}</Text> : null}
     </View>
@@ -129,7 +129,14 @@ const styles = StyleSheet.create({
   label: FormLabelTextStyle,
   input: FormInputTextStyle,
   actionGroup: {
-    gap: 8,
+    gap: EmailSignUpOtpUi.actionGroupGap,
+  },
+  secondaryActionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    flexWrap: "wrap",
+    gap: EmailSignUpOtpUi.secondaryActionGap,
   },
   status: {
     color: AppColors.primary,

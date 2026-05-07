@@ -11,15 +11,21 @@ import {
 import { appPlatform } from "../../lib/appPlatform";
 import { showNativeToast } from "../../lib/nativeToast";
 import type { AccessibleLedgerBook, LedgerBook } from "../../types/ledgerBook";
+import type { LedgerBookMember } from "../../types/ledgerBookMember";
 import { IconActionButton } from "../IconActionButton";
+import { LedgerBookMembers } from "../LedgerBookMembers";
 import { sharedLedgerPanelStyles as styles } from "./sharedLedgerPanelStyles";
 
 type LedgerBookManagementCardProps = {
   accessibleBooks: AccessibleLedgerBook[];
   activeBook: LedgerBook | null;
   currentUserId: string;
+  members: LedgerBookMember[];
   onCreateLedgerBook: (nextName: string) => Promise<boolean>;
+  onKickMember: (targetUserId: string) => Promise<boolean>;
+  onOpenSubscription: () => void;
   onSwitchLedgerBook: (bookId: string) => Promise<boolean>;
+  shouldShowSharedMemberLimitNotice: boolean;
   subscriptionTier: SubscriptionTier;
 };
 
@@ -27,8 +33,12 @@ export function LedgerBookManagementCard({
   accessibleBooks,
   activeBook,
   currentUserId,
+  members,
   onCreateLedgerBook,
+  onKickMember,
+  onOpenSubscription,
   onSwitchLedgerBook,
+  shouldShowSharedMemberLimitNotice,
   subscriptionTier,
 }: LedgerBookManagementCardProps) {
   const [newBookName, setNewBookName] = useState("");
@@ -45,6 +55,11 @@ export function LedgerBookManagementCard({
   const canCreateOwnedBook =
     ownedBookCount < ownedBookLimit && accessibleBookCount < accessibleBookLimit;
   const shouldUseNativeNamePrompt = appPlatform.isIOS;
+  const shouldInsetLedgerBookList = shouldUseNativeNamePrompt && !activeBook;
+  const isFreePlan = subscriptionTier === SubscriptionTiers.free;
+  const createLimitReachedMessage = isFreePlan
+    ? LedgerBookManagementCopy.createFreePlanLimitReached
+    : LedgerBookManagementCopy.createLimitReached;
 
   const createLedgerBook = async (normalizedName: string) => {
     const didCreate = await onCreateLedgerBook(normalizedName);
@@ -65,7 +80,7 @@ export function LedgerBookManagementCard({
     }
 
     if (!canCreateOwnedBook) {
-      showNativeToast(LedgerBookManagementCopy.createLimitReached);
+      showNativeToast(createLimitReachedMessage);
       return null;
     }
 
@@ -107,7 +122,7 @@ export function LedgerBookManagementCard({
 
   const handlePressCreateLedgerBook = () => {
     if (!canCreateOwnedBook) {
-      showNativeToast(LedgerBookManagementCopy.createLimitReached);
+      showNativeToast(createLimitReachedMessage);
       return;
     }
 
@@ -155,7 +170,7 @@ export function LedgerBookManagementCard({
         </View>
         <IconActionButton
           accessibilityLabel={LedgerBookManagementCopy.createAction}
-          disabled={!canCreateOwnedBook || (!shouldUseNativeNamePrompt && !newBookName.trim())}
+          disabled={canCreateOwnedBook && !shouldUseNativeNamePrompt && !newBookName.trim()}
           icon="plus"
           onPress={handlePressCreateLedgerBook}
         />
@@ -163,7 +178,7 @@ export function LedgerBookManagementCard({
       <View
         style={[
           styles.ledgerBookList,
-          shouldUseNativeNamePrompt ? styles.sectionBottomInset : null,
+          shouldInsetLedgerBookList ? styles.sectionBottomInset : null,
         ]}
       >
         {accessibleBooks.length > 0 ? (
@@ -178,12 +193,26 @@ export function LedgerBookManagementCard({
               : ownershipLabel;
 
             return (
-              <View key={book.id} style={styles.ledgerBookItem}>
+              <View
+                key={book.id}
+                style={[styles.ledgerBookItem, isActiveBook ? styles.activeLedgerBookItem : null]}
+              >
                 <View style={styles.ledgerBookItemContent}>
                   <Text numberOfLines={1} style={styles.ledgerBookItemName}>
                     {book.name}
                   </Text>
-                  <Text style={styles.ledgerBookItemMeta}>{bookStateLabel}</Text>
+                  <View style={styles.ledgerBookItemMetaRow}>
+                    <Text style={styles.ledgerBookItemMeta}>
+                      {isActiveBook ? ownershipLabel : bookStateLabel}
+                    </Text>
+                    {isActiveBook ? (
+                      <View style={styles.currentLedgerBadge}>
+                        <Text style={styles.currentLedgerBadgeText}>
+                          {LedgerBookManagementCopy.activeStateLabel}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
                 </View>
                 <IconActionButton
                   accessibilityLabel={LedgerBookManagementCopy.switchActionAccessibilityLabel}
@@ -200,6 +229,23 @@ export function LedgerBookManagementCard({
           <Text style={styles.helpText}>{LedgerBookManagementCopy.emptyList}</Text>
         )}
       </View>
+      {activeBook ? (
+        <View
+          style={[
+            styles.ledgerBookList,
+            styles.ledgerBookMembersBlock,
+            shouldUseNativeNamePrompt ? styles.sectionBottomInset : null,
+          ]}
+        >
+          <LedgerBookMembers
+            currentUserId={currentUserId}
+            members={members}
+            onKickMember={onKickMember}
+            onOpenSubscription={onOpenSubscription}
+            shouldShowSharedMemberLimitNotice={shouldShowSharedMemberLimitNotice}
+          />
+        </View>
+      ) : null}
       {!shouldUseNativeNamePrompt ? (
         <View style={[styles.createBookRow, styles.sectionBottomInset]}>
           <TextInput

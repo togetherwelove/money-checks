@@ -1,7 +1,8 @@
+import { translate } from "../_shared/i18n/translate.ts";
+
 const EXPO_PUSH_API_URL = "https://exp.host/--/api/v2/push/send";
 const ANDROID_NOTIFICATION_CHANNEL_ID = "ledger-updates";
 const DEFAULT_NOTIFICATION_ENABLED = true;
-const DEFAULT_REQUESTER_DISPLAY_NAME = "User";
 const EXPO_PUSH_TOKEN_PATTERN = /^(ExponentPushToken|ExpoPushToken)\[[^\]]+\]$/;
 const NOTIFICATION_ACTION_ROUTES = {
   allEntries: "all-entries",
@@ -15,8 +16,6 @@ const NOTIFICATION_CATEGORY_IDS = {
   joinRequest: "ledger_join_request",
   ledgerBookUpdate: "ledger_book_update",
 } as const;
-const JOIN_REQUEST_NOTIFICATION_TITLE = "Join request";
-const JOIN_REQUEST_NOTIFICATION_BODY = "{requesterName} requested access to {bookName}.";
 const PUSH_NOTIFICATION_FUNCTION_NAME = "send-push-notifications";
 const PUSH_NOTIFICATION_MINIMUM_INVOCATION_INTERVAL = "10 seconds";
 const PUSH_NOTIFICATION_MAX_TARGET_USER_COUNT = 20;
@@ -113,6 +112,11 @@ type ProfileDisplayNameRow = {
   id: string;
 };
 
+type ProfilePreferredLocaleRow = {
+  id: string;
+  preferred_locale: string | null;
+};
+
 type LedgerBookMemberRow = {
   book_id: string;
   role: BookMemberRole;
@@ -157,12 +161,13 @@ type SendPushNotificationsHandlerOptions = {
 };
 
 type JoinRequestOwnerNotification = {
-  body: string;
+  bookName: string;
+  requesterName: string;
   targetUserIds: string[];
-  title: string;
 };
 
 type ExpoPushMessage = {
+  badge?: number;
   body: string;
   categoryId?: string;
   channelId?: string;
@@ -178,6 +183,8 @@ type ExpoPushContent = {
   data?: Record<string, unknown>;
   title: string;
 };
+
+type ExpoPushContentResolver = ExpoPushContent | ((locale: string | null) => ExpoPushContent);
 
 type WidgetPushData = {
   actionRoute?: NotificationActionRoute;
@@ -315,14 +322,21 @@ async function buildPushMessages(
       return [];
     }
 
-    return resolveExpoPushMessages(adminClient, joinRequestNotification.targetUserIds, {
-      body: joinRequestNotification.body,
-      categoryId: NOTIFICATION_CATEGORY_IDS.joinRequest,
-      data: {
-        actionRoute: NOTIFICATION_ACTION_ROUTES.share,
-      },
-      title: joinRequestNotification.title,
-    });
+    return resolveExpoPushMessages(
+      adminClient,
+      joinRequestNotification.targetUserIds,
+      (locale) => ({
+        body: translate(locale, "push.joinRequest.body", {
+          bookName: joinRequestNotification.bookName,
+          requesterName: joinRequestNotification.requesterName,
+        }),
+        categoryId: NOTIFICATION_CATEGORY_IDS.joinRequest,
+        data: {
+          actionRoute: NOTIFICATION_ACTION_ROUTES.share,
+        },
+        title: translate(locale, "push.joinRequest.title"),
+      }),
+    );
   }
 
   const targetUserIds = await resolveTargetUserIds(adminClient, payload, senderUserId);
@@ -339,10 +353,8 @@ async function buildPushMessages(
     return [];
   }
 
-  return resolveExpoPushMessages(
-    adminClient,
-    filteredUserIds,
-    buildExpoPushContent(payload.event, payload.widgetData),
+  return resolveExpoPushMessages(adminClient, filteredUserIds, (locale) =>
+    buildExpoPushContent(payload.event, payload.widgetData, locale),
   );
 }
 
@@ -465,12 +477,9 @@ async function resolveLatestJoinRequestOwnerNotification(
   const requesterName = await fetchProfileDisplayName(adminClient, senderUserId);
 
   return {
-    body: JOIN_REQUEST_NOTIFICATION_BODY.replace("{requesterName}", requesterName).replace(
-      "{bookName}",
-      book.name,
-    ),
+    bookName: book.name,
+    requesterName,
     targetUserIds: [book.owner_id],
-    title: JOIN_REQUEST_NOTIFICATION_TITLE,
   };
 }
 
@@ -494,10 +503,10 @@ async function fetchProfileDisplayName(
     .maybeSingle<ProfileDisplayNameRow>();
 
   if (error || !data) {
-    return DEFAULT_REQUESTER_DISPLAY_NAME;
+    return translate(null, "push.fallbacks.member");
   }
 
-  return data.display_name?.trim() || DEFAULT_REQUESTER_DISPLAY_NAME;
+  return data.display_name?.trim() || translate(null, "push.fallbacks.member");
 }
 
 async function filterRecipientsByPreference(
@@ -535,7 +544,7 @@ async function filterRecipientsByPreference(
 async function resolveExpoPushMessages(
   adminClient: SendPushNotificationsAdminClient,
   targetUserIds: string[],
-  content: ExpoPushContent,
+  content: ExpoPushContentResolver,
 ): Promise<ExpoPushMessage[]> {
   const pushDeviceTokensQuery = adminClient.from("push_device_tokens") as {
     select: (columns: string) => {
@@ -550,24 +559,59 @@ async function resolveExpoPushMessages(
     return [];
   }
 
+  const preferredLocaleByUserId = await fetchProfilePreferredLocaleMap(adminClient, targetUserIds);
+
   return (data as PushDeviceTokenRow[])
     .filter((row) => EXPO_PUSH_TOKEN_PATTERN.test(row.expo_push_token))
-    .map((row) => ({
-      body: content.body,
-      ...(content.categoryId ? { categoryId: content.categoryId } : {}),
-      ...(content.data && Object.keys(content.data).length > 0 ? { data: content.data } : {}),
-      ...(row.platform === "android" ? { channelId: ANDROID_NOTIFICATION_CHANNEL_ID } : {}),
-      sound: "default",
-      title: content.title,
-      to: row.expo_push_token,
-    }));
+    .map((row) => {
+      const resolvedContent =
+        typeof content === "function"
+          ? content(preferredLocaleByUserId.get(row.user_id) ?? null)
+          : content;
+
+      return {
+        body: resolvedContent.body,
+        ...(resolvedContent.categoryId ? { categoryId: resolvedContent.categoryId } : {}),
+        ...(resolvedContent.data && Object.keys(resolvedContent.data).length > 0
+          ? { data: resolvedContent.data }
+          : {}),
+        ...(row.platform === "android" ? { channelId: ANDROID_NOTIFICATION_CHANNEL_ID } : {}),
+        ...(row.platform === "ios" ? { badge: 1 } : {}),
+        sound: "default",
+        title: resolvedContent.title,
+        to: row.expo_push_token,
+      };
+    });
+}
+
+async function fetchProfilePreferredLocaleMap(
+  adminClient: SendPushNotificationsAdminClient,
+  targetUserIds: string[],
+): Promise<Map<string, string | null>> {
+  const profilesQuery = adminClient.from("profiles") as {
+    select: (columns: string) => {
+      in: (column: string, values: string[]) => QueryResult<ProfilePreferredLocaleRow>;
+    };
+  };
+  const { data, error } = await profilesQuery
+    .select("id, preferred_locale")
+    .in("id", targetUserIds);
+
+  if (error || !Array.isArray(data)) {
+    return new Map();
+  }
+
+  return new Map(
+    (data as ProfilePreferredLocaleRow[]).map((row) => [row.id, row.preferred_locale]),
+  );
 }
 
 function buildExpoPushContent(
   event: NotificationEvent,
   widgetData?: WidgetPushData,
+  locale?: string | null,
 ): ExpoPushContent {
-  const notificationContent = buildNotificationContent(event);
+  const notificationContent = buildNotificationContent(event, locale);
   const categoryId = resolveCategoryIdForEvent(event.type);
   const actionRoute = resolveActionRouteForEvent(event.type);
   const data = {
@@ -582,60 +626,89 @@ function buildExpoPushContent(
   };
 }
 
-function buildNotificationContent(event: NotificationEvent): { body: string; title: string } {
-  const actorName = readText(event.actorName, "Member");
-  const bookName = readText(event.bookName, "shared ledger");
-  const category = readText(event.category, "uncategorized");
-  const amountLabel = typeof event.amount === "number" ? formatCurrency(event.amount) : "0";
+function resolvePushCategoryLabel(event: NotificationEvent, locale?: string | null): string {
+  const rawCategory = readText(event.category, translate(locale, "push.fallbacks.uncategorized"));
+  if (!event.entryType) {
+    return rawCategory;
+  }
+
+  const categoryKey = `categories.${event.entryType}.${rawCategory}`;
+  const translatedCategory = translate(locale, categoryKey);
+  return translatedCategory === categoryKey ? rawCategory : translatedCategory;
+}
+
+function buildNotificationContent(
+  event: NotificationEvent,
+  locale?: string | null,
+): { body: string; title: string } {
+  const actorName = readText(event.actorName, translate(locale, "push.fallbacks.member"));
+  const bookName = readText(event.bookName, translate(locale, "push.fallbacks.sharedLedger"));
+  const category = resolvePushCategoryLabel(event, locale);
+  const amountLabel = typeof event.amount === "number" ? formatCurrency(event.amount, locale) : "0";
   const totalAmountLabel =
-    typeof event.totalAmount === "number" ? formatCurrency(event.totalAmount) : "0";
-  const periodLabel = event.period ?? "period";
+    typeof event.totalAmount === "number" ? formatCurrency(event.totalAmount, locale) : "0";
+  const periodLabel = event.period ?? translate(locale, "push.fallbacks.period");
 
   if (event.type === "expense_limit_exceeded") {
     return {
-      body: `${periodLabel} expense total reached ${totalAmountLabel}.`,
-      title: "Expense limit exceeded",
+      body: translate(locale, "push.expenseLimitExceeded.body", {
+        period: periodLabel,
+        totalAmount: totalAmountLabel,
+      }),
+      title: translate(locale, "push.expenseLimitExceeded.title"),
     };
   }
 
   if (event.type === "member_joined_book") {
     return {
-      body: `${actorName} joined ${bookName}.`,
-      title: "Shared ledger member joined",
+      body: translate(locale, "push.memberJoinedBook.body", { actorName, bookName }),
+      title: translate(locale, "push.memberJoinedBook.title"),
     };
   }
 
   if (event.type === "member_left_book") {
     return {
-      body: `${actorName} left ${bookName}.`,
-      title: "Shared ledger member left",
+      body: translate(locale, "push.memberLeftBook.body", { actorName, bookName }),
+      title: translate(locale, "push.memberLeftBook.title"),
     };
   }
 
   if (event.type === "member_removed_from_book") {
     return {
-      body: `${actorName} removed you from ${bookName}.`,
-      title: "Removed from shared ledger",
+      body: translate(locale, "push.memberRemovedFromBook.body", { actorName, bookName }),
+      title: translate(locale, "push.memberRemovedFromBook.title"),
     };
   }
 
   if (event.type === "other_member_deleted_entry") {
     return {
-      body: `${actorName} deleted ${category} ${amountLabel}.`,
-      title: "Entry deleted",
+      body: translate(locale, "push.entryDeleted.body", {
+        actorName,
+        amount: amountLabel,
+        category,
+      }),
+      title: translate(locale, "push.entryDeleted.title"),
     };
   }
 
   if (event.type === "other_member_updated_entry") {
     return {
-      body: `${actorName} updated ${category} ${amountLabel}.`,
-      title: "Entry updated",
+      body: translate(locale, "push.entryUpdated.body", {
+        actorName,
+        amount: amountLabel,
+        category,
+      }),
+      title: translate(locale, "push.entryUpdated.title"),
     };
   }
 
   return {
-    body: `${actorName} added ${category} ${amountLabel}.`,
-    title: "Entry added",
+    body: translate(locale, "push.entryCreated.body", {
+      actorName,
+      amount: amountLabel,
+      category,
+    }),
+    title: translate(locale, "push.entryCreated.title"),
   };
 }
 
@@ -793,8 +866,9 @@ function readText(value: string | undefined, fallback: string): string {
   return value?.trim() || fallback;
 }
 
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("ko-KR").format(amount);
+function formatCurrency(amount: number, locale?: string | null): string {
+  const numberFormatLocale = locale === "en" ? "en-US" : "ko-KR";
+  return new Intl.NumberFormat(numberFormatLocale).format(amount);
 }
 
 function createJsonResponse(status: number, body: Record<string, unknown>): Response {

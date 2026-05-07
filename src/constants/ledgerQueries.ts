@@ -3,6 +3,7 @@ export const LedgerQueryConfig = {
 } as const;
 
 export const LedgerEntrySelectColumns = {
+  attachmentCleanup: ["id", "installment_group_id"].join(","),
   list: [
     "book_id",
     "id",
@@ -14,6 +15,7 @@ export const LedgerEntrySelectColumns = {
     "currency",
     "content",
     "category",
+    "category_id",
     "installment_group_id",
     "installment_months",
     "installment_order",

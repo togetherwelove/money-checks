@@ -22,45 +22,62 @@ export function LedgerBookMembers({
   onKickMember,
   shouldShowSharedMemberLimitNotice,
 }: LedgerBookMembersProps) {
-  const currentMember = members.find((member) => member.userId === currentUserId);
-  const canManageMembers = currentMember?.role === "owner";
+  const canManageMembers = members.some(
+    (member) => member.userId === currentUserId && member.role === "owner",
+  );
   const shouldScrollMembers = members.length > LedgerBookMembersUi.maxVisibleMembers;
   const memberListContent = (
     <View style={styles.memberList}>
-      {members.map((member) => (
-        <View key={member.userId} style={styles.memberRow}>
-          <Text style={styles.memberName}>
-            {member.displayName}
-            {member.userId === currentUserId ? ` ${AppMessages.accountMemberSelfSuffix}` : ""}
-          </Text>
-          <View style={styles.memberActions}>
-            <Text style={styles.memberRole}>{getRoleLabel(member.role)}</Text>
-            {canManageMembers && member.role !== "owner" && member.userId !== currentUserId ? (
-              <Pressable onPress={() => void onKickMember(member.userId)}>
-                <Text style={styles.kickAction}>{AppMessages.accountKickAction}</Text>
-              </Pressable>
-            ) : null}
+      {members.map((member, memberIndex) => {
+        const isOwner = member.role === "owner";
+        const canKickMember = canManageMembers && !isOwner && member.userId !== currentUserId;
+        const memberRoleLabel = getRoleLabel(member.role);
+
+        return (
+          <View
+            key={member.userId}
+            style={[styles.memberRow, memberIndex > 0 ? styles.memberRowDivider : null]}
+          >
+            <View style={styles.memberIdentity}>
+              <Text numberOfLines={1} style={styles.memberName}>
+                {member.displayName}
+              </Text>
+              {member.userId === currentUserId ? (
+                <Text style={styles.selfBadge}>{AppMessages.accountMemberSelfSuffix}</Text>
+              ) : null}
+            </View>
+            <View style={styles.memberActions}>
+              <Text
+                style={[
+                  styles.memberRoleBadge,
+                  isOwner ? styles.ownerRoleBadge : styles.editorRoleBadge,
+                ]}
+              >
+                {memberRoleLabel}
+              </Text>
+              {canKickMember ? (
+                <Pressable
+                  hitSlop={LedgerBookMembersUi.actionHitSlop}
+                  onPress={() => void onKickMember(member.userId)}
+                  style={styles.memberActionButton}
+                >
+                  <Text style={styles.kickAction}>{AppMessages.accountKickAction}</Text>
+                </Pressable>
+              ) : null}
+            </View>
           </View>
-        </View>
-      ))}
+        );
+      })}
     </View>
   );
 
   return (
     <View style={styles.section}>
-      <View style={styles.summaryRow}>
-        <InfoBlock
-          label={AppMessages.accountMemberCount}
-          value={`${members.length}${AppMessages.accountMemberCountSuffix}`}
-        />
-        <InfoBlock label={AppMessages.accountRoleLabel} value={getRoleLabel(currentMember?.role)} />
-      </View>
-
       <Text style={styles.memberTitle}>{AppMessages.accountMembersTitle}</Text>
       {shouldScrollMembers ? (
         <ScrollView
           nestedScrollEnabled
-          showsVerticalScrollIndicator={false}
+          showsVerticalScrollIndicator
           style={styles.memberListScroll}
         >
           {memberListContent}
@@ -74,15 +91,6 @@ export function LedgerBookMembers({
           onPress={onOpenSubscription}
         />
       ) : null}
-    </View>
-  );
-}
-
-function InfoBlock({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.infoBlock}>
-      <Text style={styles.label}>{label}</Text>
-      <Text style={styles.value}>{value}</Text>
     </View>
   );
 }
@@ -101,64 +109,104 @@ function getRoleLabel(role?: LedgerBookMemberRole): string {
 
 const styles = StyleSheet.create({
   section: {
-    gap: 8,
+    gap: 6,
   },
-  summaryRow: {
-    flexDirection: "row",
-    gap: 12,
+  memberList: {
+    overflow: "hidden",
+    borderWidth: 1,
+    borderTopColor: AppColors.border,
+    borderColor: AppColors.border,
+    borderRadius: LedgerBookMembersUi.listBorderRadius,
+    backgroundColor: AppColors.background,
   },
-  infoBlock: {
-    flex: 1,
-    gap: 3,
-  },
-  label: {
-    color: AppColors.mutedText,
-    fontSize: 11,
-    fontWeight: "600",
-  },
-  value: {
-    color: AppColors.text,
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  memberList: {},
   memberListScroll: {
     maxHeight: LedgerBookMembersLayout.listMaxHeight,
   },
   memberTitle: {
-    color: AppColors.text,
-    fontSize: 18,
+    color: AppColors.mutedStrongText,
+    fontSize: LedgerBookMembersUi.labelFontSize,
     fontWeight: "700",
-    borderTopWidth: 1,
-    borderTopColor: AppColors.border,
-    paddingTop: 10,
+    lineHeight: LedgerBookMembersUi.labelLineHeight,
+    marginBottom: LedgerBookMembersUi.labelBottomMargin,
   },
   memberRow: {
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
     gap: 8,
     minHeight: LedgerBookMembersUi.rowHeight,
-    paddingVertical: 2,
+    paddingHorizontal: LedgerBookMembersUi.rowHorizontalPadding,
+    paddingVertical: LedgerBookMembersUi.rowVerticalPadding,
+  },
+  memberRowDivider: {
+    borderTopWidth: 1,
+    borderTopColor: AppColors.border,
+  },
+  memberIdentity: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: LedgerBookMembersUi.memberIdentityGap,
   },
   memberName: {
     color: AppColors.text,
     fontSize: 13,
     fontWeight: "600",
-    flex: 1,
+    lineHeight: LedgerBookMembersUi.rowTextLineHeight,
+    flexShrink: 1,
   },
-  memberRole: {
+  selfBadge: {
     color: AppColors.mutedText,
-    fontSize: 12,
-    fontWeight: "600",
+    fontSize: 11,
+    fontWeight: "700",
+    lineHeight: LedgerBookMembersUi.badgeLineHeight,
+    backgroundColor: AppColors.surface,
+    borderColor: AppColors.border,
+    borderWidth: 1,
+    borderRadius: LedgerBookMembersUi.selfBadgeHorizontalPadding,
+    paddingHorizontal: LedgerBookMembersUi.selfBadgeHorizontalPadding,
+    paddingVertical: LedgerBookMembersUi.selfBadgeVerticalPadding,
+    flexShrink: 0,
+  },
+  memberRoleBadge: {
+    color: AppColors.mutedText,
+    fontSize: 11,
+    fontWeight: "700",
+    lineHeight: LedgerBookMembersUi.badgeLineHeight,
+    borderRadius: LedgerBookMembersUi.roleBadgeHorizontalPadding,
+    paddingHorizontal: LedgerBookMembersUi.roleBadgeHorizontalPadding,
+    paddingVertical: LedgerBookMembersUi.roleBadgeVerticalPadding,
+    flexShrink: 0,
+  },
+  ownerRoleBadge: {
+    color: AppColors.primary,
+    backgroundColor: AppColors.surfaceStrong,
+  },
+  editorRoleBadge: {
+    color: AppColors.mutedText,
+    backgroundColor: AppColors.surfaceMuted,
   },
   memberActions: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 8,
+    minHeight: LedgerBookMembersUi.rowHeight,
+    flexShrink: 0,
+  },
+  memberActionButton: {
+    borderWidth: 1,
+    borderColor: AppColors.expenseSoft,
+    borderRadius: LedgerBookMembersUi.roleBadgeHorizontalPadding,
+    backgroundColor: AppColors.expenseSoft,
+    justifyContent: "center",
+    paddingHorizontal: LedgerBookMembersUi.actionButtonHorizontalPadding,
+    paddingVertical: LedgerBookMembersUi.actionButtonVerticalPadding,
   },
   kickAction: {
     color: AppColors.expense,
     fontSize: 12,
     fontWeight: "700",
+    lineHeight: LedgerBookMembersUi.rowTextLineHeight,
   },
 });

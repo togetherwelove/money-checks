@@ -8,6 +8,7 @@ import {
   NotificationEventOrder,
   NotificationRequiredEvents,
 } from "../config/notificationCopy";
+import { clampNotificationThresholdAmount } from "../config/notificationThresholdLimits";
 import type { NotificationEventType } from "../domain/notificationEvents";
 import type { NotificationPreferences } from "./notificationPreferences";
 
@@ -113,7 +114,7 @@ function mergeNotificationPreferences(
     },
     thresholds: {
       ...fallbackPreferences.thresholds,
-      ...thresholdState.thresholds,
+      ...clampNotificationThresholds(thresholdState.thresholds),
     },
   };
 }
@@ -151,6 +152,17 @@ function mergeThresholdState(row: NotificationPreferencesRow): {
     enabledThresholds: nextEnabledThresholds,
     thresholds: nextThresholds,
   };
+}
+
+function clampNotificationThresholds(
+  thresholds: NotificationPreferences["thresholds"],
+): NotificationPreferences["thresholds"] {
+  return Object.fromEntries(
+    Object.entries(thresholds).map(([key, amount]) => [
+      key,
+      clampNotificationThresholdAmount(amount),
+    ]),
+  ) as NotificationPreferences["thresholds"];
 }
 
 function resolveCurrentNotificationTimeZone(): string | null {

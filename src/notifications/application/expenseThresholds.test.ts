@@ -6,6 +6,7 @@ function createExpenseEntry(date: string, amount: number): LedgerEntry {
     amount,
     category: "식비",
     content: "식사",
+    categoryId: "expense-food",
     date,
     id: `${date}-${amount}`,
     note: "",

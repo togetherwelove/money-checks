@@ -1,14 +1,19 @@
 import { Feather } from "@expo/vector-icons";
+import { useRef } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import Swipeable from "react-native-gesture-handler/Swipeable";
 
 import { AppColors } from "../constants/colors";
+import { LedgerEntryListUi } from "../constants/ledgerEntryList";
+import { AppMessages } from "../constants/messages";
 import { formatInstallmentProgressLabel, stripInstallmentNoteSuffix } from "../lib/installments";
 import type { CategoryIconName } from "../types/category";
 import type { LedgerEntry } from "../types/ledger";
 import { formatCurrency, formatEntryMetaDate } from "../utils/calendar";
 
 type LedgerEntryListItemProps = {
-  categoryIconByLabel: Map<string, CategoryIconName>;
+  categoryIconByKey: Map<string, CategoryIconName>;
+  categoryLabelById: Map<string, string>;
   entry: LedgerEntry;
   onDeleteEntry: (entry: LedgerEntry) => void | Promise<void>;
   onEditEntry: (entry: LedgerEntry) => void;
@@ -23,77 +28,107 @@ const ENTRY_ATTACHMENT_ICON_SIZE = 12;
 const ENTRY_ROW_GAP = 8;
 
 export function LedgerEntryListItem({
-  categoryIconByLabel,
+  categoryIconByKey,
+  categoryLabelById,
   entry,
   onDeleteEntry,
   onEditEntry,
   showsDate = false,
   showsInstallmentStatusLine = false,
 }: LedgerEntryListItemProps) {
+  const swipeableRef = useRef<Swipeable>(null);
   const installmentProgressLabel = formatInstallmentProgressLabel(entry);
   const noteLabel = stripInstallmentNoteSuffix(entry.note);
+  const categoryLabel = categoryLabelById.get(entry.categoryId) ?? entry.category;
 
   return (
-    <View style={styles.entryRow}>
-      <Pressable onPress={() => onEditEntry(entry)} style={styles.entryBody}>
-        <View style={styles.entryLeadingIcon}>
-          <Feather
-            color={AppColors.mutedText}
-            name={categoryIconByLabel.get(entry.category) ?? FALLBACK_CATEGORY_ICON_NAME}
-            size={CATEGORY_ICON_SIZE}
-          />
-        </View>
-        <View style={styles.entryTextBlock}>
-          <View style={styles.entryPrimaryRow}>
-            <Text style={styles.entryContent} numberOfLines={1}>
-              {resolveEntryContentLabel(entry)}
-            </Text>
-            <Text
-              style={[styles.entryAmount, entry.type === "income" ? styles.income : styles.expense]}
-            >
-              {entry.type === "income" ? "+" : "-"}
-              {formatCurrency(entry.amount)}
-            </Text>
+    <Swipeable
+      friction={LedgerEntryListUi.swipeFriction}
+      overshootFriction={LedgerEntryListUi.swipeOvershootFriction}
+      ref={swipeableRef}
+      renderRightActions={() => (
+        <Pressable
+          accessibilityLabel={AppMessages.editorDeleteConfirmAction}
+          onPress={() => {
+            swipeableRef.current?.close();
+            onDeleteEntry(entry);
+          }}
+          style={styles.deleteSnapAction}
+        >
+          <Feather color={AppColors.inverseText} name="trash-2" size={16} />
+          <Text style={styles.deleteSnapLabel}>{AppMessages.editorDeleteConfirmAction}</Text>
+        </Pressable>
+      )}
+      rightThreshold={LedgerEntryListUi.swipeActionWidth}
+    >
+      <View style={styles.entryRow}>
+        <Pressable onPress={() => onEditEntry(entry)} style={styles.entryBody}>
+          <View style={styles.entryLeadingIcon}>
+            <Feather
+              color={AppColors.mutedText}
+              name={
+                categoryIconByKey.get(entry.categoryId) ??
+                categoryIconByKey.get(entry.category) ??
+                FALLBACK_CATEGORY_ICON_NAME
+              }
+              size={CATEGORY_ICON_SIZE}
+            />
           </View>
-          <View style={styles.entryMetaRow}>
-            <Text style={styles.entryMeta} numberOfLines={1}>
-              {buildEntryMainMeta({
-                entry,
-                noteLabel,
-                showsDate,
-              })}
-            </Text>
-            {entry.photoAttachments.length > 0 ? (
-              <Feather
-                color={AppColors.mutedText}
-                name="paperclip"
-                size={ENTRY_ATTACHMENT_ICON_SIZE}
-              />
-            ) : null}
-            {!showsInstallmentStatusLine && installmentProgressLabel ? (
-              <Text style={styles.entryMeta} numberOfLines={1}>
-                {ENTRY_META_SEPARATOR}
-                {installmentProgressLabel}
+          <View style={styles.entryTextBlock}>
+            <View style={styles.entryPrimaryRow}>
+              <Text style={styles.entryContent} numberOfLines={1}>
+                {resolveEntryContentLabel(entry, categoryLabel)}
               </Text>
+              <Text
+                style={[
+                  styles.entryAmount,
+                  entry.type === "income" ? styles.income : styles.expense,
+                ]}
+              >
+                {entry.type === "income" ? "+" : "-"}
+                {formatCurrency(entry.amount)}
+              </Text>
+            </View>
+            <View style={styles.entryMetaRow}>
+              <Text style={styles.entryMeta} numberOfLines={1}>
+                {buildEntryMainMeta({
+                  entry,
+                  categoryLabel,
+                  noteLabel,
+                  showsDate,
+                })}
+              </Text>
+              {entry.photoAttachments.length > 0 ? (
+                <Feather
+                  color={AppColors.mutedText}
+                  name="paperclip"
+                  size={ENTRY_ATTACHMENT_ICON_SIZE}
+                />
+              ) : null}
+              {!showsInstallmentStatusLine && installmentProgressLabel ? (
+                <Text style={styles.entryMeta} numberOfLines={1}>
+                  {ENTRY_META_SEPARATOR}
+                  {installmentProgressLabel}
+                </Text>
+              ) : null}
+            </View>
+            {showsInstallmentStatusLine && installmentProgressLabel ? (
+              <Text style={styles.entryStatus}>{installmentProgressLabel}</Text>
             ) : null}
           </View>
-          {showsInstallmentStatusLine && installmentProgressLabel ? (
-            <Text style={styles.entryStatus}>{installmentProgressLabel}</Text>
-          ) : null}
-        </View>
-      </Pressable>
-      <Pressable onPress={() => onDeleteEntry(entry)} style={styles.deleteButton}>
-        <Feather color={AppColors.expense} name="trash-2" size={16} />
-      </Pressable>
-    </View>
+        </Pressable>
+      </View>
+    </Swipeable>
   );
 }
 
 function buildEntryMainMeta({
+  categoryLabel,
   entry,
   noteLabel,
   showsDate,
 }: {
+  categoryLabel: string;
   entry: LedgerEntry;
   noteLabel: string;
   showsDate: boolean;
@@ -104,7 +139,7 @@ function buildEntryMainMeta({
     parts.push(formatEntryMetaDate(entry.date));
   }
 
-  parts.push(entry.category);
+  parts.push(categoryLabel);
 
   if (entry.targetMemberName) {
     parts.push(entry.targetMemberName);
@@ -119,13 +154,13 @@ function buildEntryMainMeta({
   return parts.join(ENTRY_META_SEPARATOR);
 }
 
-function resolveEntryContentLabel(entry: LedgerEntry): string {
+function resolveEntryContentLabel(entry: LedgerEntry, categoryLabel: string): string {
   const normalizedContent = entry.content.trim();
   if (normalizedContent) {
     return normalizedContent;
   }
 
-  return entry.category;
+  return categoryLabel;
 }
 
 const styles = StyleSheet.create({
@@ -137,6 +172,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderBottomWidth: 1,
     borderBottomColor: AppColors.border,
+    backgroundColor: AppColors.background,
   },
   entryBody: {
     flex: 1,
@@ -188,7 +224,16 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "600",
   },
-  deleteButton: {
-    padding: 4,
+  deleteSnapAction: {
+    width: LedgerEntryListUi.swipeActionWidth,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 2,
+    backgroundColor: AppColors.expense,
+  },
+  deleteSnapLabel: {
+    color: AppColors.inverseText,
+    fontSize: 10,
+    fontWeight: "700",
   },
 });

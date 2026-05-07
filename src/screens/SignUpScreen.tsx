@@ -1,27 +1,33 @@
-import { useEffect, useMemo, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Linking, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
+import { EmailSignUpAgreementCard } from "../components/authScreen/EmailSignUpAgreementCard";
 import { EmailSignUpFormCard } from "../components/authScreen/EmailSignUpFormCard";
 import { EmailSignUpOtpCard } from "../components/authScreen/EmailSignUpOtpCard";
+import {
+  SignUpCaptchaChallenge,
+  type SignUpCaptchaChallengeHandle,
+} from "../components/authScreen/SignUpCaptchaChallenge";
+import { type SignUpStep, SignUpStepIndicator } from "../components/authScreen/SignUpStepIndicator";
 import { AppColors } from "../constants/colors";
 import { EmailAuthCopy } from "../constants/emailAuth";
+import { EmailOtpTiming } from "../constants/emailOtp";
+import { KeyboardLayout } from "../constants/keyboard";
 import { AppLayout } from "../constants/layout";
+import { LegalLinks } from "../constants/legal";
 import { AppMessages } from "../constants/messages";
+import {
+  calculateEmailOtpResendAvailableAt,
+  calculateRemainingEmailOtpCooldownSeconds,
+  createEmailOtpCooldownKey,
+  formatEmailOtpCooldownLabel,
+} from "../lib/auth/emailOtpCooldown";
 import {
   resendEmailSignUpOtp,
   signUpWithEmailPassword,
   verifyEmailSignUpOtp,
 } from "../lib/auth/emailPasswordAuth";
-import {
-  DEFAULT_SIGN_UP_RETRY_SECONDS,
-  SIGN_UP_COOLDOWN_MESSAGE,
-  formatSignUpOtpCooldownLabel,
-  parseSignUpOtpRetrySeconds,
-  resolveSignUpRetrySeconds,
-} from "../lib/auth/signUpOtpError";
-
-const SIGN_UP_OTP_RESEND_COOLDOWN_MS = DEFAULT_SIGN_UP_RETRY_SECONDS * 1000;
+import { showNativeToast } from "../lib/nativeToast";
 
 type SignUpScreenProps = {
   onBackToSignIn: () => void;
@@ -30,70 +36,88 @@ type SignUpScreenProps = {
 export function SignUpScreen({ onBackToSignIn }: SignUpScreenProps) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [email, setEmail] = useState("");
+  const [hasAgreedToPrivacy, setHasAgreedToPrivacy] = useState(false);
+  const [hasAgreedToTerms, setHasAgreedToTerms] = useState(false);
   const [password, setPassword] = useState("");
-  const [resendAvailableAt, setResendAvailableAt] = useState<number | null>(null);
+  const [resendAvailableAtByEmail, setResendAvailableAtByEmail] = useState<Record<string, number>>(
+    {},
+  );
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [step, setStep] = useState<"credentials" | "otp">("credentials");
+  const [step, setStep] = useState<SignUpStep>("agreement");
   const [token, setToken] = useState("");
   const [now, setNow] = useState(() => Date.now());
+  const captchaChallengeRef = useRef<SignUpCaptchaChallengeHandle>(null);
+  const otpEmailCooldownKey = useMemo(() => createEmailOtpCooldownKey(email), [email]);
+  const resendAvailableAt = resendAvailableAtByEmail[otpEmailCooldownKey] ?? null;
+  const remainingResendSeconds = calculateRemainingEmailOtpCooldownSeconds(resendAvailableAt, now);
+  const resendDisabled = remainingResendSeconds > 0;
+  const requestOtpDisabled = step === "credentials" && resendDisabled;
+  const resendLabel = resendDisabled
+    ? `${EmailAuthCopy.signUp.resendOtpAction} (${formatEmailOtpCooldownLabel(remainingResendSeconds)})`
+    : EmailAuthCopy.signUp.resendOtpAction;
+  const requestOtpLabel = requestOtpDisabled
+    ? `${EmailAuthCopy.signUp.requestOtpAction} (${formatEmailOtpCooldownLabel(remainingResendSeconds)})`
+    : EmailAuthCopy.signUp.requestOtpAction;
 
   useEffect(() => {
-    if (!resendAvailableAt || resendAvailableAt <= now) {
+    if (!resendDisabled) {
       return;
     }
 
     const timerId = setInterval(() => {
       setNow(Date.now());
-    }, 1000);
+    }, EmailOtpTiming.resendTimerIntervalMs);
 
     return () => {
       clearInterval(timerId);
     };
-  }, [now, resendAvailableAt]);
+  }, [resendDisabled]);
 
-  const remainingResendSeconds = useMemo(() => {
-    if (!resendAvailableAt || resendAvailableAt <= now) {
-      return 0;
-    }
-
-    return Math.ceil((resendAvailableAt - now) / 1000);
-  }, [now, resendAvailableAt]);
-
-  const resendDisabled = remainingResendSeconds > 0;
-  const requestOtpDisabled = step === "credentials" && remainingResendSeconds > 0;
-  const resendLabel = resendDisabled
-    ? `${EmailAuthCopy.signUp.resendOtpAction} (${formatSignUpOtpCooldownLabel(remainingResendSeconds)})`
-    : EmailAuthCopy.signUp.resendOtpAction;
-  const requestOtpLabel = requestOtpDisabled
-    ? `${EmailAuthCopy.signUp.requestOtpAction} (${formatSignUpOtpCooldownLabel(remainingResendSeconds)})`
-    : EmailAuthCopy.signUp.requestOtpAction;
-
-  const startResendCooldown = (durationMs = SIGN_UP_OTP_RESEND_COOLDOWN_MS) => {
-    setNow(Date.now());
-    setResendAvailableAt(Date.now() + durationMs);
+  const startEmailResendCooldown = () => {
+    const nextNow = Date.now();
+    setNow(nextNow);
+    setResendAvailableAtByEmail((currentValue) => ({
+      ...currentValue,
+      [otpEmailCooldownKey]: calculateEmailOtpResendAvailableAt(nextNow),
+    }));
   };
 
   const handleRequestOtp = async () => {
     try {
-      const result = await signUpWithEmailPassword(email, password);
+      const captchaToken = await captchaChallengeRef.current?.requestToken();
+      if (!captchaToken) {
+        return;
+      }
+
+      const result = await signUpWithEmailPassword(email, password, captchaToken);
       if (result === "signed-in") {
         return;
       }
 
       setStep("otp");
       setToken("");
-      startResendCooldown();
+      startEmailResendCooldown();
       setStatusMessage(EmailAuthCopy.signUp.otpRequestedStatus);
     } catch (error) {
-      const retryAfterSeconds = resolveSignUpRetrySeconds(error);
-      if (retryAfterSeconds !== null) {
-        startResendCooldown(retryAfterSeconds * 1000);
-        setStatusMessage(SIGN_UP_COOLDOWN_MESSAGE);
-        return;
-      }
-
       console.error("[SignUpScreen] Sign-up failed", error);
+      setStatusMessage(
+        error instanceof Error ? error.message : EmailAuthCopy.signUp.requestOtpError,
+      );
     }
+  };
+
+  const handleOpenLegalLink = async (url: string) => {
+    try {
+      await Linking.openURL(url);
+    } catch {
+      showNativeToast(EmailAuthCopy.legalLinkError);
+    }
+  };
+
+  const handleToggleAllAgreements = () => {
+    const shouldAgree = !(hasAgreedToTerms && hasAgreedToPrivacy);
+    setHasAgreedToTerms(shouldAgree);
+    setHasAgreedToPrivacy(shouldAgree);
   };
 
   const handleVerifyOtp = async () => {
@@ -112,33 +136,52 @@ export function SignUpScreen({ onBackToSignIn }: SignUpScreenProps) {
       }
 
       await resendEmailSignUpOtp(email);
-      startResendCooldown();
+      startEmailResendCooldown();
       setStatusMessage(EmailAuthCopy.signUp.otpResentStatus);
     } catch (error) {
-      const retryAfterSeconds = parseSignUpOtpRetrySeconds(error);
-      if (retryAfterSeconds !== null) {
-        startResendCooldown(retryAfterSeconds * 1000);
-        setStatusMessage(EmailAuthCopy.signUp.otpResendCooldownStatus);
-        return;
-      }
-
       console.error("[SignUpScreen] Sign-up OTP resend failed", error);
+      setStatusMessage(
+        error instanceof Error ? error.message : EmailAuthCopy.signUp.requestOtpError,
+      );
     }
   };
 
   return (
-    <KeyboardAwareScrollView
-      centerContent
+    <ScrollView
       contentContainerStyle={styles.content}
+      keyboardDismissMode={
+        Platform.OS === "ios" ? KeyboardLayout.dismissMode.ios : KeyboardLayout.dismissMode.android
+      }
+      keyboardShouldPersistTaps={KeyboardLayout.persistTaps}
       style={styles.screen}
     >
       <View style={styles.heroSection}>
         <Text style={styles.brand}>{AppMessages.brand}</Text>
         <Text style={styles.title}>{EmailAuthCopy.signUp.title}</Text>
         <Text style={styles.subtitle}>{EmailAuthCopy.signUp.subtitle}</Text>
+        <SignUpStepIndicator currentStep={step} />
       </View>
 
-      {step === "credentials" ? (
+      {step === "agreement" ? (
+        <EmailSignUpAgreementCard
+          hasAgreedToPrivacy={hasAgreedToPrivacy}
+          hasAgreedToTerms={hasAgreedToTerms}
+          onBack={onBackToSignIn}
+          onNext={() => {
+            setStatusMessage(null);
+            setStep("credentials");
+          }}
+          onOpenPrivacyPolicy={() => {
+            void handleOpenLegalLink(LegalLinks.privacyPolicyUrl);
+          }}
+          onOpenTermsOfUse={() => {
+            void handleOpenLegalLink(LegalLinks.termsOfUseUrl);
+          }}
+          onToggleAll={handleToggleAllAgreements}
+          onTogglePrivacy={() => setHasAgreedToPrivacy((currentValue) => !currentValue)}
+          onToggleTerms={() => setHasAgreedToTerms((currentValue) => !currentValue)}
+        />
+      ) : step === "credentials" ? (
         <EmailSignUpFormCard
           confirmPassword={confirmPassword}
           email={email}
@@ -189,7 +232,8 @@ export function SignUpScreen({ onBackToSignIn }: SignUpScreenProps) {
           token={token}
         />
       )}
-    </KeyboardAwareScrollView>
+      <SignUpCaptchaChallenge ref={captchaChallengeRef} />
+    </ScrollView>
   );
 }
 
@@ -199,6 +243,7 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.background,
   },
   content: {
+    flexGrow: 1,
     padding: AppLayout.screenPadding,
     gap: 16,
     justifyContent: "center",

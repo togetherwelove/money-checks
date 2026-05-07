@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
-import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import { Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { ScreenSlideTransition } from "../components/ScreenSlideTransition";
 import { AuthLandingCard } from "../components/authScreen/AuthLandingCard";
 import { EmailSignInCard } from "../components/authScreen/EmailSignInCard";
+import { EmailSignUpAgreementCard } from "../components/authScreen/EmailSignUpAgreementCard";
+import { PasswordResetRequestCard } from "../components/authScreen/PasswordResetRequestCard";
 import { AuthLandingCopy } from "../constants/authLanding";
 import { AppColors } from "../constants/colors";
 import { EmailAuthCopy } from "../constants/emailAuth";
+import { KeyboardLayout } from "../constants/keyboard";
 import { AppLayout } from "../constants/layout";
 import { LegalLinks } from "../constants/legal";
 import { AppMessages } from "../constants/messages";
@@ -22,6 +24,10 @@ import {
   isGoogleSignInCancelled,
   signInWithGoogle,
 } from "../lib/auth/googleSignIn";
+import {
+  requestEmailPasswordReset,
+  resolvePasswordResetErrorMessage,
+} from "../lib/auth/passwordReset";
 import { showNativeToast } from "../lib/nativeToast";
 import { SignUpScreen } from "./SignUpScreen";
 
@@ -29,12 +35,25 @@ type AuthScreenProps = {
   initialErrorMessage?: string | null;
 };
 
+type AuthScreenMode =
+  | "landing"
+  | "email-sign-in"
+  | "password-reset-request"
+  | "sign-up"
+  | "social-agreement";
+type SocialSignInProvider = "apple" | "google";
+
 export function AuthScreen({ initialErrorMessage = null }: AuthScreenProps) {
   const [email, setEmail] = useState("");
+  const [hasAgreedToSocialPrivacy, setHasAgreedToSocialPrivacy] = useState(false);
+  const [hasAgreedToSocialTerms, setHasAgreedToSocialTerms] = useState(false);
   const [password, setPassword] = useState("");
-  const [screen, setScreen] = useState<"landing" | "email-sign-in" | "sign-up">("landing");
+  const [pendingSocialSignInProvider, setPendingSocialSignInProvider] =
+    useState<SocialSignInProvider | null>(null);
+  const [screen, setScreen] = useState<AuthScreenMode>("landing");
   const showAppleSignIn = canUseAppleSignIn();
   const showGoogleSignIn = canUseGoogleSignIn();
+  const title = resolveAuthScreenTitle(screen, pendingSocialSignInProvider);
 
   useEffect(() => {
     if (!initialErrorMessage) {
@@ -49,6 +68,16 @@ export function AuthScreen({ initialErrorMessage = null }: AuthScreenProps) {
       await signInWithEmailPassword(email, password);
     } catch (error) {
       console.error("[AuthScreen] Email password sign-in failed", error);
+    }
+  };
+
+  const handleRequestPasswordReset = async () => {
+    try {
+      await requestEmailPasswordReset(email);
+      showNativeToast(EmailAuthCopy.passwordReset.requestSuccess);
+      setScreen("email-sign-in");
+    } catch (error) {
+      showNativeToast(resolvePasswordResetErrorMessage(error));
     }
   };
 
@@ -80,7 +109,36 @@ export function AuthScreen({ initialErrorMessage = null }: AuthScreenProps) {
     try {
       await Linking.openURL(url);
     } catch {
-      showNativeToast(AuthLandingCopy.legalLinkError);
+      showNativeToast(EmailAuthCopy.legalLinkError);
+    }
+  };
+
+  const handleToggleAllSocialAgreements = () => {
+    const shouldAgree = !(hasAgreedToSocialTerms && hasAgreedToSocialPrivacy);
+    setHasAgreedToSocialTerms(shouldAgree);
+    setHasAgreedToSocialPrivacy(shouldAgree);
+  };
+
+  const handleOpenSocialAgreement = (provider: SocialSignInProvider) => {
+    setPendingSocialSignInProvider(provider);
+    setScreen("social-agreement");
+  };
+
+  const handleBackFromSocialAgreement = () => {
+    setPendingSocialSignInProvider(null);
+    setHasAgreedToSocialTerms(false);
+    setHasAgreedToSocialPrivacy(false);
+    setScreen("landing");
+  };
+
+  const handleContinueSocialSignIn = () => {
+    if (pendingSocialSignInProvider === "google") {
+      void handleGoogleSignIn();
+      return;
+    }
+
+    if (pendingSocialSignInProvider === "apple") {
+      void handleAppleSignIn();
     }
   };
 
@@ -94,14 +152,19 @@ export function AuthScreen({ initialErrorMessage = null }: AuthScreenProps) {
           }}
         />
       ) : (
-        <KeyboardAwareScrollView
-          centerContent
+        <ScrollView
           contentContainerStyle={styles.content}
+          keyboardDismissMode={
+            Platform.OS === "ios"
+              ? KeyboardLayout.dismissMode.ios
+              : KeyboardLayout.dismissMode.android
+          }
+          keyboardShouldPersistTaps={KeyboardLayout.persistTaps}
           style={styles.screen}
         >
           <View style={styles.heroSection}>
             <Text style={styles.brand}>{AppMessages.brand}</Text>
-            <Text style={styles.title}>{EmailAuthCopy.signIn.title}</Text>
+            <Text style={styles.title}>{title}</Text>
           </View>
 
           {screen === "email-sign-in" ? (
@@ -110,6 +173,10 @@ export function AuthScreen({ initialErrorMessage = null }: AuthScreenProps) {
                 email={email}
                 onChangeEmail={setEmail}
                 onChangePassword={setPassword}
+                onOpenPasswordReset={() => {
+                  setPassword("");
+                  setScreen("password-reset-request");
+                }}
                 onOpenSignUp={() => {
                   setPassword("");
                   setScreen("sign-up");
@@ -127,31 +194,86 @@ export function AuthScreen({ initialErrorMessage = null }: AuthScreenProps) {
                 <Text style={styles.backLinkText}>{AuthLandingCopy.backToMethodsAction}</Text>
               </Pressable>
             </>
-          ) : (
-            <AuthLandingCard
-              onAppleSignIn={showAppleSignIn ? handleAppleSignIn : null}
-              onEmailSignIn={() => setScreen("email-sign-in")}
-              onEmailSignUp={() => {
-                setPassword("");
-                setScreen("sign-up");
-              }}
-              onGoogleSignIn={showGoogleSignIn ? handleGoogleSignIn : null}
+          ) : screen === "password-reset-request" ? (
+            <>
+              <PasswordResetRequestCard
+                email={email}
+                onBack={() => {
+                  setScreen("email-sign-in");
+                }}
+                onChangeEmail={setEmail}
+                onSubmit={handleRequestPasswordReset}
+                statusMessage={null}
+              />
+              <Pressable
+                onPress={() => {
+                  setScreen("landing");
+                }}
+                style={styles.backLinkButton}
+              >
+                <Text style={styles.backLinkText}>{AuthLandingCopy.backToMethodsAction}</Text>
+              </Pressable>
+            </>
+          ) : screen === "social-agreement" ? (
+            <EmailSignUpAgreementCard
+              hasAgreedToPrivacy={hasAgreedToSocialPrivacy}
+              hasAgreedToTerms={hasAgreedToSocialTerms}
+              onBack={handleBackFromSocialAgreement}
+              onNext={handleContinueSocialSignIn}
               onOpenPrivacyPolicy={() => {
                 void handleOpenLegalLink(LegalLinks.privacyPolicyUrl);
               }}
               onOpenTermsOfUse={() => {
                 void handleOpenLegalLink(LegalLinks.termsOfUseUrl);
               }}
+              onToggleAll={handleToggleAllSocialAgreements}
+              onTogglePrivacy={() => setHasAgreedToSocialPrivacy((currentValue) => !currentValue)}
+              onToggleTerms={() => setHasAgreedToSocialTerms((currentValue) => !currentValue)}
+            />
+          ) : (
+            <AuthLandingCard
+              onAppleSignIn={showAppleSignIn ? () => handleOpenSocialAgreement("apple") : null}
+              onEmailSignIn={() => setScreen("email-sign-in")}
+              onEmailSignUp={() => {
+                setPassword("");
+                setScreen("sign-up");
+              }}
+              onGoogleSignIn={showGoogleSignIn ? () => handleOpenSocialAgreement("google") : null}
             />
           )}
 
           <View style={styles.supportCard}>
-            <Text style={styles.supportLabel}>{EmailAuthCopy.supportLabel}</Text>
+            <Text style={styles.supportLabel}>{EmailAuthCopy.legalConsentNotice}</Text>
           </View>
-        </KeyboardAwareScrollView>
+        </ScrollView>
       )}
     </ScreenSlideTransition>
   );
+}
+
+function resolveAuthScreenTitle(
+  screen: AuthScreenMode,
+  pendingSocialSignInProvider: SocialSignInProvider | null,
+): string {
+  if (screen === "email-sign-in") {
+    return EmailAuthCopy.signIn.emailTitle;
+  }
+
+  if (screen === "password-reset-request") {
+    return EmailAuthCopy.passwordReset.requestTitle;
+  }
+
+  if (screen === "social-agreement") {
+    if (pendingSocialSignInProvider === "google") {
+      return EmailAuthCopy.signIn.googleAgreementTitle;
+    }
+
+    if (pendingSocialSignInProvider === "apple") {
+      return EmailAuthCopy.signIn.appleAgreementTitle;
+    }
+  }
+
+  return EmailAuthCopy.signIn.title;
 }
 
 const styles = StyleSheet.create({
@@ -160,6 +282,7 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.background,
   },
   content: {
+    flexGrow: 1,
     padding: AppLayout.screenPadding,
     gap: 16,
     justifyContent: "center",

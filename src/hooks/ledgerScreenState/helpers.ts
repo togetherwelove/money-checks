@@ -48,11 +48,8 @@ export async function saveLedgerEntries(params: {
   return trackBusyTask(() => insertLedgerEntries(activeBookId, userId, entries));
 }
 
-export async function removeLedgerEntry(
-  entryId: string,
-  trackBusyTask: BusyTaskTracker,
-): Promise<void> {
-  await trackBusyTask(() => deleteLedgerEntry(entryId));
+export async function removeLedgerEntry(entryId: string): Promise<void> {
+  await deleteLedgerEntry(entryId);
 }
 
 export async function removeLedgerEntries(

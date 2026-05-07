@@ -1,3 +1,4 @@
+import type { AppLanguage } from "../i18n/types";
 import type { ProfileDisplayRow } from "../types/supabase";
 import { isValidDisplayName, normalizeDisplayNameCandidate } from "../utils/displayName";
 import {
@@ -68,4 +69,14 @@ export async function syncOwnProfileDisplayNameIfMissing(
   }
 
   return updateOwnProfileDisplayName(userId, normalizedFallbackDisplayName);
+}
+
+export async function syncOwnProfilePreferredLocale(language: AppLanguage): Promise<void> {
+  const { error } = await supabase.rpc("update_own_profile_preferred_locale", {
+    next_locale: language,
+  });
+
+  if (error) {
+    throw error;
+  }
 }

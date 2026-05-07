@@ -3,9 +3,10 @@ import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 
 import { AppColors } from "../../constants/colors";
+import type { AppLanguage } from "../../i18n/types";
 import { PushNotificationCopy } from "../../notifications/config/pushNotificationCopy";
 import { appPlatform } from "../appPlatform";
-import { NotificationActionCategoryDefinitions } from "./notificationActions";
+import { buildNotificationActionCategoryDefinitions } from "./notificationActions";
 import { syncPushDeviceToken } from "./pushDeviceTokens";
 
 export type NotificationPermissionState = "default" | "denied" | "granted" | "unsupported";
@@ -81,9 +82,9 @@ export async function syncPushRegistration(userId: string): Promise<void> {
   await syncPushDeviceToken(expoPushToken, appPlatform.isIOS ? "ios" : "android", userId);
 }
 
-export async function registerNotificationActionCategories(): Promise<void> {
+export async function registerNotificationActionCategories(language: AppLanguage): Promise<void> {
   await Promise.all(
-    NotificationActionCategoryDefinitions.map((category) =>
+    buildNotificationActionCategoryDefinitions(language).map((category) =>
       Notifications.setNotificationCategoryAsync(category.identifier, [...category.actions]),
     ),
   );

@@ -1,9 +1,10 @@
-import { StyleSheet } from "react-native";
+import { Linking, StyleSheet } from "react-native";
 
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { NotificationSettingsCard } from "../components/accountScreen/NotificationSettingsCard";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
+import type { NotificationPermissionState } from "../lib/notifications/pushNotifications";
 import type {
   NotificationEventType,
   NotificationThresholdKey,
@@ -12,10 +13,12 @@ import type { NotificationPreferenceGroup } from "../notifications/preferences/n
 
 type NotificationSettingsScreenProps = {
   notificationPermissionLabel: string;
+  notificationPermissionState: NotificationPermissionState;
   notificationPreferenceGroups: NotificationPreferenceGroup[];
-  notificationStatusMessage: string;
+  notificationStatusMessage: string | null;
   onChangeNotificationThresholdEnabled: (key: NotificationThresholdKey, enabled: boolean) => void;
   onChangeNotificationThreshold: (key: NotificationThresholdKey, value: string) => void;
+  onRequestNotificationPermission: () => Promise<boolean>;
   onToggleNotificationPreference: (
     eventTypes: NotificationEventType | readonly NotificationEventType[],
     enabled: boolean,
@@ -24,17 +27,29 @@ type NotificationSettingsScreenProps = {
 
 export function NotificationSettingsScreen({
   notificationPermissionLabel,
+  notificationPermissionState,
   notificationPreferenceGroups,
   notificationStatusMessage,
   onChangeNotificationThresholdEnabled,
   onChangeNotificationThreshold,
+  onRequestNotificationPermission,
   onToggleNotificationPreference,
 }: NotificationSettingsScreenProps) {
+  const handleOpenNotificationPermission = () => {
+    if (notificationPermissionState === "default") {
+      void onRequestNotificationPermission();
+      return;
+    }
+
+    void Linking.openSettings();
+  };
+
   return (
     <KeyboardAwareScrollView contentContainerStyle={styles.content} style={styles.screen}>
       <NotificationSettingsCard
         onChangeThresholdEnabled={onChangeNotificationThresholdEnabled}
         onChangeThresholdValue={onChangeNotificationThreshold}
+        onOpenDeviceNotificationSettings={handleOpenNotificationPermission}
         onTogglePreference={onToggleNotificationPreference}
         permissionLabel={notificationPermissionLabel}
         preferenceGroups={notificationPreferenceGroups}
@@ -51,5 +66,6 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: AppLayout.screenPadding,
+    paddingTop: AppLayout.screenTopPadding,
   },
 });

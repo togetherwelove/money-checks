@@ -12,6 +12,9 @@ const appIconPath = "./assets/app/icon.png";
 const androidAdaptiveForegroundPath = "./assets/app/adaptive-icon-foreground.png";
 const androidGoogleServicesFilePath = "./android/app/google-services.json";
 const iosGoogleServicesFilePath = "./GoogleService-Info.plist";
+const androidPostNotificationsPermission = "android.permission.POST_NOTIFICATIONS";
+const iosUserTrackingPermission =
+  "맞춤형 광고를 제공하고 광고 성과를 측정하기 위해 앱 추적 권한을 사용합니다.";
 const imagePickerPermissionConfig = {
   cameraPermission: "알뜰 앱 이용 중 첨부할 이미지를 촬영하기 위해 카메라 접근 권한이 필요합니다.",
   microphonePermission: false,
@@ -42,6 +45,7 @@ const config: ExpoConfig = {
     googleServicesFile: iosGoogleServicesFilePath,
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
+      NSUserTrackingUsageDescription: iosUserTrackingPermission,
     },
     supportsTablet: false,
   },
@@ -52,6 +56,7 @@ const config: ExpoConfig = {
     },
     googleServicesFile: androidGoogleServicesFilePath,
     package: "com.chanwook.moneychecks",
+    permissions: [androidPostNotificationsPermission],
   },
   plugins: [
     "@react-native-community/datetimepicker",
@@ -61,6 +66,12 @@ const config: ExpoConfig = {
     "expo-apple-authentication",
     "expo-mail-composer",
     "expo-sharing",
+    [
+      "expo-tracking-transparency",
+      {
+        userTrackingPermission: iosUserTrackingPermission,
+      },
+    ],
     ["expo-image-picker", imagePickerPermissionConfig],
     [
       "expo-notifications",

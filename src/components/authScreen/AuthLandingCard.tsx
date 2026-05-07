@@ -1,10 +1,9 @@
 import { StyleSheet, Text, View } from "react-native";
 
-import { AuthLandingCopy } from "../../constants/authLanding";
+import { AuthLandingCopy, AuthLandingUi } from "../../constants/authLanding";
 import { AppColors } from "../../constants/colors";
 import { SurfaceCardStyle } from "../../constants/uiStyles";
 import { ActionButton } from "../ActionButton";
-import { TextLinkButton } from "../TextLinkButton";
 import { AppleSignInButton } from "./AppleSignInButton";
 import { GoogleSignInButton } from "./GoogleSignInButton";
 
@@ -13,8 +12,6 @@ type AuthLandingCardProps = {
   onEmailSignIn: () => void;
   onEmailSignUp: () => void;
   onGoogleSignIn?: (() => void | Promise<void>) | null;
-  onOpenPrivacyPolicy: () => void;
-  onOpenTermsOfUse: () => void;
 };
 
 export function AuthLandingCard({
@@ -22,14 +19,12 @@ export function AuthLandingCard({
   onEmailSignIn,
   onEmailSignUp,
   onGoogleSignIn = null,
-  onOpenPrivacyPolicy,
-  onOpenTermsOfUse,
 }: AuthLandingCardProps) {
+  const hasSocialSignIn = Boolean(onGoogleSignIn || onAppleSignIn);
+
   return (
     <View style={styles.card}>
       <View style={styles.actionGroup}>
-        {onAppleSignIn ? <AppleSignInButton onPress={onAppleSignIn} /> : null}
-        {onGoogleSignIn ? <GoogleSignInButton onPress={onGoogleSignIn} /> : null}
         <ActionButton
           fullWidth
           label={AuthLandingCopy.emailSignInAction}
@@ -44,13 +39,15 @@ export function AuthLandingCard({
           size="large"
           variant="secondary"
         />
-      </View>
-      <View style={styles.legalNotice}>
-        <Text style={styles.legalText}>{AuthLandingCopy.legalPrefix}</Text>
-        <TextLinkButton label={AuthLandingCopy.termsOfUseAction} onPress={onOpenTermsOfUse} />
-        <Text style={styles.legalText}>{AuthLandingCopy.legalMiddle}</Text>
-        <TextLinkButton label={AuthLandingCopy.privacyPolicyAction} onPress={onOpenPrivacyPolicy} />
-        <Text style={styles.legalText}>{AuthLandingCopy.legalSuffix}</Text>
+        {hasSocialSignIn ? (
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerLabel}>{AuthLandingCopy.methodDividerLabel}</Text>
+            <View style={styles.dividerLine} />
+          </View>
+        ) : null}
+        {onGoogleSignIn ? <GoogleSignInButton onPress={onGoogleSignIn} /> : null}
+        {onAppleSignIn ? <AppleSignInButton onPress={onAppleSignIn} /> : null}
       </View>
     </View>
   );
@@ -64,18 +61,20 @@ const styles = StyleSheet.create({
   actionGroup: {
     gap: 10,
   },
-  legalNotice: {
+  dividerRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    gap: 2,
-    paddingHorizontal: 4,
+    alignItems: "center",
+    gap: AuthLandingUi.methodDividerGap,
+    paddingVertical: AuthLandingUi.methodDividerPaddingVertical,
   },
-  legalText: {
+  dividerLine: {
+    flex: 1,
+    height: AuthLandingUi.methodDividerLineHeight,
+    backgroundColor: AppColors.border,
+  },
+  dividerLabel: {
     color: AppColors.mutedText,
-    fontSize: 12,
-    lineHeight: 18,
-    fontWeight: "600",
-    textAlign: "center",
+    fontSize: AuthLandingUi.methodDividerTextFontSize,
+    fontWeight: "700",
   },
 });

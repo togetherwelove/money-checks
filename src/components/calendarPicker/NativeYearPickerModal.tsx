@@ -2,7 +2,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { useEffect, useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
-import { CalendarPickerCopy } from "../../constants/calendarPicker";
+import { CalendarPickerCopy, CalendarPickerLocale } from "../../constants/calendarPicker";
 import { ModalActionRowStyle } from "../../constants/uiStyles";
 import { parseIsoDate, toIsoDate } from "../../utils/calendar";
 import { ActionButton } from "../ActionButton";
@@ -41,7 +41,7 @@ export function NativeYearPickerModal({
       <DateTimePicker
         display="spinner"
         mode="date"
-        locale="ko-KR"
+        locale={CalendarPickerLocale}
         onChange={(_event, nextDate) => {
           if (!nextDate) {
             return;

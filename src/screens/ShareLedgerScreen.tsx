@@ -16,6 +16,8 @@ import type { LedgerBook } from "../types/ledgerBook";
 import type { AccessibleLedgerBook } from "../types/ledgerBook";
 import type {
   JoinSharedLedgerBookAttempt,
+  JoinSharedLedgerBookPreview,
+  JoinSharedLedgerBookResolution,
   LedgerBookJoinRequest,
 } from "../types/ledgerBookJoinRequest";
 import type { LedgerBookMember } from "../types/ledgerBookMember";
@@ -33,10 +35,14 @@ type ShareLedgerScreenProps = {
   activeBook: LedgerBook | null;
   onOpenSubscription: () => void;
   onApproveJoinRequest: (requestId: string) => Promise<boolean>;
-  onBeforeCopyShareCode: () => Promise<boolean>;
+  onBeforeCopyShareCode: () => Promise<void> | void;
   onCreateLedgerBook: (nextName: string) => Promise<boolean>;
-  onJoinSharedLedgerBook: (shareCode: string) => Promise<JoinSharedLedgerBookAttempt>;
+  onJoinSharedLedgerBook: (
+    shareCode: string,
+    joinResolution?: JoinSharedLedgerBookResolution,
+  ) => Promise<JoinSharedLedgerBookAttempt>;
   onLeaveSharedLedgerBook: () => Promise<boolean>;
+  onPreviewJoinSharedLedgerBook: (shareCode: string) => Promise<JoinSharedLedgerBookPreview>;
   onRenameActiveLedgerBook: (nextName: string) => Promise<boolean>;
   onRemoveSharedLedgerMember: (targetUserId: string) => Promise<boolean>;
   onRejectJoinRequest: (requestId: string) => Promise<boolean>;
@@ -66,6 +72,7 @@ export function ShareLedgerScreen({
   onCreateLedgerBook,
   onLeaveSharedLedgerBook,
   onJoinSharedLedgerBook,
+  onPreviewJoinSharedLedgerBook,
   onRemoveSharedLedgerMember,
   onRenameActiveLedgerBook,
   onRejectJoinRequest,
@@ -157,6 +164,7 @@ export function ShareLedgerScreen({
         onKickMember={handleKickMember}
         onLeaveSharedLedgerBook={onLeaveSharedLedgerBook}
         onJoinSharedLedgerBook={onJoinSharedLedgerBook}
+        onPreviewJoinSharedLedgerBook={onPreviewJoinSharedLedgerBook}
         onRejectJoinRequest={onRejectJoinRequest}
         onRenameActiveLedgerBook={onRenameActiveLedgerBook}
         onSwitchLedgerBook={onSwitchLedgerBook}
@@ -225,6 +233,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: AppLayout.screenPadding,
+    paddingTop: AppLayout.screenTopPadding,
     gap: AppLayout.cardGap,
   },
 });

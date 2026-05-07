@@ -9,6 +9,7 @@ export type LedgerEntryRow = {
   currency: string;
   content: string;
   category: string;
+  category_id: string;
   installment_group_id: string | null;
   installment_months: number | null;
   installment_order: number | null;
@@ -64,6 +65,7 @@ export type LedgerBookJoinRequestRow = {
   book_id: string;
   created_at: string;
   id: string;
+  join_resolution: "merge_personal_book_on_approval" | "standard";
   requester_user_id: string;
   reviewed_at: string | null;
   reviewed_by: string | null;
@@ -71,10 +73,37 @@ export type LedgerBookJoinRequestRow = {
 };
 
 export type LedgerBookJoinRequestProfileRow = {
+  approval_status:
+    | "blocked_accessible_limit"
+    | "blocked_shared_editor_free"
+    | "blocked_shared_owner_free"
+    | "blocked_target_member_limit"
+    | "can_approve"
+    | "can_approve_with_personal_book_merge"
+    | "needs_personal_book_merge_confirmation";
   created_at: string;
   display_name: string | null;
   id: string;
+  join_resolution: "merge_personal_book_on_approval" | "standard";
   requester_user_id: string;
+};
+
+export type LedgerBookJoinPreviewRow = {
+  status:
+    | "already_member"
+    | "blocked_accessible_limit"
+    | "blocked_shared_editor_free"
+    | "blocked_shared_owner_free"
+    | "blocked_target_member_limit"
+    | "can_request"
+    | "can_request_with_personal_book_merge"
+    | "expired_code"
+    | "invalid_code"
+    | "join_cooldown"
+    | "own_book"
+    | "pending_request";
+  target_book_id: string | null;
+  target_book_name: string | null;
 };
 
 export type NotificationPreferencesRow = {

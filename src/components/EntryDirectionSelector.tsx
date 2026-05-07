@@ -10,12 +10,19 @@ import {
 } from "react-native";
 
 import { AppColors } from "../constants/colors";
+import { selectStaticCopy } from "../i18n/staticCopy";
 import type { LedgerEntryType } from "../types/ledger";
 
-const ENTRY_DIRECTION_LABELS: Record<LedgerEntryType, string> = {
-  expense: "지출",
-  income: "수입",
-};
+const ENTRY_DIRECTION_LABELS = selectStaticCopy<Record<LedgerEntryType, string>>({
+  en: {
+    expense: "Expense",
+    income: "Income",
+  },
+  ko: {
+    expense: "지출",
+    income: "수입",
+  },
+});
 const ENTRY_DIRECTION_ORDER: LedgerEntryType[] = ["expense", "income"];
 const ENTRY_DIRECTION_OPTION_GAP = 4;
 const ENTRY_DIRECTION_CONTAINER_INSET = 4;

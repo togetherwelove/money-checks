@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
 import { MonthlySummaryCopy } from "../constants/monthlySummary";
+import { OneLineTextFitProps } from "../constants/textLayout";
 import { formatCurrency } from "../utils/calendar";
 
 type MonthlySummaryProps = {
@@ -65,7 +66,9 @@ function SummaryMetric({
 
   return (
     <View style={[styles.metric, isResult ? styles.resultMetric : null]}>
-      <Text style={styles.metricTitle}>{title}</Text>
+      <Text {...OneLineTextFitProps} style={styles.metricTitle}>
+        {title}
+      </Text>
       <Text
         adjustsFontSizeToFit
         minimumFontScale={SUMMARY_VALUE_MINIMUM_FONT_SCALE}

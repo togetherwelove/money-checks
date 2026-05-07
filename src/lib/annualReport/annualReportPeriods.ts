@@ -1,4 +1,5 @@
 import {
+  AnnualReportCopy,
   type AnnualReportRangeMode,
   buildSelectedYearOptionLabel,
 } from "../../constants/annualReport";
@@ -16,7 +17,7 @@ export function buildFirstToLastPeriod(firstDate: string, lastDate: string): Ann
     dateFrom: firstDate,
     dateTo: lastDate,
     mode: "first-to-last",
-    optionLabel: "최초 - 마지막 등록 날짜",
+    optionLabel: AnnualReportCopy.firstToLastOption,
     periodLabel: `${firstDate} ~ ${lastDate}`,
   };
 }
@@ -39,7 +40,7 @@ export function buildCustomRangePeriod(dateFrom: string, dateTo: string): Annual
     dateFrom,
     dateTo,
     mode: "custom-range",
-    optionLabel: "기간 직접 선택",
+    optionLabel: AnnualReportCopy.customRangeOption,
     periodLabel: `${dateFrom} ~ ${dateTo}`,
   };
 }

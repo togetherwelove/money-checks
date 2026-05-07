@@ -19,6 +19,7 @@ export type LedgerEntry = {
   amount: number;
   content: string;
   category: string;
+  categoryId: string;
   installmentGroupId?: string | null;
   installmentMonths?: number | null;
   installmentOrder?: number | null;
@@ -38,6 +39,7 @@ export type LedgerEntryDraft = {
   targetMemberName?: string;
   content: string;
   category: string;
+  categoryId: string;
   installmentMonths: number;
   note: string;
   photoAttachments: LedgerEntryPhotoAttachment[];

@@ -1,10 +1,23 @@
-export const AppleAuthCopy = {
-  signInAction: "Apple로 로그인",
-  cancelledError: "Apple 로그인이 취소되었어요.",
-  missingTokenError: "Apple 로그인 토큰을 가져오지 못했어요.",
-  unavailableError: "Apple 로그인을 사용할 수 없는 환경이에요.",
-} as const;
+import { selectStaticCopy } from "../i18n/staticCopy";
+
+export const AppleAuthCopy = selectStaticCopy({
+  en: {
+    signInAction: "Sign in with Apple",
+    cancelledError: "Apple sign-in was canceled.",
+    missingTokenError: "Could not get the Apple sign-in token.",
+    unavailableError: "Apple sign-in is unavailable in this environment.",
+  },
+  ko: {
+    signInAction: "Apple로 로그인",
+    cancelledError: "Apple 로그인이 취소되었어요.",
+    missingTokenError: "Apple 로그인 토큰을 가져오지 못했어요.",
+    unavailableError: "Apple 로그인을 사용할 수 없는 환경이에요.",
+  },
+} as const);
 
 export const AppleAuthConfig = {
-  defaultDisplayName: "사용자",
+  defaultDisplayName: selectStaticCopy({
+    en: "User",
+    ko: "사용자",
+  }),
 } as const;

@@ -5,11 +5,15 @@ import { EmailAuthCopy } from "../../constants/emailAuth";
 import {
   FormInputTextStyle,
   FormLabelTextStyle,
-  NoteTextStyle,
   StatusMessageTextStyle,
   SurfaceCardStyle,
 } from "../../constants/uiStyles";
+import { isPasswordValid } from "../../lib/auth/passwordValidation";
 import { ActionButton } from "../ActionButton";
+import {
+  PasswordConfirmationRequirement,
+  PasswordRequirementChecklist,
+} from "./PasswordRequirementChecklist";
 
 type EmailSignUpFormCardProps = {
   confirmPassword: string;
@@ -39,7 +43,7 @@ export function EmailSignUpFormCard({
   submitLabel,
 }: EmailSignUpFormCardProps) {
   const canSubmit = Boolean(
-    email.trim() && password && confirmPassword && password === confirmPassword,
+    email.trim() && isPasswordValid(password) && confirmPassword && password === confirmPassword,
   );
 
   return (
@@ -71,6 +75,7 @@ export function EmailSignUpFormCard({
           textContentType="newPassword"
           value={password}
         />
+        <PasswordRequirementChecklist password={password} />
       </View>
       <View style={styles.fieldGroup}>
         <Text style={styles.label}>{EmailAuthCopy.signUp.passwordConfirmLabel}</Text>
@@ -85,6 +90,7 @@ export function EmailSignUpFormCard({
           textContentType="newPassword"
           value={confirmPassword}
         />
+        <PasswordConfirmationRequirement confirmPassword={confirmPassword} password={password} />
       </View>
       <View style={styles.actionGroup}>
         <ActionButton
@@ -121,16 +127,6 @@ const styles = StyleSheet.create({
   actionGroup: {
     gap: 8,
   },
-  noticeBlock: {
-    gap: 4,
-    paddingTop: 4,
-  },
-  noticeTitle: {
-    color: AppColors.text,
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  noticeText: NoteTextStyle,
   status: {
     color: AppColors.primary,
     ...StatusMessageTextStyle,

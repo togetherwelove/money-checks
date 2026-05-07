@@ -1,3 +1,4 @@
+import { selectStaticCopy } from "../i18n/staticCopy";
 import type { MonthlyComparisonMetric, MonthlyInsights } from "../types/ledger";
 import { formatCurrency } from "../utils/calendar";
 
@@ -22,22 +23,41 @@ export type PushNotificationContent = {
   title: string;
 };
 
-const MonthlyComparisonCopy = {
-  expenseDecrease: "전월보다 {amount} 덜 썼어요",
-  expenseIncrease: "전월보다 {amount} 더 썼어요",
-  incomeDecrease: "전월보다 {amount} 덜 벌었어요",
-  incomeIncrease: "전월보다 {amount} 더 벌었어요",
-  previousAmountPrefix: "전월",
-  previousDataUnavailable: "전월 데이터 없음",
-  rateDecrease: "{monthLabel} 대비 {rate}% 감소",
-  rateIncrease: "{monthLabel} 대비 {rate}% 증가",
-  same: "전월과 같아요",
-} as const;
+const MonthlyComparisonCopy = selectStaticCopy({
+  en: {
+    expenseDecrease: "Spent {amount} less than last month",
+    expenseIncrease: "Spent {amount} more than last month",
+    incomeDecrease: "Earned {amount} less than last month",
+    incomeIncrease: "Earned {amount} more than last month",
+    previousAmountPrefix: "Previous",
+    previousDataUnavailable: "No previous month data",
+    rateDecrease: "{rate}% decrease from {monthLabel}",
+    rateIncrease: "{rate}% increase from {monthLabel}",
+    same: "Same as last month",
+  },
+  ko: {
+    expenseDecrease: "전월보다 {amount} 덜 썼어요",
+    expenseIncrease: "전월보다 {amount} 더 썼어요",
+    incomeDecrease: "전월보다 {amount} 덜 벌었어요",
+    incomeIncrease: "전월보다 {amount} 더 벌었어요",
+    previousAmountPrefix: "전월",
+    previousDataUnavailable: "전월 데이터 없음",
+    rateDecrease: "{monthLabel} 대비 {rate}% 감소",
+    rateIncrease: "{monthLabel} 대비 {rate}% 증가",
+    same: "전월과 같아요",
+  },
+} as const);
 
-const PreviousMonthSummaryCopy = {
-  body: "수입: {incomeSummary}\n지출: {expenseSummary}",
-  title: "{currentMonthLabel} 수입·지출 돌아보기",
-} as const;
+const PreviousMonthSummaryCopy = selectStaticCopy({
+  en: {
+    body: "Income: {incomeSummary}\nExpense: {expenseSummary}",
+    title: "{currentMonthLabel} Income & Expense Review",
+  },
+  ko: {
+    body: "수입: {incomeSummary}\n지출: {expenseSummary}",
+    title: "{currentMonthLabel} 수입·지출 돌아보기",
+  },
+} as const);
 
 export function buildMonthlyComparisonSummary(
   metric: MonthlyComparisonMetric,

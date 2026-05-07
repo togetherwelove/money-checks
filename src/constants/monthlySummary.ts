@@ -1,9 +1,22 @@
+import { selectStaticCopy } from "../i18n/staticCopy";
+
+const MonthlySummaryLocalizedCopy = selectStaticCopy({
+  en: {
+    balanceLabel: "Balance",
+    expenseLabel: "Total Expense",
+    incomeLabel: "Total Income",
+  },
+  ko: {
+    balanceLabel: "잔액",
+    expenseLabel: "총지출",
+    incomeLabel: "총수입",
+  },
+} as const);
+
 export const MonthlySummaryCopy = {
-  balanceLabel: "\uC794\uC561",
-  expenseLabel: "\uCD1D\uC9C0\uCD9C",
+  ...MonthlySummaryLocalizedCopy,
   formulaEquals: "=",
   formulaMinus: "-",
-  incomeLabel: "\uCD1D\uC218\uC785",
   negativeSign: "- ",
   positiveSign: "+ ",
 } as const;

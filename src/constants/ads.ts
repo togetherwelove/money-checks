@@ -1,3 +1,5 @@
+import { selectStaticCopy } from "../i18n/staticCopy";
+
 export const AdMobTestUnitIds = {
   iosBanner: "ca-app-pub-3940256099942544/2934735716",
   androidBanner: "ca-app-pub-3940256099942544/6300978111",
@@ -28,5 +30,21 @@ export type AdInterstitialPlacementKey =
 export const NativeAdListConfig = {
   insertionStartAfterEntryCount: 6,
   insertionInterval: 10,
-  sponsoredLabel: "광고 ",
+  sponsoredLabel: selectStaticCopy({
+    en: "Ad ",
+    ko: "광고 ",
+  }),
+} as const;
+
+export const NativeAdCardUi = {
+  advertiserGap: 4,
+  callToActionBorderRadius: 999,
+  callToActionPaddingHorizontal: 10,
+  callToActionPaddingVertical: 5,
+  contentGap: 4,
+  iconBorderRadius: 8,
+  iconSize: 40,
+  minHeight: 76,
+  primaryRowGap: 8,
+  verticalInset: 8,
 } as const;

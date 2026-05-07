@@ -1,4 +1,7 @@
-const amountNumberFormatter = new Intl.NumberFormat("ko-KR");
+import { resolveStaticCopyLanguage } from "../i18n/staticCopy";
+
+const AMOUNT_NUMBER_FORMAT_LOCALE = resolveStaticCopyLanguage() === "en" ? "en-US" : "ko-KR";
+const amountNumberFormatter = new Intl.NumberFormat(AMOUNT_NUMBER_FORMAT_LOCALE);
 
 export function sanitizeAmountDigits(value: string): string {
   return value.replace(/[^0-9]/g, "");

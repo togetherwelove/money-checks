@@ -31,6 +31,22 @@ export function resolveSharedLedgerJoinErrorMessage(error: unknown): string {
     return SubscriptionMessages.sharedLedgerLimitDescription;
   }
 
+  if (errorText.includes("Free shared ledger owners cannot join another ledger.")) {
+    return ShareLedgerMessages.joinSharedOwnerFreeBlockedError;
+  }
+
+  if (errorText.includes("Free shared ledger editors cannot join another ledger.")) {
+    return ShareLedgerMessages.joinSharedEditorFreeBlockedError;
+  }
+
+  if (errorText.includes("Join request requires personal ledger merge confirmation.")) {
+    return ShareLedgerMessages.joinRequiresPersonalLedgerMergeConfirmationError;
+  }
+
+  if (errorText.includes("Accessible ledger book limit reached for subscription tier.")) {
+    return ShareLedgerMessages.joinAccessibleLimitError;
+  }
+
   return AppMessages.accountJoinError;
 }
 

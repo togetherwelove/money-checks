@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
+import { AppTextBreakProps } from "../constants/textLayout";
 
 type ScreenHeaderBlockProps = {
   action?: ReactNode;
@@ -13,12 +14,22 @@ type ScreenHeaderBlockProps = {
 export function ScreenHeaderBlock({ action, eyebrow, subtitle, title }: ScreenHeaderBlockProps) {
   return (
     <View style={styles.header}>
-      {eyebrow ? <Text style={styles.eyebrow}>{eyebrow}</Text> : null}
+      {eyebrow ? (
+        <Text {...AppTextBreakProps} style={styles.eyebrow}>
+          {eyebrow}
+        </Text>
+      ) : null}
       <View style={styles.titleRow}>
-        <Text style={styles.title}>{title}</Text>
+        <Text {...AppTextBreakProps} style={styles.title}>
+          {title}
+        </Text>
         {action ? <View style={styles.action}>{action}</View> : null}
       </View>
-      {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+      {subtitle ? (
+        <Text {...AppTextBreakProps} style={styles.subtitle}>
+          {subtitle}
+        </Text>
+      ) : null}
     </View>
   );
 }

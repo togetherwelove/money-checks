@@ -9,8 +9,10 @@ import { formatAmountNumber } from "../utils/amount";
 import { parseIsoDate } from "../utils/calendar";
 import {
   CALENDAR_DAYS_PER_WEEK,
-  CALENDAR_DAY_CELL_MIN_HEIGHT,
-  CALENDAR_ROW_HEIGHT,
+  CALENDAR_DAY_CELL_PADDING_VERTICAL,
+  CALENDAR_DAY_CONTENT_GAP,
+  CALENDAR_DAY_NUMBER_LINE_HEIGHT,
+  CALENDAR_EMPTY_AMOUNT_SPACE_HEIGHT,
   CALENDAR_ROW_PADDING,
 } from "./monthCalendarPager/calendarLayout";
 import { getVisibleCalendarDays } from "./monthCalendarPager/calendarWeekCount";
@@ -82,19 +84,21 @@ const DayCell = memo(function DayCell({
 
   return (
     <Pressable onPress={handlePress} style={styles.dayCell}>
-      {hasDateMemo ? <View style={styles.memoIndicator} /> : null}
       <View style={styles.dayContent}>
-        <Text
-          style={[
-            styles.dayNumber,
-            shouldApplyWeekendTint && isSunday && styles.sundayNumber,
-            shouldApplyWeekendTint && isSaturday && styles.saturdayNumber,
-            day.isToday && styles.todayNumber,
-            isSelected && styles.selectedNumber,
-          ]}
-        >
-          {day.dayNumber}
-        </Text>
+        <View style={styles.dayNumberWrap}>
+          <Text
+            style={[
+              styles.dayNumber,
+              shouldApplyWeekendTint && isSunday && styles.sundayNumber,
+              shouldApplyWeekendTint && isSaturday && styles.saturdayNumber,
+              day.isToday && styles.todayNumber,
+              isSelected && styles.selectedNumber,
+            ]}
+          >
+            {day.dayNumber}
+          </Text>
+          {hasDateMemo ? <View style={styles.memoIndicator} /> : null}
+        </View>
         {hasEntry ? (
           <View style={styles.amounts}>
             {day.income > 0 ? (
@@ -118,7 +122,9 @@ const DayCell = memo(function DayCell({
               </Text>
             ) : null}
           </View>
-        ) : null}
+        ) : (
+          <View style={styles.emptyAmountSpace} />
+        )}
       </View>
     </Pressable>
   );
@@ -138,36 +144,36 @@ const styles = StyleSheet.create({
   },
   daySlot: {
     width: CELL_WIDTH,
-    paddingHorizontal: CALENDAR_DAY_HORIZONTAL_PADDING,
     paddingVertical: CALENDAR_DAY_VERTICAL_PADDING,
   },
   dayCell: {
     position: "relative",
-    minHeight: CALENDAR_DAY_CELL_MIN_HEIGHT,
-    paddingHorizontal: 2,
-    paddingVertical: 2,
+    paddingVertical: CALENDAR_DAY_CELL_PADDING_VERTICAL,
   },
-  emptyDayCell: {
-    minHeight: CALENDAR_DAY_CELL_MIN_HEIGHT,
-  },
+  emptyDayCell: {},
   weekDivider: {
     borderTopColor: AppColors.border,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   dayContent: {
-    flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    gap: 1,
+    gap: CALENDAR_DAY_CONTENT_GAP,
   },
   memoIndicator: {
     position: "absolute",
-    top: DateMemoUi.calendarIndicatorInset,
-    right: DateMemoUi.calendarIndicatorInset,
+    top: DateMemoUi.calendarIndicatorOffsetTop,
+    right: DateMemoUi.calendarIndicatorOffsetRight,
     width: DateMemoUi.calendarIndicatorSize,
     height: DateMemoUi.calendarIndicatorSize,
     borderRadius: DateMemoUi.calendarIndicatorSize,
     backgroundColor: AppColors.primary,
+  },
+  dayNumberWrap: {
+    position: "relative",
+    width: DateMemoUi.calendarNumberBadgeWidth,
+    alignItems: "center",
+    justifyContent: "center",
   },
   dayNumber: {
     color: AppColors.text,
@@ -176,6 +182,7 @@ const styles = StyleSheet.create({
     paddingVertical: 1,
     borderRadius: 999,
     fontSize: 11,
+    lineHeight: CALENDAR_DAY_NUMBER_LINE_HEIGHT,
     fontWeight: "800",
     textAlign: "center",
   },
@@ -199,6 +206,9 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
     gap: 0,
+  },
+  emptyAmountSpace: {
+    height: CALENDAR_EMPTY_AMOUNT_SPACE_HEIGHT,
   },
   amountText: {
     maxWidth: "100%",

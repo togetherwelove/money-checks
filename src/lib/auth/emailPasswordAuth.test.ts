@@ -57,9 +57,17 @@ describe("emailPasswordAuth", () => {
       error: null,
     });
 
-    await expect(signUpWithEmailPassword("  USER@Example.COM ", "Secret123!")).resolves.toBe(
-      "signed-in",
-    );
+    await expect(
+      signUpWithEmailPassword("  USER@Example.COM ", "Secret123!", "captcha-token"),
+    ).resolves.toBe("signed-in");
+
+    expect(authMock.signUp).toHaveBeenCalledWith({
+      email: "user@example.com",
+      options: {
+        captchaToken: "captcha-token",
+      },
+      password: "Secret123!",
+    });
   });
 
   it("returns otp-required when sign-up does not create a session", async () => {
@@ -70,9 +78,9 @@ describe("emailPasswordAuth", () => {
       error: null,
     });
 
-    await expect(signUpWithEmailPassword("  USER@Example.COM ", "Secret123!")).resolves.toBe(
-      "otp-required",
-    );
+    await expect(
+      signUpWithEmailPassword("  USER@Example.COM ", "Secret123!", "captcha-token"),
+    ).resolves.toBe("otp-required");
   });
 
   it("verifies sign-up otp with the normalized email", async () => {

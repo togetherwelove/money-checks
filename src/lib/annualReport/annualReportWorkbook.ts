@@ -63,7 +63,7 @@ export function buildAnnualReportWorkbook(report: AnnualReportData): XLSX.WorkBo
   appendTableSheet(
     workbook,
     AnnualReportCopy.chartSheetName,
-    [[`${report.bookName} 차트`]],
+    [[`${report.bookName} ${AnnualReportCopy.chartTitleSuffix}`]],
     ChartSheetColumnWidths,
   );
 
@@ -119,24 +119,7 @@ function appendTableSheet(
 }
 
 function buildLedgerRows(report: AnnualReportData): SheetCellValue[][] {
-  const header = [
-    "거래일",
-    "연월",
-    "유형",
-    "내용",
-    "분류",
-    "수입",
-    "지출",
-    "수지",
-    "담당자",
-    "작성자",
-    "메모",
-    "증빙수",
-    "분할",
-    "등록일",
-    "수정일",
-    "거래ID",
-  ];
+  const header = [...AnnualReportCopy.ledgerHeaders];
 
   if (report.entries.length === 0) {
     return [header];
@@ -147,7 +130,9 @@ function buildLedgerRows(report: AnnualReportData): SheetCellValue[][] {
     ...report.entries.map((entry) => [
       parseIsoDate(entry.date),
       entry.date.slice(0, 7),
-      entry.type === "income" ? "수입" : "지출",
+      entry.type === "income"
+        ? AnnualReportCopy.typeLabels.income
+        : AnnualReportCopy.typeLabels.expense,
       entry.content || "-",
       entry.category,
       entry.type === "income" ? entry.amount : 0,
@@ -167,24 +152,24 @@ function buildLedgerRows(report: AnnualReportData): SheetCellValue[][] {
 
 function buildMonthlySummaryRows(monthlyRows: AnnualReportMonthRow[]): SheetCellValue[][] {
   return [
-    ["월", "수입", "지출", "수지", "건수"],
+    [...AnnualReportCopy.monthlySummaryHeaders],
     ...monthlyRows.map((row) => [row.monthLabel, row.income, row.expense, row.balance, row.count]),
   ];
 }
 
 function buildCategorySummaryRows(report: AnnualReportData): SheetCellValue[][] {
   return [
-    ["지출 분류", "지출", "비중", "건수"],
+    [...AnnualReportCopy.expenseCategoryHeaders],
     ...buildCategoryRows(report.expenseCategories, "expense"),
     [],
-    ["수입 분류", "수입", "비중", "건수"],
+    [...AnnualReportCopy.incomeCategoryHeaders],
     ...buildCategoryRows(report.incomeCategories, "income"),
   ];
 }
 
 function buildMemberSummaryRows(memberRows: AnnualReportMemberRow[]): SheetCellValue[][] {
   return [
-    ["담당자", "수입", "지출", "수지", "건수"],
+    [...AnnualReportCopy.memberSummaryHeaders],
     ...memberRows.map((row) => [row.memberName, row.income, row.expense, row.balance, row.count]),
   ];
 }
@@ -194,16 +179,16 @@ function buildSummaryRows(report: AnnualReportData): SheetCellValue[][] {
   const topIncomeCategory = report.incomeCategories[0]?.category ?? "-";
 
   return [
-    ["가계부", report.bookName],
-    ["기간", report.periodLabel],
-    ["생성일", report.generatedAtLabel],
-    ["총수입", report.totalIncome],
-    ["총지출", report.totalExpense],
-    ["기간 수지", report.totalIncome - report.totalExpense],
-    ["기록 건수", report.entries.length],
-    ["주요 수입 분류", topIncomeCategory],
-    ["주요 지출 분류", topExpenseCategory],
-    ["안내", "모임 장부 정리와 공유를 위한 참고용 자료입니다."],
+    [AnnualReportCopy.summaryRows.ledger, report.bookName],
+    [AnnualReportCopy.summaryRows.period, report.periodLabel],
+    [AnnualReportCopy.summaryRows.generatedAt, report.generatedAtLabel],
+    [AnnualReportCopy.summaryRows.income, report.totalIncome],
+    [AnnualReportCopy.summaryRows.expense, report.totalExpense],
+    [AnnualReportCopy.summaryRows.balance, report.totalIncome - report.totalExpense],
+    [AnnualReportCopy.summaryRows.entryCount, report.entries.length],
+    [AnnualReportCopy.summaryRows.topIncomeCategory, topIncomeCategory],
+    [AnnualReportCopy.summaryRows.topExpenseCategory, topExpenseCategory],
+    [AnnualReportCopy.summaryRows.note, AnnualReportCopy.summaryRows.noteValue],
   ];
 }
 
@@ -212,7 +197,7 @@ function buildCategoryRows(
   type: "expense" | "income",
 ): SheetCellValue[][] {
   if (rows.length === 0) {
-    return [[type === "income" ? "수입 없음" : "지출 없음", 0, 0, 0]];
+    return [[AnnualReportCopy.emptyCategoryLabels[type], 0, 0, 0]];
   }
 
   return rows.map((row) => [row.category, row.amount, row.share, row.count]);

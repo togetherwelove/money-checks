@@ -3,54 +3,55 @@ import { useState } from "react";
 import { Text, TextInput, View } from "react-native";
 
 import { LedgerBookNicknameCopy } from "../../constants/ledgerBookNickname";
-import { EMPTY_VALUE_PLACEHOLDER } from "../../constants/ledgerDisplay";
+import { SHARE_CODE_LENGTH } from "../../constants/ledgerDisplay";
 import { AppMessages } from "../../constants/messages";
 import { ShareLedgerMessages } from "../../constants/shareLedgerMessages";
 import { showNativeToast } from "../../lib/nativeToast";
 import type { LedgerBook } from "../../types/ledgerBook";
 import type { LedgerBookJoinRequest } from "../../types/ledgerBookJoinRequest";
-import type { LedgerBookMember } from "../../types/ledgerBookMember";
+import { ActionButton } from "../ActionButton";
 import { IconActionButton } from "../IconActionButton";
 import { LedgerBookJoinRequests } from "../LedgerBookJoinRequests";
-import { LedgerBookMembers } from "../LedgerBookMembers";
 import { sharedLedgerPanelStyles as styles } from "./sharedLedgerPanelStyles";
 
 type SharedLedgerBookCardProps = {
   activeBook: LedgerBook | null;
   bookName: string | null;
   bookNameInput: string;
+  canLeaveSharedBook: boolean;
   canEditBookName: boolean;
   currentUserId: string;
   isOwner: boolean;
-  members: LedgerBookMember[];
   onApproveJoinRequest: (requestId: string) => Promise<boolean>;
-  onBeforeCopyShareCode: () => Promise<boolean>;
+  onBeforeCopyShareCode: () => Promise<void> | void;
   onChangeBookName: (value: string) => void;
-  onKickMember: (targetUserId: string) => Promise<boolean>;
-  onOpenSubscription: () => void;
+  onChangeShareCodeInput: (value: string) => void;
+  onJoin: () => unknown;
+  onLeave: () => unknown;
   onRejectJoinRequest: (requestId: string) => Promise<boolean>;
   onSaveBookName: () => Promise<boolean>;
   pendingJoinRequests: LedgerBookJoinRequest[];
-  shouldShowSharedMemberLimitNotice: boolean;
+  shareCodeInput: string;
 };
 
 export function SharedLedgerBookCard({
   activeBook,
   bookName,
   bookNameInput,
+  canLeaveSharedBook,
   canEditBookName,
   currentUserId,
   isOwner,
-  members,
   onApproveJoinRequest,
   onBeforeCopyShareCode,
   onChangeBookName,
-  onKickMember,
-  onOpenSubscription,
+  onChangeShareCodeInput,
+  onJoin,
+  onLeave,
   onRejectJoinRequest,
   onSaveBookName,
   pendingJoinRequests,
-  shouldShowSharedMemberLimitNotice,
+  shareCodeInput,
 }: SharedLedgerBookCardProps) {
   const [isEditingBookName, setIsEditingBookName] = useState(false);
   const isSharedBook = Boolean(activeBook && activeBook.ownerId !== currentUserId);
@@ -61,10 +62,7 @@ export function SharedLedgerBookCard({
       return;
     }
 
-    const didShowAd = await onBeforeCopyShareCode();
-    if (!didShowAd) {
-      return;
-    }
+    await onBeforeCopyShareCode();
 
     await Clipboard.setStringAsync(shareCode);
     showNativeToast(ShareLedgerMessages.copyCodeSuccessToast);
@@ -140,47 +138,23 @@ export function SharedLedgerBookCard({
           </View>
         ) : null}
       </View>
-      <View style={styles.codeBlock}>
-        <Text style={styles.sectionLabel}>{AppMessages.accountShareCode}</Text>
-        <View style={styles.shareCodeRow}>
-          <Text
-            adjustsFontSizeToFit
-            minimumFontScale={0.7}
-            numberOfLines={1}
-            style={styles.shareCode}
-          >
-            {shareCode ?? EMPTY_VALUE_PLACEHOLDER}
-          </Text>
-          {shareCode ? (
-            <IconActionButton
-              accessibilityLabel={ShareLedgerMessages.copyCodeAccessibilityLabel}
-              icon="copy"
+      {shareCode ? (
+        <View style={styles.codeBlock}>
+          <Text style={styles.helpText}>{AppMessages.accountShareCodeHint}</Text>
+          <View style={styles.shareCodeRow}>
+            <ActionButton
+              fullWidth
+              label={ShareLedgerMessages.copyCodeAction}
               onPress={() => {
                 void handleCopyShareCode();
               }}
+              variant="primary"
             />
-          ) : null}
-        </View>
-        <Text style={styles.helpText}>{AppMessages.accountShareCodeHint}</Text>
-      </View>
-      {activeBook ? (
-        <View
-          style={[
-            styles.sectionContent,
-            !isOwner || !pendingJoinRequests.length ? styles.sectionBottomInset : null,
-          ]}
-        >
-          <LedgerBookMembers
-            currentUserId={currentUserId}
-            members={members}
-            onKickMember={onKickMember}
-            onOpenSubscription={onOpenSubscription}
-            shouldShowSharedMemberLimitNotice={shouldShowSharedMemberLimitNotice}
-          />
+          </View>
         </View>
       ) : null}
       {isOwner && pendingJoinRequests.length ? (
-        <View style={[styles.sectionContent, styles.sectionBottomInset]}>
+        <View style={[styles.sectionContent, styles.subsection]}>
           <LedgerBookJoinRequests
             onApproveRequest={onApproveJoinRequest}
             onRejectRequest={onRejectJoinRequest}
@@ -188,6 +162,31 @@ export function SharedLedgerBookCard({
           />
         </View>
       ) : null}
+      <View style={[styles.sectionContent, styles.subsection, styles.sectionBottomInset]}>
+        <Text style={styles.sectionTitle}>{AppMessages.accountJoinTitle}</Text>
+        <Text style={styles.helpText}>{AppMessages.accountJoinSubtitle}</Text>
+        <TextInput
+          autoCapitalize="characters"
+          maxLength={SHARE_CODE_LENGTH}
+          onChangeText={onChangeShareCodeInput}
+          placeholder={AppMessages.accountJoinPlaceholder}
+          style={styles.input}
+          value={shareCodeInput}
+        />
+        <View style={styles.actionRow}>
+          <ActionButton label={AppMessages.accountJoinAction} onPress={onJoin} />
+        </View>
+        {canLeaveSharedBook ? (
+          <View style={styles.leaveSection}>
+            <Text style={styles.helpText}>{AppMessages.accountDisconnectHint}</Text>
+            <ActionButton
+              label={AppMessages.accountDisconnectAction}
+              onPress={onLeave}
+              variant="destructive"
+            />
+          </View>
+        ) : null}
+      </View>
     </View>
   );
 }

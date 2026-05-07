@@ -33,16 +33,16 @@ type CategorySelectorProps = {
   categories: readonly CategoryDefinition[];
   entryType: LedgerEntryType;
   onDraggingChange?: (isDragging: boolean) => void;
-  selectedCategory: string;
+  selectedCategoryId: string;
   title: string;
-  onSelectCategory: (category: string) => void;
+  onSelectCategory: (category: CategoryDefinition | null) => void;
 };
 
 export function CategorySelector({
   categories,
   entryType,
   onDraggingChange,
-  selectedCategory,
+  selectedCategoryId,
   title,
   onSelectCategory,
 }: CategorySelectorProps) {
@@ -153,7 +153,7 @@ export function CategorySelector({
               animatedPosition={getAnimatedPosition(category.id)}
               category={category}
               cellSize={cellSize}
-              isActive={selectedCategory === category.label}
+              isActive={selectedCategoryId === category.id}
               isDragging={draggingCategoryId === category.id}
               key={category.id}
               onDragEnd={handleDragEnd}
@@ -239,7 +239,7 @@ export function CategorySelector({
     const nextCategories = [...orderedCategories, nextCategory];
     saveCustomCategories(sortCustomCategoriesByVisibleOrder(nextCustomCategories, nextCategories));
     commitOrderedCategories(nextCategories);
-    onSelectCategory(nextLabel);
+    onSelectCategory(nextCategory);
     setIsAddingCategory(false);
     setIsIconPickerOpen(false);
     setNewCategoryLabel("");
@@ -252,18 +252,18 @@ export function CategorySelector({
   }
 
   function selectCategory(nextCategory: CategoryDefinition) {
-    if (selectedCategory === nextCategory.label) {
+    if (selectedCategoryId === nextCategory.id) {
       clearSelectedCategory();
       return;
     }
 
     setIsAddingCategory(false);
     setIsIconPickerOpen(false);
-    onSelectCategory(nextCategory.label);
+    onSelectCategory(nextCategory);
   }
 
   function clearSelectedCategory() {
-    onSelectCategory("");
+    onSelectCategory(null);
   }
 
   function startInlineCategory() {
@@ -323,8 +323,8 @@ export function CategorySelector({
 
     commitOrderedCategories(nextCategories);
 
-    if (selectedCategory === deletingCategory.label) {
-      onSelectCategory(nextCategories[0]?.label ?? "");
+    if (selectedCategoryId === deletingCategory.id) {
+      onSelectCategory(nextCategories[0] ?? null);
     }
   }
 

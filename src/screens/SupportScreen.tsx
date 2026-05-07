@@ -84,6 +84,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: AppLayout.screenPadding,
+    paddingTop: AppLayout.screenTopPadding,
     gap: SupportUi.contentGap,
   },
   packageList: {

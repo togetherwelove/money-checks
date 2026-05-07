@@ -7,6 +7,7 @@ import {
   KRW_CURRENCY_SUFFIX,
   formatMonthLabel,
 } from "../constants/ledgerDisplay";
+import { resolveStaticCopyLanguage } from "../i18n/staticCopy";
 import type {
   CalendarDay,
   LedgerDayNote,
@@ -15,22 +16,24 @@ import type {
 } from "../types/ledger";
 import { formatAmountNumber } from "./amount";
 
-const selectedDateFormatter = new Intl.DateTimeFormat("ko-KR", {
+const CALENDAR_FORMAT_LOCALE = resolveStaticCopyLanguage() === "en" ? "en-US" : "ko-KR";
+
+const selectedDateFormatter = new Intl.DateTimeFormat(CALENDAR_FORMAT_LOCALE, {
   month: "long",
   day: "numeric",
   weekday: "short",
 });
-const selectedDateWithYearFormatter = new Intl.DateTimeFormat("ko-KR", {
+const selectedDateWithYearFormatter = new Intl.DateTimeFormat(CALENDAR_FORMAT_LOCALE, {
   year: "numeric",
   month: "long",
   day: "numeric",
   weekday: "short",
 });
-const entryDateFormatter = new Intl.DateTimeFormat("ko-KR", {
+const entryDateFormatter = new Intl.DateTimeFormat(CALENDAR_FORMAT_LOCALE, {
   month: "long",
   day: "numeric",
 });
-const monthYearFormatter = new Intl.DateTimeFormat("ko-KR", {
+const monthYearFormatter = new Intl.DateTimeFormat(CALENDAR_FORMAT_LOCALE, {
   year: "numeric",
   month: "long",
 });
@@ -61,6 +64,10 @@ export function formatEntryMetaDate(isoDate: string): string {
 }
 
 export function formatMonthYear(date: Date): string {
+  if (resolveStaticCopyLanguage() === "en") {
+    return monthYearFormatter.format(date);
+  }
+
   const formatted = monthYearFormatter.formatToParts(date);
   const year = formatted.find((part) => part.type === "year")?.value;
   const month = formatted.find((part) => part.type === "month")?.value;
@@ -250,6 +257,10 @@ function parseMonthKey(monthKey: string): Date {
 
 function formatDateWithOptionalYear(date: Date, includeYear: boolean): string {
   const formatter = includeYear ? selectedDateWithYearFormatter : selectedDateFormatter;
+  if (resolveStaticCopyLanguage() === "en") {
+    return formatter.format(date);
+  }
+
   const formatted = formatter.formatToParts(date);
   const year = formatted.find((part) => part.type === "year")?.value;
   const month = formatted.find((part) => part.type === "month")?.value;

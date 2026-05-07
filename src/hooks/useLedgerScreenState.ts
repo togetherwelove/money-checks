@@ -53,6 +53,7 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
     isLoadingBook,
     joinSharedLedgerBookByCode,
     leaveSharedLedgerBook,
+    previewSharedLedgerBookJoinByCode,
     removeSharedLedgerMember,
     renameActiveLedgerBook,
     refreshSharedLedgerBook,
@@ -80,7 +81,7 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
       selectedDateSummaryEntries
         .map(
           (entry) =>
-            `${entry.id}:${entry.amount}:${entry.content}:${entry.category}:${entry.note}:${entry.type}`,
+            `${entry.id}:${entry.amount}:${entry.content}:${entry.categoryId}:${entry.note}:${entry.type}`,
         )
         .join("|"),
     [selectedDateSummaryEntries],
@@ -161,6 +162,16 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
     return savedEntries;
   };
 
+  const handleSaveDraftEntry = async (draftToSave: LedgerEntryDraft) => {
+    const savedEntries = await persistDraftEntry(draftToSave, null);
+    if (savedEntries.length === 0) {
+      return [];
+    }
+
+    handleSelectDate(draftToSave.date);
+    return savedEntries;
+  };
+
   const persistDraftEntry = async (
     draftToSave: LedgerEntryDraft,
     targetEditingEntryId: string | null,
@@ -183,6 +194,7 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
         targetMemberName: draftToSave.targetMemberName,
         content: draftToSave.content.trim(),
         category: draftToSave.category.trim(),
+        categoryId: draftToSave.categoryId.trim(),
         note: draftToSave.note.trim(),
         photoAttachments: draftToSave.photoAttachments,
         sourceType: "manual",
@@ -214,7 +226,7 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
   };
 
   const handleDeleteEntry = async (entryId: string) => {
-    await removeLedgerEntry(entryId, trackBusyTask);
+    await removeLedgerEntry(entryId);
     setEntries((currentEntries) => currentEntries.filter((entry) => entry.id !== entryId));
     if (editingEntryId === entryId) {
       resetEditor(selectedDate);
@@ -293,6 +305,7 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
       targetMemberName: entry.targetMemberName ?? entry.authorName,
       content: entry.content,
       category: entry.category,
+      categoryId: entry.categoryId,
       installmentMonths: entry.installmentMonths ?? 1,
       note: entry.note,
       photoAttachments: entry.photoAttachments,
@@ -333,6 +346,7 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
     pendingJoinRequests,
     previousMonthPage,
     previousChartMonth,
+    previewSharedLedgerBookJoinByCode,
     approveLedgerJoinRequest,
     rejectLedgerJoinRequest,
     removeSharedLedgerMember,
@@ -348,6 +362,7 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
     handleDeleteSelectedDateNote,
     handleDeleteEntry,
     handleEditEntry,
+    handleSaveDraftEntry,
     handleSaveSelectedDateNote,
     handleSaveEntry,
     handleSettleInstallmentEntry,
@@ -363,7 +378,7 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
     updateDraftPhotoAttachments: (nextPhotoAttachments: LedgerEntryPhotoAttachment[]) =>
       setDraft((currentDraft) => ({ ...currentDraft, photoAttachments: nextPhotoAttachments })),
     updateDraftType: (type) =>
-      setDraft((currentDraft) => ({ ...currentDraft, category: "", type })),
+      setDraft((currentDraft) => ({ ...currentDraft, category: "", categoryId: "", type })),
   };
 }
 

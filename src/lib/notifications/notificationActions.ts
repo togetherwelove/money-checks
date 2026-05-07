@@ -1,5 +1,6 @@
 import type * as Notifications from "expo-notifications";
 
+import type { AppLanguage } from "../../i18n/types";
 import type { LedgerAppScreen } from "../../types/app";
 
 export const NotificationCategoryIds = {
@@ -31,90 +32,111 @@ export type NotificationActionPayload = {
   actionRoute?: NotificationActionPayloadRoute;
 };
 
-export const NotificationActionCategoryDefinitions = [
-  {
-    actions: [
-      {
-        buttonTitle: "내역 보기",
-        identifier: NotificationActionIds.openEntry,
-        options: {
-          isAuthenticationRequired: true,
-          isDestructive: false,
-          opensAppToForeground: true,
-        },
-      },
-      {
-        buttonTitle: "가계부 보기",
-        identifier: NotificationActionIds.openBook,
-        options: {
-          isAuthenticationRequired: true,
-          isDestructive: false,
-          opensAppToForeground: true,
-        },
-      },
-    ],
-    identifier: NotificationCategoryIds.entryChange,
+const NotificationActionCopyByLanguage = {
+  en: {
+    openBook: "View Ledger",
+    openCharts: "View Charts",
+    openEntry: "View Entries",
+    reviewJoinRequest: "Review Request",
+    viewSummary: "View Summary",
   },
-  {
-    actions: [
-      {
-        buttonTitle: "차트 보기",
-        identifier: NotificationActionIds.openCharts,
-        options: {
-          isAuthenticationRequired: true,
-          isDestructive: false,
-          opensAppToForeground: true,
-        },
-      },
-    ],
-    identifier: NotificationCategoryIds.expenseThreshold,
+  ko: {
+    openBook: "가계부 보기",
+    openCharts: "차트 보기",
+    openEntry: "내역 보기",
+    reviewJoinRequest: "요청 확인",
+    viewSummary: "요약 보기",
   },
-  {
-    actions: [
-      {
-        buttonTitle: "요청 확인",
-        identifier: NotificationActionIds.reviewJoinRequest,
-        options: {
-          isAuthenticationRequired: true,
-          isDestructive: false,
-          opensAppToForeground: true,
-        },
-      },
-    ],
-    identifier: NotificationCategoryIds.joinRequest,
-  },
-  {
-    actions: [
-      {
-        buttonTitle: "가계부 보기",
-        identifier: NotificationActionIds.openBook,
-        options: {
-          isAuthenticationRequired: true,
-          isDestructive: false,
-          opensAppToForeground: true,
-        },
-      },
-    ],
-    identifier: NotificationCategoryIds.ledgerBookUpdate,
-  },
-  {
-    actions: [
-      {
-        buttonTitle: "요약 보기",
-        identifier: NotificationActionIds.openCharts,
-        options: {
-          isAuthenticationRequired: true,
-          isDestructive: false,
-          opensAppToForeground: true,
-        },
-      },
-    ],
-    identifier: NotificationCategoryIds.monthlySummary,
-  },
-] as const satisfies readonly {
+} as const satisfies Record<AppLanguage, Record<string, string>>;
+
+export function buildNotificationActionCategoryDefinitions(language: AppLanguage): readonly {
   actions: Notifications.NotificationAction[];
   identifier: string;
-}[];
+}[] {
+  const notificationActionCopy = NotificationActionCopyByLanguage[language];
+
+  return [
+    {
+      actions: [
+        {
+          buttonTitle: notificationActionCopy.openEntry,
+          identifier: NotificationActionIds.openEntry,
+          options: {
+            isAuthenticationRequired: true,
+            isDestructive: false,
+            opensAppToForeground: true,
+          },
+        },
+        {
+          buttonTitle: notificationActionCopy.openBook,
+          identifier: NotificationActionIds.openBook,
+          options: {
+            isAuthenticationRequired: true,
+            isDestructive: false,
+            opensAppToForeground: true,
+          },
+        },
+      ],
+      identifier: NotificationCategoryIds.entryChange,
+    },
+    {
+      actions: [
+        {
+          buttonTitle: notificationActionCopy.openCharts,
+          identifier: NotificationActionIds.openCharts,
+          options: {
+            isAuthenticationRequired: true,
+            isDestructive: false,
+            opensAppToForeground: true,
+          },
+        },
+      ],
+      identifier: NotificationCategoryIds.expenseThreshold,
+    },
+    {
+      actions: [
+        {
+          buttonTitle: notificationActionCopy.reviewJoinRequest,
+          identifier: NotificationActionIds.reviewJoinRequest,
+          options: {
+            isAuthenticationRequired: true,
+            isDestructive: false,
+            opensAppToForeground: true,
+          },
+        },
+      ],
+      identifier: NotificationCategoryIds.joinRequest,
+    },
+    {
+      actions: [
+        {
+          buttonTitle: notificationActionCopy.openBook,
+          identifier: NotificationActionIds.openBook,
+          options: {
+            isAuthenticationRequired: true,
+            isDestructive: false,
+            opensAppToForeground: true,
+          },
+        },
+      ],
+      identifier: NotificationCategoryIds.ledgerBookUpdate,
+    },
+    {
+      actions: [
+        {
+          buttonTitle: notificationActionCopy.viewSummary,
+          identifier: NotificationActionIds.openCharts,
+          options: {
+            isAuthenticationRequired: true,
+            isDestructive: false,
+            opensAppToForeground: true,
+          },
+        },
+      ],
+      identifier: NotificationCategoryIds.monthlySummary,
+    },
+  ];
+}
 
 export function resolveNotificationActionRoute(
   actionIdentifier: string,

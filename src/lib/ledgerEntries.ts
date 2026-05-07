@@ -91,7 +91,7 @@ export async function fetchLedgerEntriesPage(
     cursor?: LedgerEntriesPageCursor | null;
     limit: number;
     ascending?: boolean;
-    category?: string | null;
+    categoryId?: string | null;
     orderBy?: "created_at" | "occurred_on";
     searchQuery?: string;
   },
@@ -104,7 +104,7 @@ export async function fetchLedgerEntriesPage(
     cursor,
     limit,
     ascending = false,
-    category,
+    categoryId,
     orderBy = "created_at",
     searchQuery,
   } = params;
@@ -116,8 +116,8 @@ export async function fetchLedgerEntriesPage(
     .order("id", { ascending })
     .range(0, limit);
 
-  if (category) {
-    query = query.eq("category", category);
+  if (categoryId) {
+    query = query.eq("category_id", categoryId);
   }
 
   if (cursor && orderBy === "created_at" && !ascending) {
@@ -244,6 +244,7 @@ export async function insertLedgerEntries(
         content: entry.content,
         currency: DEFAULT_CURRENCY,
         category: entry.category,
+        category_id: entry.categoryId,
         metadata: buildLedgerEntryMetadata(entry.targetMemberId ?? userId),
         installment_group_id: entry.installmentGroupId ?? null,
         installment_months: entry.installmentMonths ?? null,
@@ -283,6 +284,7 @@ export async function updateLedgerEntry(entry: LedgerEntry): Promise<LedgerEntry
       amount: entry.amount,
       content: entry.content,
       category: entry.category,
+      category_id: entry.categoryId,
       metadata: buildLedgerEntryMetadata(entry.targetMemberId ?? entry.authorId ?? ""),
       note: entry.note,
     })
@@ -310,9 +312,9 @@ export async function updateLedgerEntry(entry: LedgerEntry): Promise<LedgerEntry
 export async function deleteLedgerEntry(entryId: string): Promise<void> {
   const { data: entryRows, error: entryRowsError } = await supabase
     .from(LEDGER_TABLE)
-    .select(LedgerEntrySelectColumns.list)
+    .select(LedgerEntrySelectColumns.attachmentCleanup)
     .eq("id", entryId)
-    .returns<LedgerEntryRow[]>();
+    .returns<Pick<LedgerEntryRow, "id" | "installment_group_id">[]>();
 
   if (entryRowsError) {
     throw entryRowsError;
@@ -333,9 +335,9 @@ export async function deleteLedgerEntries(entryIds: string[]): Promise<void> {
 
   const { data: entryRows, error: entryRowsError } = await supabase
     .from(LEDGER_TABLE)
-    .select(LedgerEntrySelectColumns.list)
+    .select(LedgerEntrySelectColumns.attachmentCleanup)
     .in("id", entryIds)
-    .returns<LedgerEntryRow[]>();
+    .returns<Pick<LedgerEntryRow, "id" | "installment_group_id">[]>();
 
   if (entryRowsError) {
     throw entryRowsError;

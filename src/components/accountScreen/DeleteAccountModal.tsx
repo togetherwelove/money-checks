@@ -13,7 +13,6 @@ import {
 } from "../../constants/uiStyles";
 import { deleteOwnAccount } from "../../lib/auth/deleteAccount";
 import { ActionButton } from "../ActionButton";
-import { KeyboardAwareScrollView } from "../KeyboardAwareScrollView";
 
 type DeleteAccountModalProps = {
   isOpen: boolean;
@@ -62,11 +61,7 @@ export function DeleteAccountModal({ isOpen, onClose }: DeleteAccountModalProps)
       <View style={styles.overlay}>
         <Pressable onPress={handleClose} style={styles.backdrop} />
         <View style={styles.sheet}>
-          <KeyboardAwareScrollView
-            contentContainerStyle={styles.sheetContent}
-            extraScrollHeight={AppLayout.screenPadding * 6}
-            showsVerticalScrollIndicator={false}
-          >
+          <View style={styles.sheetContent}>
             <View style={styles.header}>
               <Text style={styles.title}>{AccountDeletionMessages.title}</Text>
               <Pressable disabled={isDeleting} onPress={handleClose}>
@@ -100,7 +95,7 @@ export function DeleteAccountModal({ isOpen, onClose }: DeleteAccountModalProps)
                 variant="destructive"
               />
             </View>
-          </KeyboardAwareScrollView>
+          </View>
         </View>
       </View>
     </Modal>

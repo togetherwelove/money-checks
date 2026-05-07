@@ -65,10 +65,10 @@ export function addAnnualReportXlsxCharts(bytes: Uint8Array, report: AnnualRepor
     entryMap,
     "xl/drawings/drawing1.xml",
     buildDrawingXml([
-      createPlacement(0, 0, 8, 18, "월별 수입 지출", "rId1"),
-      createPlacement(8, 0, 16, 18, "지출 분류", "rId2"),
-      createPlacement(0, 18, 8, 36, "수입 분류", "rId3"),
-      createPlacement(8, 18, 16, 36, "담당자별 수입 지출", "rId4"),
+      createPlacement(0, 0, 8, 18, AnnualReportCopy.chartTitles.monthly, "rId1"),
+      createPlacement(8, 0, 16, 18, AnnualReportCopy.chartTitles.expenseCategory, "rId2"),
+      createPlacement(0, 18, 8, 36, AnnualReportCopy.chartTitles.incomeCategory, "rId3"),
+      createPlacement(8, 18, 16, 36, AnnualReportCopy.chartTitles.member, "rId4"),
     ]),
   );
   upsertTextEntry(
@@ -109,7 +109,7 @@ function buildMonthlyChartXml(report: AnnualReportData) {
         valueRange: buildSheetRange(sheetName, "C", MonthlyDataFirstRow, "C", lastRow),
       },
     ],
-    title: "월별 수입과 지출",
+    title: AnnualReportCopy.chartTitles.monthly,
   });
 }
 
@@ -144,7 +144,7 @@ function buildExpenseCategoryChartXml(layout: ReturnType<typeof getCategorySumma
         ),
       },
     ],
-    title: "지출 분류별 금액",
+    title: AnnualReportCopy.chartTitles.expenseCategory,
   });
 }
 
@@ -179,7 +179,7 @@ function buildIncomeCategoryChartXml(layout: ReturnType<typeof getCategorySummar
         ),
       },
     ],
-    title: "수입 분류별 금액",
+    title: AnnualReportCopy.chartTitles.incomeCategory,
   });
 }
 
@@ -201,7 +201,7 @@ function buildMemberChartXml(report: AnnualReportData) {
         valueRange: buildSheetRange(sheetName, "C", MemberDataFirstRow, "C", lastRow),
       },
     ],
-    title: "담당자별 수입과 지출",
+    title: AnnualReportCopy.chartTitles.member,
   });
 }
 

@@ -10,6 +10,7 @@ import {
   fetchActiveLedgerBook,
   fetchLedgerBookById,
   leaveActiveLedgerBook,
+  previewLedgerBookJoinByCode,
   removeMemberFromActiveLedgerBook,
   requestLedgerBookJoinByCode,
   switchActiveLedgerBook,
@@ -23,7 +24,11 @@ import {
 import { resolveSharedLedgerJoinErrorMessage } from "../../lib/sharedLedgerJoinError";
 import { supabase } from "../../lib/supabase";
 import type { AccessibleLedgerBook, LedgerBook } from "../../types/ledgerBook";
-import type { JoinSharedLedgerBookAttempt } from "../../types/ledgerBookJoinRequest";
+import type {
+  JoinSharedLedgerBookAttempt,
+  JoinSharedLedgerBookPreview,
+  JoinSharedLedgerBookResolution,
+} from "../../types/ledgerBookJoinRequest";
 import type { LedgerBookRow, ProfileRow } from "../../types/supabase";
 import { mapLedgerBookRow } from "../../utils/ledgerBookMapper";
 import type { BusyTaskTracker } from "./types";
@@ -41,8 +46,12 @@ type ActiveLedgerBookState = {
   accessibleBooks: AccessibleLedgerBook[];
   createLedgerBook: (nextName: string) => Promise<boolean>;
   isLoadingBook: boolean;
-  joinSharedLedgerBookByCode: (shareCode: string) => Promise<JoinSharedLedgerBookAttempt>;
+  joinSharedLedgerBookByCode: (
+    shareCode: string,
+    joinResolution?: JoinSharedLedgerBookResolution,
+  ) => Promise<JoinSharedLedgerBookAttempt>;
   leaveSharedLedgerBook: () => Promise<boolean>;
+  previewSharedLedgerBookJoinByCode: (shareCode: string) => Promise<JoinSharedLedgerBookPreview>;
   removeSharedLedgerMember: (targetUserId: string) => Promise<boolean>;
   renameActiveLedgerBook: (nextName: string) => Promise<boolean>;
   refreshSharedLedgerBook: () => Promise<void>;
@@ -203,7 +212,23 @@ export function useActiveLedgerBook(
     };
   }, [activeBook?.id]);
 
-  const joinSharedLedgerBookByCode = async (shareCode: string) => {
+  const previewSharedLedgerBookJoinByCode = async (shareCode: string) => {
+    const normalizedCode = shareCode.trim();
+    if (!normalizedCode) {
+      return {
+        status: "invalid_code",
+        targetBookId: null,
+        targetBookName: null,
+      } satisfies JoinSharedLedgerBookPreview;
+    }
+
+    return trackBusyTask(() => previewLedgerBookJoinByCode(normalizedCode));
+  };
+
+  const joinSharedLedgerBookByCode = async (
+    shareCode: string,
+    joinResolution?: JoinSharedLedgerBookResolution,
+  ) => {
     const normalizedCode = shareCode.trim();
     if (!normalizedCode) {
       return {
@@ -218,7 +243,9 @@ export function useActiveLedgerBook(
     setActiveBookError(null);
 
     try {
-      const joinResult = await trackBusyTask(() => requestLedgerBookJoinByCode(normalizedCode));
+      const joinResult = await trackBusyTask(() =>
+        requestLedgerBookJoinByCode(normalizedCode, joinResolution),
+      );
       let joinedBook: LedgerBook | null = null;
       if (joinResult === "joined") {
         joinedBook = await fetchActiveLedgerBook(userId);
@@ -372,6 +399,7 @@ export function useActiveLedgerBook(
     isLoadingBook,
     joinSharedLedgerBookByCode,
     leaveSharedLedgerBook,
+    previewSharedLedgerBookJoinByCode,
     removeSharedLedgerMember,
     renameActiveLedgerBook,
     refreshSharedLedgerBook,

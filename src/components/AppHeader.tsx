@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
@@ -10,20 +9,16 @@ import { IconActionButton } from "./IconActionButton";
 
 type AppHeaderProps = {
   isMenuOpen?: boolean;
-  leadingAction?: ReactNode;
   onOpenMenu: () => void;
   showsPlusBadge?: boolean;
-  trailingAction?: ReactNode;
   titleLabel?: string | null;
   yearLabel?: string | null;
 };
 
 export function AppHeader({
   isMenuOpen = false,
-  leadingAction = null,
   onOpenMenu,
   showsPlusBadge = false,
-  trailingAction = null,
   titleLabel = null,
   yearLabel = null,
 }: AppHeaderProps) {
@@ -31,7 +26,7 @@ export function AppHeader({
 
   return (
     <View style={styles.container}>
-      <View style={styles.sideSlot}>{leadingAction}</View>
+      <View style={styles.sideSlot} />
       <View style={styles.titleSlot}>
         {centerLabel ? (
           <View style={styles.titleRow}>
@@ -51,7 +46,6 @@ export function AppHeader({
         ) : null}
       </View>
       <View style={[styles.sideSlot, styles.trailingSlot]}>
-        {trailingAction}
         <IconActionButton icon="menu" isActive={isMenuOpen} onPress={onOpenMenu} />
       </View>
     </View>

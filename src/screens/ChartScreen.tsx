@@ -15,16 +15,23 @@ import { ChartScreenCopy } from "../constants/chartScreen";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
+import { hasSeenChartSwipeTutorial, markChartSwipeTutorialSeen } from "../lib/chartTutorialStorage";
 
 type ChartScreenProps = {
   showsBannerAd: boolean;
   state: LedgerScreenState;
+  userId: string;
 };
 
-export function ChartScreen({ showsBannerAd, state }: ChartScreenProps) {
+export function ChartScreen({ showsBannerAd, state, userId }: ChartScreenProps) {
   const translateX = useSharedValue(0);
 
   useEffect(() => {
+    if (hasSeenChartSwipeTutorial(userId)) {
+      return;
+    }
+
+    markChartSwipeTutorialSeen(userId);
     translateX.value = withDelay(
       ChartScreenCopy.swipeHintDelayMs,
       withSequence(
@@ -42,7 +49,7 @@ export function ChartScreen({ showsBannerAd, state }: ChartScreenProps) {
         }),
       ),
     );
-  }, [translateX]);
+  }, [translateX, userId]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
@@ -82,6 +89,7 @@ const styles = StyleSheet.create({
   },
   pagerLayer: {
     flex: 1,
+    paddingTop: AppLayout.screenTopPadding,
   },
   screen: {
     flex: 1,

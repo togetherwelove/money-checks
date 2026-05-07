@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { InteractionManager, StyleSheet, Text, TextInput, View } from "react-native";
+import { StyleSheet, Text, TextInput, View } from "react-native";
 
 import { ActionButton } from "../components/ActionButton";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
@@ -13,6 +13,7 @@ import {
   StatusMessageTextStyle,
   SurfaceCardStyle,
 } from "../constants/uiStyles";
+import { scheduleIdleTask } from "../lib/idleScheduler";
 import { isValidDisplayName } from "../utils/displayName";
 
 type NicknameSetupScreenProps = {
@@ -27,13 +28,13 @@ export function NicknameSetupScreen({ onSubmit }: NicknameSetupScreenProps) {
   const inputRef = useRef<TextInput | null>(null);
 
   useEffect(() => {
-    const interactionTask = InteractionManager.runAfterInteractions(() => {
+    const idleTask = scheduleIdleTask(() => {
       setInputInstanceKey(1);
       setIsInputReady(true);
     });
 
     return () => {
-      interactionTask.cancel();
+      idleTask.cancel();
     };
   }, []);
 

@@ -2,14 +2,13 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { useEffect, useMemo, useState } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 
+import { CalendarPickerCopy, CalendarPickerLocale } from "../constants/calendarPicker";
 import { AppColors } from "../constants/colors";
 import { CommonActionCopy } from "../constants/commonActions";
 import { AppLayout } from "../constants/layout";
 import { ModalActionRowStyle } from "../constants/uiStyles";
 import { parseIsoDate, toIsoDate } from "../utils/calendar";
 import { ActionButton } from "./ActionButton";
-
-const ENTRY_DATE_PICKER_TITLE = "?좎쭨 ?좏깮";
 
 type EntryDatePickerModalProps = {
   isOpen: boolean;
@@ -45,14 +44,14 @@ export function EntryDatePickerModal({
         <Pressable onPress={onClose} style={styles.backdrop} />
         <View style={styles.sheet}>
           <View style={styles.header}>
-            <Text style={styles.title}>{ENTRY_DATE_PICKER_TITLE}</Text>
+            <Text style={styles.title}>{CalendarPickerCopy.yearPickerTitle}</Text>
             <Pressable onPress={onClose}>
               <Text style={styles.closeText}>{CommonActionCopy.close}</Text>
             </Pressable>
           </View>
           <DateTimePicker
             display="inline"
-            locale="ko-KR"
+            locale={CalendarPickerLocale}
             mode="date"
             onChange={(_event, nextDate) => {
               if (!nextDate) {

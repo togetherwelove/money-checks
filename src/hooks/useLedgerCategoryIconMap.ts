@@ -1,50 +1,50 @@
 import { useMemo } from "react";
 
-import { CATEGORY_OPTIONS } from "../constants/categories";
+import { EXPENSE_CATEGORY_LABEL_COPY } from "../constants/expenseCategories";
+import { INCOME_CATEGORY_LABEL_COPY } from "../constants/incomeCategories";
 import type { CategoryDefinition, CategoryIconName } from "../types/category";
-import { useCustomCategories } from "./useCustomCategories";
+import { useLedgerCategories } from "./useLedgerCategories";
+
+type CategoryLabelCopy = Record<string, Record<string, string>>;
 
 export function useLedgerCategoryIconMap(): Map<string, CategoryIconName> {
-  const {
-    customCategories: expenseCustomCategories,
-    systemCategoryIconOverrides: expenseSystemCategoryIconOverrides,
-  } = useCustomCategories("expense");
-  const {
-    customCategories: incomeCustomCategories,
-    systemCategoryIconOverrides: incomeSystemCategoryIconOverrides,
-  } = useCustomCategories("income");
+  const categories = useLedgerCategories();
 
-  return useMemo(
-    () =>
-      new Map(
-        [
-          ...applySystemCategoryIconOverrides(
-            CATEGORY_OPTIONS.expense,
-            expenseSystemCategoryIconOverrides,
-          ),
-          ...applySystemCategoryIconOverrides(
-            CATEGORY_OPTIONS.income,
-            incomeSystemCategoryIconOverrides,
-          ),
-          ...expenseCustomCategories,
-          ...incomeCustomCategories,
-        ].map((category) => [category.label, category.iconName]),
-      ),
-    [
-      expenseCustomCategories,
-      expenseSystemCategoryIconOverrides,
-      incomeCustomCategories,
-      incomeSystemCategoryIconOverrides,
-    ],
-  );
+  return useMemo(() => {
+    const iconByKey = new Map<string, CategoryIconName>();
+
+    for (const category of categories) {
+      iconByKey.set(category.id, category.iconName);
+      iconByKey.set(category.label, category.iconName);
+    }
+
+    addSystemCategoryLabelAliases(iconByKey, categories, EXPENSE_CATEGORY_LABEL_COPY);
+    addSystemCategoryLabelAliases(iconByKey, categories, INCOME_CATEGORY_LABEL_COPY);
+
+    return iconByKey;
+  }, [categories]);
 }
 
-function applySystemCategoryIconOverrides(
+function addSystemCategoryLabelAliases(
+  iconByKey: Map<string, CategoryIconName>,
   categories: readonly CategoryDefinition[],
-  iconOverrides: Record<string, CategoryIconName>,
-): CategoryDefinition[] {
-  return categories.map((category) => ({
-    ...category,
-    iconName: iconOverrides[category.id] ?? category.iconName,
-  }));
+  labelCopy: CategoryLabelCopy,
+): void {
+  for (const category of categories) {
+    const labelsByLanguage = Object.values(labelCopy).find((languageLabels) =>
+      Object.values(languageLabels).includes(category.label),
+    );
+
+    if (!labelsByLanguage) {
+      continue;
+    }
+
+    for (const label of Object.values(labelsByLanguage)) {
+      if (iconByKey.has(label)) {
+        continue;
+      }
+
+      iconByKey.set(label, category.iconName);
+    }
+  }
 }

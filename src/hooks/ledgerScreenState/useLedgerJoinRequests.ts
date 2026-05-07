@@ -1,13 +1,11 @@
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import { useEffect, useRef, useState } from "react";
 
-import { DEFAULT_MEMBER_DISPLAY_NAME } from "../../constants/ledgerDisplay";
 import {
   approveLedgerBookJoinRequest,
   fetchPendingLedgerBookJoinRequests,
   rejectLedgerBookJoinRequest,
 } from "../../lib/ledgerBooks";
-import { fetchProfileDisplayName } from "../../lib/profiles";
 import { supabase } from "../../lib/supabase";
 import type { LedgerBook } from "../../types/ledgerBook";
 import type { LedgerBookJoinRequest } from "../../types/ledgerBookJoinRequest";
@@ -147,34 +145,12 @@ export function useLedgerJoinRequests(
       return;
     }
 
-    let requesterDisplayName = DEFAULT_MEMBER_DISPLAY_NAME;
     try {
-      requesterDisplayName =
-        (await fetchProfileDisplayName(changedRequest.requester_user_id)).trim() ||
-        DEFAULT_MEMBER_DISPLAY_NAME;
+      const nextRequests = await fetchPendingLedgerBookJoinRequests(activeBook.id);
+      setPendingJoinRequests(nextRequests);
+      seenRequestIdsRef.current = new Set(nextRequests.map((request) => request.id));
     } catch {
-      requesterDisplayName = DEFAULT_MEMBER_DISPLAY_NAME;
+      seenRequestIdsRef.current.add(changedRequest.id);
     }
-
-    const nextRequest: LedgerBookJoinRequest = {
-      id: changedRequest.id,
-      requestedAt: changedRequest.created_at,
-      requesterDisplayName,
-      requesterUserId: changedRequest.requester_user_id,
-    };
-
-    setPendingJoinRequests((currentRequests) => upsertJoinRequest(currentRequests, nextRequest));
-    seenRequestIdsRef.current.add(changedRequest.id);
   }
-}
-
-function upsertJoinRequest(
-  currentRequests: LedgerBookJoinRequest[],
-  nextRequest: LedgerBookJoinRequest,
-): LedgerBookJoinRequest[] {
-  const nextRequests = currentRequests.some((request) => request.id === nextRequest.id)
-    ? currentRequests.map((request) => (request.id === nextRequest.id ? nextRequest : request))
-    : [...currentRequests, nextRequest];
-
-  return [...nextRequests].sort((left, right) => left.requestedAt.localeCompare(right.requestedAt));
 }

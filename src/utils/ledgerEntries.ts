@@ -14,6 +14,7 @@ export function createDraft(isoDate: string, targetMemberId: string): LedgerEntr
     targetMemberName: undefined,
     content: "",
     category: "",
+    categoryId: "",
     installmentMonths: ONE_TIME_INSTALLMENT_MONTHS,
     note: "",
     photoAttachments: [],
@@ -46,7 +47,7 @@ export function sanitizeAmountInput(value: string): string {
 }
 
 export function canSubmitDraft(draft: LedgerEntryDraft): boolean {
-  return Boolean(Number(draft.amount) && draft.content.trim() && draft.category.trim());
+  return Boolean(Number(draft.amount) && draft.content.trim() && draft.categoryId.trim());
 }
 
 export function createManualEntryId(): string {

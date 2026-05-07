@@ -1,3 +1,5 @@
+import type { TFunction } from "i18next";
+
 import { AllEntriesCopy } from "../constants/allEntries";
 import { HelpCopy } from "../constants/help";
 import { AppMessages } from "../constants/messages";
@@ -21,6 +23,24 @@ export const AppScreenLabels: Record<LedgerAppScreen, string> = {
   subscription: SubscriptionMessages.screenTitle,
 };
 
-export function getAppScreenLabel(screen: LedgerAppScreen): string {
+const AppScreenLabelKeys: Record<LedgerAppScreen, string> = {
+  account: "screens.account",
+  "all-entries": "screens.allEntries",
+  calendar: "screens.calendar",
+  charts: "screens.charts",
+  "contact-support": "screens.contactSupport",
+  entry: "screens.entry",
+  help: "screens.help",
+  "notification-settings": "screens.notificationSettings",
+  share: "screens.share",
+  support: "screens.support",
+  subscription: "screens.subscription",
+};
+
+export function getAppScreenLabel(screen: LedgerAppScreen, t?: TFunction): string {
+  if (t) {
+    return t(AppScreenLabelKeys[screen]);
+  }
+
   return AppScreenLabels[screen];
 }

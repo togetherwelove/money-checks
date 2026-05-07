@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Alert, InteractionManager } from "react-native";
+import { Alert } from "react-native";
 
 import { AnnualReportCopy, buildSelectedYearOptionLabel } from "../constants/annualReport";
 import { CommonActionCopy } from "../constants/commonActions";
@@ -10,6 +10,7 @@ import {
   buildSelectedYearPeriod,
 } from "../lib/annualReport/annualReportPeriods";
 import { confirmAndDownloadAnnualReport } from "../lib/annualReport/downloadAnnualReport";
+import { scheduleIdleTask } from "../lib/idleScheduler";
 import { fetchLedgerEntries, fetchLedgerEntryDateBounds } from "../lib/ledgerEntries";
 import type { LedgerBook } from "../types/ledgerBook";
 
@@ -162,7 +163,7 @@ async function selectAnnualReportPeriod(
         text: AnnualReportCopy.customRangeOption,
         onPress: () => {
           resolve();
-          InteractionManager.runAfterInteractions(() => {
+          scheduleIdleTask(() => {
             setCustomRangeDraft({
               endDate: lastDate,
               isOpen: true,

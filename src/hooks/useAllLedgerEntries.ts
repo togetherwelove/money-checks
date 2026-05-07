@@ -9,16 +9,27 @@ import type { BusyTaskTracker } from "./ledgerScreenState/types";
 
 type UseAllLedgerEntriesParams = {
   activeBookId: string | null;
-  selectedCategory: string | null;
+  selectedCategoryId: string | null;
   searchQuery: string;
   trackBlockingTask: BusyTaskTracker;
 };
 
 const EMPTY_ENTRIES: LedgerEntry[] = [];
 
+function compareEntriesByCreatedAtDesc(leftEntry: LedgerEntry, rightEntry: LedgerEntry) {
+  const createdAtComparison = (rightEntry.createdAt ?? "").localeCompare(
+    leftEntry.createdAt ?? "",
+  );
+  if (createdAtComparison !== 0) {
+    return createdAtComparison;
+  }
+
+  return leftEntry.id.localeCompare(rightEntry.id);
+}
+
 export function useAllLedgerEntries({
   activeBookId,
-  selectedCategory,
+  selectedCategoryId,
   searchQuery,
   trackBlockingTask,
 }: UseAllLedgerEntriesParams) {
@@ -57,7 +68,7 @@ export function useAllLedgerEntries({
           nextCursor: firstPageNextCursor,
         } = await executeTask(() =>
           fetchLedgerEntriesPage(activeBookId, {
-            category: selectedCategory,
+            categoryId: selectedCategoryId,
             limit: LedgerQueryConfig.allEntriesPageSize,
             searchQuery,
           }),
@@ -77,7 +88,7 @@ export function useAllLedgerEntries({
         }
       }
     },
-    [activeBookId, searchQuery, selectedCategory, trackBlockingTask],
+    [activeBookId, searchQuery, selectedCategoryId, trackBlockingTask],
   );
 
   useEffect(() => {
@@ -98,7 +109,7 @@ export function useAllLedgerEntries({
         hasMore: nextHasMore,
         nextCursor: loadedPageNextCursor,
       } = await fetchLedgerEntriesPage(activeBookId, {
-        category: selectedCategory,
+        categoryId: selectedCategoryId,
         cursor: nextCursor,
         limit: LedgerQueryConfig.allEntriesPageSize,
         searchQuery,
@@ -123,7 +134,7 @@ export function useAllLedgerEntries({
     isRefreshing,
     nextCursor,
     searchQuery,
-    selectedCategory,
+    selectedCategoryId,
   ]);
 
   return {
@@ -136,5 +147,13 @@ export function useAllLedgerEntries({
     refreshEntries: () => loadFirstPage(false),
     removeEntryFromFeed: (entryId: string) =>
       setEntries((currentEntries) => currentEntries.filter((entry) => entry.id !== entryId)),
+    restoreEntryToFeed: (entryToRestore: LedgerEntry) =>
+      setEntries((currentEntries) => {
+        if (currentEntries.some((entry) => entry.id === entryToRestore.id)) {
+          return currentEntries;
+        }
+
+        return [...currentEntries, entryToRestore].sort(compareEntriesByCreatedAtDesc);
+      }),
   };
 }
