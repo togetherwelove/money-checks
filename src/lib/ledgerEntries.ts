@@ -3,6 +3,7 @@ import { LedgerEntrySelectColumns } from "../constants/ledgerQueries";
 import type { LedgerEntry } from "../types/ledger";
 import type { LedgerEntryRow, ProfileDisplayRow } from "../types/supabase";
 import { mapLedgerEntryRow } from "../utils/ledgerMapper";
+import { resolveDisplayCurrency } from "./currencyPreference";
 import { buildLedgerEntryMetadata, resolveLedgerEntryTargetMemberId } from "./ledgerEntryMetadata";
 import {
   deleteLedgerEntryPhotoAttachmentsForEntries,
@@ -13,7 +14,6 @@ import { supabase } from "./supabase";
 
 const LEDGER_TABLE = "ledger_entries";
 const PROFILE_TABLE = "profiles";
-const DEFAULT_CURRENCY = "KRW";
 const DEFAULT_SOURCE_TYPE = "manual";
 
 export type LedgerEntriesPageCursor = {
@@ -242,7 +242,7 @@ export async function insertLedgerEntries(
         occurred_on: entry.date,
         amount: entry.amount,
         content: entry.content,
-        currency: DEFAULT_CURRENCY,
+        currency: entry.currency ?? resolveDisplayCurrency(),
         category: entry.category,
         category_id: entry.categoryId,
         metadata: buildLedgerEntryMetadata(entry.targetMemberId ?? userId),
@@ -282,6 +282,7 @@ export async function updateLedgerEntry(entry: LedgerEntry): Promise<LedgerEntry
       entry_type: entry.type,
       occurred_on: entry.date,
       amount: entry.amount,
+      currency: entry.currency ?? resolveDisplayCurrency(),
       content: entry.content,
       category: entry.category,
       category_id: entry.categoryId,

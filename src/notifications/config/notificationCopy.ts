@@ -9,8 +9,10 @@ import type {
 type NotificationEventDefinition = {
   bodyTemplate: string;
   defaultEnabled: boolean;
+  expenseBodyTemplate?: string;
   groupId: NotificationPreferenceGroupId;
   helpMessage?: string;
+  incomeBodyTemplate?: string;
   label: string;
   title: string;
 };
@@ -81,33 +83,31 @@ export const NotificationSettingsUi = {
   permissionChevronIconSize: 16,
 } as const;
 
-export const NotificationGroupCopy: Record<
-  NotificationPreferenceGroupId,
-  { title: string }
-> = selectStaticCopy({
-  en: {
-    sharedLedger: {
-      title: "Shared Activity",
+export const NotificationGroupCopy: Record<NotificationPreferenceGroupId, { title: string }> =
+  selectStaticCopy({
+    en: {
+      sharedLedger: {
+        title: "Shared Activity",
+      },
+      summary: {
+        title: "Monthly Summary",
+      },
+      threshold: {
+        title: "Expense Limits",
+      },
     },
-    summary: {
-      title: "Monthly Summary",
+    ko: {
+      sharedLedger: {
+        title: "공유 가계부 활동",
+      },
+      summary: {
+        title: "지난달 요약",
+      },
+      threshold: {
+        title: "금액 기준 알림",
+      },
     },
-    threshold: {
-      title: "Expense Limits",
-    },
-  },
-  ko: {
-    sharedLedger: {
-      title: "공유 가계부 활동",
-    },
-    summary: {
-      title: "지난달 요약",
-    },
-    threshold: {
-      title: "금액 기준 알림",
-    },
-  },
-});
+  });
 
 export const NotificationGroupOrder = [
   "sharedLedger",
@@ -115,33 +115,31 @@ export const NotificationGroupOrder = [
   "summary",
 ] as const satisfies readonly NotificationPreferenceGroupId[];
 
-export const NotificationThresholdCopy: Record<
-  NotificationThresholdKey,
-  { label: string }
-> = selectStaticCopy({
-  en: {
-    expenseAmountDay: {
-      label: "Daily limit",
+export const NotificationThresholdCopy: Record<NotificationThresholdKey, { label: string }> =
+  selectStaticCopy({
+    en: {
+      expenseAmountDay: {
+        label: "Daily limit",
+      },
+      expenseAmountWeek: {
+        label: "Weekly limit",
+      },
+      expenseAmountMonth: {
+        label: "Monthly limit",
+      },
     },
-    expenseAmountWeek: {
-      label: "Weekly limit",
+    ko: {
+      expenseAmountDay: {
+        label: "하루 지출 기준",
+      },
+      expenseAmountWeek: {
+        label: "한 주 지출 기준",
+      },
+      expenseAmountMonth: {
+        label: "한 달 지출 기준",
+      },
     },
-    expenseAmountMonth: {
-      label: "Monthly limit",
-    },
-  },
-  ko: {
-    expenseAmountDay: {
-      label: "하루 지출 기준",
-    },
-    expenseAmountWeek: {
-      label: "한 주 지출 기준",
-    },
-    expenseAmountMonth: {
-      label: "한 달 지출 기준",
-    },
-  },
-});
+  });
 
 export const NotificationDefaultThresholds: Record<NotificationThresholdKey, number> = {
   expenseAmountDay: 200000,
@@ -229,23 +227,11 @@ export const NotificationEventCopy: Record<NotificationEventType, NotificationEv
       other_member_created_entry: {
         bodyTemplate: "{actorName} added {category} {amountLabel}.\n{noteSentence}",
         defaultEnabled: true,
+        expenseBodyTemplate: "{actorName} spent {amountLabel} on {category}.\n{noteSentence}",
         groupId: "sharedLedger",
+        incomeBodyTemplate: "{actorName} earned {amountLabel} from {category}.\n{noteSentence}",
         label: "Member adds entry",
         title: "Entry Added",
-      },
-      other_member_deleted_entry: {
-        bodyTemplate: "{actorName} deleted the {category} {amountLabel} entry.",
-        defaultEnabled: true,
-        groupId: "sharedLedger",
-        label: "Member deletes entry",
-        title: "Entry Deleted",
-      },
-      other_member_updated_entry: {
-        bodyTemplate: "{actorName} updated the {category} {amountLabel} entry.",
-        defaultEnabled: true,
-        groupId: "sharedLedger",
-        label: "Member updates entry",
-        title: "Entry Updated",
       },
     },
     ko: {
@@ -289,42 +275,27 @@ export const NotificationEventCopy: Record<NotificationEventType, NotificationEv
         title: "공유 가계부에서 제외",
       },
       other_member_created_entry: {
-        bodyTemplate:
-          "{actorName}님이 {category} {amountLabel}을 추가했어요.\n메모: {noteSentence}",
+        bodyTemplate: "{actorName}님이 {category} {amountLabel}을 추가했어요.\n{noteSentence}",
         defaultEnabled: true,
+        expenseBodyTemplate: "{actorName}님이 {category} {amountLabel}을 썼어요.\n{noteSentence}",
         groupId: "sharedLedger",
+        incomeBodyTemplate: "{actorName}님이 {category} {amountLabel}을 벌었어요.\n{noteSentence}",
         label: "다른 멤버가 등록했을 때 내게 알립니다.",
         title: "기록 추가",
-      },
-      other_member_deleted_entry: {
-        bodyTemplate: "{actorName}님이 {category} {amountLabel} 기록을 삭제했어요.",
-        defaultEnabled: true,
-        groupId: "sharedLedger",
-        label: "다른 멤버가 삭제했을 때 내게 알립니다.",
-        title: "기록 삭제",
-      },
-      other_member_updated_entry: {
-        bodyTemplate: "{actorName}님이 {category} {amountLabel} 기록을 수정했어요.",
-        defaultEnabled: true,
-        groupId: "sharedLedger",
-        label: "다른 멤버가 수정했을 때 내게 알립니다.",
-        title: "기록 수정",
       },
     },
   });
 
 export const NotificationEntryChangeEventTypes = [
   "other_member_created_entry",
-  "other_member_updated_entry",
-  "other_member_deleted_entry",
 ] as const satisfies readonly NotificationEventType[];
 
 export const NotificationEntryChangePreferenceCopy = selectStaticCopy({
   en: {
-    label: "Member entry changes",
+    label: "When another member adds entries",
   },
   ko: {
-    label: "다른 멤버가 내역을 변경할 때",
+    label: "다른 멤버가 내역을 등록할 때",
   },
 } as const);
 
@@ -342,8 +313,6 @@ export function isRequiredNotificationEvent(eventType: NotificationEventType): b
 
 export const NotificationEventOrder = [
   "other_member_created_entry",
-  "other_member_updated_entry",
-  "other_member_deleted_entry",
   "member_joined_book",
   "member_left_book",
   "member_removed_from_book",
@@ -367,12 +336,10 @@ export const NotificationThresholdFieldLabels: Record<NotificationThresholdKey, 
 
 export const NotificationThresholdAmountCopy = selectStaticCopy({
   en: {
-    currencyLabel: "KRW",
     exceededLabel: "exceeded",
     placeholder: "Amount",
   },
   ko: {
-    currencyLabel: "원",
     exceededLabel: "초과 시",
     placeholder: "금액",
   },

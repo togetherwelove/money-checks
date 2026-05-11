@@ -10,17 +10,24 @@ export const ko = {
       calendar: "달력",
       charts: "차트",
       entry: "등록",
-      ledger: "내보내기",
+      export: "내보내기",
     },
   },
   language: {
+    cardTitle: "언어/통화",
+    currencySelectLabel: "표시 통화",
     deviceDefault: "기기 언어를 기준으로 처음 설정돼요.",
     english: "English",
     korean: "한국어",
-    restartNotice: "적용되었습니다. 앱을 재시작해주세요.",
+    languageSelectLabel: "언어",
+    restartNotice: "적용되었습니다. 앱을 재시작해 주세요.",
     screenTitle: "언어",
     selected: "선택됨",
     systemSectionTitle: "언어 설정",
+  },
+  currency: {
+    KRW: "KRW (원)",
+    USD: "USD ($)",
   },
   menu: {
     sections: {
@@ -71,19 +78,11 @@ export const ko = {
   },
   push: {
     entryCreated: {
-      body: "{{actorName}}님이 {{category}} {{amount}}을 추가했어요.",
+      body: "{{actorName}}님이 {{category}} {{amount}}원을 추가했어요.",
       title: "내역 추가",
     },
-    entryDeleted: {
-      body: "{{actorName}}님이 {{category}} {{amount}}을 삭제했어요.",
-      title: "내역 삭제",
-    },
-    entryUpdated: {
-      body: "{{actorName}}님이 {{category}} {{amount}}을 수정했어요.",
-      title: "내역 수정",
-    },
     expenseLimitExceeded: {
-      body: "{{period}} 지출 합계가 {{totalAmount}}에 도달했어요.",
+      body: "{{period}} 지출 합계가 {{totalAmount}}원에 도달했어요.",
       title: "지출 기준 초과",
     },
     fallbacks: {

@@ -188,10 +188,6 @@ export function LedgerBookManagementCard({
             const ownershipLabel = isOwner
               ? LedgerBookManagementCopy.ownerBadge
               : LedgerBookManagementCopy.sharedBadge;
-            const bookStateLabel = isActiveBook
-              ? `${ownershipLabel} · ${LedgerBookManagementCopy.activeStateLabel}`
-              : ownershipLabel;
-
             return (
               <View
                 key={book.id}
@@ -202,16 +198,7 @@ export function LedgerBookManagementCard({
                     {book.name}
                   </Text>
                   <View style={styles.ledgerBookItemMetaRow}>
-                    <Text style={styles.ledgerBookItemMeta}>
-                      {isActiveBook ? ownershipLabel : bookStateLabel}
-                    </Text>
-                    {isActiveBook ? (
-                      <View style={styles.currentLedgerBadge}>
-                        <Text style={styles.currentLedgerBadgeText}>
-                          {LedgerBookManagementCopy.activeStateLabel}
-                        </Text>
-                      </View>
-                    ) : null}
+                    <Text style={styles.ledgerBookItemMeta}>{ownershipLabel}</Text>
                   </View>
                 </View>
                 <IconActionButton

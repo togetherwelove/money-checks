@@ -103,6 +103,21 @@ export function upsertEntryInCache(
   };
 }
 
+export function upsertEntryInCachedMonth(
+  entryCache: LedgerEntryCache,
+  nextEntry: LedgerEntry,
+): LedgerEntryCache {
+  const monthKey = getMonthKey(parseIsoDate(nextEntry.date));
+  if (!(monthKey in entryCache)) {
+    return entryCache;
+  }
+
+  return {
+    ...entryCache,
+    [monthKey]: upsertRealtimeLedgerEntry(entryCache[monthKey] ?? [], nextEntry),
+  };
+}
+
 export function removeEntryFromCache(
   entryCache: LedgerEntryCache,
   entryId: string,

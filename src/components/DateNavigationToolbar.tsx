@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
@@ -13,6 +14,7 @@ type DateNavigationToolbarProps = {
   onPressLabel?: (() => void) | null;
   spacing?: "compactBottom" | "default";
   showMoveToCurrent?: boolean;
+  trailing?: ReactNode;
 };
 
 export function DateNavigationToolbar({
@@ -21,6 +23,7 @@ export function DateNavigationToolbar({
   onPressLabel = null,
   spacing = "default",
   showMoveToCurrent = true,
+  trailing = null,
 }: DateNavigationToolbarProps) {
   const labelNode = onPressLabel ? (
     <Pressable onPress={onPressLabel} style={styles.labelButton}>
@@ -50,6 +53,7 @@ export function DateNavigationToolbar({
           />
         ) : null}
       </View>
+      {trailing ? <View style={styles.trailingSlot}>{trailing}</View> : null}
     </View>
   );
 }
@@ -68,6 +72,7 @@ const styles = StyleSheet.create({
   },
   labelButton: {
     alignItems: "flex-start",
+    flexShrink: 1,
     justifyContent: "center",
   },
   labelContent: {
@@ -95,5 +100,8 @@ const styles = StyleSheet.create({
   currentButtonSlot: {
     width: DateNavigationToolbarLayout.defaultMinHeight,
     height: DateNavigationToolbarLayout.defaultMinHeight,
+  },
+  trailingSlot: {
+    marginLeft: "auto",
   },
 });

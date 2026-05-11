@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { AppLanguage } from "../i18n/types";
 import { logAppError } from "../lib/logAppError";
 import {
+  isPushNotificationRateLimitError,
   sendPendingJoinRequestNotification,
   sendPushNotificationToBookMembers,
   sendPushNotificationToUsers,
@@ -169,6 +170,10 @@ export function useLedgerNotifications(userId: string): LedgerNotificationsState
     try {
       await sendPushNotificationToBookMembers(bookId, event, excludeUserIds, widget);
     } catch (error) {
+      if (isPushNotificationRateLimitError(error)) {
+        return;
+      }
+
       logAppError("LedgerNotifications", error, {
         bookId,
         eventType: event.type,
@@ -185,6 +190,10 @@ export function useLedgerNotifications(userId: string): LedgerNotificationsState
     try {
       await sendPushNotificationToUsers(event, targetUserIds, bookId);
     } catch (error) {
+      if (isPushNotificationRateLimitError(error)) {
+        return;
+      }
+
       logAppError("LedgerNotifications", error, {
         bookId: bookId ?? null,
         eventType: event.type,
@@ -198,6 +207,10 @@ export function useLedgerNotifications(userId: string): LedgerNotificationsState
     try {
       await sendPendingJoinRequestNotification();
     } catch (error) {
+      if (isPushNotificationRateLimitError(error)) {
+        return;
+      }
+
       logAppError("LedgerNotifications", error, {
         step: "send_pending_join_request_notification",
       });

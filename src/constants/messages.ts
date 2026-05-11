@@ -34,6 +34,7 @@ export const AppMessages = selectStaticCopy({
     accountActionTitle: "Account Actions",
     accountTitle: "Account",
     accountEmail: "Email",
+    accountEmailApplePrivateRelayLabel: "Apple private email",
     accountProvider: "Login Method",
     accountBookFallback: "No ledger has been created.",
     accountBookSharedState: "Shared",
@@ -62,6 +63,9 @@ export const AppMessages = selectStaticCopy({
     accountDisconnectSuccess: "Returned to your personal ledger.",
     accountDisconnectError: "Could not disconnect the shared ledger.",
     accountKickAction: "Remove",
+    accountKickAccessibilityLabelSuffix: " remove",
+    accountKickConfirmMessageSuffix: " will no longer be able to access this shared ledger.",
+    accountKickConfirmTitle: "Remove this member?",
     accountKickSuccess: "Member removed from the shared ledger.",
     accountKickError: "Could not remove the member.",
     weekdayLabels: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
@@ -98,6 +102,7 @@ export const AppMessages = selectStaticCopy({
     accountActionTitle: "계정 작업",
     accountTitle: "계정",
     accountEmail: "이메일",
+    accountEmailApplePrivateRelayLabel: "Apple 비공개 이메일",
     accountProvider: "로그인 방식",
     accountBookFallback: "생성된 가계부가 없어요.",
     accountBookSharedState: "공유 중",
@@ -105,7 +110,7 @@ export const AppMessages = selectStaticCopy({
     accountMemberSelfSuffix: "(본인)",
     accountRoleOwner: "소유자",
     accountRoleEditor: "편집자",
-    accountRoleViewer: "보기",
+    accountRoleViewer: "조회자",
     accountShareCodeHint: "함께 가계부를 사용하려면 코드를 복사해 다른 사람에게 보내 주세요.",
     accountJoinTitle: "가계부 참여",
     accountJoinSubtitle: "소유자가 요청을 허락하면 함께 가계부를 관리할 수 있어요.",
@@ -125,9 +130,20 @@ export const AppMessages = selectStaticCopy({
     accountDisconnectAction: "연결 끊기",
     accountDisconnectSuccess: "개인 가계부로 돌아왔어요.",
     accountDisconnectError: "공유 가계부 연결을 끊지 못했어요.",
-    accountKickAction: "강퇴",
+    accountKickAction: "내보내기",
+    accountKickAccessibilityLabelSuffix: "님 내보내기",
+    accountKickConfirmMessageSuffix: "님은 이 공유 가계부에 더 이상 접근할 수 없어요.",
+    accountKickConfirmTitle: "멤버를 내보낼까요?",
     accountKickSuccess: "멤버를 공유 가계부에서 내보냈어요.",
-    accountKickError: "멤버를 강퇴하지 못했어요.",
+    accountKickError: "멤버를 내보내지 못했어요.",
     weekdayLabels: ["일", "월", "화", "수", "목", "금", "토"],
   },
 } as const);
+
+export function buildAccountKickConfirmMessage(displayName: string): string {
+  return `${displayName}${AppMessages.accountKickConfirmMessageSuffix}`;
+}
+
+export function buildAccountKickAccessibilityLabel(displayName: string): string {
+  return `${displayName}${AppMessages.accountKickAccessibilityLabelSuffix}`;
+}

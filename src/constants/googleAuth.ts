@@ -6,6 +6,7 @@ export const GoogleAuthCopy = selectStaticCopy({
     signInAction: "Sign in with Google",
     cancelledError: "Google sign-in was canceled.",
     missingSessionError: "Could not get the Google sign-in session.",
+    signInError: "Could not sign in with Google. Please try again.",
     unavailableError: "Google sign-in is unavailable in this environment.",
   },
   ko: {
@@ -13,6 +14,7 @@ export const GoogleAuthCopy = selectStaticCopy({
     signInAction: "Google로 로그인",
     cancelledError: "Google 로그인이 취소되었어요.",
     missingSessionError: "Google 로그인 세션을 가져오지 못했어요.",
+    signInError: "Google로 로그인하지 못했어요. 다시 시도해 주세요.",
     unavailableError: "Google 로그인을 사용할 수 없는 환경이에요.",
   },
 } as const);

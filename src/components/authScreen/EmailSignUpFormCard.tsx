@@ -27,6 +27,7 @@ type EmailSignUpFormCardProps = {
   statusMessage: string | null;
   submitDisabled?: boolean;
   submitLabel?: string;
+  submitting?: boolean;
 };
 
 export function EmailSignUpFormCard({
@@ -41,6 +42,7 @@ export function EmailSignUpFormCard({
   statusMessage,
   submitDisabled = false,
   submitLabel,
+  submitting = false,
 }: EmailSignUpFormCardProps) {
   const canSubmit = Boolean(
     email.trim() && isPasswordValid(password) && confirmPassword && password === confirmPassword,
@@ -54,6 +56,7 @@ export function EmailSignUpFormCard({
           autoCapitalize="none"
           autoComplete="email"
           importantForAutofill="yes"
+          editable={!submitting}
           keyboardType="email-address"
           onChangeText={onChangeEmail}
           placeholder={EmailAuthCopy.signUp.emailPlaceholder}
@@ -68,6 +71,7 @@ export function EmailSignUpFormCard({
           autoCapitalize="none"
           autoComplete="new-password"
           importantForAutofill="no"
+          editable={!submitting}
           onChangeText={onChangePassword}
           placeholder={EmailAuthCopy.signUp.passwordPlaceholder}
           secureTextEntry
@@ -83,6 +87,7 @@ export function EmailSignUpFormCard({
           autoCapitalize="none"
           autoComplete="new-password"
           importantForAutofill="no"
+          editable={!submitting}
           onChangeText={onChangeConfirmPassword}
           placeholder={EmailAuthCopy.signUp.passwordConfirmPlaceholder}
           secureTextEntry
@@ -94,14 +99,16 @@ export function EmailSignUpFormCard({
       </View>
       <View style={styles.actionGroup}>
         <ActionButton
-          disabled={!canSubmit || submitDisabled}
+          disabled={!canSubmit || submitDisabled || submitting}
           fullWidth
           label={submitLabel ?? EmailAuthCopy.signUp.requestOtpAction}
+          loading={submitting}
           onPress={onSubmit}
           size="large"
           variant="primary"
         />
         <ActionButton
+          disabled={submitting}
           fullWidth
           label={EmailAuthCopy.signUp.backAction}
           onPress={onBack}

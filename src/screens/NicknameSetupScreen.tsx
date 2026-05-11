@@ -4,12 +4,15 @@ import { StyleSheet, Text, TextInput, View } from "react-native";
 import { ActionButton } from "../components/ActionButton";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { ScreenHeaderBlock } from "../components/ScreenHeaderBlock";
-import { AuthOnboardingMessages } from "../constants/authOnboarding";
+import { TextLinkButton } from "../components/TextLinkButton";
+import {
+  AuthOnboardingMessages,
+  buildNicknameAccountDescription,
+} from "../constants/authOnboarding";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import {
   FormInputTextStyle,
-  FormLabelTextStyle,
   StatusMessageTextStyle,
   SurfaceCardStyle,
 } from "../constants/uiStyles";
@@ -17,10 +20,16 @@ import { scheduleIdleTask } from "../lib/idleScheduler";
 import { isValidDisplayName } from "../utils/displayName";
 
 type NicknameSetupScreenProps = {
+  accountEmail: string | null;
+  onSwitchAccount: () => void;
   onSubmit: (displayName: string) => Promise<boolean>;
 };
 
-export function NicknameSetupScreen({ onSubmit }: NicknameSetupScreenProps) {
+export function NicknameSetupScreen({
+  accountEmail,
+  onSubmit,
+  onSwitchAccount,
+}: NicknameSetupScreenProps) {
   const [displayName, setDisplayName] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [inputInstanceKey, setInputInstanceKey] = useState(0);
@@ -76,6 +85,11 @@ export function NicknameSetupScreen({ onSubmit }: NicknameSetupScreenProps) {
         title={AuthOnboardingMessages.nicknameTitle}
       />
       <View style={styles.card}>
+        {accountEmail ? (
+          <Text style={styles.accountDescription}>
+            {buildNicknameAccountDescription(accountEmail)}
+          </Text>
+        ) : null}
         <TextInput
           ref={inputRef}
           onChangeText={(value) => {
@@ -101,6 +115,11 @@ export function NicknameSetupScreen({ onSubmit }: NicknameSetupScreenProps) {
           variant="primary"
         />
       </View>
+      <TextLinkButton
+        align="center"
+        label={AuthOnboardingMessages.nicknameSwitchAccountAction}
+        onPress={onSwitchAccount}
+      />
     </KeyboardAwareScrollView>
   );
 }
@@ -118,8 +137,13 @@ const styles = StyleSheet.create({
     ...SurfaceCardStyle,
     gap: 10,
   },
-  label: FormLabelTextStyle,
   input: FormInputTextStyle,
+  accountDescription: {
+    color: AppColors.mutedStrongText,
+    fontSize: 12,
+    fontWeight: "600",
+    lineHeight: 18,
+  },
   errorText: {
     color: AppColors.expense,
     ...StatusMessageTextStyle,

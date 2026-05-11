@@ -5,6 +5,7 @@ import { AppleAuthConfig, AppleAuthCopy } from "../../constants/appleAuth";
 import { appPlatform } from "../appPlatform";
 import { syncOwnProfileDisplayNameIfMissing } from "../profiles";
 import { supabase } from "../supabase";
+import { resolveAppleDisplayName } from "./appleDisplayName";
 
 const APPLE_AUTH_PROVIDER = "apple";
 const APPLE_SIGN_IN_CANCELLED_CODE = "ERR_REQUEST_CANCELED";
@@ -18,26 +19,6 @@ async function createAppleNoncePair() {
   return {
     hashedNonce,
     rawNonce,
-  };
-}
-
-function resolveAppleDisplayName(credential: AppleAuthentication.AppleAuthenticationCredential) {
-  const nameParts = [
-    credential.fullName?.givenName,
-    credential.fullName?.middleName,
-    credential.fullName?.familyName,
-  ]
-    .filter((value): value is string => Boolean(value?.trim()))
-    .map((value) => value.trim());
-
-  if (nameParts.length === 0) {
-    return null;
-  }
-
-  return {
-    familyName: credential.fullName?.familyName?.trim() ?? null,
-    fullName: nameParts.join(" "),
-    givenName: credential.fullName?.givenName?.trim() ?? null,
   };
 }
 

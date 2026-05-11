@@ -39,6 +39,7 @@ import {
 } from "../constants/uiStyles";
 import type { BusyTaskTracker } from "../hooks/ledgerScreenState/types";
 import type { AdTrackingPermissionState } from "../lib/ads/trackingTransparency";
+import { isApplePrivateRelayEmail } from "../lib/auth/applePrivateRelayEmail";
 import { signOutFromApp } from "../lib/auth/signOut";
 import { showNativeToast } from "../lib/nativeToast";
 import { fetchOwnProfileDisplayName, updateOwnProfileDisplayName } from "../lib/profiles";
@@ -189,7 +190,7 @@ export function AccountScreen({
       >
         <View style={[styles.card, styles.primaryCard]}>
           <Text style={styles.cardTitle}>{AppMessages.accountSessionTitle}</Text>
-          <InfoRow label={AppMessages.accountEmail} value={email} />
+          <InfoRow label={AppMessages.accountEmail} value={<AccountEmailValue email={email} />} />
           <InfoRow label={AppMessages.accountProvider} value={accountProviderLabel} />
           <InfoRow
             action={
@@ -239,7 +240,7 @@ export function AccountScreen({
             value={displayName}
           />
         </View>
-        <AccountLanguageCard />
+        <AccountLanguageCard userId={userId} />
         {showAdTrackingPermissionCard ? (
           <AdTrackingPermissionCard
             onOpenSettings={onOpenAdTrackingSettings}
@@ -274,6 +275,23 @@ export function AccountScreen({
         onOpenSubscriptionManagement={handleManageSubscriptionFromDeleteWarning}
       />
       <DeleteAccountModal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} />
+    </>
+  );
+}
+
+function AccountEmailValue({ email }: { email: string }) {
+  const isPrivateRelayEmail = isApplePrivateRelayEmail(email);
+
+  return (
+    <>
+      <Text style={styles.value}>{email}</Text>
+      {isPrivateRelayEmail ? (
+        <View style={styles.privateRelayBadge}>
+          <Text style={styles.privateRelayBadgeText}>
+            {AppMessages.accountEmailApplePrivateRelayLabel}
+          </Text>
+        </View>
+      ) : null}
     </>
   );
 }
@@ -331,6 +349,20 @@ const styles = StyleSheet.create({
   },
   plusLabelText: {
     ...BrandPlusTextStyle,
+  },
+  privateRelayBadge: {
+    backgroundColor: AppColors.surfaceStrong,
+    borderColor: AppColors.border,
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+  privateRelayBadgeText: {
+    color: AppColors.primary,
+    fontSize: 11,
+    fontWeight: "800",
+    lineHeight: 14,
   },
   valueRow: {
     flexDirection: "row",

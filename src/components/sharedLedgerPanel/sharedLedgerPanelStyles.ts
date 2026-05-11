@@ -32,6 +32,11 @@ export const sharedLedgerPanelStyles = StyleSheet.create({
   sectionContent: {
     paddingHorizontal: AppLayout.cardContentPadding,
   },
+  sectionContentInset: {
+    gap: 8,
+    paddingHorizontal: AppLayout.cardContentPadding,
+    paddingVertical: AppLayout.cardContentPadding,
+  },
   sectionBottomInset: {
     paddingBottom: AppLayout.cardContentPadding,
   },
@@ -90,6 +95,17 @@ export const sharedLedgerPanelStyles = StyleSheet.create({
   },
   shareCodeRow: {
     flexDirection: "row",
+  },
+  copyActionContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: SharedLedgerPanelUi.copyActionGap,
+  },
+  copyActionText: {
+    color: AppColors.inverseText,
+    fontSize: SharedLedgerPanelUi.copyActionTextFontSize,
+    fontWeight: "700",
   },
   helpText: {
     color: AppColors.mutedText,
@@ -166,21 +182,6 @@ export const sharedLedgerPanelStyles = StyleSheet.create({
   ledgerBookItemMetaRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: SharedLedgerPanelUi.ledgerBookStatusMetaGap,
-    flexWrap: "wrap",
-  },
-  currentLedgerBadge: {
-    flexShrink: 0,
-    borderRadius: SharedLedgerPanelUi.ledgerBookStatusBadgeRadius,
-    backgroundColor: AppColors.surfaceStrong,
-    paddingHorizontal: SharedLedgerPanelUi.ledgerBookStatusBadgeHorizontalPadding,
-    paddingVertical: SharedLedgerPanelUi.ledgerBookStatusBadgeVerticalPadding,
-  },
-  currentLedgerBadgeText: {
-    color: AppColors.primary,
-    fontSize: 11,
-    fontWeight: "800",
-    lineHeight: SharedLedgerPanelUi.ledgerBookStatusBadgeLineHeight,
   },
   createBookRow: {
     flexDirection: "row",

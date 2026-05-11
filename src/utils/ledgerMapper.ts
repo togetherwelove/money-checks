@@ -7,6 +7,7 @@ export function mapLedgerEntryRow(row: LedgerEntryRow, authorName?: string): Led
     authorId: row.user_id,
     authorName,
     createdAt: row.created_at,
+    currency: row.currency,
     id: row.id,
     date: row.occurred_on,
     type: row.entry_type,

@@ -53,3 +53,8 @@ export type LedgerBookJoinRequest = {
   requesterDisplayName: string;
   requesterUserId: string;
 };
+
+export type LedgerBookJoinApprovalAttempt = {
+  didApprove: boolean;
+  errorMessage: string | null;
+};

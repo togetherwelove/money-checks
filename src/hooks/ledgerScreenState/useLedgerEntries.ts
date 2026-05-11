@@ -1,15 +1,19 @@
-import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { DEFAULT_MEMBER_DISPLAY_NAME } from "../../constants/ledgerDisplay";
+import { LedgerRealtimeConfig } from "../../constants/ledgerQueries";
 import { AppMessages } from "../../constants/messages";
 import { resolveLedgerEntryTargetMemberId } from "../../lib/ledgerEntryMetadata";
+import {
+  type LedgerEntryRealtimePayload,
+  resolveChangedLedgerEntryRow,
+  resolveDeletedLedgerEntryId,
+  subscribeToLedgerEntryChanges,
+} from "../../lib/ledgerEntryRealtime";
 import { logAppError } from "../../lib/logAppError";
 import { fetchProfileDisplayName } from "../../lib/profiles";
-import { supabase } from "../../lib/supabase";
 import type { LedgerEntry } from "../../types/ledger";
-import type { LedgerEntryRow } from "../../types/supabase";
 import { getMonthKey } from "../../utils/calendar";
 import { mapLedgerEntryRow } from "../../utils/ledgerMapper";
 import { loadLedgerMonthEntries } from "./helpers";
@@ -23,7 +27,7 @@ import {
   removeEntryFromCache,
   replaceVisibleWindowEntries,
   setMonthEntriesInCache,
-  upsertEntryInCache,
+  upsertEntryInCachedMonth,
 } from "./ledgerEntryCache";
 
 type LedgerEntriesState = {
@@ -125,21 +129,43 @@ export function useLedgerEntries(
       );
     };
 
-    void loadMonthsIntoCache(missingPagePreloadMonths)
-      .then(() => {
+    const loadPreloadMonths = async (months: Date[]) => {
+      try {
+        await loadMonthsIntoCache(months);
+      } catch (error) {
+        logAppError("LedgerEntries", error, {
+          activeBookId,
+          step: "preload_entries",
+          visibleMonth: visibleMonth.toISOString(),
+        });
+      }
+    };
+
+    const loadEntriesIntoCache = async () => {
+      const visibleMonthKey = getMonthKey(visibleMonth);
+      const missingVisibleMonth = missingPagePreloadMonths.some(
+        (month) => getMonthKey(month) === visibleMonthKey,
+      );
+      const missingAdjacentPageMonths = missingPagePreloadMonths.filter(
+        (month) => getMonthKey(month) !== visibleMonthKey,
+      );
+
+      if (missingVisibleMonth) {
+        await loadMonthsIntoCache([visibleMonth]);
         if (!isMounted) {
           return;
         }
-
         setIsLoadingEntries(false);
-        void loadMonthsIntoCache(missingBackgroundPreloadMonths).catch((error) => {
-          logAppError("LedgerEntries", error, {
-            activeBookId,
-            step: "preload_entries",
-            visibleMonth: visibleMonth.toISOString(),
-          });
-        });
-      })
+        await loadPreloadMonths(missingAdjacentPageMonths);
+      } else {
+        setIsLoadingEntries(false);
+        await loadPreloadMonths(missingPagePreloadMonths);
+      }
+
+      await loadPreloadMonths(missingBackgroundPreloadMonths);
+    };
+
+    void loadEntriesIntoCache()
       .catch((error) => {
         logAppError("LedgerEntries", error, {
           activeBookId,
@@ -172,11 +198,9 @@ export function useLedgerEntries(
       return;
     }
 
-    const handleLedgerEntryChange = async (
-      payload: RealtimePostgresChangesPayload<Record<string, unknown>>,
-    ) => {
+    const handleLedgerEntryChange = async (payload: LedgerEntryRealtimePayload) => {
       if (payload.eventType === "DELETE") {
-        const deletedEntryId = typeof payload.old.id === "string" ? payload.old.id : null;
+        const deletedEntryId = resolveDeletedLedgerEntryId(payload);
         if (!deletedEntryId) {
           return;
         }
@@ -185,7 +209,7 @@ export function useLedgerEntries(
         return;
       }
 
-      const changedRow = payload.new as LedgerEntryRow;
+      const changedRow = resolveChangedLedgerEntryRow(payload);
       let authorName = DEFAULT_MEMBER_DISPLAY_NAME;
       let targetMemberName = DEFAULT_MEMBER_DISPLAY_NAME;
       try {
@@ -220,34 +244,20 @@ export function useLedgerEntries(
             ? (currentEntry.authorName ?? authorName)
             : authorName,
         );
-        return upsertEntryInCache(currentCache, {
+        return upsertEntryInCachedMonth(removeEntryFromCache(currentCache, changedRow.id), {
           ...nextEntry,
           targetMemberName,
         });
       });
     };
 
-    const channel = supabase
-      .channel(`ledger-book-${activeBookId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "ledger_entries",
-          filter: `book_id=eq.${activeBookId}`,
-        },
-        (payload) => {
-          void handleLedgerEntryChange(
-            payload as RealtimePostgresChangesPayload<Record<string, unknown>>,
-          );
-        },
-      )
-      .subscribe();
-
-    return () => {
-      void supabase.removeChannel(channel);
-    };
+    return subscribeToLedgerEntryChanges({
+      bookId: activeBookId,
+      channelScope: LedgerRealtimeConfig.calendarChannelScope,
+      onChange: (payload) => {
+        void handleLedgerEntryChange(payload);
+      },
+    });
   }, [activeBookId]);
 
   const refreshLedger = async () => {

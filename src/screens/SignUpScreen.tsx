@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Linking, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Linking, StyleSheet, Text, View } from "react-native";
 
+import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { EmailSignUpAgreementCard } from "../components/authScreen/EmailSignUpAgreementCard";
 import { EmailSignUpFormCard } from "../components/authScreen/EmailSignUpFormCard";
 import { EmailSignUpOtpCard } from "../components/authScreen/EmailSignUpOtpCard";
@@ -39,6 +40,9 @@ export function SignUpScreen({ onBackToSignIn }: SignUpScreenProps) {
   const [hasAgreedToPrivacy, setHasAgreedToPrivacy] = useState(false);
   const [hasAgreedToTerms, setHasAgreedToTerms] = useState(false);
   const [password, setPassword] = useState("");
+  const [isRequestingOtp, setIsRequestingOtp] = useState(false);
+  const [isResendingOtp, setIsResendingOtp] = useState(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [resendAvailableAtByEmail, setResendAvailableAtByEmail] = useState<Record<string, number>>(
     {},
   );
@@ -83,6 +87,11 @@ export function SignUpScreen({ onBackToSignIn }: SignUpScreenProps) {
   };
 
   const handleRequestOtp = async () => {
+    if (isRequestingOtp || requestOtpDisabled) {
+      return;
+    }
+
+    setIsRequestingOtp(true);
     try {
       const captchaToken = await captchaChallengeRef.current?.requestToken();
       if (!captchaToken) {
@@ -103,6 +112,8 @@ export function SignUpScreen({ onBackToSignIn }: SignUpScreenProps) {
       setStatusMessage(
         error instanceof Error ? error.message : EmailAuthCopy.signUp.requestOtpError,
       );
+    } finally {
+      setIsRequestingOtp(false);
     }
   };
 
@@ -121,14 +132,26 @@ export function SignUpScreen({ onBackToSignIn }: SignUpScreenProps) {
   };
 
   const handleVerifyOtp = async () => {
+    if (isVerifyingOtp) {
+      return;
+    }
+
+    setIsVerifyingOtp(true);
     try {
       await verifyEmailSignUpOtp(email, token);
     } catch (error) {
       console.error("[SignUpScreen] Sign-up OTP verification failed", error);
+    } finally {
+      setIsVerifyingOtp(false);
     }
   };
 
   const handleResendOtp = async () => {
+    if (isResendingOtp || isVerifyingOtp) {
+      return;
+    }
+
+    setIsResendingOtp(true);
     try {
       if (resendDisabled) {
         setStatusMessage(EmailAuthCopy.signUp.otpResendCooldownStatus);
@@ -143,16 +166,15 @@ export function SignUpScreen({ onBackToSignIn }: SignUpScreenProps) {
       setStatusMessage(
         error instanceof Error ? error.message : EmailAuthCopy.signUp.requestOtpError,
       );
+    } finally {
+      setIsResendingOtp(false);
     }
   };
 
   return (
-    <ScrollView
+    <KeyboardAwareScrollView
       contentContainerStyle={styles.content}
-      keyboardDismissMode={
-        Platform.OS === "ios" ? KeyboardLayout.dismissMode.ios : KeyboardLayout.dismissMode.android
-      }
-      keyboardShouldPersistTaps={KeyboardLayout.persistTaps}
+      extraScrollHeight={KeyboardLayout.focusedInputExtraScrollHeightMin}
       style={styles.screen}
     >
       <View style={styles.heroSection}>
@@ -209,6 +231,7 @@ export function SignUpScreen({ onBackToSignIn }: SignUpScreenProps) {
           statusMessage={statusMessage}
           submitDisabled={requestOtpDisabled}
           submitLabel={requestOtpLabel}
+          submitting={isRequestingOtp}
         />
       ) : (
         <EmailSignUpOtpCard
@@ -228,12 +251,14 @@ export function SignUpScreen({ onBackToSignIn }: SignUpScreenProps) {
           onSubmit={handleVerifyOtp}
           resendDisabled={resendDisabled}
           resendLabel={resendLabel}
+          resending={isResendingOtp}
           statusMessage={statusMessage}
+          submitting={isVerifyingOtp}
           token={token}
         />
       )}
       <SignUpCaptchaChallenge ref={captchaChallengeRef} />
-    </ScrollView>
+    </KeyboardAwareScrollView>
   );
 }
 

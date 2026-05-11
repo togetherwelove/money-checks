@@ -20,7 +20,9 @@ type EmailSignUpOtpCardProps = {
   onSubmit: () => void | Promise<void>;
   resendDisabled: boolean;
   resendLabel: string;
+  resending?: boolean;
   statusMessage: string | null;
+  submitting?: boolean;
   token: string;
 };
 
@@ -32,7 +34,9 @@ export function EmailSignUpOtpCard({
   onSubmit,
   resendDisabled,
   resendLabel,
+  resending = false,
   statusMessage,
+  submitting = false,
   token,
 }: EmailSignUpOtpCardProps) {
   const canSubmit = Boolean(token.trim());
@@ -53,6 +57,7 @@ export function EmailSignUpOtpCard({
           autoCapitalize="none"
           autoComplete="one-time-code"
           importantForAutofill="yes"
+          editable={!submitting}
           keyboardType="number-pad"
           maxLength={6}
           onChangeText={onChangeToken}
@@ -64,23 +69,26 @@ export function EmailSignUpOtpCard({
       </View>
       <View style={styles.actionGroup}>
         <ActionButton
-          disabled={!canSubmit}
+          disabled={!canSubmit || submitting}
           fullWidth
           label={EmailAuthCopy.signUp.verifyOtpAction}
+          loading={submitting}
           onPress={onSubmit}
           size="large"
           variant="primary"
         />
         <View style={styles.secondaryActionRow}>
           <ActionButton
-            disabled={resendDisabled}
+            disabled={resendDisabled || submitting || resending}
             label={resendLabel}
+            loading={resending}
             onPress={onResend}
             size="inline"
             variant="secondary"
           />
           <TextLinkButton
             align="center"
+            disabled={submitting || resending}
             label={EmailAuthCopy.signUp.editCredentialsAction}
             onPress={onEditCredentials}
           />

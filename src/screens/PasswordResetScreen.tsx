@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Platform, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { StyleSheet, Text, TextInput, View } from "react-native";
 
 import { ActionButton } from "../components/ActionButton";
+import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import {
   PasswordConfirmationRequirement,
   PasswordRequirementChecklist,
@@ -43,12 +44,9 @@ export function PasswordResetScreen({ onComplete }: PasswordResetScreenProps) {
   };
 
   return (
-    <ScrollView
+    <KeyboardAwareScrollView
       contentContainerStyle={styles.content}
-      keyboardDismissMode={
-        Platform.OS === "ios" ? KeyboardLayout.dismissMode.ios : KeyboardLayout.dismissMode.android
-      }
-      keyboardShouldPersistTaps={KeyboardLayout.persistTaps}
+      extraScrollHeight={KeyboardLayout.focusedInputExtraScrollHeightMin}
       style={styles.screen}
     >
       <View style={styles.heroSection}>
@@ -97,7 +95,7 @@ export function PasswordResetScreen({ onComplete }: PasswordResetScreenProps) {
         />
         {statusMessage ? <Text style={styles.status}>{statusMessage}</Text> : null}
       </View>
-    </ScrollView>
+    </KeyboardAwareScrollView>
   );
 }
 

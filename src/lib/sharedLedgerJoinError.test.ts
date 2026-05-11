@@ -1,5 +1,6 @@
 import { AppMessages } from "../constants/messages";
 import { ShareLedgerMessages } from "../constants/shareLedgerMessages";
+import { SharedLedgerJoinPreviewCopy } from "../constants/sharedLedgerJoinPreview";
 import { resolveSharedLedgerJoinErrorMessage } from "./sharedLedgerJoinError";
 
 describe("resolveSharedLedgerJoinErrorMessage", () => {
@@ -15,6 +16,12 @@ describe("resolveSharedLedgerJoinErrorMessage", () => {
         details: "This join request is cooling down.",
       }),
     ).toBe(ShareLedgerMessages.joinCooldownError);
+
+    expect(
+      resolveSharedLedgerJoinErrorMessage({
+        message: "Shared ledger member limit reached for owner subscription tier.",
+      }),
+    ).toBe(SharedLedgerJoinPreviewCopy.targetMemberLimit);
   });
 
   it("falls back to the generic join error for unknown cases", () => {

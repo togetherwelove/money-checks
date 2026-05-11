@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import { LedgerQueryConfig } from "../constants/ledgerQueries";
+import { LedgerQueryConfig, LedgerRealtimeConfig } from "../constants/ledgerQueries";
 import { AppMessages } from "../constants/messages";
 import { type LedgerEntriesPageCursor, fetchLedgerEntriesPage } from "../lib/ledgerEntries";
+import { subscribeToLedgerEntryChanges } from "../lib/ledgerEntryRealtime";
 import { logAppError } from "../lib/logAppError";
 import type { LedgerEntry } from "../types/ledger";
 import type { BusyTaskTracker } from "./ledgerScreenState/types";
@@ -17,9 +18,7 @@ type UseAllLedgerEntriesParams = {
 const EMPTY_ENTRIES: LedgerEntry[] = [];
 
 function compareEntriesByCreatedAtDesc(leftEntry: LedgerEntry, rightEntry: LedgerEntry) {
-  const createdAtComparison = (rightEntry.createdAt ?? "").localeCompare(
-    leftEntry.createdAt ?? "",
-  );
+  const createdAtComparison = (rightEntry.createdAt ?? "").localeCompare(leftEntry.createdAt ?? "");
   if (createdAtComparison !== 0) {
     return createdAtComparison;
   }
@@ -39,6 +38,7 @@ export function useAllLedgerEntries({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [nextCursor, setNextCursor] = useState<LedgerEntriesPageCursor | null>(null);
+  const realtimeRefreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadFirstPage = useCallback(
     async (usesBlockingOverlay: boolean) => {
@@ -94,6 +94,37 @@ export function useAllLedgerEntries({
   useEffect(() => {
     void loadFirstPage(true);
   }, [loadFirstPage]);
+
+  useEffect(() => {
+    if (!activeBookId) {
+      return;
+    }
+
+    const scheduleRealtimeRefresh = () => {
+      if (realtimeRefreshTimeoutRef.current) {
+        clearTimeout(realtimeRefreshTimeoutRef.current);
+      }
+
+      realtimeRefreshTimeoutRef.current = setTimeout(() => {
+        realtimeRefreshTimeoutRef.current = null;
+        void loadFirstPage(false);
+      }, LedgerQueryConfig.realtimeRefreshDelayMs);
+    };
+
+    const unsubscribe = subscribeToLedgerEntryChanges({
+      bookId: activeBookId,
+      channelScope: LedgerRealtimeConfig.allEntriesChannelScope,
+      onChange: scheduleRealtimeRefresh,
+    });
+
+    return () => {
+      if (realtimeRefreshTimeoutRef.current) {
+        clearTimeout(realtimeRefreshTimeoutRef.current);
+        realtimeRefreshTimeoutRef.current = null;
+      }
+      unsubscribe();
+    };
+  }, [activeBookId, loadFirstPage]);
 
   const loadMoreEntries = useCallback(async () => {
     if (!activeBookId || isLoadingMore || isRefreshing || !hasMore) {

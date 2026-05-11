@@ -1,15 +1,51 @@
+import { EmailAuthCopy } from "../../constants/emailAuth";
+import { EmailSignInErrorCopy } from "../../constants/emailSignInErrors";
 import { supabase } from "../supabase";
 
 export type EmailPasswordSignUpResult = "otp-required" | "signed-in";
+
+const EMAIL_NOT_CONFIRMED_ERROR_CODE = "email_not_confirmed";
+const EMAIL_NOT_CONFIRMED_ERROR_TEXT = "email not confirmed";
+
+type AuthErrorLike = {
+  code?: string | null;
+  message?: string | null;
+};
 
 export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
-export async function signInWithEmailPassword(email: string, password: string): Promise<void> {
+export function isEmailNotConfirmedSignInError(error: unknown): boolean {
+  if (!isAuthErrorLike(error)) {
+    return false;
+  }
+
+  return (
+    error.code === EMAIL_NOT_CONFIRMED_ERROR_CODE ||
+    error.message?.toLowerCase().includes(EMAIL_NOT_CONFIRMED_ERROR_TEXT) === true
+  );
+}
+
+export function resolveEmailPasswordSignInErrorMessage(error: unknown): string {
+  if (isEmailNotConfirmedSignInError(error)) {
+    return EmailSignInErrorCopy.emailNotConfirmed;
+  }
+
+  return EmailAuthCopy.signIn.errorFallback;
+}
+
+export async function signInWithEmailPassword(
+  email: string,
+  password: string,
+  captchaToken: string,
+): Promise<void> {
   const normalizedEmail = normalizeEmail(email);
   const { error } = await supabase.auth.signInWithPassword({
     email: normalizedEmail,
+    options: {
+      captchaToken,
+    },
     password,
   });
 
@@ -60,4 +96,8 @@ export async function resendEmailSignUpOtp(email: string): Promise<void> {
   if (error) {
     throw error;
   }
+}
+
+function isAuthErrorLike(error: unknown): error is AuthErrorLike {
+  return typeof error === "object" && error !== null;
 }

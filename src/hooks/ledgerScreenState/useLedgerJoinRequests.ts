@@ -6,14 +6,18 @@ import {
   fetchPendingLedgerBookJoinRequests,
   rejectLedgerBookJoinRequest,
 } from "../../lib/ledgerBooks";
+import { resolveSharedLedgerJoinErrorMessage } from "../../lib/sharedLedgerJoinError";
 import { supabase } from "../../lib/supabase";
 import type { LedgerBook } from "../../types/ledgerBook";
-import type { LedgerBookJoinRequest } from "../../types/ledgerBookJoinRequest";
+import type {
+  LedgerBookJoinApprovalAttempt,
+  LedgerBookJoinRequest,
+} from "../../types/ledgerBookJoinRequest";
 import type { LedgerBookJoinRequestRow } from "../../types/supabase";
 import type { BusyTaskTracker } from "./types";
 
 type LedgerJoinRequestsState = {
-  approveLedgerJoinRequest: (requestId: string) => Promise<boolean>;
+  approveLedgerJoinRequest: (requestId: string) => Promise<LedgerBookJoinApprovalAttempt>;
   pendingJoinRequests: LedgerBookJoinRequest[];
   rejectLedgerJoinRequest: (requestId: string) => Promise<boolean>;
 };
@@ -91,9 +95,12 @@ export function useLedgerJoinRequests(
       setPendingJoinRequests((currentRequests) =>
         currentRequests.filter((request) => request.id !== requestId),
       );
-      return true;
-    } catch {
-      return false;
+      return { didApprove: true, errorMessage: null };
+    } catch (error) {
+      return {
+        didApprove: false,
+        errorMessage: resolveSharedLedgerJoinErrorMessage(error),
+      };
     }
   };
 

@@ -16,9 +16,28 @@ export function buildNotificationContent(event: NotificationEvent): Notification
   const tokenMap = buildTokenMap(event);
 
   return {
-    body: applyTemplate(eventCopy.bodyTemplate, tokenMap),
+    body: applyTemplate(resolveBodyTemplate(event, eventCopy), tokenMap),
     title: applyTemplate(eventCopy.title, tokenMap),
   };
+}
+
+function resolveBodyTemplate(
+  event: NotificationEvent,
+  eventCopy: (typeof NotificationEventCopy)[NotificationEvent["type"]],
+): string {
+  if (event.type !== "other_member_created_entry") {
+    return eventCopy.bodyTemplate;
+  }
+
+  if (event.entryType === "expense") {
+    return eventCopy.expenseBodyTemplate ?? eventCopy.bodyTemplate;
+  }
+
+  if (event.entryType === "income") {
+    return eventCopy.incomeBodyTemplate ?? eventCopy.bodyTemplate;
+  }
+
+  return eventCopy.bodyTemplate;
 }
 
 function buildTokenMap(event: NotificationEvent): Record<string, string> {

@@ -12,6 +12,7 @@ import type {
   JoinSharedLedgerBookAttempt,
   JoinSharedLedgerBookPreview,
   JoinSharedLedgerBookResolution,
+  LedgerBookJoinApprovalAttempt,
   LedgerBookJoinRequest,
 } from "../../types/ledgerBookJoinRequest";
 
@@ -51,7 +52,7 @@ export type LedgerScreenState = {
   previousMonthPage: MonthPage;
   previousChartMonth: ChartMonthData;
   previewSharedLedgerBookJoinByCode: (shareCode: string) => Promise<JoinSharedLedgerBookPreview>;
-  approveLedgerJoinRequest: (requestId: string) => Promise<boolean>;
+  approveLedgerJoinRequest: (requestId: string) => Promise<LedgerBookJoinApprovalAttempt>;
   rejectLedgerJoinRequest: (requestId: string) => Promise<boolean>;
   removeSharedLedgerMember: (targetUserId: string) => Promise<boolean>;
   renameActiveLedgerBook: (nextName: string) => Promise<boolean>;

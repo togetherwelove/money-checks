@@ -3,15 +3,17 @@ import { StyleSheet, Text, View } from "react-native";
 import { AppColors } from "../constants/colors";
 import { AppMessages } from "../constants/messages";
 import { SharedLedgerJoinPreviewCopy } from "../constants/sharedLedgerJoinPreview";
-import { SharedLedgerPanelUi } from "../constants/sharedLedgerPanel";
+import { SharedLedgerJoinRequestUi, SharedLedgerPanelUi } from "../constants/sharedLedgerPanel";
 import type {
+  LedgerBookJoinApprovalAttempt,
   LedgerBookJoinApprovalStatus,
   LedgerBookJoinRequest,
 } from "../types/ledgerBookJoinRequest";
+import { formatRelativeTime } from "../utils/relativeTime";
 import { ActionButton } from "./ActionButton";
 
 type LedgerBookJoinRequestsProps = {
-  onApproveRequest: (requestId: string) => Promise<boolean>;
+  onApproveRequest: (requestId: string) => Promise<LedgerBookJoinApprovalAttempt>;
   onRejectRequest: (requestId: string) => Promise<boolean>;
   requests: LedgerBookJoinRequest[];
 };
@@ -30,21 +32,36 @@ export function LedgerBookJoinRequests({
       <Text style={styles.title}>{AppMessages.accountJoinRequestsTitle}</Text>
       <View style={styles.list}>
         {requests.map((request) => (
-          <View key={request.id} style={styles.row}>
-            <Text style={styles.name}>{request.requesterDisplayName}</Text>
+          <View key={request.id} style={styles.requestCard}>
+            <View style={styles.requestHeader}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>
+                  {getRequesterInitial(request.requesterDisplayName)}
+                </Text>
+              </View>
+              <View style={styles.requestMeta}>
+                <Text numberOfLines={1} style={styles.name}>
+                  {request.requesterDisplayName}
+                </Text>
+                <Text style={styles.requestedAt}>{formatRelativeTime(request.requestedAt)}</Text>
+              </View>
+            </View>
             <JoinRequestStatusText approvalStatus={request.approvalStatus} />
             <View style={styles.actions}>
               <ActionButton
                 label={AppMessages.accountJoinRejectAction}
                 onPress={() => onRejectRequest(request.id)}
+                size="inline"
                 variant="secondary"
               />
-              <ActionButton
-                disabled={!canApproveJoinRequest(request.approvalStatus)}
-                label={AppMessages.accountJoinApproveAction}
-                onPress={() => onApproveRequest(request.id)}
-                variant="primary"
-              />
+              {canApproveJoinRequest(request.approvalStatus) ? (
+                <ActionButton
+                  label={AppMessages.accountJoinApproveAction}
+                  onPress={() => onApproveRequest(request.id)}
+                  size="inline"
+                  variant="primary"
+                />
+              ) : null}
             </View>
           </View>
         ))}
@@ -63,7 +80,27 @@ function JoinRequestStatusText({
     return null;
   }
 
-  return <Text style={styles.status}>{message}</Text>;
+  const tone = resolveApprovalStatusTone(approvalStatus);
+
+  return (
+    <View
+      style={[
+        styles.statusBadge,
+        tone === "warning" ? styles.warningStatusBadge : null,
+        tone === "blocked" ? styles.blockedStatusBadge : null,
+      ]}
+    >
+      <Text
+        style={[
+          styles.status,
+          tone === "warning" ? styles.warningStatusText : null,
+          tone === "blocked" ? styles.blockedStatusText : null,
+        ]}
+      >
+        {message}
+      </Text>
+    </View>
+  );
 }
 
 function canApproveJoinRequest(approvalStatus: LedgerBookJoinApprovalStatus): boolean {
@@ -100,6 +137,25 @@ function resolveApprovalStatusMessage(approvalStatus: LedgerBookJoinApprovalStat
   return SharedLedgerJoinPreviewCopy.accessibleLimit;
 }
 
+function resolveApprovalStatusTone(
+  approvalStatus: LedgerBookJoinApprovalStatus,
+): "blocked" | "warning" {
+  if (
+    approvalStatus === "can_approve_with_personal_book_merge" ||
+    approvalStatus === "needs_personal_book_merge_confirmation"
+  ) {
+    return "warning";
+  }
+
+  return "blocked";
+}
+
+function getRequesterInitial(displayName: string): string {
+  return (
+    displayName.trim().charAt(0).toUpperCase() || SharedLedgerJoinRequestUi.requesterFallbackInitial
+  );
+}
+
 const styles = StyleSheet.create({
   section: {
     gap: 8,
@@ -114,23 +170,76 @@ const styles = StyleSheet.create({
   list: {
     gap: 8,
   },
-  row: {
-    gap: 8,
-    paddingVertical: 2,
+  requestCard: {
+    gap: SharedLedgerPanelUi.joinRequestCardGap,
+    paddingHorizontal: SharedLedgerPanelUi.joinRequestCardPaddingHorizontal,
+    paddingVertical: SharedLedgerPanelUi.joinRequestCardPaddingVertical,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+    borderRadius: SharedLedgerPanelUi.joinRequestCardRadius,
+    backgroundColor: AppColors.background,
+  },
+  requestHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SharedLedgerPanelUi.joinRequestHeaderGap,
+  },
+  avatar: {
+    width: SharedLedgerPanelUi.joinRequestAvatarSize,
+    height: SharedLedgerPanelUi.joinRequestAvatarSize,
+    borderRadius: SharedLedgerPanelUi.joinRequestAvatarSize,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: AppColors.surfaceStrong,
+  },
+  avatarText: {
+    color: AppColors.primary,
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  requestMeta: {
+    flex: 1,
+    minWidth: 0,
+    gap: SharedLedgerPanelUi.joinRequestMetaGap,
   },
   name: {
     color: AppColors.text,
     fontSize: 13,
+    fontWeight: "800",
+  },
+  requestedAt: {
+    color: AppColors.mutedStrongText,
+    fontSize: 11,
     fontWeight: "600",
   },
+  statusBadge: {
+    alignSelf: "flex-start",
+    borderRadius: SharedLedgerPanelUi.joinRequestStatusRadius,
+    backgroundColor: AppColors.surfaceMuted,
+    paddingHorizontal: SharedLedgerPanelUi.joinRequestStatusPaddingHorizontal,
+    paddingVertical: SharedLedgerPanelUi.joinRequestStatusPaddingVertical,
+  },
+  warningStatusBadge: {
+    backgroundColor: AppColors.accentSoft,
+  },
+  blockedStatusBadge: {
+    backgroundColor: AppColors.expenseSoft,
+  },
   status: {
-    color: AppColors.mutedText,
+    color: AppColors.mutedStrongText,
     fontSize: 12,
-    fontWeight: "600",
-    lineHeight: 16,
+    fontWeight: "700",
+    lineHeight: SharedLedgerPanelUi.joinRequestStatusTextLineHeight,
+  },
+  warningStatusText: {
+    color: AppColors.accent,
+  },
+  blockedStatusText: {
+    color: AppColors.expense,
   },
   actions: {
     flexDirection: "row",
-    gap: 8,
+    flexWrap: "wrap",
+    gap: SharedLedgerPanelUi.joinRequestActionGap,
   },
 });

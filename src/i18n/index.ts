@@ -15,7 +15,14 @@ function resolveDeviceLanguage(): AppLanguage {
 }
 
 export function resolveInitialLanguage(): AppLanguage {
-  return readStoredLanguage() ?? resolveDeviceLanguage();
+  const storedLanguage = readStoredLanguage();
+  if (storedLanguage) {
+    return storedLanguage;
+  }
+
+  const deviceLanguage = resolveDeviceLanguage();
+  storeLanguage(deviceLanguage);
+  return deviceLanguage;
 }
 
 void i18n.use(initReactI18next).init({
@@ -24,6 +31,9 @@ void i18n.use(initReactI18next).init({
     escapeValue: false,
   },
   lng: resolveInitialLanguage(),
+  react: {
+    useSuspense: false,
+  },
   resources: {
     en: { translation: en },
     ko: { translation: ko },

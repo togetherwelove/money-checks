@@ -21,6 +21,7 @@ export const AdMobNativeConfig = {
 
 export const AdInterstitialPlacement = {
   annualReportDownload: "annual-report-download",
+  joinRequestSend: "join-request-send",
   shareCodeCopy: "share-code-copy",
 } as const;
 

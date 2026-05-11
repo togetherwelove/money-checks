@@ -45,6 +45,7 @@ type SignedInStackNavigatorProps = {
   onChangeNotificationThresholdEnabled: (key: NotificationThresholdKey, enabled: boolean) => void;
   onChangeNotificationThreshold: (key: NotificationThresholdKey, value: string) => void;
   onBeforeCopyShareCode: () => Promise<void> | void;
+  onBeforeSendJoinRequest: () => Promise<void> | void;
   onDeleteSelectedEntry: (entry: LedgerEntry) => Promise<boolean>;
   onEditSelectedEntryFromAllEntries: (entry: LedgerEntry) => void;
   onEditSelectedEntryFromCalendar: (entry: LedgerEntry) => void;
@@ -102,6 +103,7 @@ export function SignedInStackNavigator({
   onChangeNotificationThresholdEnabled,
   onChangeNotificationThreshold,
   onBeforeCopyShareCode,
+  onBeforeSendJoinRequest,
   onDeleteSelectedEntry,
   onEditSelectedEntryFromAllEntries,
   onEditSelectedEntryFromCalendar,
@@ -186,6 +188,7 @@ export function SignedInStackNavigator({
             activeBook={ledgerState.activeBook}
             onApproveJoinRequest={ledgerState.approveLedgerJoinRequest}
             onBeforeCopyShareCode={onBeforeCopyShareCode}
+            onBeforeSendJoinRequest={onBeforeSendJoinRequest}
             onCreateLedgerBook={ledgerState.createLedgerBook}
             onJoinSharedLedgerBook={ledgerState.joinSharedLedgerBookByCode}
             onLeaveSharedLedgerBook={ledgerState.leaveSharedLedgerBook}

@@ -12,6 +12,7 @@ import {
   mergeEntries,
   sanitizeAmountInput,
 } from "../utils/ledgerEntries";
+import { buildLedgerEntryListSignature } from "../utils/ledgerEntrySignature";
 import {
   getChartMonthDataFromCache,
   getMonthPageFromCache,
@@ -77,13 +78,7 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
     [entries, selectedDate],
   );
   const selectedDateEntrySignature = useMemo(
-    () =>
-      selectedDateSummaryEntries
-        .map(
-          (entry) =>
-            `${entry.id}:${entry.amount}:${entry.content}:${entry.categoryId}:${entry.note}:${entry.type}`,
-        )
-        .join("|"),
+    () => buildLedgerEntryListSignature(selectedDateSummaryEntries),
     [selectedDateSummaryEntries],
   );
   const {

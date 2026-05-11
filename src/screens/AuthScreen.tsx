@@ -1,14 +1,22 @@
-import { useEffect, useState } from "react";
-import { Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 
+import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { ScreenSlideTransition } from "../components/ScreenSlideTransition";
 import { AuthLandingCard } from "../components/authScreen/AuthLandingCard";
+import { AuthLanguageSwitch } from "../components/authScreen/AuthLanguageSwitch";
 import { EmailSignInCard } from "../components/authScreen/EmailSignInCard";
 import { EmailSignUpAgreementCard } from "../components/authScreen/EmailSignUpAgreementCard";
 import { PasswordResetRequestCard } from "../components/authScreen/PasswordResetRequestCard";
+import {
+  SignUpCaptchaChallenge as AuthCaptchaChallenge,
+  type SignUpCaptchaChallengeHandle as AuthCaptchaChallengeHandle,
+} from "../components/authScreen/SignUpCaptchaChallenge";
+import { AppleAuthCopy } from "../constants/appleAuth";
 import { AuthLandingCopy } from "../constants/authLanding";
 import { AppColors } from "../constants/colors";
 import { EmailAuthCopy } from "../constants/emailAuth";
+import { GoogleAuthCopy } from "../constants/googleAuth";
 import { KeyboardLayout } from "../constants/keyboard";
 import { AppLayout } from "../constants/layout";
 import { LegalLinks } from "../constants/legal";
@@ -18,7 +26,10 @@ import {
   isAppleSignInCancelled,
   signInWithApple,
 } from "../lib/auth/appleSignIn";
-import { signInWithEmailPassword } from "../lib/auth/emailPasswordAuth";
+import {
+  resolveEmailPasswordSignInErrorMessage,
+  signInWithEmailPassword,
+} from "../lib/auth/emailPasswordAuth";
 import {
   canUseGoogleSignIn,
   isGoogleSignInCancelled,
@@ -51,6 +62,8 @@ export function AuthScreen({ initialErrorMessage = null }: AuthScreenProps) {
   const [pendingSocialSignInProvider, setPendingSocialSignInProvider] =
     useState<SocialSignInProvider | null>(null);
   const [screen, setScreen] = useState<AuthScreenMode>("landing");
+  const [isEmailSignInSubmitting, setIsEmailSignInSubmitting] = useState(false);
+  const captchaChallengeRef = useRef<AuthCaptchaChallengeHandle>(null);
   const showAppleSignIn = canUseAppleSignIn();
   const showGoogleSignIn = canUseGoogleSignIn();
   const title = resolveAuthScreenTitle(screen, pendingSocialSignInProvider);
@@ -64,10 +77,23 @@ export function AuthScreen({ initialErrorMessage = null }: AuthScreenProps) {
   }, [initialErrorMessage]);
 
   const handleSubmit = async () => {
+    if (isEmailSignInSubmitting) {
+      return;
+    }
+
+    setIsEmailSignInSubmitting(true);
     try {
-      await signInWithEmailPassword(email, password);
+      const captchaToken = await captchaChallengeRef.current?.requestToken();
+      if (!captchaToken) {
+        return;
+      }
+
+      await signInWithEmailPassword(email, password, captchaToken);
     } catch (error) {
       console.error("[AuthScreen] Email password sign-in failed", error);
+      showNativeToast(resolveEmailPasswordSignInErrorMessage(error));
+    } finally {
+      setIsEmailSignInSubmitting(false);
     }
   };
 
@@ -90,6 +116,7 @@ export function AuthScreen({ initialErrorMessage = null }: AuthScreenProps) {
       }
 
       console.error("[AuthScreen] Google sign-in failed", error);
+      showNativeToast(GoogleAuthCopy.signInError);
     }
   };
 
@@ -102,6 +129,7 @@ export function AuthScreen({ initialErrorMessage = null }: AuthScreenProps) {
       }
 
       console.error("[AuthScreen] Apple sign-in failed", error);
+      showNativeToast(AppleAuthCopy.signInError);
     }
   };
 
@@ -152,19 +180,23 @@ export function AuthScreen({ initialErrorMessage = null }: AuthScreenProps) {
           }}
         />
       ) : (
-        <ScrollView
+        <KeyboardAwareScrollView
           contentContainerStyle={styles.content}
-          keyboardDismissMode={
-            Platform.OS === "ios"
-              ? KeyboardLayout.dismissMode.ios
-              : KeyboardLayout.dismissMode.android
-          }
-          keyboardShouldPersistTaps={KeyboardLayout.persistTaps}
+          extraScrollHeight={KeyboardLayout.focusedInputExtraScrollHeightMin}
           style={styles.screen}
         >
+          <AuthLanguageSwitch />
           <View style={styles.heroSection}>
-            <Text style={styles.brand}>{AppMessages.brand}</Text>
-            <Text style={styles.title}>{title}</Text>
+            {screen === "landing" ? null : <Text style={styles.brand}>{AppMessages.brand}</Text>}
+            {screen === "landing" ? (
+              <Text style={styles.title}>
+                {EmailAuthCopy.signIn.titlePrefix}
+                <Text style={styles.titleHighlight}>{EmailAuthCopy.signIn.titleBrand}</Text>
+                {EmailAuthCopy.signIn.titleSuffix}
+              </Text>
+            ) : (
+              <Text style={styles.title}>{title}</Text>
+            )}
           </View>
 
           {screen === "email-sign-in" ? (
@@ -183,13 +215,18 @@ export function AuthScreen({ initialErrorMessage = null }: AuthScreenProps) {
                 }}
                 onSubmit={handleSubmit}
                 password={password}
+                submitting={isEmailSignInSubmitting}
               />
               <Pressable
+                disabled={isEmailSignInSubmitting}
                 onPress={() => {
                   setPassword("");
                   setScreen("landing");
                 }}
-                style={styles.backLinkButton}
+                style={[
+                  styles.backLinkButton,
+                  isEmailSignInSubmitting ? styles.disabledBackLinkButton : null,
+                ]}
               >
                 <Text style={styles.backLinkText}>{AuthLandingCopy.backToMethodsAction}</Text>
               </Pressable>
@@ -245,7 +282,8 @@ export function AuthScreen({ initialErrorMessage = null }: AuthScreenProps) {
           <View style={styles.supportCard}>
             <Text style={styles.supportLabel}>{EmailAuthCopy.legalConsentNotice}</Text>
           </View>
-        </ScrollView>
+          <AuthCaptchaChallenge ref={captchaChallengeRef} />
+        </KeyboardAwareScrollView>
       )}
     </ScreenSlideTransition>
   );
@@ -293,15 +331,18 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   brand: {
-    color: AppColors.primary,
-    fontSize: 13,
+    color: AppColors.mutedText,
+    fontSize: 12,
     fontWeight: "700",
     letterSpacing: 0.4,
   },
   title: {
     color: AppColors.text,
-    fontSize: 30,
+    fontSize: 28,
     fontWeight: "800",
+  },
+  titleHighlight: {
+    color: AppColors.primary,
   },
   subtitle: {
     color: AppColors.mutedText,
@@ -315,6 +356,9 @@ const styles = StyleSheet.create({
   backLinkButton: {
     alignSelf: "center",
     paddingVertical: 4,
+  },
+  disabledBackLinkButton: {
+    opacity: 0.45,
   },
   backLinkText: {
     color: AppColors.mutedStrongText,

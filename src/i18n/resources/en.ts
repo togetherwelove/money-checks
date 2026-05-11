@@ -12,17 +12,24 @@ export const en = {
       calendar: "Calendar",
       charts: "Charts",
       entry: "Add",
-      ledger: "Ledgers",
+      export: "Export",
     },
   },
   language: {
+    cardTitle: "Language / Currency",
+    currencySelectLabel: "Display Currency",
     deviceDefault: "The first language is selected from your device settings.",
     english: "English",
     korean: "한국어",
+    languageSelectLabel: "Language",
     restartNotice: "Fully restart the app to apply the selected language to every screen.",
     screenTitle: "Language",
     selected: "Selected",
     systemSectionTitle: "Language Settings",
+  },
+  currency: {
+    KRW: "KRW (₩)",
+    USD: "USD ($)",
   },
   menu: {
     sections: {
@@ -75,14 +82,6 @@ export const en = {
     entryCreated: {
       body: "{{actorName}} added {{category}} {{amount}}.",
       title: "Entry Added",
-    },
-    entryDeleted: {
-      body: "{{actorName}} deleted {{category}} {{amount}}.",
-      title: "Entry Deleted",
-    },
-    entryUpdated: {
-      body: "{{actorName}} updated {{category}} {{amount}}.",
-      title: "Entry Updated",
     },
     expenseLimitExceeded: {
       body: "{{period}} expenses reached {{totalAmount}}.",

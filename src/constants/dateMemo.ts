@@ -23,10 +23,9 @@ export const DateMemoCopy = selectStaticCopy({
 export const DateMemoUi = {
   accordionMaxHeight: 192,
   accordionMinHeight: 96,
-  calendarIndicatorOffsetRight: -2,
+  calendarIndicatorOffsetRight: -4,
   calendarIndicatorOffsetTop: 0,
-  calendarIndicatorSize: 6,
-  calendarNumberBadgeWidth: 22,
+  calendarIndicatorSize: 4,
   inputMaxLength: 300,
   keyboardExtraScrollHeightMax: 96,
   keyboardExtraScrollHeightMin: 24,

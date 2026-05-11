@@ -14,20 +14,6 @@ export function createOtherMemberCreatedEntryEvent(
   return createSharedEntryEvent("other_member_created_entry", context, entry);
 }
 
-export function createOtherMemberUpdatedEntryEvent(
-  context: SharedBookContext,
-  entry: LedgerEntry,
-): NotificationEvent {
-  return createSharedEntryEvent("other_member_updated_entry", context, entry);
-}
-
-export function createOtherMemberDeletedEntryEvent(
-  context: SharedBookContext,
-  entry: LedgerEntry,
-): NotificationEvent {
-  return createSharedEntryEvent("other_member_deleted_entry", context, entry);
-}
-
 export function createMemberJoinedBookEvent(
   actorName: string,
   bookName: string,

@@ -217,6 +217,8 @@ export function EntryScreen({
           dateLabel={formatSelectedDate(selectedDate)}
           onMoveToToday={() => handleSelectDate(todayIsoDate)}
           onPressDateLabel={handleOpenDatePicker}
+          onSelectType={updateDraftType}
+          selectedType={draft.type}
           showMoveToToday={selectedDate !== todayIsoDate}
         />
         <LedgerEditorPanel
@@ -231,7 +233,6 @@ export function EntryScreen({
           onPickPhotoAttachments={handlePickPhotoAttachments}
           onRemovePhotoAttachment={handleRemovePhotoAttachment}
           onSaveEntry={onSaveEntry}
-          onSelectType={updateDraftType}
           onSettleInstallmentEntry={
             editingEntry ? () => onSettleInstallmentEntry(editingEntry) : null
           }

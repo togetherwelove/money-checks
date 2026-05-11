@@ -13,6 +13,7 @@ export type LedgerEntry = {
   authorId?: string;
   authorName?: string;
   createdAt?: string;
+  currency?: string;
   id: string;
   date: string;
   type: LedgerEntryType;

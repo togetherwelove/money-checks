@@ -16,9 +16,13 @@ vi.mock("../supabase", () => ({
   },
 }));
 
+import { EmailAuthCopy } from "../../constants/emailAuth";
+import { EmailSignInErrorCopy } from "../../constants/emailSignInErrors";
 import {
+  isEmailNotConfirmedSignInError,
   normalizeEmail,
   resendEmailSignUpOtp,
+  resolveEmailPasswordSignInErrorMessage,
   signInWithEmailPassword,
   signUpWithEmailPassword,
   verifyEmailSignUpOtp,
@@ -41,12 +45,30 @@ describe("emailPasswordAuth", () => {
   it("signs in with the normalized email and password", async () => {
     authMock.signInWithPassword.mockResolvedValue({ error: null });
 
-    await signInWithEmailPassword("  USER@Example.COM ", "Secret123!");
+    await signInWithEmailPassword("  USER@Example.COM ", "Secret123!", "captcha-token");
 
     expect(authMock.signInWithPassword).toHaveBeenCalledWith({
       email: "user@example.com",
+      options: {
+        captchaToken: "captcha-token",
+      },
       password: "Secret123!",
     });
+  });
+
+  it("detects unconfirmed email sign-in errors", () => {
+    expect(isEmailNotConfirmedSignInError({ code: "email_not_confirmed" })).toBe(true);
+    expect(isEmailNotConfirmedSignInError({ message: "Email not confirmed" })).toBe(true);
+    expect(isEmailNotConfirmedSignInError({ message: "Invalid login credentials" })).toBe(false);
+  });
+
+  it("resolves sign-in error messages by auth error reason", () => {
+    expect(resolveEmailPasswordSignInErrorMessage({ code: "email_not_confirmed" })).toBe(
+      EmailSignInErrorCopy.emailNotConfirmed,
+    );
+    expect(resolveEmailPasswordSignInErrorMessage({ message: "Invalid login credentials" })).toBe(
+      EmailAuthCopy.signIn.errorFallback,
+    );
   });
 
   it("returns signed-in when sign-up creates a session", async () => {

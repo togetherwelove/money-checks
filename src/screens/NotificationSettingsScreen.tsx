@@ -52,6 +52,7 @@ export function NotificationSettingsScreen({
         onOpenDeviceNotificationSettings={handleOpenNotificationPermission}
         onTogglePreference={onToggleNotificationPreference}
         permissionLabel={notificationPermissionLabel}
+        permissionState={notificationPermissionState}
         preferenceGroups={notificationPreferenceGroups}
         statusMessage={notificationStatusMessage}
       />

@@ -14,9 +14,7 @@ export type NotificationEventType =
   | "member_left_book"
   | "member_joined_book"
   | "member_removed_from_book"
-  | "other_member_created_entry"
-  | "other_member_deleted_entry"
-  | "other_member_updated_entry";
+  | "other_member_created_entry";
 
 export type NotificationEvent = {
   type: NotificationEventType;

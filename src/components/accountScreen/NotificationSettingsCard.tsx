@@ -5,6 +5,7 @@ import { AppColors } from "../../constants/colors";
 import { AppLayout } from "../../constants/layout";
 import { AppTextBreakProps } from "../../constants/textLayout";
 import { InsetPanelStyle, SupportingTextStyle, SurfaceCardStyle } from "../../constants/uiStyles";
+import type { NotificationPermissionState } from "../../lib/notifications/pushNotifications";
 import {
   NotificationSettingsUi,
   NotificationUiCopy,
@@ -18,6 +19,7 @@ type NotificationSettingsCardProps = {
   onChangeThresholdValue: (key: NotificationThresholdKey, value: string) => void;
   onOpenDeviceNotificationSettings: () => void;
   permissionLabel: string;
+  permissionState: NotificationPermissionState;
   preferenceGroups: NotificationPreferenceGroupState[];
   statusMessage: string | null;
   onTogglePreference: (
@@ -33,39 +35,37 @@ export function NotificationSettingsCard({
   onChangeThresholdValue,
   onOpenDeviceNotificationSettings,
   permissionLabel,
+  permissionState,
   preferenceGroups,
   statusMessage,
   onTogglePreference,
 }: NotificationSettingsCardProps) {
+  const isPermissionGranted = permissionState === "granted";
+
   return (
     <View style={styles.card}>
       <View style={styles.permissionList}>
-        <Pressable
-          accessibilityRole="button"
-          onPress={onOpenDeviceNotificationSettings}
-          style={({ pressed }) => [styles.permissionRow, pressed ? styles.pressedRow : null]}
-        >
-          <View style={styles.textBlock}>
-            <Text {...AppTextBreakProps} style={styles.label}>
-              {NotificationUiCopy.permissionSectionTitle}
-            </Text>
-            {statusMessage ? (
-              <Text {...AppTextBreakProps} style={styles.statusText}>
-                {statusMessage}
-              </Text>
-            ) : null}
-          </View>
-          <View style={styles.permissionAction}>
-            <Text {...AppTextBreakProps} numberOfLines={1} style={styles.value}>
-              {permissionLabel}
-            </Text>
-            <Feather
-              color={AppColors.mutedStrongText}
-              name="chevron-right"
-              size={NotificationSettingsUi.permissionChevronIconSize}
+        {isPermissionGranted ? (
+          <View style={styles.permissionRow}>
+            <NotificationPermissionContent
+              permissionLabel={permissionLabel}
+              shouldShowChevron={false}
+              statusMessage={statusMessage}
             />
           </View>
-        </Pressable>
+        ) : (
+          <Pressable
+            accessibilityRole="button"
+            onPress={onOpenDeviceNotificationSettings}
+            style={({ pressed }) => [styles.permissionRow, pressed ? styles.pressedRow : null]}
+          >
+            <NotificationPermissionContent
+              permissionLabel={permissionLabel}
+              shouldShowChevron
+              statusMessage={statusMessage}
+            />
+          </Pressable>
+        )}
       </View>
       <View style={styles.preferenceBlock}>
         {preferenceGroups.map((group) => (
@@ -79,6 +79,43 @@ export function NotificationSettingsCard({
         ))}
       </View>
     </View>
+  );
+}
+
+function NotificationPermissionContent({
+  permissionLabel,
+  shouldShowChevron,
+  statusMessage,
+}: {
+  permissionLabel: string;
+  shouldShowChevron: boolean;
+  statusMessage: string | null;
+}) {
+  return (
+    <>
+      <View style={styles.textBlock}>
+        <Text {...AppTextBreakProps} style={styles.label}>
+          {NotificationUiCopy.permissionSectionTitle}
+        </Text>
+        {statusMessage ? (
+          <Text {...AppTextBreakProps} style={styles.statusText}>
+            {statusMessage}
+          </Text>
+        ) : null}
+      </View>
+      <View style={styles.permissionAction}>
+        <Text {...AppTextBreakProps} numberOfLines={1} style={styles.value}>
+          {permissionLabel}
+        </Text>
+        {shouldShowChevron ? (
+          <Feather
+            color={AppColors.mutedStrongText}
+            name="chevron-right"
+            size={NotificationSettingsUi.permissionChevronIconSize}
+          />
+        ) : null}
+      </View>
+    </>
   );
 }
 

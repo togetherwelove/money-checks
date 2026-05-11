@@ -25,7 +25,7 @@ export const INCOME_CATEGORY_LABEL_COPY: Record<
     sideIncome: "Side Income",
   },
   ko: {
-    bonus: "성과금",
+    bonus: "성과급",
     interest: "이자",
     other: "기타",
     refund: "환급",

@@ -171,13 +171,11 @@ const styles = StyleSheet.create({
   },
   dayNumberWrap: {
     position: "relative",
-    width: DateMemoUi.calendarNumberBadgeWidth,
     alignItems: "center",
     justifyContent: "center",
   },
   dayNumber: {
     color: AppColors.text,
-    minWidth: 22,
     paddingHorizontal: 4,
     paddingVertical: 1,
     borderRadius: 999,

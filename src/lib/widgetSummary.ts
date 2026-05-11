@@ -1,12 +1,10 @@
-import { KRW_CURRENCY_SUFFIX } from "../constants/ledgerDisplay";
 import { LedgerWidgetConfig } from "../constants/widget";
 import type { LedgerEntry } from "../types/ledger";
 import type { LedgerWidgetSummary } from "../types/widget";
-import { formatAmountNumber } from "../utils/amount";
-import { formatEntryMetaDate } from "../utils/calendar";
+import { formatCurrency, formatEntryMetaDate } from "../utils/calendar";
 import { supabase } from "./supabase";
 
-const EMPTY_AMOUNT_LABEL = `0${KRW_CURRENCY_SUFFIX}`;
+const EMPTY_AMOUNT_LABEL = formatCurrency(0);
 
 type LedgerWidgetSummaryRpcRow = {
   month_expense_amount: number | string;
@@ -82,7 +80,7 @@ function formatWidgetAmount(amount: number): string {
     return EMPTY_AMOUNT_LABEL;
   }
 
-  return `${formatAmountNumber(amount)}${KRW_CURRENCY_SUFFIX}`;
+  return formatCurrency(amount);
 }
 
 function mapLedgerWidgetSummaryRpcRow(

@@ -31,7 +31,7 @@ const FooterTabLabelKeys: Record<FooterTabScreen, string> = {
   calendar: "footer.tabs.calendar",
   charts: "footer.tabs.charts",
   entry: "footer.tabs.entry",
-  share: "footer.tabs.ledger",
+  share: "footer.tabs.export",
 };
 
 export function buildFooterTabs(t: TFunction): FooterTabItem[] {

@@ -1,8 +1,8 @@
-import { AntDesign } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../../constants/colors";
 import { GoogleAuthCopy } from "../../constants/googleAuth";
+import { GoogleGIcon } from "./GoogleGIcon";
 
 type GoogleSignInButtonProps = {
   onPress: () => void | Promise<void>;
@@ -12,7 +12,7 @@ export function GoogleSignInButton({ onPress }: GoogleSignInButtonProps) {
   return (
     <Pressable onPress={onPress} style={styles.button}>
       <View style={styles.iconBox}>
-        <AntDesign color={AppColors.text} name="google" size={18} />
+        <GoogleGIcon />
       </View>
       <Text style={styles.label}>{GoogleAuthCopy.signInAction}</Text>
     </Pressable>

@@ -4,6 +4,7 @@ import { AppMessages } from "../../constants/messages";
 import { fetchLedgerEntries } from "../../lib/ledgerEntries";
 import { logAppError } from "../../lib/logAppError";
 import type { LedgerEntry } from "../../types/ledger";
+import { buildLedgerEntryListSignature } from "../../utils/ledgerEntrySignature";
 
 type SelectedDateEntriesState = {
   isLoadingSelectedDateEntries: boolean;
@@ -71,7 +72,7 @@ export function useSelectedDateEntries(
         }));
         setSignatureByDate((currentSignatureByDate) => ({
           ...currentSignatureByDate,
-          [selectedDate]: selectedDateEntrySignature,
+          [selectedDate]: buildLedgerEntryListSignature(nextEntries),
         }));
       })
       .catch((error) => {
@@ -112,7 +113,7 @@ export function useSelectedDateEntries(
         }));
         setSignatureByDate((currentSignatureByDate) => ({
           ...currentSignatureByDate,
-          [selectedDate]: selectedDateEntrySignature,
+          [selectedDate]: buildLedgerEntryListSignature(nextEntries),
         }));
       } catch (error) {
         logAppError("SelectedDateEntries", error, {

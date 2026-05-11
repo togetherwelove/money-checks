@@ -1,14 +1,20 @@
+import { Feather } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import { useState } from "react";
-import { Text, TextInput, View } from "react-native";
+import { Share, Text, TextInput, View } from "react-native";
 
+import { AppColors } from "../../constants/colors";
 import { LedgerBookNicknameCopy } from "../../constants/ledgerBookNickname";
-import { SHARE_CODE_LENGTH } from "../../constants/ledgerDisplay";
 import { AppMessages } from "../../constants/messages";
 import { ShareLedgerMessages } from "../../constants/shareLedgerMessages";
+import { SharedLedgerPanelUi } from "../../constants/sharedLedgerPanel";
 import { showNativeToast } from "../../lib/nativeToast";
+import { formatSharedLedgerInviteMessage } from "../../lib/sharedLedgerInvite";
 import type { LedgerBook } from "../../types/ledgerBook";
-import type { LedgerBookJoinRequest } from "../../types/ledgerBookJoinRequest";
+import type {
+  LedgerBookJoinApprovalAttempt,
+  LedgerBookJoinRequest,
+} from "../../types/ledgerBookJoinRequest";
 import { ActionButton } from "../ActionButton";
 import { IconActionButton } from "../IconActionButton";
 import { LedgerBookJoinRequests } from "../LedgerBookJoinRequests";
@@ -22,16 +28,13 @@ type SharedLedgerBookCardProps = {
   canEditBookName: boolean;
   currentUserId: string;
   isOwner: boolean;
-  onApproveJoinRequest: (requestId: string) => Promise<boolean>;
+  onApproveJoinRequest: (requestId: string) => Promise<LedgerBookJoinApprovalAttempt>;
   onBeforeCopyShareCode: () => Promise<void> | void;
   onChangeBookName: (value: string) => void;
-  onChangeShareCodeInput: (value: string) => void;
-  onJoin: () => unknown;
   onLeave: () => unknown;
   onRejectJoinRequest: (requestId: string) => Promise<boolean>;
   onSaveBookName: () => Promise<boolean>;
   pendingJoinRequests: LedgerBookJoinRequest[];
-  shareCodeInput: string;
 };
 
 export function SharedLedgerBookCard({
@@ -45,17 +48,16 @@ export function SharedLedgerBookCard({
   onApproveJoinRequest,
   onBeforeCopyShareCode,
   onChangeBookName,
-  onChangeShareCodeInput,
-  onJoin,
   onLeave,
   onRejectJoinRequest,
   onSaveBookName,
   pendingJoinRequests,
-  shareCodeInput,
 }: SharedLedgerBookCardProps) {
   const [isEditingBookName, setIsEditingBookName] = useState(false);
   const isSharedBook = Boolean(activeBook && activeBook.ownerId !== currentUserId);
   const shareCode = activeBook?.shareCode ?? null;
+  const shouldShowJoinRequests = isOwner && Boolean(pendingJoinRequests.length);
+  const hasDetails = Boolean(shareCode || shouldShowJoinRequests || canLeaveSharedBook);
 
   const handleCopyShareCode = async () => {
     if (!shareCode) {
@@ -65,6 +67,13 @@ export function SharedLedgerBookCard({
     await onBeforeCopyShareCode();
 
     await Clipboard.setStringAsync(shareCode);
+    try {
+      await Share.share({
+        message: formatSharedLedgerInviteMessage(shareCode),
+      });
+    } catch (error) {
+      console.error("[SharedLedgerBookCard] Share sheet failed", error);
+    }
     showNativeToast(ShareLedgerMessages.copyCodeSuccessToast);
   };
 
@@ -87,7 +96,7 @@ export function SharedLedgerBookCard({
 
   return (
     <View style={[styles.section, styles.primarySection]}>
-      <View style={styles.sectionHeader}>
+      <View style={[styles.sectionHeader, hasDetails ? null : styles.sectionBottomInset]}>
         {canEditBookName ? (
           isEditingBookName ? (
             <View style={styles.bookNameEditRow}>
@@ -139,12 +148,27 @@ export function SharedLedgerBookCard({
         ) : null}
       </View>
       {shareCode ? (
-        <View style={styles.codeBlock}>
+        <View
+          style={[
+            styles.codeBlock,
+            shouldShowJoinRequests || canLeaveSharedBook ? null : styles.sectionBottomInset,
+          ]}
+        >
           <Text style={styles.helpText}>{AppMessages.accountShareCodeHint}</Text>
           <View style={styles.shareCodeRow}>
             <ActionButton
               fullWidth
               label={ShareLedgerMessages.copyCodeAction}
+              labelContent={
+                <View style={styles.copyActionContent}>
+                  <Feather
+                    color={AppColors.inverseText}
+                    name="copy"
+                    size={SharedLedgerPanelUi.copyActionIconSize}
+                  />
+                  <Text style={styles.copyActionText}>{ShareLedgerMessages.copyCodeAction}</Text>
+                </View>
+              }
               onPress={() => {
                 void handleCopyShareCode();
               }}
@@ -153,8 +177,14 @@ export function SharedLedgerBookCard({
           </View>
         </View>
       ) : null}
-      {isOwner && pendingJoinRequests.length ? (
-        <View style={[styles.sectionContent, styles.subsection]}>
+      {shouldShowJoinRequests ? (
+        <View
+          style={[
+            styles.sectionContent,
+            styles.subsection,
+            canLeaveSharedBook ? null : styles.sectionBottomInset,
+          ]}
+        >
           <LedgerBookJoinRequests
             onApproveRequest={onApproveJoinRequest}
             onRejectRequest={onRejectJoinRequest}
@@ -162,21 +192,8 @@ export function SharedLedgerBookCard({
           />
         </View>
       ) : null}
-      <View style={[styles.sectionContent, styles.subsection, styles.sectionBottomInset]}>
-        <Text style={styles.sectionTitle}>{AppMessages.accountJoinTitle}</Text>
-        <Text style={styles.helpText}>{AppMessages.accountJoinSubtitle}</Text>
-        <TextInput
-          autoCapitalize="characters"
-          maxLength={SHARE_CODE_LENGTH}
-          onChangeText={onChangeShareCodeInput}
-          placeholder={AppMessages.accountJoinPlaceholder}
-          style={styles.input}
-          value={shareCodeInput}
-        />
-        <View style={styles.actionRow}>
-          <ActionButton label={AppMessages.accountJoinAction} onPress={onJoin} />
-        </View>
-        {canLeaveSharedBook ? (
+      {canLeaveSharedBook ? (
+        <View style={[styles.sectionContent, styles.subsection, styles.sectionBottomInset]}>
           <View style={styles.leaveSection}>
             <Text style={styles.helpText}>{AppMessages.accountDisconnectHint}</Text>
             <ActionButton
@@ -185,8 +202,8 @@ export function SharedLedgerBookCard({
               variant="destructive"
             />
           </View>
-        ) : null}
-      </View>
+        </View>
+      ) : null}
     </View>
   );
 }

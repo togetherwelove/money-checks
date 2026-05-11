@@ -8,10 +8,6 @@ export const DEFAULT_MEMBER_DISPLAY_NAME = selectStaticCopy({
 });
 export const EMPTY_VALUE_PLACEHOLDER = "-";
 export const EMPTY_CATEGORY_LABEL = EMPTY_VALUE_PLACEHOLDER;
-export const KRW_CURRENCY_SUFFIX = selectStaticCopy({
-  en: " KRW",
-  ko: "원",
-});
 export const SHARE_CODE_LENGTH = 16;
 
 const monthLabelFormatter = new Intl.DateTimeFormat(LEDGER_DISPLAY_LOCALE, {

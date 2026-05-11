@@ -1,8 +1,15 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Feather } from "@expo/vector-icons";
+import { useRef, useState } from "react";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
+import { CommonActionCopy } from "../constants/commonActions";
 import { LedgerBookMembersLayout, LedgerBookMembersUi } from "../constants/ledgerBookMembers";
-import { AppMessages } from "../constants/messages";
+import {
+  AppMessages,
+  buildAccountKickAccessibilityLabel,
+  buildAccountKickConfirmMessage,
+} from "../constants/messages";
 import { SubscriptionMessages } from "../constants/subscription";
 import type { LedgerBookMember, LedgerBookMemberRole } from "../types/ledgerBookMember";
 import { TextLinkButton } from "./TextLinkButton";
@@ -22,6 +29,8 @@ export function LedgerBookMembers({
   onKickMember,
   shouldShowSharedMemberLimitNotice,
 }: LedgerBookMembersProps) {
+  const pendingKickMemberIdRef = useRef<string | null>(null);
+  const [pendingKickMemberId, setPendingKickMemberId] = useState<string | null>(null);
   const canManageMembers = members.some(
     (member) => member.userId === currentUserId && member.role === "owner",
   );
@@ -32,6 +41,8 @@ export function LedgerBookMembers({
         const isOwner = member.role === "owner";
         const canKickMember = canManageMembers && !isOwner && member.userId !== currentUserId;
         const memberRoleLabel = getRoleLabel(member.role);
+        const selfBadgeLabel = stripWrappingParentheses(AppMessages.accountMemberSelfSuffix);
+        const isKickActionDisabled = pendingKickMemberId !== null;
 
         return (
           <View
@@ -42,11 +53,6 @@ export function LedgerBookMembers({
               <Text numberOfLines={1} style={styles.memberName}>
                 {member.displayName}
               </Text>
-              {member.userId === currentUserId ? (
-                <Text style={styles.selfBadge}>{AppMessages.accountMemberSelfSuffix}</Text>
-              ) : null}
-            </View>
-            <View style={styles.memberActions}>
               <Text
                 style={[
                   styles.memberRoleBadge,
@@ -55,16 +61,37 @@ export function LedgerBookMembers({
               >
                 {memberRoleLabel}
               </Text>
-              {canKickMember ? (
-                <Pressable
-                  hitSlop={LedgerBookMembersUi.actionHitSlop}
-                  onPress={() => void onKickMember(member.userId)}
-                  style={styles.memberActionButton}
-                >
-                  <Text style={styles.kickAction}>{AppMessages.accountKickAction}</Text>
-                </Pressable>
+              {member.userId === currentUserId ? (
+                <Text style={styles.selfBadge}>{selfBadgeLabel}</Text>
               ) : null}
             </View>
+            {canKickMember ? (
+              <View style={styles.memberActions}>
+                <Pressable
+                  accessibilityLabel={buildAccountKickAccessibilityLabel(member.displayName)}
+                  accessibilityRole="button"
+                  disabled={isKickActionDisabled}
+                  hitSlop={LedgerBookMembersUi.actionHitSlop}
+                  onPress={() =>
+                    confirmKickMember(member.displayName, {
+                      onCancel: releasePendingKickMember,
+                      onConfirm: () => handleConfirmKickMember(member.userId),
+                      onOpen: () => reservePendingKickMember(member.userId),
+                    })
+                  }
+                  style={[
+                    styles.memberActionButton,
+                    isKickActionDisabled ? styles.disabledMemberActionButton : null,
+                  ]}
+                >
+                  <Feather
+                    color={AppColors.expense}
+                    name="user-minus"
+                    size={LedgerBookMembersUi.actionIconSize}
+                  />
+                </Pressable>
+              </View>
+            ) : null}
           </View>
         );
       })}
@@ -93,6 +120,29 @@ export function LedgerBookMembers({
       ) : null}
     </View>
   );
+
+  function reservePendingKickMember(memberId: string): boolean {
+    if (pendingKickMemberIdRef.current) {
+      return false;
+    }
+
+    pendingKickMemberIdRef.current = memberId;
+    setPendingKickMemberId(memberId);
+    return true;
+  }
+
+  function releasePendingKickMember() {
+    pendingKickMemberIdRef.current = null;
+    setPendingKickMemberId(null);
+  }
+
+  async function handleConfirmKickMember(memberId: string): Promise<boolean> {
+    try {
+      return await onKickMember(memberId);
+    } finally {
+      releasePendingKickMember();
+    }
+  }
 }
 
 function getRoleLabel(role?: LedgerBookMemberRole): string {
@@ -105,6 +155,43 @@ function getRoleLabel(role?: LedgerBookMemberRole): string {
   }
 
   return AppMessages.accountRoleEditor;
+}
+
+function stripWrappingParentheses(label: string): string {
+  return label.replace(/^\((.*)\)$/, "$1");
+}
+
+function confirmKickMember(
+  displayName: string,
+  actions: {
+    onCancel: () => void;
+    onConfirm: () => Promise<boolean>;
+    onOpen: () => boolean;
+  },
+) {
+  if (!actions.onOpen()) {
+    return;
+  }
+
+  Alert.alert(
+    AppMessages.accountKickConfirmTitle,
+    buildAccountKickConfirmMessage(displayName),
+    [
+      {
+        onPress: actions.onCancel,
+        style: "cancel",
+        text: CommonActionCopy.cancel,
+      },
+      {
+        onPress: () => void actions.onConfirm(),
+        style: "destructive",
+        text: AppMessages.accountKickAction,
+      },
+    ],
+    {
+      onDismiss: actions.onCancel,
+    },
+  );
 }
 
 const styles = StyleSheet.create({
@@ -191,22 +278,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    minHeight: LedgerBookMembersUi.rowHeight,
     flexShrink: 0,
   },
   memberActionButton: {
     borderWidth: 1,
     borderColor: AppColors.expenseSoft,
-    borderRadius: LedgerBookMembersUi.roleBadgeHorizontalPadding,
+    borderRadius: LedgerBookMembersUi.actionButtonBorderRadius,
     backgroundColor: AppColors.expenseSoft,
+    alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: LedgerBookMembersUi.actionButtonHorizontalPadding,
-    paddingVertical: LedgerBookMembersUi.actionButtonVerticalPadding,
+    height: LedgerBookMembersUi.actionButtonSize,
+    width: LedgerBookMembersUi.actionButtonSize,
   },
-  kickAction: {
-    color: AppColors.expense,
-    fontSize: 12,
-    fontWeight: "700",
-    lineHeight: LedgerBookMembersUi.rowTextLineHeight,
+  disabledMemberActionButton: {
+    opacity: LedgerBookMembersUi.disabledActionButtonOpacity,
   },
 });

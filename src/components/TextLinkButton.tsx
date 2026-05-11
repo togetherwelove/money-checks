@@ -5,6 +5,7 @@ import { AppTextBreakProps } from "../constants/textLayout";
 
 type TextLinkButtonProps = {
   align?: "center" | "start";
+  disabled?: boolean;
   label: string;
   onPress: () => void;
   tone?: "default" | "destructive";
@@ -12,12 +13,20 @@ type TextLinkButtonProps = {
 
 export function TextLinkButton({
   align = "start",
+  disabled = false,
   label,
   onPress,
   tone = "default",
 }: TextLinkButtonProps) {
   return (
-    <Pressable onPress={onPress} style={align === "center" ? styles.centerButton : styles.button}>
+    <Pressable
+      disabled={disabled}
+      onPress={onPress}
+      style={[
+        align === "center" ? styles.centerButton : styles.button,
+        disabled ? styles.disabledButton : null,
+      ]}
+    >
       <Text
         {...AppTextBreakProps}
         style={[styles.text, tone === "destructive" ? styles.destructiveText : null]}
@@ -34,6 +43,9 @@ const styles = StyleSheet.create({
   },
   centerButton: {
     alignSelf: "center",
+  },
+  disabledButton: {
+    opacity: 0.45,
   },
   text: {
     color: AppColors.mutedText,

@@ -126,6 +126,11 @@ export type ProfileDisplayRow = {
   id: string;
 };
 
+export type ProfileCurrencyRow = {
+  default_currency: string;
+  id: string;
+};
+
 export type ProfileSubscriptionRow = {
   id: string;
   subscription_tier: "free" | "plus" | null;

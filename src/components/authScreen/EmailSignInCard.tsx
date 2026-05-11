@@ -13,6 +13,7 @@ type EmailSignInCardProps = {
   onOpenSignUp: () => void;
   onSubmit: () => void | Promise<void>;
   password: string;
+  submitting?: boolean;
 };
 
 export function EmailSignInCard({
@@ -23,6 +24,7 @@ export function EmailSignInCard({
   onOpenSignUp,
   onSubmit,
   password,
+  submitting = false,
 }: EmailSignInCardProps) {
   const canSubmit = Boolean(email.trim() && password);
 
@@ -35,6 +37,7 @@ export function EmailSignInCard({
           autoComplete="email"
           importantForAutofill="yes"
           keyboardType="email-address"
+          editable={!submitting}
           onChangeText={onChangeEmail}
           placeholder={EmailAuthCopy.signIn.emailPlaceholder}
           style={styles.input}
@@ -48,6 +51,7 @@ export function EmailSignInCard({
           autoCapitalize="none"
           autoComplete="password"
           importantForAutofill="yes"
+          editable={!submitting}
           onChangeText={onChangePassword}
           placeholder={EmailAuthCopy.signIn.passwordPlaceholder}
           secureTextEntry
@@ -58,20 +62,29 @@ export function EmailSignInCard({
       </View>
       <View style={styles.actionGroup}>
         <ActionButton
-          disabled={!canSubmit}
+          disabled={!canSubmit || submitting}
           fullWidth
           label={EmailAuthCopy.signIn.submitAction}
+          loading={submitting}
           onPress={onSubmit}
           size="large"
           variant="primary"
         />
       </View>
       <View style={styles.linkRow}>
-        <Pressable onPress={onOpenPasswordReset} style={styles.linkButton}>
+        <Pressable
+          disabled={submitting}
+          onPress={onOpenPasswordReset}
+          style={[styles.linkButton, submitting ? styles.disabledLinkButton : null]}
+        >
           <Text style={styles.linkText}>{EmailAuthCopy.signIn.forgotPasswordAction}</Text>
         </Pressable>
         <Text style={styles.linkDivider}>·</Text>
-        <Pressable onPress={onOpenSignUp} style={styles.linkButton}>
+        <Pressable
+          disabled={submitting}
+          onPress={onOpenSignUp}
+          style={[styles.linkButton, submitting ? styles.disabledLinkButton : null]}
+        >
           <Text style={styles.linkText}>{EmailAuthCopy.signIn.openSignUpAction}</Text>
         </Pressable>
       </View>
@@ -101,6 +114,9 @@ const styles = StyleSheet.create({
   },
   linkButton: {
     paddingVertical: 4,
+  },
+  disabledLinkButton: {
+    opacity: 0.45,
   },
   linkDivider: {
     color: AppColors.mutedText,

@@ -20,6 +20,18 @@ const PUSH_NOTIFICATION_FUNCTION_NAME = "send-push-notifications";
 const PUSH_NOTIFICATION_MINIMUM_INVOCATION_INTERVAL = "10 seconds";
 const PUSH_NOTIFICATION_MAX_TARGET_USER_COUNT = 20;
 const PUSH_NOTIFICATION_MAX_EXCLUDED_USER_COUNT = 20;
+const PUSH_CURRENCY_FORMAT_CONFIG = {
+  KRW: {
+    locale: "ko-KR",
+    prefix: "",
+    suffix: "원",
+  },
+  USD: {
+    locale: "en-US",
+    prefix: "USD ",
+    suffix: "",
+  },
+} as const;
 
 const REQUIRED_NOTIFICATION_EVENTS = new Set([
   "member_joined_book",
@@ -32,8 +44,6 @@ const NOTIFICATION_EVENT_TYPES = new Set([
   "member_left_book",
   "member_removed_from_book",
   "other_member_created_entry",
-  "other_member_deleted_entry",
-  "other_member_updated_entry",
 ]);
 
 const corsHeaders = {
@@ -48,14 +58,13 @@ type AuthenticatedUser = {
 type BookMemberRole = "editor" | "owner" | "viewer";
 type LedgerEntryType = "expense" | "income";
 type NotificationThresholdPeriod = "day" | "week" | "month";
+type PushCurrency = keyof typeof PUSH_CURRENCY_FORMAT_CONFIG;
 type NotificationEventType =
   | "expense_limit_exceeded"
   | "member_joined_book"
   | "member_left_book"
   | "member_removed_from_book"
-  | "other_member_created_entry"
-  | "other_member_deleted_entry"
-  | "other_member_updated_entry";
+  | "other_member_created_entry";
 type NotificationEvent = {
   type: NotificationEventType;
   actorName?: string;
@@ -113,6 +122,7 @@ type ProfileDisplayNameRow = {
 };
 
 type ProfilePreferredLocaleRow = {
+  default_currency: string | null;
   id: string;
   preferred_locale: string | null;
 };
@@ -184,7 +194,13 @@ type ExpoPushContent = {
   title: string;
 };
 
-type ExpoPushContentResolver = ExpoPushContent | ((locale: string | null) => ExpoPushContent);
+type ExpoPushContentResolver =
+  | ExpoPushContent
+  | ((preferences: ProfilePushPreferences) => ExpoPushContent);
+type ProfilePushPreferences = {
+  currency: PushCurrency;
+  locale: string | null;
+};
 
 type WidgetPushData = {
   actionRoute?: NotificationActionRoute;
@@ -299,12 +315,17 @@ function buildPushNotificationLockName(
   }
 
   const bookKey = "bookId" in payload && payload.bookId ? payload.bookId : "self";
+  const targetKey =
+    payload.route === "direct-targets"
+      ? [...new Set(payload.targetUserIds)].sort().join(",")
+      : "book-members";
   return [
     PUSH_NOTIFICATION_FUNCTION_NAME,
     payload.route,
     senderUserId,
     bookKey,
     payload.event.type,
+    targetKey,
   ].join(":");
 }
 
@@ -325,8 +346,8 @@ async function buildPushMessages(
     return resolveExpoPushMessages(
       adminClient,
       joinRequestNotification.targetUserIds,
-      (locale) => ({
-        body: translate(locale, "push.joinRequest.body", {
+      (preferences) => ({
+        body: translate(preferences.locale, "push.joinRequest.body", {
           bookName: joinRequestNotification.bookName,
           requesterName: joinRequestNotification.requesterName,
         }),
@@ -334,7 +355,7 @@ async function buildPushMessages(
         data: {
           actionRoute: NOTIFICATION_ACTION_ROUTES.share,
         },
-        title: translate(locale, "push.joinRequest.title"),
+        title: translate(preferences.locale, "push.joinRequest.title"),
       }),
     );
   }
@@ -353,8 +374,8 @@ async function buildPushMessages(
     return [];
   }
 
-  return resolveExpoPushMessages(adminClient, filteredUserIds, (locale) =>
-    buildExpoPushContent(payload.event, payload.widgetData, locale),
+  return resolveExpoPushMessages(adminClient, filteredUserIds, (preferences) =>
+    buildExpoPushContent(payload.event, payload.widgetData, preferences),
   );
 }
 
@@ -559,14 +580,19 @@ async function resolveExpoPushMessages(
     return [];
   }
 
-  const preferredLocaleByUserId = await fetchProfilePreferredLocaleMap(adminClient, targetUserIds);
+  const pushPreferencesByUserId = await fetchProfilePushPreferencesMap(adminClient, targetUserIds);
 
   return (data as PushDeviceTokenRow[])
     .filter((row) => EXPO_PUSH_TOKEN_PATTERN.test(row.expo_push_token))
     .map((row) => {
       const resolvedContent =
         typeof content === "function"
-          ? content(preferredLocaleByUserId.get(row.user_id) ?? null)
+          ? content(
+              pushPreferencesByUserId.get(row.user_id) ?? {
+                currency: "KRW",
+                locale: null,
+              },
+            )
           : content;
 
       return {
@@ -584,17 +610,17 @@ async function resolveExpoPushMessages(
     });
 }
 
-async function fetchProfilePreferredLocaleMap(
+async function fetchProfilePushPreferencesMap(
   adminClient: SendPushNotificationsAdminClient,
   targetUserIds: string[],
-): Promise<Map<string, string | null>> {
+): Promise<Map<string, ProfilePushPreferences>> {
   const profilesQuery = adminClient.from("profiles") as {
     select: (columns: string) => {
       in: (column: string, values: string[]) => QueryResult<ProfilePreferredLocaleRow>;
     };
   };
   const { data, error } = await profilesQuery
-    .select("id, preferred_locale")
+    .select("id, preferred_locale, default_currency")
     .in("id", targetUserIds);
 
   if (error || !Array.isArray(data)) {
@@ -602,16 +628,22 @@ async function fetchProfilePreferredLocaleMap(
   }
 
   return new Map(
-    (data as ProfilePreferredLocaleRow[]).map((row) => [row.id, row.preferred_locale]),
+    (data as ProfilePreferredLocaleRow[]).map((row) => [
+      row.id,
+      {
+        currency: resolvePushCurrency(row.default_currency),
+        locale: row.preferred_locale,
+      },
+    ]),
   );
 }
 
 function buildExpoPushContent(
   event: NotificationEvent,
   widgetData?: WidgetPushData,
-  locale?: string | null,
+  preferences: ProfilePushPreferences = { currency: "KRW", locale: null },
 ): ExpoPushContent {
-  const notificationContent = buildNotificationContent(event, locale);
+  const notificationContent = buildNotificationContent(event, preferences);
   const categoryId = resolveCategoryIdForEvent(event.type);
   const actionRoute = resolveActionRouteForEvent(event.type);
   const data = {
@@ -639,15 +671,19 @@ function resolvePushCategoryLabel(event: NotificationEvent, locale?: string | nu
 
 function buildNotificationContent(
   event: NotificationEvent,
-  locale?: string | null,
+  preferences: ProfilePushPreferences,
 ): { body: string; title: string } {
+  const locale = preferences.locale;
   const actorName = readText(event.actorName, translate(locale, "push.fallbacks.member"));
   const bookName = readText(event.bookName, translate(locale, "push.fallbacks.sharedLedger"));
   const category = resolvePushCategoryLabel(event, locale);
-  const amountLabel = typeof event.amount === "number" ? formatCurrency(event.amount, locale) : "0";
+  const amountLabel =
+    typeof event.amount === "number" ? formatCurrency(event.amount, preferences.currency) : "0";
   const totalAmountLabel =
-    typeof event.totalAmount === "number" ? formatCurrency(event.totalAmount, locale) : "0";
-  const periodLabel = event.period ?? translate(locale, "push.fallbacks.period");
+    typeof event.totalAmount === "number"
+      ? formatCurrency(event.totalAmount, preferences.currency)
+      : "0";
+  const periodLabel = resolvePushPeriodLabel(event.period, locale);
 
   if (event.type === "expense_limit_exceeded") {
     return {
@@ -680,30 +716,10 @@ function buildNotificationContent(
     };
   }
 
-  if (event.type === "other_member_deleted_entry") {
-    return {
-      body: translate(locale, "push.entryDeleted.body", {
-        actorName,
-        amount: amountLabel,
-        category,
-      }),
-      title: translate(locale, "push.entryDeleted.title"),
-    };
-  }
-
-  if (event.type === "other_member_updated_entry") {
-    return {
-      body: translate(locale, "push.entryUpdated.body", {
-        actorName,
-        amount: amountLabel,
-        category,
-      }),
-      title: translate(locale, "push.entryUpdated.title"),
-    };
-  }
+  const entryCreatedBodyKey = resolveEntryCreatedBodyTranslationKey(event.entryType);
 
   return {
-    body: translate(locale, "push.entryCreated.body", {
+    body: translate(locale, entryCreatedBodyKey, {
       actorName,
       amount: amountLabel,
       category,
@@ -712,12 +728,31 @@ function buildNotificationContent(
   };
 }
 
+function resolveEntryCreatedBodyTranslationKey(entryType?: LedgerEntryType): string {
+  if (entryType === "expense") {
+    return "push.entryCreated.expenseBody";
+  }
+
+  if (entryType === "income") {
+    return "push.entryCreated.incomeBody";
+  }
+
+  return "push.entryCreated.body";
+}
+
+function resolvePushPeriodLabel(
+  period: NotificationThresholdPeriod | undefined,
+  locale?: string | null,
+): string {
+  if (!period) {
+    return translate(locale, "push.fallbacks.period");
+  }
+
+  return translate(locale, `push.periods.${period}`);
+}
+
 function resolveCategoryIdForEvent(eventType?: NotificationEventType): string | null {
-  if (
-    eventType === "other_member_created_entry" ||
-    eventType === "other_member_updated_entry" ||
-    eventType === "other_member_deleted_entry"
-  ) {
+  if (eventType === "other_member_created_entry") {
     return NOTIFICATION_CATEGORY_IDS.entryChange;
   }
 
@@ -739,11 +774,7 @@ function resolveCategoryIdForEvent(eventType?: NotificationEventType): string | 
 function resolveActionRouteForEvent(
   eventType?: NotificationEventType,
 ): NotificationActionRoute | null {
-  if (
-    eventType === "other_member_created_entry" ||
-    eventType === "other_member_updated_entry" ||
-    eventType === "other_member_deleted_entry"
-  ) {
+  if (eventType === "other_member_created_entry") {
     return NOTIFICATION_ACTION_ROUTES.allEntries;
   }
 
@@ -866,9 +897,15 @@ function readText(value: string | undefined, fallback: string): string {
   return value?.trim() || fallback;
 }
 
-function formatCurrency(amount: number, locale?: string | null): string {
-  const numberFormatLocale = locale === "en" ? "en-US" : "ko-KR";
-  return new Intl.NumberFormat(numberFormatLocale).format(amount);
+function resolvePushCurrency(value?: string | null): PushCurrency {
+  return value === "USD" ? "USD" : "KRW";
+}
+
+function formatCurrency(amount: number, currency: PushCurrency): string {
+  const config = PUSH_CURRENCY_FORMAT_CONFIG[currency];
+  const amountLabel = new Intl.NumberFormat(config.locale).format(amount);
+
+  return `${config.prefix}${amountLabel}${config.suffix}`;
 }
 
 function createJsonResponse(status: number, body: Record<string, unknown>): Response {

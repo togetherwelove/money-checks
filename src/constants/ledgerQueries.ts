@@ -1,5 +1,17 @@
 export const LedgerQueryConfig = {
   allEntriesPageSize: 30,
+  realtimeRefreshDelayMs: 250,
+} as const;
+
+export const LedgerRealtimeConfig = {
+  allEntriesChannelScope: "all-entries",
+  calendarChannelScope: "calendar",
+  ledgerEntriesAllEvents: "*",
+  ledgerEntriesBookIdFilterColumn: "book_id",
+  ledgerEntriesChannelPrefix: "ledger-entries",
+  ledgerEntriesTable: "ledger_entries",
+  postgresChangesEvent: "postgres_changes",
+  publicSchema: "public",
 } as const;
 
 export const LedgerEntrySelectColumns = {

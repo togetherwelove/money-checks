@@ -24,12 +24,14 @@ import type {
   JoinSharedLedgerBookPreview,
   JoinSharedLedgerBookPreviewStatus,
   JoinSharedLedgerBookResolution,
+  LedgerBookJoinApprovalAttempt,
   LedgerBookJoinRequest,
 } from "../types/ledgerBookJoinRequest";
 import { JoinSharedLedgerBookResolutions } from "../types/ledgerBookJoinRequest";
 import type { LedgerBookMember } from "../types/ledgerBookMember";
 import { LedgerBookManagementCard } from "./sharedLedgerPanel/LedgerBookManagementCard";
 import { SharedLedgerBookCard } from "./sharedLedgerPanel/SharedLedgerBookCard";
+import { SharedLedgerJoinCard } from "./sharedLedgerPanel/SharedLedgerJoinCard";
 import { sharedLedgerPanelStyles as styles } from "./sharedLedgerPanel/sharedLedgerPanelStyles";
 
 type SharedLedgerPanelProps = {
@@ -39,7 +41,7 @@ type SharedLedgerPanelProps = {
   members: LedgerBookMember[];
   onCreateLedgerBook: (nextName: string) => Promise<boolean>;
   onOpenSubscription: () => void;
-  onApproveJoinRequest: (requestId: string) => Promise<boolean>;
+  onApproveJoinRequest: (requestId: string) => Promise<LedgerBookJoinApprovalAttempt>;
   onBeforeCopyShareCode: () => Promise<void> | void;
   onKickMember: (targetUserId: string) => Promise<boolean>;
   onRejectJoinRequest: (requestId: string) => Promise<boolean>;
@@ -48,6 +50,7 @@ type SharedLedgerPanelProps = {
     shareCode: string,
     joinResolution?: JoinSharedLedgerBookResolution,
   ) => Promise<JoinSharedLedgerBookAttempt>;
+  onBeforeSendJoinRequest: () => Promise<void> | void;
   onPreviewJoinSharedLedgerBook: (shareCode: string) => Promise<JoinSharedLedgerBookPreview>;
   onRenameActiveLedgerBook: (nextName: string) => Promise<boolean>;
   onSwitchLedgerBook: (bookId: string) => Promise<boolean>;
@@ -79,6 +82,7 @@ export function SharedLedgerPanel({
   onRejectJoinRequest,
   onLeaveSharedLedgerBook,
   onJoinSharedLedgerBook,
+  onBeforeSendJoinRequest,
   onPreviewJoinSharedLedgerBook,
   onRenameActiveLedgerBook,
   onSwitchLedgerBook,
@@ -121,6 +125,10 @@ export function SharedLedgerPanel({
     const joinResolution = await resolveConfirmedJoinResolution(joinPreview);
     if (!joinResolution) {
       return;
+    }
+
+    if (shouldShowAdBeforeJoinRequest(joinPreview.status)) {
+      await onBeforeSendJoinRequest();
     }
 
     const joinAttempt = await onJoinSharedLedgerBook(nextShareCode, joinResolution);
@@ -185,12 +193,14 @@ export function SharedLedgerPanel({
   };
 
   const handleApproveJoinRequest = async (requestId: string) => {
-    const didApprove = await onApproveJoinRequest(requestId);
+    const approveAttempt = await onApproveJoinRequest(requestId);
     showNativeToast(
-      didApprove ? AppMessages.accountJoinApproveSuccess : AppMessages.accountJoinApproveError,
+      approveAttempt.didApprove
+        ? AppMessages.accountJoinApproveSuccess
+        : (approveAttempt.errorMessage ?? AppMessages.accountJoinApproveError),
     );
 
-    if (didApprove && activeBook) {
+    if (approveAttempt.didApprove && activeBook) {
       const approvedRequest = pendingJoinRequests.find((request) => request.id === requestId);
       if (approvedRequest) {
         await onSendPushNotificationToBookMembers(
@@ -201,7 +211,7 @@ export function SharedLedgerPanel({
       }
     }
 
-    return didApprove;
+    return approveAttempt;
   };
 
   const handleRejectJoinRequest = async (requestId: string) => {
@@ -236,10 +246,6 @@ export function SharedLedgerPanel({
         canEditBookName={canEditDisplayedBookName}
         currentUserId={currentUserId}
         isOwner={currentMemberRole === "owner"}
-        onChangeShareCodeInput={(value) => {
-          setShareCodeInput(value.toUpperCase());
-        }}
-        onJoin={handleJoin}
         onLeave={handleLeave}
         onApproveJoinRequest={handleApproveJoinRequest}
         onBeforeCopyShareCode={onBeforeCopyShareCode}
@@ -247,6 +253,12 @@ export function SharedLedgerPanel({
         onRejectJoinRequest={handleRejectJoinRequest}
         onSaveBookName={handleSaveBookName}
         pendingJoinRequests={pendingJoinRequests}
+      />
+      <SharedLedgerJoinCard
+        onChangeShareCodeInput={(value) => {
+          setShareCodeInput(value.toUpperCase());
+        }}
+        onJoin={handleJoin}
         shareCodeInput={shareCodeInput}
       />
     </View>
@@ -290,6 +302,10 @@ export function SharedLedgerPanel({
     showNativeToast(resolveJoinPreviewBlockedMessage(joinPreview.status));
     return null;
   }
+}
+
+function shouldShowAdBeforeJoinRequest(status: JoinSharedLedgerBookPreviewStatus): boolean {
+  return status === "can_request" || status === "can_request_with_personal_book_merge";
 }
 
 function confirmJoinRequest(title: string, message: string, confirmAction: string) {

@@ -9,6 +9,7 @@ import {
   removeEntryFromCache,
   replaceVisibleWindowEntries,
   upsertEntryInCache,
+  upsertEntryInCachedMonth,
 } from "./ledgerEntryCache";
 
 const aprilEntry: LedgerEntry = {
@@ -80,6 +81,14 @@ describe("ledgerEntryCache", () => {
 
     expect(updatedCache["2026-05"]?.[0]?.amount).toBe(2500);
     expect(prunedCache["2026-05"]).toEqual([]);
+  });
+
+  it("ignores realtime entries for months that have not been loaded", () => {
+    const cachedOnlyMay = mergeEntriesIntoCache({}, [mayEntry]);
+    const unchangedCache = upsertEntryInCachedMonth(cachedOnlyMay, juneEntry);
+
+    expect(unchangedCache).toBe(cachedOnlyMay);
+    expect(unchangedCache["2026-06"]).toBeUndefined();
   });
 
   it("replaces only the visible 3-month window cache", () => {

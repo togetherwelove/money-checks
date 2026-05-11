@@ -2,11 +2,7 @@ import {
   CALENDAR_DAYS_PER_WEEK,
   CALENDAR_WEEK_ROWS,
 } from "../components/monthCalendarPager/calendarLayout";
-import {
-  EMPTY_CATEGORY_LABEL,
-  KRW_CURRENCY_SUFFIX,
-  formatMonthLabel,
-} from "../constants/ledgerDisplay";
+import { EMPTY_CATEGORY_LABEL, formatMonthLabel } from "../constants/ledgerDisplay";
 import { resolveStaticCopyLanguage } from "../i18n/staticCopy";
 import type {
   CalendarDay,
@@ -15,6 +11,7 @@ import type {
   MonthlyLedgerSummary,
 } from "../types/ledger";
 import { formatAmountNumber } from "./amount";
+import { formatCurrency as formatDisplayCurrency } from "./currency";
 
 const CALENDAR_FORMAT_LOCALE = resolveStaticCopyLanguage() === "en" ? "en-US" : "ko-KR";
 
@@ -44,7 +41,7 @@ type DayAggregate = {
 };
 
 export function formatCurrency(amount: number): string {
-  return `${formatAmountNumber(amount)}${KRW_CURRENCY_SUFFIX}`;
+  return formatDisplayCurrency(amount);
 }
 
 export function formatSelectedDate(isoDate: string): string {

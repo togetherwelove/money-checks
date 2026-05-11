@@ -9,7 +9,7 @@ import * as Notifications from "expo-notifications";
 import "./src/i18n";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AppState, StatusBar, StyleSheet, Text, View } from "react-native";
+import { Alert, AppState, StatusBar, StyleSheet, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { RootSiblingParent } from "react-native-root-siblings";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
@@ -26,9 +26,10 @@ import { AnnualReportRangePickerModal } from "./src/components/annualReport/Annu
 import { NativeYearPickerModal } from "./src/components/calendarPicker/NativeYearPickerModal";
 import { AdInterstitialPlacement } from "./src/constants/ads";
 import { AppleAuthConfig } from "./src/constants/appleAuth";
-import { AuthOnboardingTiming } from "./src/constants/authOnboarding";
+import { AuthOnboardingMessages, AuthOnboardingTiming } from "./src/constants/authOnboarding";
 import { CardSmsClipboardCopy } from "./src/constants/cardSmsClipboard";
 import { AppColors } from "./src/constants/colors";
+import { CommonActionCopy } from "./src/constants/commonActions";
 import { EntryRegistrationCopy } from "./src/constants/entryRegistration";
 import { EXPENSE_CATEGORY_LABELS } from "./src/constants/expenseCategories";
 import { INCOME_CATEGORY_LABELS } from "./src/constants/incomeCategories";
@@ -62,6 +63,7 @@ import {
 import { appPlatform } from "./src/lib/appPlatform";
 import { getAppScreenLabel } from "./src/lib/appScreenLabels";
 import { installAppTextDefaults } from "./src/lib/appTextDefaults";
+import { signOutFromApp } from "./src/lib/auth/signOut";
 import {
   resolveSessionAuthProvider,
   resolveSessionAuthProviderLabel,
@@ -87,11 +89,7 @@ import { openSubscriptionManagement } from "./src/lib/subscription/openSubscript
 import { isSubscriptionPurchaseCancelled } from "./src/lib/subscription/subscriptionError";
 import { registerLedgerWidgetNotificationSync } from "./src/lib/widgetNotificationSync";
 import { fetchLedgerWidgetSummary } from "./src/lib/widgetSummary";
-import {
-  createOtherMemberCreatedEntryEvent,
-  createOtherMemberDeletedEntryEvent,
-  createOtherMemberUpdatedEntryEvent,
-} from "./src/notifications/domain/notificationEventFactories";
+import { createOtherMemberCreatedEntryEvent } from "./src/notifications/domain/notificationEventFactories";
 import { AuthScreen } from "./src/screens/AuthScreen";
 import { NicknameSetupScreen } from "./src/screens/NicknameSetupScreen";
 import { PasswordResetScreen } from "./src/screens/PasswordResetScreen";
@@ -159,6 +157,8 @@ function SignedInApp({ session }: { session: Session }) {
   const hasScheduledInitialPermissionRequestRef = useRef(false);
   const hasStartedInitialPermissionRequestRef = useRef(false);
   const permissionRequestTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasCheckedInitialClipboardImportRef = useRef(false);
+  const previousClipboardImportAppStateRef = useRef(AppState.currentState);
   const [currentScreen, setCurrentScreen] = useState<LedgerAppScreen>("calendar");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNicknameScreenReady, setIsNicknameScreenReady] = useState(false);
@@ -184,7 +184,10 @@ function SignedInApp({ session }: { session: Session }) {
   const shouldServeAdMobAds =
     !subscription.isLoading && subscription.currentTier === SubscriptionTiers.free;
   const showsAdMobAds = shouldServeAdMobAds && isMobileAdsReady;
-  const showAdTrackingPermissionCard = shouldServeAdMobAds && isAdTrackingPermissionSupported();
+  const showAdTrackingPermissionCard =
+    shouldServeAdMobAds &&
+    isAdTrackingPermissionSupported() &&
+    (adTrackingPermissionState === "not-determined" || adTrackingPermissionState === "denied");
   const supportPackages = useSupportPackages(session.user.id);
   const ledgerState = useLedgerScreenState(session);
   useLedgerWidgetSync(ledgerState.activeBook?.id ?? null, ledgerState.entries);
@@ -510,6 +513,68 @@ function SignedInApp({ session }: { session: Session }) {
     setEntryActionMenuDraft(clipboardDraft);
   }, [navigateToEntryFromCalendar, readAvailableCardSmsClipboardDraft]);
 
+  const handleOpenDetectedCardSmsClipboardMenu = useCallback(async () => {
+    if (
+      authOnboarding.isLoading ||
+      authOnboarding.step !== null ||
+      ledgerState.isLoading ||
+      currentScreen === "entry" ||
+      entryActionMenuDraft
+    ) {
+      return;
+    }
+
+    const clipboardDraft = await readAvailableCardSmsClipboardDraft();
+    if (!clipboardDraft) {
+      return;
+    }
+
+    setEntryActionMenuDraft(clipboardDraft);
+  }, [
+    authOnboarding.isLoading,
+    authOnboarding.step,
+    currentScreen,
+    entryActionMenuDraft,
+    ledgerState.isLoading,
+    readAvailableCardSmsClipboardDraft,
+  ]);
+
+  useEffect(() => {
+    if (
+      hasCheckedInitialClipboardImportRef.current ||
+      authOnboarding.isLoading ||
+      authOnboarding.step !== null ||
+      ledgerState.isLoading
+    ) {
+      return;
+    }
+
+    hasCheckedInitialClipboardImportRef.current = true;
+    void handleOpenDetectedCardSmsClipboardMenu();
+  }, [
+    authOnboarding.isLoading,
+    authOnboarding.step,
+    handleOpenDetectedCardSmsClipboardMenu,
+    ledgerState.isLoading,
+  ]);
+
+  useEffect(() => {
+    const appStateSubscription = AppState.addEventListener("change", (nextState) => {
+      const previousState = previousClipboardImportAppStateRef.current;
+      previousClipboardImportAppStateRef.current = nextState;
+
+      if (previousState === "active" || nextState !== "active") {
+        return;
+      }
+
+      void handleOpenDetectedCardSmsClipboardMenu();
+    });
+
+    return () => {
+      appStateSubscription.remove();
+    };
+  }, [handleOpenDetectedCardSmsClipboardMenu]);
+
   const handleDismissEntryActionMenu = useCallback(() => {
     setEntryActionMenuDraft(null);
   }, []);
@@ -639,9 +704,39 @@ function SignedInApp({ session }: { session: Session }) {
       const savedDisplayName = await updateOwnProfileDisplayName(session.user.id, displayName);
       authOnboarding.completeNicknameOnboarding(savedDisplayName || displayName);
       return true;
-    } catch {
+    } catch (error) {
+      logAppError("App", error, {
+        step: "complete_nickname_onboarding",
+        userId: session.user.id,
+      });
       return false;
     }
+  };
+
+  const handleSwitchAccountFromNickname = () => {
+    Alert.alert(
+      AuthOnboardingMessages.nicknameSwitchAccountConfirmTitle,
+      AuthOnboardingMessages.nicknameSwitchAccountConfirmMessage,
+      [
+        {
+          style: "cancel",
+          text: CommonActionCopy.cancel,
+        },
+        {
+          onPress: () => {
+            void signOutFromApp().catch((error) => {
+              logAppError("App", error, {
+                step: "switch_account_from_nickname_onboarding",
+                userId: session.user.id,
+              });
+              showNativeToast(AuthOnboardingMessages.nicknameSwitchAccountError);
+            });
+          },
+          style: "destructive",
+          text: AuthOnboardingMessages.nicknameSwitchAccountAction,
+        },
+      ],
+    );
   };
 
   const handlePurchasePlus = async () => {
@@ -737,6 +832,14 @@ function SignedInApp({ session }: { session: Session }) {
     }
 
     await showInterstitialAd(AdInterstitialPlacement.shareCodeCopy);
+  };
+
+  const handleBeforeSendJoinRequest = async () => {
+    if (!showsAdMobAds) {
+      return;
+    }
+
+    await showInterstitialAd(AdInterstitialPlacement.joinRequestSend);
   };
 
   const handleSaveEntry = async () => {
@@ -989,7 +1092,11 @@ function SignedInApp({ session }: { session: Session }) {
     return (
       <SignedOutAppShell>
         {isNicknameScreenReady ? (
-          <NicknameSetupScreen onSubmit={handleCompleteNicknameOnboarding} />
+          <NicknameSetupScreen
+            accountEmail={session.user.email ?? null}
+            onSubmit={handleCompleteNicknameOnboarding}
+            onSwitchAccount={handleSwitchAccountFromNickname}
+          />
         ) : (
           <OnboardingTransitionScreen />
         )}
@@ -1038,6 +1145,7 @@ function SignedInApp({ session }: { session: Session }) {
                 notificationPermissionState={notifications.permissionState}
                 notificationStatusMessage={notifications.statusMessage}
                 onBeforeCopyShareCode={handleBeforeCopyShareCode}
+                onBeforeSendJoinRequest={handleBeforeSendJoinRequest}
                 onChangeNotificationThreshold={notifications.updateThresholdValue}
                 onChangeNotificationThresholdEnabled={notifications.updateThresholdEnabled}
                 onDeleteSelectedEntry={handleDeleteEntryFromCalendar}
@@ -1133,7 +1241,6 @@ function SignedInApp({ session }: { session: Session }) {
 
   async function notifySharedLedgerEntryChange(
     savedEntry: LedgerEntry,
-    changeType: "create" | "update",
     widget?: Awaited<ReturnType<typeof resolveCurrentLedgerWidgetPushSummary>>,
   ) {
     if (!ledgerState.activeBook) {
@@ -1141,16 +1248,10 @@ function SignedInApp({ session }: { session: Session }) {
     }
 
     const actorName = await resolveCurrentActorName();
-    const event =
-      changeType === "create"
-        ? createOtherMemberCreatedEntryEvent(
-            { actorName, bookName: ledgerState.activeBook.name },
-            { ...savedEntry, authorId: session.user.id, authorName: actorName },
-          )
-        : createOtherMemberUpdatedEntryEvent(
-            { actorName, bookName: ledgerState.activeBook.name },
-            { ...savedEntry, authorId: session.user.id, authorName: actorName },
-          );
+    const event = createOtherMemberCreatedEntryEvent(
+      { actorName, bookName: ledgerState.activeBook.name },
+      { ...savedEntry, authorId: session.user.id, authorName: actorName },
+    );
 
     await notifications.sendPushNotificationToBookMembers(
       ledgerState.activeBook.id,
@@ -1193,12 +1294,14 @@ function SignedInApp({ session }: { session: Session }) {
         await notifications.notifySavedEntry(lastCurrentMonthEntry, currentEntries);
       }
 
-      const widget = ledgerState.activeBook
-        ? await resolveCurrentLedgerWidgetPushSummary(ledgerState.activeBook.id)
-        : undefined;
+      if (changeType === "create") {
+        const widget = ledgerState.activeBook
+          ? await resolveCurrentLedgerWidgetPushSummary(ledgerState.activeBook.id)
+          : undefined;
 
-      for (const savedEntry of currentMonthEntries) {
-        await notifySharedLedgerEntryChange(savedEntry, changeType, widget);
+        for (const savedEntry of currentMonthEntries) {
+          await notifySharedLedgerEntryChange(savedEntry, widget);
+        }
       }
     } catch (error) {
       logAppError("App", error, {
@@ -1209,31 +1312,7 @@ function SignedInApp({ session }: { session: Session }) {
     }
   }
 
-  async function runEntryDeleteSideEffects(deletedEntry: LedgerEntry) {
-    const activeBook = ledgerState.activeBook;
-    if (!activeBook) {
-      return;
-    }
-
-    try {
-      const actorName = await resolveCurrentActorName();
-      const widget = await resolveCurrentLedgerWidgetPushSummary(activeBook.id);
-      await notifications.sendPushNotificationToBookMembers(
-        activeBook.id,
-        createOtherMemberDeletedEntryEvent(
-          { actorName, bookName: activeBook.name },
-          { ...deletedEntry, authorId: session.user.id, authorName: actorName },
-        ),
-        [session.user.id],
-        widget,
-      );
-    } catch (error) {
-      logAppError("App", error, {
-        entryId: deletedEntry.id,
-        step: "run_entry_delete_side_effects",
-      });
-    }
-  }
+  async function runEntryDeleteSideEffects(_deletedEntry: LedgerEntry) {}
 }
 
 function buildCardSmsClipboardLedgerEntryDraft({

@@ -1,6 +1,6 @@
 import { AppMessages } from "../constants/messages";
 import { ShareLedgerMessages } from "../constants/shareLedgerMessages";
-import { SubscriptionMessages } from "../constants/subscription";
+import { SharedLedgerJoinPreviewCopy } from "../constants/sharedLedgerJoinPreview";
 
 type SupabaseLikeError = {
   details?: string | null;
@@ -28,7 +28,7 @@ export function resolveSharedLedgerJoinErrorMessage(error: unknown): string {
   }
 
   if (errorText.includes("Shared ledger member limit reached for owner subscription tier.")) {
-    return SubscriptionMessages.sharedLedgerLimitDescription;
+    return SharedLedgerJoinPreviewCopy.targetMemberLimit;
   }
 
   if (errorText.includes("Free shared ledger owners cannot join another ledger.")) {

@@ -38,6 +38,24 @@ type SerializedLedgerWidgetPushPayload = ReturnType<typeof buildLedgerWidgetPush
 
 const PUSH_NOTIFICATIONS_FUNCTION = "send-push-notifications";
 const PUSH_NOTIFICATIONS_ENDPOINT = `${supabaseUrl}/functions/v1/${PUSH_NOTIFICATIONS_FUNCTION}`;
+const PUSH_NOTIFICATION_RATE_LIMIT_STATUS = 429;
+
+export class PushNotificationRequestError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = "PushNotificationRequestError";
+  }
+}
+
+export function isPushNotificationRateLimitError(error: unknown): boolean {
+  return (
+    error instanceof PushNotificationRequestError &&
+    error.status === PUSH_NOTIFICATION_RATE_LIMIT_STATUS
+  );
+}
 
 export async function sendPushNotificationToBookMembers(
   bookId: string,
@@ -108,10 +126,11 @@ async function sendPushNotification(request: PushNotificationRequest): Promise<v
 
   if (!response.ok) {
     const responseText = await readResponseText(response);
-    throw new Error(
+    throw new PushNotificationRequestError(
       responseText
         ? `send-push-notifications returned ${response.status}: ${responseText}`
         : `send-push-notifications returned ${response.status}.`,
+      response.status,
     );
   }
 }

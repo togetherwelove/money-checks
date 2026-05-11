@@ -1,6 +1,8 @@
+import type { AppCurrency } from "../constants/currency";
 import type { AppLanguage } from "../i18n/types";
-import type { ProfileDisplayRow } from "../types/supabase";
+import type { ProfileCurrencyRow, ProfileDisplayRow } from "../types/supabase";
 import { isValidDisplayName, normalizeDisplayNameCandidate } from "../utils/displayName";
+import { resolveSupportedCurrency } from "./currencyPreference";
 import {
   getCachedProfileDisplayName,
   setCachedProfileDisplayName,
@@ -74,6 +76,30 @@ export async function syncOwnProfileDisplayNameIfMissing(
 export async function syncOwnProfilePreferredLocale(language: AppLanguage): Promise<void> {
   const { error } = await supabase.rpc("update_own_profile_preferred_locale", {
     next_locale: language,
+  });
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function fetchOwnProfileDefaultCurrency(userId: string): Promise<AppCurrency | null> {
+  const { data, error } = await supabase
+    .from(PROFILE_TABLE)
+    .select("id, default_currency")
+    .eq("id", userId)
+    .single<ProfileCurrencyRow>();
+
+  if (error) {
+    throw error;
+  }
+
+  return resolveSupportedCurrency(data.default_currency);
+}
+
+export async function syncOwnProfileDefaultCurrency(currency: AppCurrency): Promise<void> {
+  const { error } = await supabase.rpc("update_own_profile_default_currency", {
+    next_currency: currency,
   });
 
   if (error) {

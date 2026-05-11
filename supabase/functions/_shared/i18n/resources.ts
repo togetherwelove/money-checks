@@ -31,15 +31,9 @@ export const functionI18nResources = {
     push: {
       entryCreated: {
         body: "{{actorName}} added {{category}} {{amount}}.",
+        expenseBody: "{{actorName}} spent {{amount}} on {{category}}.",
+        incomeBody: "{{actorName}} earned {{amount}} from {{category}}.",
         title: "Entry Added",
-      },
-      entryDeleted: {
-        body: "{{actorName}} deleted {{category}} {{amount}}.",
-        title: "Entry Deleted",
-      },
-      entryUpdated: {
-        body: "{{actorName}} updated {{category}} {{amount}}.",
-        title: "Entry Updated",
       },
       expenseLimitExceeded: {
         body: "{{period}} expenses reached {{totalAmount}}.",
@@ -54,6 +48,11 @@ export const functionI18nResources = {
       joinRequest: {
         body: "{{requesterName}} requested access to {{bookName}}.",
         title: "Join Request",
+      },
+      periods: {
+        day: "day",
+        month: "month",
+        week: "week",
       },
       memberJoinedBook: {
         body: "{{actorName}} joined {{bookName}}.",
@@ -99,15 +98,9 @@ export const functionI18nResources = {
     push: {
       entryCreated: {
         body: "{{actorName}}님이 {{category}} {{amount}}을 추가했어요.",
+        expenseBody: "{{actorName}}님이 {{category}} {{amount}}을 썼어요.",
+        incomeBody: "{{actorName}}님이 {{category}} {{amount}}을 벌었어요.",
         title: "내역 추가",
-      },
-      entryDeleted: {
-        body: "{{actorName}}님이 {{category}} {{amount}}을 삭제했어요.",
-        title: "내역 삭제",
-      },
-      entryUpdated: {
-        body: "{{actorName}}님이 {{category}} {{amount}}을 수정했어요.",
-        title: "내역 수정",
       },
       expenseLimitExceeded: {
         body: "{{period}} 지출 합계가 {{totalAmount}}에 도달했어요.",
@@ -122,6 +115,11 @@ export const functionI18nResources = {
       joinRequest: {
         body: "{{requesterName}}님이 {{bookName}} 참여를 요청했어요.",
         title: "참여 요청",
+      },
+      periods: {
+        day: "하루",
+        month: "한 달",
+        week: "한 주",
       },
       memberJoinedBook: {
         body: "{{actorName}}님이 {{bookName}}에 참여했어요.",

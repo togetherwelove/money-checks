@@ -1,7 +1,9 @@
 import { StyleSheet, Switch, Text, TextInput, View } from "react-native";
 
 import { AppColors } from "../../constants/colors";
+import { CurrencyUnitLabels } from "../../constants/currency";
 import { AppTextBreakProps } from "../../constants/textLayout";
+import { resolveDisplayCurrency } from "../../lib/currencyPreference";
 import { NotificationThresholdAmountCopy } from "../../notifications/config/notificationCopy";
 import { NotificationThresholdAmountInput } from "../../notifications/config/notificationThresholdLimits";
 import type { NotificationThresholdField as NotificationThresholdFieldState } from "../../notifications/preferences/notificationPreferences";
@@ -20,6 +22,8 @@ export function NotificationThresholdField({
   onChangeEnabled,
   onChangeValue,
 }: NotificationThresholdFieldProps) {
+  const currencyUnitLabel = CurrencyUnitLabels[resolveDisplayCurrency()];
+
   return (
     <View style={[styles.field, isFirst && styles.firstField]}>
       <View style={styles.inputWrap}>
@@ -37,7 +41,7 @@ export function NotificationThresholdField({
           value={formatAmountInput(field.value)}
         />
         <Text {...AppTextBreakProps} style={styles.currency}>
-          {NotificationThresholdAmountCopy.currencyLabel}
+          {currencyUnitLabel}
         </Text>
         <Text {...AppTextBreakProps} style={styles.label}>
           {NotificationThresholdAmountCopy.exceededLabel}
