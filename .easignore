@@ -10,6 +10,8 @@ node_modules/
 .eas-build-state/
 .tmp-glance-aar/
 store-assets/
+/android
+/ios
 android/release-signing.properties
 android/*.keystore
 android/*.jks

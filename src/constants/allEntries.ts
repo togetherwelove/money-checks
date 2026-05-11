@@ -24,3 +24,7 @@ export const AllEntriesCopy = selectStaticCopy({
     searchPlaceholder: "내용과 메모 검색",
   },
 } as const);
+
+export const AllEntriesFilterUi = {
+  typeTintBorderOpacity: 0.52,
+} as const;

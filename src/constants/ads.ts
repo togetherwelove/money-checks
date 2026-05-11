@@ -30,7 +30,10 @@ export type AdInterstitialPlacementKey =
 
 export const NativeAdListConfig = {
   insertionStartAfterEntryCount: 6,
-  insertionInterval: 10,
+  insertionIntervalMax: 10,
+  insertionIntervalMin: 6,
+  insertionIntervalRandomMultiplier: 37,
+  insertionIntervalRandomSeed: 11,
   sponsoredLabel: selectStaticCopy({
     en: "Ad ",
     ko: "광고 ",

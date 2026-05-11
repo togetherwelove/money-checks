@@ -1,15 +1,17 @@
 import { StyleSheet, Text, View } from "react-native";
 
+import { AccountVersionCopy } from "../../constants/accountVersion";
 import { AppColors } from "../../constants/colors";
 import { AppLayout } from "../../constants/layout";
 import { getAppVersionLabel } from "../../lib/appVersion";
 
-const VERSION_TITLE = "Version";
-
 export function AccountVersionFooter() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{`${VERSION_TITLE} ${getAppVersionLabel()}`}</Text>
+      <Text
+        style={styles.title}
+      >{`${AccountVersionCopy.versionTitle} ${getAppVersionLabel()}`}</Text>
+      <Text style={styles.copyright}>{AccountVersionCopy.copyright}</Text>
     </View>
   );
 }
@@ -25,5 +27,10 @@ const styles = StyleSheet.create({
     color: AppColors.mutedText,
     fontSize: 11,
     fontWeight: "700",
+  },
+  copyright: {
+    color: AppColors.mutedStrongText,
+    fontSize: 11,
+    fontWeight: "600",
   },
 });

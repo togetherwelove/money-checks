@@ -13,7 +13,7 @@ import {
 
 import { AppNativeAdCard } from "../components/AppNativeAdCard";
 import { LedgerEntryListItem } from "../components/LedgerEntryListItem";
-import { AllEntriesCopy } from "../constants/allEntries";
+import { AllEntriesCopy, AllEntriesFilterUi } from "../constants/allEntries";
 import { AppColors } from "../constants/colors";
 import { CommonActionCopy } from "../constants/commonActions";
 import { AppLayout } from "../constants/layout";
@@ -24,6 +24,7 @@ import { useAllLedgerEntries } from "../hooks/useAllLedgerEntries";
 import { useLedgerCategories } from "../hooks/useLedgerCategories";
 import { useLedgerCategoryIconMap } from "../hooks/useLedgerCategoryIconMap";
 import { buildAllEntriesFeedItems } from "../lib/allEntriesFeedItems";
+import type { CategoryDefinition } from "../types/category";
 import type { LedgerEntry } from "../types/ledger";
 import type { LedgerBook } from "../types/ledgerBook";
 
@@ -117,27 +118,16 @@ export function AllEntriesScreen({
             </Text>
           </Pressable>
           {categories.map((category) => (
-            <Pressable
+            <CategoryFilterChip
+              category={category}
+              isSelected={selectedCategoryId === category.id}
               key={category.id}
               onPress={() =>
                 setSelectedCategoryId((currentCategoryId) =>
                   currentCategoryId === category.id ? null : category.id,
                 )
               }
-              style={[
-                styles.categoryFilterChip,
-                selectedCategoryId === category.id ? styles.activeCategoryFilterChip : null,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.categoryFilterLabel,
-                  selectedCategoryId === category.id ? styles.activeCategoryFilterLabel : null,
-                ]}
-              >
-                {category.label}
-              </Text>
-            </Pressable>
+            />
           ))}
         </ScrollView>
         <FlatList
@@ -226,6 +216,45 @@ export function AllEntriesScreen({
   }
 }
 
+function CategoryFilterChip({
+  category,
+  isSelected,
+  onPress,
+}: {
+  category: CategoryDefinition;
+  isSelected: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[
+        styles.categoryFilterChip,
+        category.type === "income"
+          ? styles.incomeCategoryFilterChip
+          : styles.expenseCategoryFilterChip,
+        isSelected
+          ? category.type === "income"
+            ? styles.activeIncomeCategoryFilterChip
+            : styles.activeExpenseCategoryFilterChip
+          : null,
+      ]}
+    >
+      <Text
+        style={[
+          styles.categoryFilterLabel,
+          category.type === "income"
+            ? styles.incomeCategoryFilterLabel
+            : styles.expenseCategoryFilterLabel,
+          isSelected ? styles.activeCategoryFilterLabel : null,
+        ]}
+      >
+        {category.label}
+      </Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
@@ -260,11 +289,37 @@ const styles = StyleSheet.create({
     borderColor: AppColors.primary,
     backgroundColor: AppColors.primary,
   },
+  expenseCategoryFilterChip: {
+    borderColor: AppColors.expense,
+    backgroundColor: AppColors.expenseSoft,
+    opacity: AllEntriesFilterUi.typeTintBorderOpacity,
+  },
+  incomeCategoryFilterChip: {
+    borderColor: AppColors.income,
+    backgroundColor: AppColors.incomeSoft,
+    opacity: AllEntriesFilterUi.typeTintBorderOpacity,
+  },
+  activeExpenseCategoryFilterChip: {
+    borderColor: AppColors.expense,
+    backgroundColor: AppColors.expense,
+    opacity: 1,
+  },
+  activeIncomeCategoryFilterChip: {
+    borderColor: AppColors.income,
+    backgroundColor: AppColors.income,
+    opacity: 1,
+  },
   categoryFilterLabel: {
     color: AppColors.mutedStrongText,
     fontSize: 13,
     lineHeight: 18,
     fontWeight: "600",
+  },
+  expenseCategoryFilterLabel: {
+    color: AppColors.expense,
+  },
+  incomeCategoryFilterLabel: {
+    color: AppColors.income,
   },
   activeCategoryFilterLabel: {
     color: AppColors.inverseText,

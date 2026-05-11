@@ -16,6 +16,7 @@ export type AllEntriesFeedItem =
 export function buildAllEntriesFeedItems(entries: LedgerEntry[]): AllEntriesFeedItem[] {
   const items: AllEntriesFeedItem[] = [];
   let nativeAdSlotIndex = 0;
+  let nextNativeAdEntryCount = NativeAdListConfig.insertionStartAfterEntryCount;
 
   for (let index = 0; index < entries.length; index += 1) {
     const entry = entries[index];
@@ -27,31 +28,31 @@ export function buildAllEntriesFeedItems(entries: LedgerEntry[]): AllEntriesFeed
       type: "entry",
     });
 
-    if (shouldInsertNativeAdAfterEntryCount(entryCount, entries.length)) {
+    if (shouldInsertNativeAdAfterEntryCount(entryCount)) {
       items.push({
         key: `native-ad-${entryCount}`,
         slotIndex: nativeAdSlotIndex,
         type: "native-ad",
       });
       nativeAdSlotIndex += 1;
+      nextNativeAdEntryCount += getNativeAdInsertionInterval(nativeAdSlotIndex);
     }
   }
 
   return items;
+
+  function shouldInsertNativeAdAfterEntryCount(entryCount: number) {
+    return entryCount < entries.length && entryCount === nextNativeAdEntryCount;
+  }
 }
 
-function shouldInsertNativeAdAfterEntryCount(entryCount: number, totalEntryCount: number) {
-  if (entryCount >= totalEntryCount) {
-    return false;
-  }
+function getNativeAdInsertionInterval(slotIndex: number) {
+  const intervalRange =
+    NativeAdListConfig.insertionIntervalMax - NativeAdListConfig.insertionIntervalMin + 1;
+  const stableRandomOffset =
+    (slotIndex * NativeAdListConfig.insertionIntervalRandomMultiplier +
+      NativeAdListConfig.insertionIntervalRandomSeed) %
+    intervalRange;
 
-  if (entryCount < NativeAdListConfig.insertionStartAfterEntryCount) {
-    return false;
-  }
-
-  return (
-    (entryCount - NativeAdListConfig.insertionStartAfterEntryCount) %
-      NativeAdListConfig.insertionInterval ===
-    0
-  );
+  return NativeAdListConfig.insertionIntervalMin + stableRandomOffset;
 }

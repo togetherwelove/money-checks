@@ -11,6 +11,6 @@ export const SubscriptionPlusLabels = selectStaticCopy({
     accountActiveSuffix: "활성화",
     menuPrefix: "알뜰",
     purchaseActionPrefix: "알뜰",
-    purchaseActionSuffix: "가입",
+    purchaseActionSuffix: "구독",
   },
 } as const);
