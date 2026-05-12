@@ -129,6 +129,9 @@ export const sharedLedgerPanelStyles = StyleSheet.create({
     fontSize: 16,
     textTransform: "uppercase",
   },
+  disabledInput: {
+    opacity: 0.55,
+  },
   statusText: {
     fontSize: 12,
     fontWeight: "600",
@@ -165,6 +168,10 @@ export const sharedLedgerPanelStyles = StyleSheet.create({
     borderColor: AppColors.primary,
     backgroundColor: AppColors.surfaceMuted,
   },
+  readOnlyLedgerBookItem: {
+    backgroundColor: AppColors.surfaceMuted,
+    opacity: 0.78,
+  },
   ledgerBookItemContent: {
     flex: 1,
     gap: 5,
@@ -178,6 +185,17 @@ export const sharedLedgerPanelStyles = StyleSheet.create({
     flexShrink: 1,
     color: AppColors.text,
     fontSize: 14,
+    fontWeight: "800",
+  },
+  readOnlyLedgerBookChip: {
+    borderRadius: 999,
+    backgroundColor: AppColors.surfaceStrong,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  readOnlyLedgerBookChipText: {
+    color: AppColors.expense,
+    fontSize: 10,
     fontWeight: "800",
   },
   ledgerBookItemMeta: {

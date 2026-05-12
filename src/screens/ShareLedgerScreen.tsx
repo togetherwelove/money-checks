@@ -13,6 +13,7 @@ import {
   writeCachedLedgerBookMembers,
 } from "../lib/ledgerBookMembersCache";
 import { fetchLedgerBookMembers } from "../lib/ledgerBooks";
+import { isLedgerBookEditableWithinPlanLimit } from "../lib/ledgerEditability";
 import { fetchProfileDisplayName } from "../lib/profiles";
 import { supabase } from "../lib/supabase";
 import type { NotificationEvent } from "../notifications/domain/notificationEvents";
@@ -43,6 +44,7 @@ type ShareLedgerScreenProps = {
   onApproveJoinRequest: (requestId: string) => Promise<LedgerBookJoinApprovalAttempt>;
   onBeforeCopyShareCode: () => Promise<void> | void;
   onCreateLedgerBook: (nextName: string) => Promise<boolean>;
+  onDeleteActiveLedgerBook: () => Promise<boolean>;
   onJoinSharedLedgerBook: (
     shareCode: string,
     joinResolution?: JoinSharedLedgerBookResolution,
@@ -79,6 +81,7 @@ export function ShareLedgerScreen({
   onBeforeCopyShareCode,
   onBeforeSendJoinRequest,
   onCreateLedgerBook,
+  onDeleteActiveLedgerBook,
   onLeaveSharedLedgerBook,
   onJoinSharedLedgerBook,
   onPreviewJoinSharedLedgerBook,
@@ -96,6 +99,9 @@ export function ShareLedgerScreen({
 }: ShareLedgerScreenProps) {
   const [members, setMembers] = useState<LedgerBookMember[]>([]);
   const activeBookId = activeBook?.id ?? null;
+  const isActiveBookReadOnlyDueToPlanLimit =
+    Boolean(activeBook) &&
+    !isLedgerBookEditableWithinPlanLimit(subscriptionTier, accessibleBooks, activeBook?.id);
 
   useEffect(() => {
     let isMounted = true;
@@ -176,8 +182,10 @@ export function ShareLedgerScreen({
         accessibleBooks={accessibleBooks}
         activeBook={activeBook}
         currentUserId={userId}
+        isReadOnlyDueToPlanLimit={isActiveBookReadOnlyDueToPlanLimit}
         members={members}
         onCreateLedgerBook={onCreateLedgerBook}
+        onDeleteActiveLedgerBook={onDeleteActiveLedgerBook}
         onOpenSubscription={onOpenSubscription}
         onApproveJoinRequest={onApproveJoinRequest}
         onBeforeCopyShareCode={onBeforeCopyShareCode}

@@ -1,4 +1,4 @@
-export type LedgerBookMemberRole = "editor" | "owner" | "viewer";
+export type LedgerBookMemberRole = "editor" | "owner";
 
 export type LedgerBookMember = {
   displayName: string;

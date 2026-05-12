@@ -11,6 +11,7 @@ export const AppColors = {
   incomeSoft: "#e6f5ef",
   expense: "#b8543c",
   expenseSoft: "#fbe8e2",
+  formerMemberText: "rgba(184, 84, 60, 0.58)",
   calendarShadow: "#c4baa9",
   text: "#1f2a28",
   mutedText: "#5f6d68",

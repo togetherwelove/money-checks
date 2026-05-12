@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { Pressable } from "react-native";
 
 import { AppColors } from "../constants/colors";
+import { LedgerEditabilityCopy } from "../constants/ledgerEditability";
 import { SubscriptionMessages } from "../constants/subscription";
 import { SubscriptionPlusLabels } from "../constants/subscriptionPlusLabels";
 import { BrandPlusTextStyle } from "../constants/uiStyles";
@@ -12,6 +13,7 @@ import { IconActionButton } from "./IconActionButton";
 type AppHeaderProps = {
   canSwitchTitle?: boolean;
   isMenuOpen?: boolean;
+  isReadOnlyTitle?: boolean;
   onOpenMenu: () => void;
   onPressTitle?: () => void;
   showsPlusBadge?: boolean;
@@ -22,6 +24,7 @@ type AppHeaderProps = {
 export function AppHeader({
   canSwitchTitle = false,
   isMenuOpen = false,
+  isReadOnlyTitle = false,
   onOpenMenu,
   onPressTitle,
   showsPlusBadge = false,
@@ -42,6 +45,11 @@ export function AppHeader({
             {centerLabel}
           </Text>
           {showsPlusBadge ? <Text style={BrandPlusTextStyle}>plus</Text> : null}
+          {isReadOnlyTitle ? (
+            <View style={styles.readOnlyChip}>
+              <Text style={styles.readOnlyChipText}>{LedgerEditabilityCopy.readOnlyBadge}</Text>
+            </View>
+          ) : null}
           {canSwitchTitle ? (
             <Feather color={AppColors.mutedStrongText} name="chevron-down" size={16} />
           ) : null}
@@ -100,10 +108,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 4,
     minWidth: 0,
+    maxWidth: "100%",
   },
   titleText: {
+    flexShrink: 1,
     color: AppColors.text,
     fontSize: 18,
+    fontWeight: "800",
+  },
+  readOnlyChip: {
+    borderRadius: 999,
+    backgroundColor: AppColors.surfaceStrong,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+  readOnlyChipText: {
+    color: AppColors.expense,
+    fontSize: 10,
     fontWeight: "800",
   },
 });

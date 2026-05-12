@@ -16,6 +16,7 @@ import { TextLinkButton } from "./TextLinkButton";
 
 type LedgerBookMembersProps = {
   currentUserId: string;
+  isManagementDisabled?: boolean;
   members: LedgerBookMember[];
   onOpenSubscription: () => void;
   onKickMember: (targetUserId: string) => Promise<boolean>;
@@ -24,6 +25,7 @@ type LedgerBookMembersProps = {
 
 export function LedgerBookMembers({
   currentUserId,
+  isManagementDisabled = false,
   members,
   onOpenSubscription,
   onKickMember,
@@ -39,7 +41,8 @@ export function LedgerBookMembers({
     <View style={styles.memberList}>
       {members.map((member, memberIndex) => {
         const isOwner = member.role === "owner";
-        const canKickMember = canManageMembers && !isOwner && member.userId !== currentUserId;
+        const canKickMember =
+          canManageMembers && !isManagementDisabled && !isOwner && member.userId !== currentUserId;
         const selfBadgeLabel = stripWrappingParentheses(AppMessages.accountMemberSelfSuffix);
         const isKickActionDisabled = pendingKickMemberId !== null;
 

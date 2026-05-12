@@ -25,6 +25,7 @@ import { AppColors } from "../constants/colors";
 import { CommonActionCopy } from "../constants/commonActions";
 import { DateMemoUi } from "../constants/dateMemo";
 import { AppLayout } from "../constants/layout";
+import { LedgerEditabilityCopy } from "../constants/ledgerEditability";
 import { AppMessages } from "../constants/messages";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
 import type { LedgerEntry } from "../types/ledger";
@@ -135,6 +136,7 @@ export function HomeScreen({
         handleBeginDateMemoEditing={handleBeginDateMemoEditing}
         isDateMemoExpanded={isDateMemoExpanded}
         isLoadingSelectedDateEntries={isLoadingSelectedDateEntries}
+        isReadOnlyDueToPlanLimit={state.isReadOnlyDueToPlanLimit}
         monthlyLedger={monthlyLedger}
         onDeleteSelectedEntry={onDeleteSelectedEntry}
         onDeleteSelectedDateNote={handleDeleteSelectedDateNote}
@@ -165,6 +167,7 @@ function KeyboardAwareContent({
   handleBeginDateMemoEditing,
   isDateMemoExpanded,
   isLoadingSelectedDateEntries,
+  isReadOnlyDueToPlanLimit,
   monthlyLedger,
   onDeleteSelectedEntry,
   onDeleteSelectedDateNote,
@@ -190,6 +193,7 @@ function KeyboardAwareContent({
   handleBeginDateMemoEditing: (input: TextInput | null) => void;
   isDateMemoExpanded: boolean;
   isLoadingSelectedDateEntries: boolean;
+  isReadOnlyDueToPlanLimit: boolean;
   monthlyLedger: LedgerScreenState["monthlyLedger"];
   onDeleteSelectedEntry: (entry: LedgerEntry) => Promise<boolean>;
   onDeleteSelectedDateNote: () => Promise<void>;
@@ -248,6 +252,18 @@ function KeyboardAwareContent({
         </View>
       </View>
       <View style={styles.transactionSection}>
+        {isReadOnlyDueToPlanLimit ? (
+          <View style={styles.readOnlyNotice}>
+            <View style={styles.readOnlyTextBlock}>
+              <Text style={styles.readOnlyNoticeTitle}>
+                {LedgerEditabilityCopy.readOnlyNoticeTitle}
+              </Text>
+              <Text style={styles.readOnlyNoticeDescription}>
+                {LedgerEditabilityCopy.readOnlyNoticeDescription}
+              </Text>
+            </View>
+          </View>
+        ) : null}
         <View style={styles.selectionRow}>
           <View style={styles.selectedDateInfo}>
             <Text style={styles.selectedDate}>{selectedDateLabel}</Text>
@@ -381,6 +397,33 @@ const styles = StyleSheet.create({
   error: {
     color: AppColors.expense,
     fontSize: 12,
+  },
+  readOnlyNotice: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: AppLayout.compactGap,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+    borderRadius: AppLayout.cardRadius,
+    backgroundColor: AppColors.surfaceMuted,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  readOnlyTextBlock: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  readOnlyNoticeTitle: {
+    color: AppColors.text,
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  readOnlyNoticeDescription: {
+    color: AppColors.mutedText,
+    fontSize: 11,
+    fontWeight: "600",
+    lineHeight: 15,
   },
   selectedDate: {
     color: AppColors.text,

@@ -41,12 +41,6 @@ export function DeleteAccountSubscriptionWarningModal({
             </Text>
             <View style={styles.actionRow}>
               <ActionButton
-                label={CommonActionCopy.cancel}
-                onPress={onClose}
-                size="inline"
-                variant="secondary"
-              />
-              <ActionButton
                 label={AccountDeletionMessages.subscriptionWarningManageAction}
                 onPress={onOpenSubscriptionManagement}
                 size="inline"

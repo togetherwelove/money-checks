@@ -4,6 +4,9 @@ import { AppColors } from "../constants/colors";
 import { CommonActionCopy } from "../constants/commonActions";
 import { AppLayout } from "../constants/layout";
 import { LedgerBookManagementCopy } from "../constants/ledgerBookManagement";
+import { LedgerEditabilityCopy } from "../constants/ledgerEditability";
+import type { SubscriptionTier } from "../constants/subscription";
+import { isLedgerBookEditableWithinPlanLimit } from "../lib/ledgerEditability";
 import type { AccessibleLedgerBook } from "../types/ledgerBook";
 import { IconActionButton } from "./IconActionButton";
 
@@ -13,6 +16,7 @@ type LedgerBookSwitcherModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onSelectBook: (bookId: string) => void;
+  subscriptionTier: SubscriptionTier;
 };
 
 export function LedgerBookSwitcherModal({
@@ -21,6 +25,7 @@ export function LedgerBookSwitcherModal({
   isOpen,
   onClose,
   onSelectBook,
+  subscriptionTier,
 }: LedgerBookSwitcherModalProps) {
   return (
     <Modal animationType="fade" onRequestClose={onClose} transparent visible={isOpen}>
@@ -36,6 +41,11 @@ export function LedgerBookSwitcherModal({
           <View style={styles.list}>
             {books.map((book) => {
               const isActiveBook = book.id === activeBookId;
+              const isReadOnlyBook = !isLedgerBookEditableWithinPlanLimit(
+                subscriptionTier,
+                books,
+                book.id,
+              );
               const ownershipLabel =
                 book.role === "owner"
                   ? LedgerBookManagementCopy.ownerBadge
@@ -50,16 +60,32 @@ export function LedgerBookSwitcherModal({
                     }
                     onClose();
                   }}
-                  style={[styles.bookItem, isActiveBook ? styles.activeBookItem : null]}
+                  style={[
+                    styles.bookItem,
+                    isReadOnlyBook ? styles.readOnlyBookItem : null,
+                    isActiveBook ? styles.activeBookItem : null,
+                  ]}
                 >
                   <View style={styles.bookTextBlock}>
-                    <Text numberOfLines={1} style={styles.bookName}>
+                    <Text
+                      numberOfLines={1}
+                      style={[styles.bookName, isReadOnlyBook ? styles.readOnlyBookName : null]}
+                    >
                       {book.name}
                     </Text>
-                    <Text style={styles.bookMeta}>
+                    <Text
+                      style={[styles.bookMeta, isReadOnlyBook ? styles.readOnlyBookMeta : null]}
+                    >
                       {isActiveBook ? LedgerBookManagementCopy.currentBadge : ownershipLabel}
                     </Text>
                   </View>
+                  {isReadOnlyBook ? (
+                    <View style={styles.readOnlyChip}>
+                      <Text style={styles.readOnlyChipText}>
+                        {LedgerEditabilityCopy.readOnlyBadge}
+                      </Text>
+                    </View>
+                  ) : null}
                   {isActiveBook ? (
                     <IconActionButton
                       accessibilityLabel={LedgerBookManagementCopy.activeStateLabel}
@@ -129,6 +155,11 @@ const styles = StyleSheet.create({
     borderColor: AppColors.primary,
     backgroundColor: AppColors.surfaceMuted,
   },
+  readOnlyBookItem: {
+    borderColor: AppColors.border,
+    backgroundColor: AppColors.surfaceMuted,
+    opacity: 0.76,
+  },
   bookTextBlock: {
     flex: 1,
     gap: 5,
@@ -138,9 +169,26 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "800",
   },
+  readOnlyBookName: {
+    color: AppColors.mutedStrongText,
+  },
   bookMeta: {
     color: AppColors.mutedStrongText,
     fontSize: 11,
     fontWeight: "600",
+  },
+  readOnlyBookMeta: {
+    color: AppColors.mutedStrongText,
+  },
+  readOnlyChip: {
+    borderRadius: 999,
+    backgroundColor: AppColors.surfaceStrong,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  readOnlyChipText: {
+    color: AppColors.expense,
+    fontSize: 10,
+    fontWeight: "800",
   },
 });

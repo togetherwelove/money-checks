@@ -38,8 +38,10 @@ export type LedgerScreenState = {
   isBusy: boolean;
   isLoading: boolean;
   isLoadingSelectedDateEntries: boolean;
+  isReadOnlyDueToPlanLimit: boolean;
   isRefreshing: boolean;
   createLedgerBook: (nextName: string) => Promise<boolean>;
+  deleteActiveLedgerBook: () => Promise<boolean>;
   joinSharedLedgerBookByCode: (
     shareCode: string,
     joinResolution?: JoinSharedLedgerBookResolution,

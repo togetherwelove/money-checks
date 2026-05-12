@@ -246,6 +246,8 @@ export function useLedgerEntries(
         );
         return upsertEntryInCachedMonth(removeEntryFromCache(currentCache, changedRow.id), {
           ...nextEntry,
+          authorHasBookAccess: currentEntry?.authorHasBookAccess ?? true,
+          targetMemberHasBookAccess: currentEntry?.targetMemberHasBookAccess ?? true,
           targetMemberName,
         });
       });

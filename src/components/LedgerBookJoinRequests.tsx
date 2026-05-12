@@ -13,12 +13,14 @@ import { formatRelativeTime } from "../utils/relativeTime";
 import { ActionButton } from "./ActionButton";
 
 type LedgerBookJoinRequestsProps = {
+  disabled?: boolean;
   onApproveRequest: (requestId: string) => Promise<LedgerBookJoinApprovalAttempt>;
   onRejectRequest: (requestId: string) => Promise<boolean>;
   requests: LedgerBookJoinRequest[];
 };
 
 export function LedgerBookJoinRequests({
+  disabled = false,
   onApproveRequest,
   onRejectRequest,
   requests,
@@ -50,6 +52,7 @@ export function LedgerBookJoinRequests({
             <View style={styles.cardFooter}>
               <View style={styles.actions}>
                 <ActionButton
+                  disabled={disabled}
                   label={AppMessages.accountJoinRejectAction}
                   onPress={() => onRejectRequest(request.id)}
                   size="inline"
@@ -57,6 +60,7 @@ export function LedgerBookJoinRequests({
                 />
                 {canApproveJoinRequest(request.approvalStatus) ? (
                   <ActionButton
+                    disabled={disabled}
                     label={AppMessages.accountJoinApproveAction}
                     onPress={() => onApproveRequest(request.id)}
                     size="inline"

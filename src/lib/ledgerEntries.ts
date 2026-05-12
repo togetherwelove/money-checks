@@ -1,7 +1,7 @@
 import { DEFAULT_MEMBER_DISPLAY_NAME } from "../constants/ledgerDisplay";
 import { LedgerEntrySelectColumns } from "../constants/ledgerQueries";
 import type { LedgerEntry } from "../types/ledger";
-import type { LedgerEntryRow, ProfileDisplayRow } from "../types/supabase";
+import type { LedgerBookMemberRow, LedgerEntryRow, ProfileDisplayRow } from "../types/supabase";
 import { mapLedgerEntryRow } from "../utils/ledgerMapper";
 import { resolveDisplayCurrency } from "./currencyPreference";
 import { buildLedgerEntryMetadata, resolveLedgerEntryTargetMemberId } from "./ledgerEntryMetadata";
@@ -13,8 +13,10 @@ import {
 import { supabase } from "./supabase";
 
 const LEDGER_TABLE = "ledger_entries";
+const LEDGER_BOOK_MEMBERS_TABLE = "ledger_book_members";
 const PROFILE_TABLE = "profiles";
 const DEFAULT_SOURCE_TYPE = "manual";
+const ENTRY_PARTICIPANT_ACCESS_KEY_SEPARATOR = ":";
 
 export type LedgerEntriesPageCursor = {
   createdAt: string;
@@ -372,14 +374,22 @@ export async function fetchLedgerEntriesByInstallmentGroup(
 }
 
 async function mapLedgerEntries(rows: LedgerEntryRow[]): Promise<LedgerEntry[]> {
-  const [authorNameMap, photoAttachmentMap, targetMemberNameMap] = await Promise.all([
-    fetchAuthorNameMap(rows),
-    fetchLedgerEntryPhotoAttachmentMap(rows),
-    fetchTargetMemberNameMap(rows),
-  ]);
+  const [authorNameMap, photoAttachmentMap, participantAccessMap, targetMemberNameMap] =
+    await Promise.all([
+      fetchAuthorNameMap(rows),
+      fetchLedgerEntryPhotoAttachmentMap(rows),
+      fetchEntryParticipantAccessMap(rows),
+      fetchTargetMemberNameMap(rows),
+    ]);
   return rows.map((row) => ({
     ...mapLedgerEntryRow(row, authorNameMap.get(row.user_id) ?? DEFAULT_MEMBER_DISPLAY_NAME),
+    authorHasBookAccess:
+      participantAccessMap.get(buildEntryParticipantAccessKey(row.book_id, row.user_id)) ?? false,
     photoAttachments: photoAttachmentMap.get(row.id) ?? [],
+    targetMemberHasBookAccess:
+      participantAccessMap.get(
+        buildEntryParticipantAccessKey(row.book_id, resolveLedgerEntryTargetMemberId(row)),
+      ) ?? false,
     targetMemberName:
       targetMemberNameMap.get(resolveLedgerEntryTargetMemberId(row)) ?? DEFAULT_MEMBER_DISPLAY_NAME,
   }));
@@ -388,13 +398,20 @@ async function mapLedgerEntries(rows: LedgerEntryRow[]): Promise<LedgerEntry[]> 
 async function mapLedgerEntriesWithoutPhotoAttachments(
   rows: LedgerEntryRow[],
 ): Promise<LedgerEntry[]> {
-  const [authorNameMap, targetMemberNameMap] = await Promise.all([
+  const [authorNameMap, participantAccessMap, targetMemberNameMap] = await Promise.all([
     fetchAuthorNameMap(rows),
+    fetchEntryParticipantAccessMap(rows),
     fetchTargetMemberNameMap(rows),
   ]);
   return rows.map((row) => ({
     ...mapLedgerEntryRow(row, authorNameMap.get(row.user_id) ?? DEFAULT_MEMBER_DISPLAY_NAME),
+    authorHasBookAccess:
+      participantAccessMap.get(buildEntryParticipantAccessKey(row.book_id, row.user_id)) ?? false,
     photoAttachments: [],
+    targetMemberHasBookAccess:
+      participantAccessMap.get(
+        buildEntryParticipantAccessKey(row.book_id, resolveLedgerEntryTargetMemberId(row)),
+      ) ?? false,
     targetMemberName:
       targetMemberNameMap.get(resolveLedgerEntryTargetMemberId(row)) ?? DEFAULT_MEMBER_DISPLAY_NAME,
   }));
@@ -460,6 +477,38 @@ async function fetchTargetMemberNameMap(rows: LedgerEntryRow[]): Promise<Map<str
   );
 }
 
+async function fetchEntryParticipantAccessMap(
+  rows: LedgerEntryRow[],
+): Promise<Map<string, boolean>> {
+  const bookIds = [...new Set(rows.map((row) => row.book_id))];
+  const participantIds = [
+    ...new Set(
+      rows.flatMap((row) => [row.user_id, resolveLedgerEntryTargetMemberId(row)]).filter(Boolean),
+    ),
+  ];
+  if (bookIds.length === 0 || participantIds.length === 0) {
+    return new Map();
+  }
+
+  const { data, error } = await supabase
+    .from(LEDGER_BOOK_MEMBERS_TABLE)
+    .select("book_id, user_id")
+    .in("book_id", bookIds)
+    .in("user_id", participantIds)
+    .returns<Pick<LedgerBookMemberRow, "book_id" | "user_id">[]>();
+
+  if (error) {
+    throw error;
+  }
+
+  return new Map(
+    (data ?? []).map((member) => [
+      buildEntryParticipantAccessKey(member.book_id, member.user_id),
+      true,
+    ]),
+  );
+}
+
 async function fetchEntryParticipantNameMap(rows: LedgerEntryRow[]): Promise<Map<string, string>> {
   const participantIds = [
     ...new Set(
@@ -486,4 +535,8 @@ async function fetchEntryParticipantNameMap(rows: LedgerEntryRow[]): Promise<Map
       profile.display_name?.trim() || DEFAULT_MEMBER_DISPLAY_NAME,
     ]),
   );
+}
+
+function buildEntryParticipantAccessKey(bookId: string, userId?: string): string {
+  return [bookId, userId ?? ""].join(ENTRY_PARTICIPANT_ACCESS_KEY_SEPARATOR);
 }

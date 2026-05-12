@@ -11,6 +11,7 @@ type AppFooterTabBarProps = {
   activeScreen: FooterTabScreen | null;
   badgedScreens?: readonly FooterTabScreen[];
   isPrimaryActionMenuOpen?: boolean;
+  isPrimaryActionDisabled?: boolean;
   onDismissPrimaryActionMenu?: () => void;
   onSelectTab: (targetScreen: FooterTabScreen) => void;
   primaryActionMenuActions?: FooterActionPopoverAction[];
@@ -21,6 +22,7 @@ export function AppFooterTabBar({
   activeScreen,
   badgedScreens = [],
   isPrimaryActionMenuOpen = false,
+  isPrimaryActionDisabled = false,
   onDismissPrimaryActionMenu,
   onSelectTab,
   primaryActionMenuActions = [],
@@ -45,6 +47,7 @@ export function AppFooterTabBar({
         {tabs.map((tab) => {
           const isActive = tab.targetScreen === activeScreen;
           const hasBadge = badgedScreens.includes(tab.targetScreen);
+          const isDisabledPrimaryAction = Boolean(tab.isPrimary && isPrimaryActionDisabled);
           return (
             <Pressable
               accessibilityLabel={tab.label}
@@ -58,11 +61,12 @@ export function AppFooterTabBar({
                 style={[
                   styles.iconButton,
                   tab.isPrimary ? styles.primaryIconButton : null,
+                  isDisabledPrimaryAction ? styles.disabledPrimaryIconButton : null,
                   isActive && !tab.isPrimary ? styles.activeIconButton : null,
                 ]}
               >
                 <MaterialCommunityIcons
-                  color={resolveIconColor(tab, isActive)}
+                  color={resolveIconColor(tab, isActive, isDisabledPrimaryAction)}
                   name={resolveTabIcon(tab, isActive)}
                   size={FooterTabBarUi.iconSize}
                 />
@@ -84,7 +88,15 @@ function resolveTabIcon(tab: FooterTabItem, isActive: boolean) {
   return isActive ? tab.activeIcon : tab.inactiveIcon;
 }
 
-function resolveIconColor(tab: FooterTabItem, isActive: boolean): string {
+function resolveIconColor(
+  tab: FooterTabItem,
+  isActive: boolean,
+  isDisabledPrimaryAction: boolean,
+): string {
+  if (isDisabledPrimaryAction) {
+    return AppColors.mutedStrongText;
+  }
+
   if (tab.isPrimary) {
     return AppColors.inverseText;
   }
@@ -134,6 +146,10 @@ const styles = StyleSheet.create({
       width: 0,
       height: FooterTabBarUi.primaryButtonShadowOffsetY,
     },
+  },
+  disabledPrimaryIconButton: {
+    backgroundColor: AppColors.surfaceStrong,
+    opacity: 0.72,
   },
   badgeDot: {
     position: "absolute",

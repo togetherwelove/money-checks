@@ -3,7 +3,9 @@ import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { MonthPage } from "../components/monthCalendarPager/monthCalendarPagerUtils";
+import type { SubscriptionTier } from "../constants/subscription";
 import { buildInstallmentSettlementEntry, buildLedgerEntriesFromDraft } from "../lib/installments";
+import { isLedgerBookEditableWithinPlanLimit } from "../lib/ledgerEditability";
 import type { LedgerEntry, LedgerEntryDraft, LedgerEntryPhotoAttachment } from "../types/ledger";
 import { addMonths, getMonthKey, parseIsoDate, startOfMonth, toIsoDate } from "../utils/calendar";
 import {
@@ -35,7 +37,15 @@ import { useSelectedDateEntries } from "./ledgerScreenState/useSelectedDateEntri
 
 export type { LedgerScreenState } from "./ledgerScreenState/types";
 
-export function useLedgerScreenState(session: Session): LedgerScreenState {
+type LedgerScreenStateOptions = {
+  onReadOnlyEditBlocked?: () => void;
+  subscriptionTier: SubscriptionTier;
+};
+
+export function useLedgerScreenState(
+  session: Session,
+  { onReadOnlyEditBlocked, subscriptionTier }: LedgerScreenStateOptions,
+): LedgerScreenState {
   const actualToday = startOfMonth(new Date());
   const [visibleMonth, setVisibleMonth] = useState(actualToday);
   const [selectedDate, setSelectedDate] = useState(() => toIsoDate(new Date()));
@@ -51,6 +61,7 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
     activeBookError,
     accessibleBooks,
     createLedgerBook,
+    deleteActiveLedgerBook,
     isLoadingBook,
     joinSharedLedgerBookByCode,
     leaveSharedLedgerBook,
@@ -60,6 +71,17 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
     refreshSharedLedgerBook,
     switchLedgerBook,
   } = useActiveLedgerBook(session.user.id, trackBusyTask);
+  const isReadOnlyDueToPlanLimit =
+    Boolean(activeBook) &&
+    !isLedgerBookEditableWithinPlanLimit(subscriptionTier, accessibleBooks, activeBook?.id);
+  const blockReadOnlyEditIfNeeded = () => {
+    if (!isReadOnlyDueToPlanLimit) {
+      return false;
+    }
+
+    onReadOnlyEditBlocked?.();
+    return true;
+  };
   const {
     approveLedgerJoinRequest,
     pendingJoinRequestCountsByBookId,
@@ -175,6 +197,10 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
     draftToSave: LedgerEntryDraft,
     targetEditingEntryId: string | null,
   ): Promise<LedgerEntry[]> => {
+    if (blockReadOnlyEditIfNeeded()) {
+      return [];
+    }
+
     if (!activeBook) {
       return [];
     }
@@ -225,6 +251,10 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
   };
 
   const handleDeleteEntry = async (entryId: string) => {
+    if (blockReadOnlyEditIfNeeded()) {
+      return;
+    }
+
     await removeLedgerEntry(entryId);
     setEntries((currentEntries) => currentEntries.filter((entry) => entry.id !== entryId));
     if (editingEntryId === entryId) {
@@ -233,6 +263,10 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
   };
 
   const handleSettleInstallmentEntry = async (entry: LedgerEntry) => {
+    if (blockReadOnlyEditIfNeeded()) {
+      return null;
+    }
+
     const currentInstallmentOrder = entry.installmentOrder;
     if (
       !activeBook ||
@@ -316,9 +350,17 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
     await Promise.all([refreshLedger(), refreshLedgerDayNotes(), refreshSelectedDateEntries()]);
   };
   const handleSaveSelectedDateNote = async (note: string) => {
+    if (blockReadOnlyEditIfNeeded()) {
+      return;
+    }
+
     await saveLedgerDayNote(selectedDate, note);
   };
   const handleDeleteSelectedDateNote = async () => {
+    if (blockReadOnlyEditIfNeeded()) {
+      return;
+    }
+
     await removeLedgerDayNote(selectedDate);
   };
 
@@ -333,9 +375,11 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
     isBusy: busyTaskCount > 0,
     isLoading: isLoadingBook || isLoadingEntries,
     isLoadingSelectedDateEntries,
+    isReadOnlyDueToPlanLimit,
     isRefreshing,
     joinSharedLedgerBookByCode,
     createLedgerBook,
+    deleteActiveLedgerBook,
     leaveSharedLedgerBook,
     currentMonthPage,
     monthlyLedger,

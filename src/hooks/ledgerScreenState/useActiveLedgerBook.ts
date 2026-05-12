@@ -6,6 +6,7 @@ import { isMissingUserRecordError } from "../../lib/auth/missingUserRecordError"
 import { signOutFromApp } from "../../lib/auth/signOut";
 import {
   createOwnedLedgerBook,
+  deleteOwnedLedgerBook,
   fetchAccessibleLedgerBooks,
   fetchActiveLedgerBook,
   fetchLedgerBookById,
@@ -45,6 +46,7 @@ type ActiveLedgerBookState = {
   activeBookError: string | null;
   accessibleBooks: AccessibleLedgerBook[];
   createLedgerBook: (nextName: string) => Promise<boolean>;
+  deleteActiveLedgerBook: () => Promise<boolean>;
   isLoadingBook: boolean;
   joinSharedLedgerBookByCode: (
     shareCode: string,
@@ -255,6 +257,10 @@ export function useActiveLedgerBook(
           setActiveBook(nextActiveBook);
         }
       } catch (error) {
+        if (payload.eventType === "DELETE" && isPermissionDeniedAccessibleLedgerBooksError(error)) {
+          return;
+        }
+
         logAppError("ActiveLedgerBook", error, {
           changedBookId,
           eventType: payload.eventType,
@@ -449,6 +455,32 @@ export function useActiveLedgerBook(
     }
   };
 
+  const deleteActiveLedgerBook = async () => {
+    if (!activeBook) {
+      return false;
+    }
+
+    setActiveBookError(null);
+    const previousBook = activeBook;
+    setActiveBook(null);
+
+    try {
+      const fallbackBookId = await trackBusyTask(() => deleteOwnedLedgerBook(activeBook.id));
+      const nextBook = await fetchLedgerBookById(fallbackBookId);
+      setActiveBook(nextBook);
+      setAccessibleBooks(await fetchAccessibleLedgerBooks());
+      return true;
+    } catch (error) {
+      setActiveBook(previousBook);
+      logAppError("ActiveLedgerBook", error, {
+        activeBookId: activeBook.id,
+        step: "delete_active_ledger_book",
+        userId,
+      });
+      return false;
+    }
+  };
+
   const switchLedgerBook = async (bookId: string) => {
     if (bookId === activeBook?.id) {
       return true;
@@ -490,6 +522,7 @@ export function useActiveLedgerBook(
     activeBookError,
     accessibleBooks,
     createLedgerBook,
+    deleteActiveLedgerBook,
     isLoadingBook,
     joinSharedLedgerBookByCode,
     leaveSharedLedgerBook,
@@ -508,6 +541,19 @@ function isInaccessibleLedgerBookError(error: unknown): boolean {
 
   const candidate = error as { message?: string | null };
   return Boolean(candidate.message?.includes("is not accessible to user"));
+}
+
+function isPermissionDeniedAccessibleLedgerBooksError(error: unknown): boolean {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const candidate = error as { code?: string | null; message?: string | null };
+  return (
+    candidate.code === "42501" &&
+    candidate.message?.includes("permission denied for function get_accessible_ledger_books") ===
+      true
+  );
 }
 
 function createDebugLedgerJoinError(error: unknown): Error {

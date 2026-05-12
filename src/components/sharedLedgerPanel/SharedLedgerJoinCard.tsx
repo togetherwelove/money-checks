@@ -6,12 +6,14 @@ import { ActionButton } from "../ActionButton";
 import { sharedLedgerPanelStyles as styles } from "./sharedLedgerPanelStyles";
 
 type SharedLedgerJoinCardProps = {
+  disabled?: boolean;
   onChangeShareCodeInput: (value: string) => void;
   onJoin: () => unknown;
   shareCodeInput: string;
 };
 
 export function SharedLedgerJoinCard({
+  disabled = false,
   onChangeShareCodeInput,
   onJoin,
   shareCodeInput,
@@ -22,17 +24,18 @@ export function SharedLedgerJoinCard({
       <Text style={styles.helpText}>{AppMessages.accountJoinSubtitle}</Text>
       <TextInput
         autoCapitalize="characters"
+        editable={!disabled}
         maxLength={SHARE_CODE_LENGTH}
         onChangeText={onChangeShareCodeInput}
         onSubmitEditing={onJoin}
         placeholder={AppMessages.accountJoinPlaceholder}
         returnKeyType="done"
-        style={styles.input}
+        style={[styles.input, disabled ? styles.disabledInput : null]}
         submitBehavior="blurAndSubmit"
         value={shareCodeInput}
       />
       <View style={styles.actionRow}>
-        <ActionButton label={AppMessages.accountJoinAction} onPress={onJoin} />
+        <ActionButton disabled={disabled} label={AppMessages.accountJoinAction} onPress={onJoin} />
       </View>
     </View>
   );

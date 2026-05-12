@@ -32,6 +32,11 @@ const CATEGORY_ICON_SIZE = 16;
 const ENTRY_ATTACHMENT_ICON_SIZE = 12;
 const ENTRY_ROW_GAP = 8;
 
+type EntryMetaPart = {
+  isFormerMemberName?: boolean;
+  value: string;
+};
+
 export function LedgerEntryListItem({
   categoryIconByKey,
   categoryLabelById,
@@ -120,12 +125,20 @@ export function LedgerEntryListItem({
             </View>
             <View style={styles.entryMetaRow}>
               <Text style={styles.entryMeta} numberOfLines={1}>
-                {buildEntryMainMeta({
+                {buildEntryMainMetaParts({
                   entry,
                   categoryLabel,
                   noteLabel,
                   showsDate,
-                })}
+                }).map((part, index) => (
+                  <Text
+                    key={`${part.value}-${index}`}
+                    style={part.isFormerMemberName ? styles.formerMemberName : null}
+                  >
+                    {index > 0 ? ENTRY_META_SEPARATOR : ""}
+                    {part.value}
+                  </Text>
+                ))}
               </Text>
               {entry.photoAttachments.length > 0 ? (
                 <Feather
@@ -151,7 +164,7 @@ export function LedgerEntryListItem({
   );
 }
 
-function buildEntryMainMeta({
+function buildEntryMainMetaParts({
   categoryLabel,
   entry,
   noteLabel,
@@ -161,26 +174,32 @@ function buildEntryMainMeta({
   entry: LedgerEntry;
   noteLabel: string;
   showsDate: boolean;
-}) {
-  const parts: string[] = [];
+}): EntryMetaPart[] {
+  const parts: EntryMetaPart[] = [];
 
   if (showsDate) {
-    parts.push(formatEntryMetaDate(entry.date));
+    parts.push({ value: formatEntryMetaDate(entry.date) });
   }
 
-  parts.push(categoryLabel);
+  parts.push({ value: categoryLabel });
 
   if (entry.targetMemberName) {
-    parts.push(entry.targetMemberName);
+    parts.push({
+      isFormerMemberName: entry.targetMemberHasBookAccess === false,
+      value: entry.targetMemberName,
+    });
   } else if (entry.authorName) {
-    parts.push(entry.authorName);
+    parts.push({
+      isFormerMemberName: entry.authorHasBookAccess === false,
+      value: entry.authorName,
+    });
   }
 
   if (noteLabel) {
-    parts.push(noteLabel);
+    parts.push({ value: noteLabel });
   }
 
-  return parts.join(ENTRY_META_SEPARATOR);
+  return parts;
 }
 
 function resolveEntryContentLabel(entry: LedgerEntry, categoryLabel: string): string {
@@ -247,6 +266,9 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     color: AppColors.mutedText,
     fontSize: 12,
+  },
+  formerMemberName: {
+    color: AppColors.formerMemberText,
   },
   entryStatus: {
     color: AppColors.mutedStrongText,

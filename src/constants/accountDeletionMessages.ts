@@ -5,14 +5,12 @@ export const AccountDeletionMessages = selectStaticCopy({
     action: "Delete Account",
     blockedOwnerError:
       "Owners of shared ledgers with remaining members must remove members or end sharing first.",
-    confirmHint: "Type 'delete' to permanently delete your account.",
     confirmLabel: "Confirmation Text",
-    confirmPlaceholder: "delete",
+    confirmPlaceholder: "Type 'delete' to permanently delete your account.",
     deleting: "Deleting your account.",
-    description:
-      "Deleting your account permanently removes your profile, ledger entries, and memberships.",
     errorFallback: "Could not delete your account. Please try again later.",
-    instruction: "This action cannot be undone.",
+    instruction:
+      "Deleting your account permanently removes your profile, ledger entries, and memberships. This action cannot be undone.",
     openAction: "Delete Account",
     subscriptionWarningContinueAction: "Continue Delete",
     subscriptionWarningDescription:
@@ -26,13 +24,12 @@ export const AccountDeletionMessages = selectStaticCopy({
     action: "계정 삭제",
     blockedOwnerError:
       "다른 멤버가 남아 있는 공유 가계부 소유자는 먼저 멤버를 정리하거나 공유를 종료해야 해요.",
-    confirmHint: "'삭제'를 입력하면 계정이 완전히 삭제돼요.",
     confirmLabel: "확인 문구",
-    confirmPlaceholder: "삭제",
+    confirmPlaceholder: "'삭제'를 입력하면 계정이 완전히 삭제돼요.",
     deleting: "계정을 삭제하고 있어요.",
-    description: "계정 삭제 시 프로필, 가계부 기록, 참여 정보가 완전히 삭제돼요.",
     errorFallback: "계정을 삭제하지 못했어요. 잠시 후 다시 시도해 주세요.",
-    instruction: "이 작업은 되돌릴 수 없어요.",
+    instruction:
+      "계정 삭제 시 프로필, 가계부 기록, 참여 정보가 완전히 삭제돼요. 이 작업은 되돌릴 수 없어요.",
     openAction: "계정 삭제",
     subscriptionWarningContinueAction: "계속 삭제",
     subscriptionWarningDescription:

@@ -190,6 +190,7 @@ export function SignedInStackNavigator({
             onBeforeCopyShareCode={onBeforeCopyShareCode}
             onBeforeSendJoinRequest={onBeforeSendJoinRequest}
             onCreateLedgerBook={ledgerState.createLedgerBook}
+            onDeleteActiveLedgerBook={ledgerState.deleteActiveLedgerBook}
             onJoinSharedLedgerBook={ledgerState.joinSharedLedgerBookByCode}
             onLeaveSharedLedgerBook={ledgerState.leaveSharedLedgerBook}
             onOpenSubscription={onOpenSubscription}

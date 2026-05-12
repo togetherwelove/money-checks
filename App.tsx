@@ -35,6 +35,7 @@ import { EntryRegistrationCopy } from "./src/constants/entryRegistration";
 import { EXPENSE_CATEGORY_LABELS } from "./src/constants/expenseCategories";
 import { INCOME_CATEGORY_LABELS } from "./src/constants/incomeCategories";
 import { LedgerBookManagementCopy } from "./src/constants/ledgerBookManagement";
+import { LedgerEditabilityCopy } from "./src/constants/ledgerEditability";
 import { AppMessages } from "./src/constants/messages";
 import { SubscriptionMessages, SubscriptionTiers } from "./src/constants/subscription";
 import { SubscriptionManagementMessages } from "./src/constants/subscriptionManagement";
@@ -192,7 +193,13 @@ function SignedInApp({ session }: { session: Session }) {
     isAdTrackingPermissionSupported() &&
     (adTrackingPermissionState === "not-determined" || adTrackingPermissionState === "denied");
   const supportPackages = useSupportPackages(session.user.id);
-  const ledgerState = useLedgerScreenState(session);
+  const handleReadOnlyEditBlocked = useCallback(() => {
+    showNativeToast(LedgerEditabilityCopy.planLimitReadOnly);
+  }, []);
+  const ledgerState = useLedgerScreenState(session, {
+    onReadOnlyEditBlocked: handleReadOnlyEditBlocked,
+    subscriptionTier: subscription.currentTier,
+  });
   const canSwitchHeaderLedgerBook =
     currentScreen === "calendar" && ledgerState.accessibleBooks.length > 1;
   useLedgerWidgetSync(ledgerState.activeBook?.id ?? null, ledgerState.entries);
@@ -518,6 +525,11 @@ function SignedInApp({ session }: { session: Session }) {
   ]);
 
   const handleOpenEntryFromCalendar = useCallback(async () => {
+    if (ledgerState.isReadOnlyDueToPlanLimit) {
+      handleReadOnlyEditBlocked();
+      return;
+    }
+
     const clipboardDraft = await readAvailableCardSmsClipboardDraft();
     if (!clipboardDraft) {
       setEntryActionMenuDraft(null);
@@ -526,13 +538,19 @@ function SignedInApp({ session }: { session: Session }) {
     }
 
     setEntryActionMenuDraft(clipboardDraft);
-  }, [navigateToEntryFromCalendar, readAvailableCardSmsClipboardDraft]);
+  }, [
+    handleReadOnlyEditBlocked,
+    ledgerState.isReadOnlyDueToPlanLimit,
+    navigateToEntryFromCalendar,
+    readAvailableCardSmsClipboardDraft,
+  ]);
 
   const handleOpenDetectedCardSmsClipboardMenu = useCallback(async () => {
     if (
       authOnboarding.isLoading ||
       authOnboarding.step !== null ||
       ledgerState.isLoading ||
+      ledgerState.isReadOnlyDueToPlanLimit ||
       currentScreen === "entry" ||
       entryActionMenuDraft
     ) {
@@ -551,6 +569,7 @@ function SignedInApp({ session }: { session: Session }) {
     currentScreen,
     entryActionMenuDraft,
     ledgerState.isLoading,
+    ledgerState.isReadOnlyDueToPlanLimit,
     readAvailableCardSmsClipboardDraft,
   ]);
 
@@ -684,10 +703,6 @@ function SignedInApp({ session }: { session: Session }) {
         return;
       }
 
-      if (targetScreen === "share" && ledgerState.activeBook?.ownerId === session.user.id) {
-        void ledgerState.refreshSharedLedgerBook();
-      }
-
       navigateToStackScreen(targetScreen);
     },
     [
@@ -697,7 +712,6 @@ function SignedInApp({ session }: { session: Session }) {
       ledgerState,
       navigateToStackScreen,
       returnToCalendarRoot,
-      session.user.id,
     ],
   );
   const handleOpenYearPicker = () => {
@@ -898,11 +912,21 @@ function SignedInApp({ session }: { session: Session }) {
   };
 
   const handleEditEntryFromCalendar = (entry: LedgerEntry) => {
+    if (ledgerState.isReadOnlyDueToPlanLimit) {
+      handleReadOnlyEditBlocked();
+      return;
+    }
+
     ledgerState.handleEditEntry(entry);
     handleOpenEntryFromCalendar();
   };
 
   const handleEditEntryFromAllEntries = (entry: LedgerEntry) => {
+    if (ledgerState.isReadOnlyDueToPlanLimit) {
+      handleReadOnlyEditBlocked();
+      return;
+    }
+
     ledgerState.handleEditEntry(entry);
     if (navigationRef.isReady()) {
       navigationRef.navigate("entry");
@@ -910,6 +934,11 @@ function SignedInApp({ session }: { session: Session }) {
   };
 
   const handleSettleInstallmentEntry = async (entry: LedgerEntry) => {
+    if (ledgerState.isReadOnlyDueToPlanLimit) {
+      handleReadOnlyEditBlocked();
+      return;
+    }
+
     try {
       const savedSettlementEntry = await ledgerState.handleSettleInstallmentEntry(entry);
       if (!savedSettlementEntry) {
@@ -934,6 +963,11 @@ function SignedInApp({ session }: { session: Session }) {
   };
 
   const handleDeleteEntryFromCalendar = async (entry: LedgerEntry) => {
+    if (ledgerState.isReadOnlyDueToPlanLimit) {
+      handleReadOnlyEditBlocked();
+      return false;
+    }
+
     try {
       await ledgerState.handleDeleteEntry(entry.id);
     } catch (error) {
@@ -1137,6 +1171,7 @@ function SignedInApp({ session }: { session: Session }) {
           <AppHeader
             canSwitchTitle={canSwitchHeaderLedgerBook}
             isMenuOpen={isMenuOpen}
+            isReadOnlyTitle={currentScreen === "calendar" && ledgerState.isReadOnlyDueToPlanLimit}
             onPressTitle={() => setIsLedgerSwitcherOpen(true)}
             showsPlusBadge={
               currentScreen === "calendar" && subscription.currentTier === SubscriptionTiers.plus
@@ -1219,6 +1254,7 @@ function SignedInApp({ session }: { session: Session }) {
                 activeScreen={activeFooterScreen}
                 badgedScreens={footerBadgedScreens}
                 isPrimaryActionMenuOpen={entryActionMenuDraft !== null}
+                isPrimaryActionDisabled={ledgerState.isReadOnlyDueToPlanLimit}
                 onDismissPrimaryActionMenu={handleDismissEntryActionMenu}
                 onSelectTab={handleSelectFooterTab}
                 primaryActionMenuActions={entryActionMenuActions}
@@ -1251,6 +1287,7 @@ function SignedInApp({ session }: { session: Session }) {
           onSelectBook={(bookId) => {
             void handleSelectHeaderLedgerBook(bookId);
           }}
+          subscriptionTier={subscription.currentTier}
         />
         <NativeYearPickerModal
           isOpen={currentScreen === "calendar" && appPlatform.isIOS && isYearPickerOpen}

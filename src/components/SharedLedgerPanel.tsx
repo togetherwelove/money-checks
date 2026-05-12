@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Alert, View } from "react-native";
 
 import { DEFAULT_MEMBER_DISPLAY_NAME } from "../constants/ledgerDisplay";
+import { LedgerEditabilityCopy } from "../constants/ledgerEditability";
 import { AppMessages } from "../constants/messages";
 import { SharedLedgerJoinCopy } from "../constants/sharedLedgerJoin";
 import { SharedLedgerJoinPreviewCopy } from "../constants/sharedLedgerJoinPreview";
@@ -40,8 +41,10 @@ type SharedLedgerPanelProps = {
   accessibleBooks: AccessibleLedgerBook[];
   activeBook: LedgerBook | null;
   currentUserId: string;
+  isReadOnlyDueToPlanLimit: boolean;
   members: LedgerBookMember[];
   onCreateLedgerBook: (nextName: string) => Promise<boolean>;
+  onDeleteActiveLedgerBook: () => Promise<boolean>;
   onOpenSubscription: () => void;
   onApproveJoinRequest: (requestId: string) => Promise<LedgerBookJoinApprovalAttempt>;
   onBeforeCopyShareCode: () => Promise<void> | void;
@@ -76,8 +79,10 @@ export function SharedLedgerPanel({
   accessibleBooks,
   activeBook,
   currentUserId,
+  isReadOnlyDueToPlanLimit,
   members,
   onCreateLedgerBook,
+  onDeleteActiveLedgerBook,
   onOpenSubscription,
   onApproveJoinRequest,
   onBeforeCopyShareCode,
@@ -99,8 +104,9 @@ export function SharedLedgerPanel({
   const [shareCodeInput, setShareCodeInput] = useState("");
   const currentMemberRole =
     members.find((member) => member.userId === currentUserId)?.role ??
-    (activeBook?.ownerId === currentUserId ? "owner" : "viewer");
-  const canEditBookName = currentMemberRole === "owner" || currentMemberRole === "editor";
+    (activeBook?.ownerId === currentUserId ? "owner" : null);
+  const canEditBookName =
+    !isReadOnlyDueToPlanLimit && (currentMemberRole === "owner" || currentMemberRole === "editor");
   const {
     bookNameInput,
     canEditBookName: canEditDisplayedBookName,
@@ -118,8 +124,20 @@ export function SharedLedgerPanel({
       : SubscriptionConfig.freeSharedMemberLimit;
   const shouldShowSharedMemberLimitNotice =
     currentMemberRole === "owner" && members.length >= sharedMemberLimit;
+  const blockReadOnlyShareActionIfNeeded = () => {
+    if (!isReadOnlyDueToPlanLimit) {
+      return false;
+    }
+
+    showNativeToast(LedgerEditabilityCopy.planLimitReadOnly);
+    return true;
+  };
 
   const handleJoin = async () => {
+    if (blockReadOnlyShareActionIfNeeded()) {
+      return;
+    }
+
     const nextShareCode = shareCodeInput.trim();
     if (!nextShareCode) {
       showNativeToast(SharedLedgerJoinCopy.requiredShareCodeError);
@@ -183,6 +201,10 @@ export function SharedLedgerPanel({
   };
 
   const handleKickMember = async (targetUserId: string) => {
+    if (blockReadOnlyShareActionIfNeeded()) {
+      return false;
+    }
+
     if (activeBook) {
       const actorName = await resolveCurrentActorName();
       await onSendPushNotificationToUsers(
@@ -199,6 +221,13 @@ export function SharedLedgerPanel({
   };
 
   const handleApproveJoinRequest = async (requestId: string) => {
+    if (blockReadOnlyShareActionIfNeeded()) {
+      return {
+        didApprove: false,
+        errorMessage: LedgerEditabilityCopy.planLimitReadOnly,
+      };
+    }
+
     const approveAttempt = await onApproveJoinRequest(requestId);
     showNativeToast(
       approveAttempt.didApprove
@@ -221,6 +250,10 @@ export function SharedLedgerPanel({
   };
 
   const handleRejectJoinRequest = async (requestId: string) => {
+    if (blockReadOnlyShareActionIfNeeded()) {
+      return false;
+    }
+
     const didReject = await onRejectJoinRequest(requestId);
     showNativeToast(
       didReject ? AppMessages.accountJoinRejectSuccess : AppMessages.accountJoinRejectError,
@@ -237,8 +270,10 @@ export function SharedLedgerPanel({
         activeBook={activeBook}
         canLeaveSharedBook={canLeaveSharedBook}
         currentUserId={currentUserId}
+        isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
         members={members}
         onCreateLedgerBook={onCreateLedgerBook}
+        onDeleteActiveLedgerBook={onDeleteActiveLedgerBook}
         onKickMember={handleKickMember}
         onLeave={handleLeave}
         onOpenSubscription={onOpenSubscription}
@@ -254,6 +289,7 @@ export function SharedLedgerPanel({
         canEditBookName={canEditDisplayedBookName}
         currentUserId={currentUserId}
         isOwner={currentMemberRole === "owner"}
+        isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
         onApproveJoinRequest={handleApproveJoinRequest}
         onBeforeCopyShareCode={onBeforeCopyShareCode}
         onChangeBookName={handleChangeBookName}
@@ -262,6 +298,7 @@ export function SharedLedgerPanel({
         pendingJoinRequests={pendingJoinRequests}
       />
       <SharedLedgerJoinCard
+        disabled={isReadOnlyDueToPlanLimit}
         onChangeShareCodeInput={(value) => {
           setShareCodeInput(value.toUpperCase());
         }}

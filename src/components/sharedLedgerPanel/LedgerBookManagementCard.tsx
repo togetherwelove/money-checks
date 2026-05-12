@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Alert, Text, TextInput, View } from "react-native";
+import { Alert, Pressable, Text, TextInput, View } from "react-native";
 
 import { CommonActionCopy } from "../../constants/commonActions";
 import { LedgerBookManagementCopy } from "../../constants/ledgerBookManagement";
+import { LedgerEditabilityCopy } from "../../constants/ledgerEditability";
 import { AppMessages } from "../../constants/messages";
 import {
   SubscriptionConfig,
@@ -10,6 +11,7 @@ import {
   SubscriptionTiers,
 } from "../../constants/subscription";
 import { appPlatform } from "../../lib/appPlatform";
+import { isLedgerBookEditableWithinPlanLimit } from "../../lib/ledgerEditability";
 import { showNativeToast } from "../../lib/nativeToast";
 import type { AccessibleLedgerBook, LedgerBook } from "../../types/ledgerBook";
 import type { LedgerBookJoinRequestCountByBookId } from "../../types/ledgerBookJoinRequest";
@@ -24,8 +26,10 @@ type LedgerBookManagementCardProps = {
   activeBook: LedgerBook | null;
   canLeaveSharedBook: boolean;
   currentUserId: string;
+  isReadOnlyDueToPlanLimit: boolean;
   members: LedgerBookMember[];
   onCreateLedgerBook: (nextName: string) => Promise<boolean>;
+  onDeleteActiveLedgerBook: () => Promise<boolean>;
   onKickMember: (targetUserId: string) => Promise<boolean>;
   onLeave: () => unknown;
   onOpenSubscription: () => void;
@@ -40,8 +44,10 @@ export function LedgerBookManagementCard({
   activeBook,
   canLeaveSharedBook,
   currentUserId,
+  isReadOnlyDueToPlanLimit,
   members,
   onCreateLedgerBook,
+  onDeleteActiveLedgerBook,
   onKickMember,
   onLeave,
   onOpenSubscription,
@@ -69,6 +75,9 @@ export function LedgerBookManagementCard({
   const createLimitReachedMessage = isFreePlan
     ? LedgerBookManagementCopy.createFreePlanLimitReached
     : LedgerBookManagementCopy.createLimitReached;
+  const canDeleteActiveBook = Boolean(
+    activeBook?.ownerId === currentUserId && members.length === 1,
+  );
 
   const createLedgerBook = async (normalizedName: string) => {
     const didCreate = await onCreateLedgerBook(normalizedName);
@@ -168,6 +177,35 @@ export function LedgerBookManagementCard({
     );
   };
 
+  const handleDeleteActiveLedgerBook = () => {
+    if (!canDeleteActiveBook) {
+      return;
+    }
+
+    Alert.alert(
+      LedgerBookManagementCopy.deleteConfirmTitle,
+      LedgerBookManagementCopy.deleteConfirmMessage,
+      [
+        {
+          style: "cancel",
+          text: CommonActionCopy.cancel,
+        },
+        {
+          onPress: async () => {
+            const didDelete = await onDeleteActiveLedgerBook();
+            showNativeToast(
+              didDelete
+                ? LedgerBookManagementCopy.deleteSuccess
+                : LedgerBookManagementCopy.deleteError,
+            );
+          },
+          style: "destructive",
+          text: LedgerBookManagementCopy.deleteAction,
+        },
+      ],
+    );
+  };
+
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
@@ -194,15 +232,32 @@ export function LedgerBookManagementCard({
           accessibleBooks.map((book) => {
             const isActiveBook = book.id === activeBook?.id;
             const isOwner = book.ownerId === currentUserId;
+            const isReadOnlyBook = !isLedgerBookEditableWithinPlanLimit(
+              subscriptionTier,
+              accessibleBooks,
+              book.id,
+            );
             const ownershipLabel = isOwner
               ? LedgerBookManagementCopy.ownerBadge
               : LedgerBookManagementCopy.sharedBadge;
             const shouldShowPendingRequestBadge =
               isOwner && (pendingJoinRequestCountsByBookId[book.id] ?? 0) > 0;
+            const switchIcon = isActiveBook ? "check" : "chevrons-right";
             return (
-              <View
+              <Pressable
+                accessibilityLabel={LedgerBookManagementCopy.switchActionAccessibilityLabel}
+                accessibilityRole="button"
                 key={book.id}
-                style={[styles.ledgerBookItem, isActiveBook ? styles.activeLedgerBookItem : null]}
+                onPress={() => {
+                  if (!isActiveBook) {
+                    void handleSwitchLedgerBook(book.id);
+                  }
+                }}
+                style={[
+                  styles.ledgerBookItem,
+                  isReadOnlyBook ? styles.readOnlyLedgerBookItem : null,
+                  isActiveBook ? styles.activeLedgerBookItem : null,
+                ]}
               >
                 <View style={styles.ledgerBookItemContent}>
                   <View style={styles.ledgerBookItemNameRow}>
@@ -212,6 +267,13 @@ export function LedgerBookManagementCard({
                     <Text numberOfLines={1} style={styles.ledgerBookItemName}>
                       {book.name}
                     </Text>
+                    {isReadOnlyBook ? (
+                      <View style={styles.readOnlyLedgerBookChip}>
+                        <Text style={styles.readOnlyLedgerBookChipText}>
+                          {LedgerEditabilityCopy.readOnlyBadge}
+                        </Text>
+                      </View>
+                    ) : null}
                   </View>
                   <View style={styles.ledgerBookItemMetaRow}>
                     <Text style={styles.ledgerBookItemMeta}>{ownershipLabel}</Text>
@@ -219,13 +281,15 @@ export function LedgerBookManagementCard({
                 </View>
                 <IconActionButton
                   accessibilityLabel={LedgerBookManagementCopy.switchActionAccessibilityLabel}
-                  icon={isActiveBook ? "check" : "log-in"}
+                  icon={switchIcon}
                   isActive={isActiveBook}
                   onPress={() => {
-                    void handleSwitchLedgerBook(book.id);
+                    if (!isActiveBook) {
+                      void handleSwitchLedgerBook(book.id);
+                    }
                   }}
                 />
-              </View>
+              </Pressable>
             );
           })
         ) : (
@@ -242,6 +306,7 @@ export function LedgerBookManagementCard({
         >
           <LedgerBookMembers
             currentUserId={currentUserId}
+            isManagementDisabled={isReadOnlyDueToPlanLimit}
             members={members}
             onKickMember={onKickMember}
             onOpenSubscription={onOpenSubscription}
@@ -276,6 +341,15 @@ export function LedgerBookManagementCard({
           <TextLinkButton
             label={AppMessages.accountDisconnectAction}
             onPress={onLeave}
+            tone="destructive"
+          />
+        </View>
+      ) : null}
+      {canDeleteActiveBook ? (
+        <View style={[styles.disconnectActionRow, styles.sectionBottomInset]}>
+          <TextLinkButton
+            label={LedgerBookManagementCopy.deleteAction}
+            onPress={handleDeleteActiveLedgerBook}
             tone="destructive"
           />
         </View>

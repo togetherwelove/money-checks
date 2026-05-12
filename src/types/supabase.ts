@@ -46,18 +46,18 @@ export type LedgerBookRow = {
 };
 
 export type AccessibleLedgerBookRow = LedgerBookRow & {
-  member_role: "editor" | "owner" | "viewer";
+  member_role: "editor" | "owner";
 };
 
 export type LedgerBookMemberRow = {
   book_id: string;
-  role: "editor" | "owner" | "viewer";
+  role: "editor" | "owner";
   user_id: string;
 };
 
 export type LedgerBookMemberProfileRow = {
   display_name: string | null;
-  role: "editor" | "owner" | "viewer";
+  role: "editor" | "owner";
   user_id: string;
 };
 
@@ -150,4 +150,9 @@ export type ReceiptFileRow = {
   storage_bucket: string;
   storage_path: string;
   user_id: string;
+};
+
+export type ReceiptFileStoragePathRow = {
+  storage_bucket: string;
+  storage_path: string;
 };

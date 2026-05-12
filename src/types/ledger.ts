@@ -11,6 +11,7 @@ export type LedgerEntryPhotoAttachment = {
 
 export type LedgerEntry = {
   authorId?: string;
+  authorHasBookAccess?: boolean;
   authorName?: string;
   createdAt?: string;
   currency?: string;
@@ -28,6 +29,7 @@ export type LedgerEntry = {
   photoAttachments: LedgerEntryPhotoAttachment[];
   sourceType?: string;
   targetMemberId?: string;
+  targetMemberHasBookAccess?: boolean;
   targetMemberName?: string;
   updatedAt?: string;
 };

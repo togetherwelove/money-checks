@@ -8,7 +8,6 @@ import { AppLayout } from "../../constants/layout";
 import {
   CompactLabelTextStyle,
   FormInputTextStyle,
-  NoteTextStyle,
   StatusMessageTextStyle,
 } from "../../constants/uiStyles";
 import { deleteOwnAccount } from "../../lib/auth/deleteAccount";
@@ -68,7 +67,6 @@ export function DeleteAccountModal({ isOpen, onClose }: DeleteAccountModalProps)
                 <Text style={styles.closeText}>{CommonActionCopy.close}</Text>
               </Pressable>
             </View>
-            <Text style={styles.description}>{AccountDeletionMessages.description}</Text>
             <Text style={styles.warning}>{AccountDeletionMessages.instruction}</Text>
             <Text style={styles.label}>{AccountDeletionMessages.confirmLabel}</Text>
             <TextInput
@@ -83,7 +81,6 @@ export function DeleteAccountModal({ isOpen, onClose }: DeleteAccountModalProps)
               style={styles.input}
               value={confirmText}
             />
-            <Text style={styles.hint}>{AccountDeletionMessages.confirmHint}</Text>
             {statusMessage ? <Text style={styles.status}>{statusMessage}</Text> : null}
             <View style={styles.actionRow}>
               <ActionButton
@@ -145,19 +142,14 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
   },
-  description: {
-    color: AppColors.text,
-    fontSize: 13,
-    lineHeight: 18,
-  },
   warning: {
     color: AppColors.expense,
     fontSize: 12,
+    lineHeight: 18,
     fontWeight: "700",
   },
   label: CompactLabelTextStyle,
   input: FormInputTextStyle,
-  hint: NoteTextStyle,
   status: {
     color: AppColors.expense,
     ...StatusMessageTextStyle,

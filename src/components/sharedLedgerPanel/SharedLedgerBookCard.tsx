@@ -27,6 +27,7 @@ type SharedLedgerBookCardProps = {
   canEditBookName: boolean;
   currentUserId: string;
   isOwner: boolean;
+  isReadOnlyDueToPlanLimit: boolean;
   onApproveJoinRequest: (requestId: string) => Promise<LedgerBookJoinApprovalAttempt>;
   onBeforeCopyShareCode: () => Promise<void> | void;
   onChangeBookName: (value: string) => void;
@@ -42,6 +43,7 @@ export function SharedLedgerBookCard({
   canEditBookName,
   currentUserId,
   isOwner,
+  isReadOnlyDueToPlanLimit,
   onApproveJoinRequest,
   onBeforeCopyShareCode,
   onChangeBookName,
@@ -158,6 +160,7 @@ export function SharedLedgerBookCard({
               onPress={() => {
                 void handleCopyShareCode();
               }}
+              disabled={isReadOnlyDueToPlanLimit}
               variant="primary"
             />
           </View>
@@ -166,6 +169,7 @@ export function SharedLedgerBookCard({
       {shouldShowJoinRequests ? (
         <View style={[styles.sectionContent, styles.subsection, styles.sectionBottomInset]}>
           <LedgerBookJoinRequests
+            disabled={isReadOnlyDueToPlanLimit}
             onApproveRequest={onApproveJoinRequest}
             onRejectRequest={onRejectJoinRequest}
             requests={pendingJoinRequests}
