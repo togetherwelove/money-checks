@@ -210,6 +210,8 @@ function KeyboardAwareContent({
   todayIsoDate: string;
   visibleMonth: Date;
 }) {
+  const [closeEntrySwipeRevision, setCloseEntrySwipeRevision] = useState(0);
+
   return (
     <View style={styles.screenContent}>
       <View style={styles.fixedSection}>
@@ -260,6 +262,8 @@ function KeyboardAwareContent({
         <ScrollView
           contentContainerStyle={styles.transactionScrollContent}
           nestedScrollEnabled
+          onTouchStart={() => setCloseEntrySwipeRevision((revision) => revision + 1)}
+          onScrollBeginDrag={() => setCloseEntrySwipeRevision((revision) => revision + 1)}
           showsVerticalScrollIndicator={false}
           style={styles.transactionScroll}
         >
@@ -279,6 +283,7 @@ function KeyboardAwareContent({
                 onSave={onSaveSelectedDateNote}
               />
               <LedgerEntryList
+                closeSwipeRevision={closeEntrySwipeRevision}
                 entries={selectedEntries}
                 onDeleteEntry={(entry) => {
                   Alert.alert(

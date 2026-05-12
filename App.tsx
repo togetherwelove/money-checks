@@ -20,6 +20,7 @@ import { AppFooterTabBar } from "./src/components/AppFooterTabBar";
 import { AppHeader } from "./src/components/AppHeader";
 import { AppMenuDrawer } from "./src/components/AppMenuDrawer";
 import { BlockingOverlay } from "./src/components/BlockingOverlay";
+import { LedgerBookSwitcherModal } from "./src/components/LedgerBookSwitcherModal";
 import { OnboardingTransitionScreen } from "./src/components/OnboardingTransitionScreen";
 import { SessionLoadingScreen } from "./src/components/SessionLoadingScreen";
 import { AnnualReportRangePickerModal } from "./src/components/annualReport/AnnualReportRangePickerModal";
@@ -33,6 +34,7 @@ import { CommonActionCopy } from "./src/constants/commonActions";
 import { EntryRegistrationCopy } from "./src/constants/entryRegistration";
 import { EXPENSE_CATEGORY_LABELS } from "./src/constants/expenseCategories";
 import { INCOME_CATEGORY_LABELS } from "./src/constants/incomeCategories";
+import { LedgerBookManagementCopy } from "./src/constants/ledgerBookManagement";
 import { AppMessages } from "./src/constants/messages";
 import { SubscriptionMessages, SubscriptionTiers } from "./src/constants/subscription";
 import { SubscriptionManagementMessages } from "./src/constants/subscriptionManagement";
@@ -160,6 +162,7 @@ function SignedInApp({ session }: { session: Session }) {
   const hasCheckedInitialClipboardImportRef = useRef(false);
   const previousClipboardImportAppStateRef = useRef(AppState.currentState);
   const [currentScreen, setCurrentScreen] = useState<LedgerAppScreen>("calendar");
+  const [isLedgerSwitcherOpen, setIsLedgerSwitcherOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNicknameScreenReady, setIsNicknameScreenReady] = useState(false);
   const [isYearPickerOpen, setIsYearPickerOpen] = useState(false);
@@ -190,6 +193,8 @@ function SignedInApp({ session }: { session: Session }) {
     (adTrackingPermissionState === "not-determined" || adTrackingPermissionState === "denied");
   const supportPackages = useSupportPackages(session.user.id);
   const ledgerState = useLedgerScreenState(session);
+  const canSwitchHeaderLedgerBook =
+    currentScreen === "calendar" && ledgerState.accessibleBooks.length > 1;
   useLedgerWidgetSync(ledgerState.activeBook?.id ?? null, ledgerState.entries);
   useEffect(() => {
     let removeListener: (() => void) | null = null;
@@ -429,6 +434,16 @@ function SignedInApp({ session }: { session: Session }) {
     returnToCalendarRoot();
   }, [clearFooterNotificationBadge, returnToCalendarRoot]);
 
+  const handleSelectHeaderLedgerBook = useCallback(
+    async (bookId: string) => {
+      const didSwitch = await ledgerState.switchLedgerBook(bookId);
+      showNativeToast(
+        didSwitch ? LedgerBookManagementCopy.switchSuccess : LedgerBookManagementCopy.switchError,
+      );
+    },
+    [ledgerState.switchLedgerBook],
+  );
+
   const navigateToEntryFromCalendar = useCallback(() => {
     navigateToStackScreen("entry");
   }, [navigateToStackScreen]);
@@ -633,6 +648,16 @@ function SignedInApp({ session }: { session: Session }) {
   const showsFooterTabBar = currentScreen !== "entry";
   const activeFooterScreen =
     showsFooterTabBar && isFooterTabScreen(currentScreen) ? currentScreen : null;
+  const hasPendingLedgerJoinRequest = Object.values(
+    ledgerState.pendingJoinRequestCountsByBookId,
+  ).some((requestCount) => requestCount > 0);
+  const footerBadgedScreens = useMemo<FooterTabScreen[]>(() => {
+    if (!hasPendingLedgerJoinRequest || badgedFooterScreens.includes("share")) {
+      return badgedFooterScreens;
+    }
+
+    return [...badgedFooterScreens, "share"];
+  }, [badgedFooterScreens, hasPendingLedgerJoinRequest]);
   const handleSelectFooterTab = useCallback(
     (targetScreen: FooterTabScreen) => {
       if (targetScreen !== "entry") {
@@ -1110,7 +1135,9 @@ function SignedInApp({ session }: { session: Session }) {
       <SafeAreaView edges={["top"]} style={styles.headerSafeArea}>
         <View style={styles.headerShell}>
           <AppHeader
+            canSwitchTitle={canSwitchHeaderLedgerBook}
             isMenuOpen={isMenuOpen}
+            onPressTitle={() => setIsLedgerSwitcherOpen(true)}
             showsPlusBadge={
               currentScreen === "calendar" && subscription.currentTier === SubscriptionTiers.plus
             }
@@ -1190,7 +1217,7 @@ function SignedInApp({ session }: { session: Session }) {
             <SafeAreaView edges={["bottom"]} style={styles.footerSafeArea}>
               <AppFooterTabBar
                 activeScreen={activeFooterScreen}
-                badgedScreens={badgedFooterScreens}
+                badgedScreens={footerBadgedScreens}
                 isPrimaryActionMenuOpen={entryActionMenuDraft !== null}
                 onDismissPrimaryActionMenu={handleDismissEntryActionMenu}
                 onSelectTab={handleSelectFooterTab}
@@ -1215,6 +1242,15 @@ function SignedInApp({ session }: { session: Session }) {
             navigateToStackScreen(targetScreen);
           }}
           sections={menuSections}
+        />
+        <LedgerBookSwitcherModal
+          activeBookId={ledgerState.activeBook?.id ?? null}
+          books={ledgerState.accessibleBooks}
+          isOpen={canSwitchHeaderLedgerBook && isLedgerSwitcherOpen}
+          onClose={() => setIsLedgerSwitcherOpen(false)}
+          onSelectBook={(bookId) => {
+            void handleSelectHeaderLedgerBook(bookId);
+          }}
         />
         <NativeYearPickerModal
           isOpen={currentScreen === "calendar" && appPlatform.isIOS && isYearPickerOpen}

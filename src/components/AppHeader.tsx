@@ -1,4 +1,6 @@
+import { Feather } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
+import { Pressable } from "react-native";
 
 import { AppColors } from "../constants/colors";
 import { SubscriptionMessages } from "../constants/subscription";
@@ -8,45 +10,61 @@ import { BrandPlusTextStyle } from "../constants/uiStyles";
 import { IconActionButton } from "./IconActionButton";
 
 type AppHeaderProps = {
+  canSwitchTitle?: boolean;
   isMenuOpen?: boolean;
   onOpenMenu: () => void;
+  onPressTitle?: () => void;
   showsPlusBadge?: boolean;
   titleLabel?: string | null;
   yearLabel?: string | null;
 };
 
 export function AppHeader({
+  canSwitchTitle = false,
   isMenuOpen = false,
   onOpenMenu,
+  onPressTitle,
   showsPlusBadge = false,
   titleLabel = null,
   yearLabel = null,
 }: AppHeaderProps) {
   const centerLabel = yearLabel ?? titleLabel;
+  const canPressTitle = Boolean(centerLabel && canSwitchTitle && onPressTitle);
+  const titleContent = centerLabel ? (
+    <View style={styles.titleRow}>
+      {centerLabel === SubscriptionMessages.screenTitle ? (
+        <Text style={styles.titleText}>
+          {SubscriptionPlusLabels.menuPrefix} <Text style={BrandPlusTextStyle}>plus</Text>
+        </Text>
+      ) : (
+        <>
+          <Text numberOfLines={1} style={styles.titleText}>
+            {centerLabel}
+          </Text>
+          {showsPlusBadge ? <Text style={BrandPlusTextStyle}>plus</Text> : null}
+          {canSwitchTitle ? (
+            <Feather color={AppColors.mutedStrongText} name="chevron-down" size={16} />
+          ) : null}
+        </>
+      )}
+    </View>
+  ) : null;
+  const menuIcon = isMenuOpen ? "x" : "menu";
 
   return (
     <View style={styles.container}>
       <View style={styles.sideSlot} />
       <View style={styles.titleSlot}>
-        {centerLabel ? (
-          <View style={styles.titleRow}>
-            {centerLabel === SubscriptionMessages.screenTitle ? (
-              <Text style={styles.titleText}>
-                {SubscriptionPlusLabels.menuPrefix} <Text style={BrandPlusTextStyle}>plus</Text>
-              </Text>
-            ) : (
-              <>
-                <Text numberOfLines={1} style={styles.titleText}>
-                  {centerLabel}
-                </Text>
-                {showsPlusBadge ? <Text style={BrandPlusTextStyle}>plus</Text> : null}
-              </>
-            )}
-          </View>
-        ) : null}
+        {canPressTitle ? (
+          <Pressable accessibilityRole="button" onPress={onPressTitle} style={styles.titleButton}>
+            {titleContent}
+          </Pressable>
+        ) : (
+          titleContent
+        )}
       </View>
       <View style={[styles.sideSlot, styles.trailingSlot]}>
-        <IconActionButton icon="menu" isActive={isMenuOpen} onPress={onOpenMenu} />
+        <IconActionButton icon={menuIcon} isActive={isMenuOpen} onPress={onOpenMenu} />
       </View>
     </View>
   );
@@ -73,6 +91,9 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+  },
+  titleButton: {
+    minWidth: 0,
   },
   titleRow: {
     flexDirection: "row",

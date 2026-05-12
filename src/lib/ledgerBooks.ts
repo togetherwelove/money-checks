@@ -154,11 +154,42 @@ export async function requestLedgerBookJoinByCode(
     join_resolution: joinResolution ?? "standard",
   });
 
+  if (
+    (joinResolution ?? "standard") === "standard" &&
+    error &&
+    shouldRetryLegacyJoinRequestRpc(error)
+  ) {
+    const legacyAttempt = await supabase.rpc(REQUEST_LEDGER_BOOK_JOIN_FUNCTION, {
+      input_code: shareCode,
+    });
+    return resolveLedgerBookJoinResult(legacyAttempt.data, legacyAttempt.error);
+  }
+
+  return resolveLedgerBookJoinResult(data, error);
+}
+
+function resolveLedgerBookJoinResult(data: unknown, error: unknown): JoinSharedLedgerBookResult {
   if (error || (data !== "joined" && data !== "requested")) {
     throw error ?? new Error("Failed to request shared ledger book access.");
   }
 
   return data;
+}
+
+function shouldRetryLegacyJoinRequestRpc(error: unknown): boolean {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const candidate = error as { code?: string | null; details?: string | null; message?: string };
+  const errorText = [candidate.code, candidate.message, candidate.details]
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    errorText.includes("PGRST202") ||
+    (errorText.includes(REQUEST_LEDGER_BOOK_JOIN_FUNCTION) && errorText.includes("join_resolution"))
+  );
 }
 
 export async function approveLedgerBookJoinRequest(requestId: string): Promise<void> {
@@ -202,6 +233,34 @@ export async function fetchPendingLedgerBookJoinRequests(
     requesterDisplayName: request.display_name?.trim() || DEFAULT_MEMBER_DISPLAY_NAME,
     requesterUserId: request.requester_user_id,
   }));
+}
+
+export async function fetchPendingLedgerBookJoinRequestCounts(
+  bookIds: readonly string[],
+): Promise<Record<string, number>> {
+  if (bookIds.length === 0) {
+    return {};
+  }
+
+  const { data, error } = await supabase
+    .from("ledger_book_join_requests")
+    .select("book_id")
+    .eq("status", "pending")
+    .in("book_id", [...bookIds]);
+
+  if (error) {
+    throw error;
+  }
+
+  const countsByBookId: Record<string, number> = {};
+  for (const request of Array.isArray(data) ? data : []) {
+    const bookId = typeof request.book_id === "string" ? request.book_id : null;
+    if (bookId) {
+      countsByBookId[bookId] = (countsByBookId[bookId] ?? 0) + 1;
+    }
+  }
+
+  return countsByBookId;
 }
 
 export async function leaveActiveLedgerBook(): Promise<void> {

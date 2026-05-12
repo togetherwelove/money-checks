@@ -1,11 +1,8 @@
-import {
-  SharedLedgerInviteConfig,
-  SharedLedgerInviteMessages,
-} from "../constants/sharedLedgerInvite";
+import { SharedLedgerInviteMessages } from "../constants/sharedLedgerInvite";
 
-export function formatSharedLedgerInviteMessage(shareCode: string): string {
+export function formatSharedLedgerInviteMessage(bookName: string, shareCode: string): string {
   return [
+    `${bookName}${SharedLedgerInviteMessages.inviteMessageSuffix}`,
     `${SharedLedgerInviteMessages.codeLabel}: ${shareCode}`,
-    `${SharedLedgerInviteMessages.appLinkLabel}: ${SharedLedgerInviteConfig.appStoreUrl}`,
   ].join("\n");
 }

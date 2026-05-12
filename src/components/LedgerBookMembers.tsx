@@ -11,7 +11,7 @@ import {
   buildAccountKickConfirmMessage,
 } from "../constants/messages";
 import { SubscriptionMessages } from "../constants/subscription";
-import type { LedgerBookMember, LedgerBookMemberRole } from "../types/ledgerBookMember";
+import type { LedgerBookMember } from "../types/ledgerBookMember";
 import { TextLinkButton } from "./TextLinkButton";
 
 type LedgerBookMembersProps = {
@@ -40,7 +40,6 @@ export function LedgerBookMembers({
       {members.map((member, memberIndex) => {
         const isOwner = member.role === "owner";
         const canKickMember = canManageMembers && !isOwner && member.userId !== currentUserId;
-        const memberRoleLabel = getRoleLabel(member.role);
         const selfBadgeLabel = stripWrappingParentheses(AppMessages.accountMemberSelfSuffix);
         const isKickActionDisabled = pendingKickMemberId !== null;
 
@@ -53,14 +52,11 @@ export function LedgerBookMembers({
               <Text numberOfLines={1} style={styles.memberName}>
                 {member.displayName}
               </Text>
-              <Text
-                style={[
-                  styles.memberRoleBadge,
-                  isOwner ? styles.ownerRoleBadge : styles.editorRoleBadge,
-                ]}
-              >
-                {memberRoleLabel}
-              </Text>
+              {isOwner ? (
+                <Text style={[styles.memberRoleBadge, styles.ownerRoleBadge]}>
+                  {AppMessages.accountRoleOwner}
+                </Text>
+              ) : null}
               {member.userId === currentUserId ? (
                 <Text style={styles.selfBadge}>{selfBadgeLabel}</Text>
               ) : null}
@@ -143,18 +139,6 @@ export function LedgerBookMembers({
       releasePendingKickMember();
     }
   }
-}
-
-function getRoleLabel(role?: LedgerBookMemberRole): string {
-  if (role === "owner") {
-    return AppMessages.accountRoleOwner;
-  }
-
-  if (role === "viewer") {
-    return AppMessages.accountRoleViewer;
-  }
-
-  return AppMessages.accountRoleEditor;
 }
 
 function stripWrappingParentheses(label: string): string {
@@ -269,10 +253,6 @@ const styles = StyleSheet.create({
   ownerRoleBadge: {
     color: AppColors.primary,
     backgroundColor: AppColors.surfaceStrong,
-  },
-  editorRoleBadge: {
-    color: AppColors.mutedText,
-    backgroundColor: AppColors.surfaceMuted,
   },
   memberActions: {
     flexDirection: "row",

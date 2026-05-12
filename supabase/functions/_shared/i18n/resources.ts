@@ -98,8 +98,8 @@ export const functionI18nResources = {
     push: {
       entryCreated: {
         body: "{{actorName}}님이 {{category}} {{amount}}을 추가했어요.",
-        expenseBody: "{{actorName}}님이 {{category}} {{amount}}을 썼어요.",
-        incomeBody: "{{actorName}}님이 {{category}} {{amount}}을 벌었어요.",
+        expenseBody: "{{actorName}}님이 {{category}}에서 {{amount}} 나갔어요.",
+        incomeBody: "{{actorName}}님이 {{category}}에서 {{amount}} 들어왔어요.",
         title: "내역 추가",
       },
       expenseLimitExceeded: {

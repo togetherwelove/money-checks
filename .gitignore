@@ -1,14 +1,12 @@
 .expo/
 .vscode/
 .supabase/
-dist/
 node_modules/
 .env
 .env.*
 *.log
 .codex-logs/
 .eas-build-state/
-.tmp-glance-aar/
 GoogleService-Info.plist
 android/release-signing.properties
 android/*.keystore

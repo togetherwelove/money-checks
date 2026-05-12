@@ -35,18 +35,6 @@ export function MonthlyInsightsSection({ insights }: MonthlyInsightsSectionProps
       <MonthlyTrendBarChart trendMonths={insights.trendMonths} />
       <MonthlyComparisonSection insights={insights} />
       <View style={styles.breakdownSection}>
-        <View style={styles.segmentedControl}>
-          <SegmentButton
-            isSelected={isCategoryMode}
-            label={MonthlyInsightChartCopy.breakdownCategoryLabel}
-            onPress={() => setBreakdownMode("category")}
-          />
-          <SegmentButton
-            isSelected={!isCategoryMode}
-            label={MonthlyInsightChartCopy.breakdownMemberLabel}
-            onPress={() => setBreakdownMode("member")}
-          />
-        </View>
         <MonthlyBreakdownDonutChart
           centerLabel={MonthlyInsightChartCopy.totalExpenseLabel}
           emptyMessage={
@@ -61,6 +49,18 @@ export function MonthlyInsightsSection({ insights }: MonthlyInsightsSectionProps
               : MonthlyInsightChartCopy.memberTitle
           }
         />
+        <View style={styles.segmentedControl}>
+          <SegmentButton
+            isSelected={isCategoryMode}
+            label={MonthlyInsightChartCopy.breakdownCategoryLabel}
+            onPress={() => setBreakdownMode("category")}
+          />
+          <SegmentButton
+            isSelected={!isCategoryMode}
+            label={MonthlyInsightChartCopy.breakdownMemberLabel}
+            onPress={() => setBreakdownMode("member")}
+          />
+        </View>
       </View>
     </View>
   );

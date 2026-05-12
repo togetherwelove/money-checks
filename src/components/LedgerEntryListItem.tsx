@@ -1,5 +1,5 @@
 import { Feather } from "@expo/vector-icons";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Swipeable from "react-native-gesture-handler/Swipeable";
 
@@ -15,8 +15,13 @@ type LedgerEntryListItemProps = {
   categoryIconByKey: Map<string, CategoryIconName>;
   categoryLabelById: Map<string, string>;
   entry: LedgerEntry;
+  hasOpenSwipe?: boolean;
+  isSwipeOpen?: boolean;
   onDeleteEntry: (entry: LedgerEntry) => void | Promise<void>;
   onEditEntry: (entry: LedgerEntry) => void;
+  onRequestCloseOpenSwipe?: () => void;
+  onSwipeClose?: (entryId: string) => void;
+  onSwipeOpen?: (entryId: string) => void;
   showsDate?: boolean;
   showsInstallmentStatusLine?: boolean;
 };
@@ -31,8 +36,13 @@ export function LedgerEntryListItem({
   categoryIconByKey,
   categoryLabelById,
   entry,
+  hasOpenSwipe = false,
+  isSwipeOpen = false,
   onDeleteEntry,
   onEditEntry,
+  onRequestCloseOpenSwipe,
+  onSwipeClose,
+  onSwipeOpen,
   showsDate = false,
   showsInstallmentStatusLine = false,
 }: LedgerEntryListItemProps) {
@@ -41,9 +51,27 @@ export function LedgerEntryListItem({
   const noteLabel = stripInstallmentNoteSuffix(entry.note);
   const categoryLabel = categoryLabelById.get(entry.categoryId) ?? entry.category;
 
+  useEffect(() => {
+    if (!isSwipeOpen) {
+      swipeableRef.current?.close();
+    }
+  }, [isSwipeOpen]);
+
+  const handlePressEntry = () => {
+    if (hasOpenSwipe) {
+      swipeableRef.current?.close();
+      onRequestCloseOpenSwipe?.();
+      return;
+    }
+
+    onEditEntry(entry);
+  };
+
   return (
     <Swipeable
       friction={LedgerEntryListUi.swipeFriction}
+      onSwipeableClose={() => onSwipeClose?.(entry.id)}
+      onSwipeableOpen={() => onSwipeOpen?.(entry.id)}
       overshootFriction={LedgerEntryListUi.swipeOvershootFriction}
       ref={swipeableRef}
       renderRightActions={() => (
@@ -53,6 +81,7 @@ export function LedgerEntryListItem({
             swipeableRef.current?.close();
             onDeleteEntry(entry);
           }}
+          onTouchStart={(event) => event.stopPropagation()}
           style={styles.deleteSnapAction}
         >
           <Feather color={AppColors.inverseText} name="trash-2" size={16} />
@@ -62,7 +91,7 @@ export function LedgerEntryListItem({
       rightThreshold={LedgerEntryListUi.swipeActionWidth}
     >
       <View style={styles.entryRow}>
-        <Pressable onPress={() => onEditEntry(entry)} style={styles.entryBody}>
+        <Pressable onPress={handlePressEntry} style={styles.entryBody}>
           <View style={styles.entryLeadingIcon}>
             <Feather
               color={AppColors.mutedText}

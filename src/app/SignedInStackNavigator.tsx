@@ -201,6 +201,7 @@ export function SignedInStackNavigator({
             onSendPushNotificationToBookMembers={onSendPushNotificationToBookMembers}
             onSendPushNotificationToUsers={onSendPushNotificationToUsers}
             onSwitchLedgerBook={ledgerState.switchLedgerBook}
+            pendingJoinRequestCountsByBookId={ledgerState.pendingJoinRequestCountsByBookId}
             pendingJoinRequests={ledgerState.pendingJoinRequests}
             subscriptionTier={subscriptionTier}
             userId={userId}

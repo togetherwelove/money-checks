@@ -400,8 +400,14 @@ async function mapLedgerEntriesWithoutPhotoAttachments(
   }));
 }
 
-function mapLedgerEntrySummaries(rows: LedgerEntryRow[]): LedgerEntry[] {
-  return rows.map((row) => mapLedgerEntryRow(row));
+async function mapLedgerEntrySummaries(rows: LedgerEntryRow[]): Promise<LedgerEntry[]> {
+  const participantNameMap = await fetchEntryParticipantNameMap(rows);
+
+  return rows.map((row) => ({
+    ...mapLedgerEntryRow(row, participantNameMap.get(row.user_id) ?? DEFAULT_MEMBER_DISPLAY_NAME),
+    targetMemberName:
+      participantNameMap.get(resolveLedgerEntryTargetMemberId(row)) ?? DEFAULT_MEMBER_DISPLAY_NAME,
+  }));
 }
 
 async function fetchAuthorNameMap(rows: LedgerEntryRow[]): Promise<Map<string, string>> {
@@ -450,6 +456,34 @@ async function fetchTargetMemberNameMap(rows: LedgerEntryRow[]): Promise<Map<str
     (data ?? []).map((profile) => [
       profile.id,
       profile.display_name || DEFAULT_MEMBER_DISPLAY_NAME,
+    ]),
+  );
+}
+
+async function fetchEntryParticipantNameMap(rows: LedgerEntryRow[]): Promise<Map<string, string>> {
+  const participantIds = [
+    ...new Set(
+      rows.flatMap((row) => [row.user_id, resolveLedgerEntryTargetMemberId(row)]).filter(Boolean),
+    ),
+  ];
+  if (participantIds.length === 0) {
+    return new Map();
+  }
+
+  const { data, error } = await supabase
+    .from(PROFILE_TABLE)
+    .select("id, display_name")
+    .in("id", participantIds)
+    .returns<ProfileDisplayRow[]>();
+
+  if (error) {
+    throw error;
+  }
+
+  return new Map(
+    (data ?? []).map((profile) => [
+      profile.id,
+      profile.display_name?.trim() || DEFAULT_MEMBER_DISPLAY_NAME,
     ]),
   );
 }

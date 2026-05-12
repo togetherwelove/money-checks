@@ -79,10 +79,10 @@ type PreviousMonthSummaryContent = {
 };
 
 const MonthlyComparisonCopy = {
-  expenseDecrease: "전월보다 {amount} 덜 썼어요",
-  expenseIncrease: "전월보다 {amount} 더 썼어요",
-  incomeDecrease: "전월보다 {amount} 덜 벌었어요",
-  incomeIncrease: "전월보다 {amount} 더 벌었어요",
+  expenseDecrease: "전월보다 {amount} 덜 나갔어요",
+  expenseIncrease: "전월보다 {amount} 더 나갔어요",
+  incomeDecrease: "전월보다 {amount} 덜 들어왔어요",
+  incomeIncrease: "전월보다 {amount} 더 들어왔어요",
   previousDataUnavailable: "전월 데이터 없음",
   same: "전월과 같아요",
 } as const;

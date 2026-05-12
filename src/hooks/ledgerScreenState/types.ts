@@ -14,6 +14,7 @@ import type {
   JoinSharedLedgerBookResolution,
   LedgerBookJoinApprovalAttempt,
   LedgerBookJoinRequest,
+  LedgerBookJoinRequestCountByBookId,
 } from "../../types/ledgerBookJoinRequest";
 
 export type BusyTaskTracker = <T>(task: () => Promise<T>) => Promise<T>;
@@ -48,6 +49,7 @@ export type LedgerScreenState = {
   monthlyInsights: MonthlyInsights;
   nextMonthPage: MonthPage;
   nextChartMonth: ChartMonthData;
+  pendingJoinRequestCountsByBookId: LedgerBookJoinRequestCountByBookId;
   pendingJoinRequests: LedgerBookJoinRequest[];
   previousMonthPage: MonthPage;
   previousChartMonth: ChartMonthData;

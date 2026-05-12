@@ -34,4 +34,26 @@ export const MonthlyInsightChartLayout = {
   donutStrokeWidth: 24,
   minVisibleBarHeight: 3,
   trendBarHeight: 104,
+  trendYAxisGap: 6,
+  trendYAxisLabelCount: 3,
+} as const;
+
+export const MonthlyComparisonLayout = {
+  amountFontSize: 22,
+  amountLineHeight: 28,
+  bodyGap: 5,
+  dividerHeight: 1,
+  headerGap: 8,
+  labelFontSize: 11,
+  labelLineHeight: 15,
+  listGap: 0,
+  previousFontSize: 11,
+  previousLineHeight: 15,
+  railRadius: 999,
+  railWidth: 4,
+  rowGap: 10,
+  rowPaddingHorizontal: 2,
+  rowPaddingVertical: 10,
+  sentenceFontSize: 13,
+  sentenceLineHeight: 19,
 } as const;

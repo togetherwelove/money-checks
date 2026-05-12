@@ -24,14 +24,12 @@ type SharedLedgerBookCardProps = {
   activeBook: LedgerBook | null;
   bookName: string | null;
   bookNameInput: string;
-  canLeaveSharedBook: boolean;
   canEditBookName: boolean;
   currentUserId: string;
   isOwner: boolean;
   onApproveJoinRequest: (requestId: string) => Promise<LedgerBookJoinApprovalAttempt>;
   onBeforeCopyShareCode: () => Promise<void> | void;
   onChangeBookName: (value: string) => void;
-  onLeave: () => unknown;
   onRejectJoinRequest: (requestId: string) => Promise<boolean>;
   onSaveBookName: () => Promise<boolean>;
   pendingJoinRequests: LedgerBookJoinRequest[];
@@ -41,23 +39,20 @@ export function SharedLedgerBookCard({
   activeBook,
   bookName,
   bookNameInput,
-  canLeaveSharedBook,
   canEditBookName,
   currentUserId,
   isOwner,
   onApproveJoinRequest,
   onBeforeCopyShareCode,
   onChangeBookName,
-  onLeave,
   onRejectJoinRequest,
   onSaveBookName,
   pendingJoinRequests,
 }: SharedLedgerBookCardProps) {
   const [isEditingBookName, setIsEditingBookName] = useState(false);
-  const isSharedBook = Boolean(activeBook && activeBook.ownerId !== currentUserId);
   const shareCode = activeBook?.shareCode ?? null;
   const shouldShowJoinRequests = isOwner && Boolean(pendingJoinRequests.length);
-  const hasDetails = Boolean(shareCode || shouldShowJoinRequests || canLeaveSharedBook);
+  const hasDetails = Boolean(shareCode || shouldShowJoinRequests);
 
   const handleCopyShareCode = async () => {
     if (!shareCode) {
@@ -69,7 +64,10 @@ export function SharedLedgerBookCard({
     await Clipboard.setStringAsync(shareCode);
     try {
       await Share.share({
-        message: formatSharedLedgerInviteMessage(shareCode),
+        message: formatSharedLedgerInviteMessage(
+          bookName ?? LedgerBookNicknameCopy.defaultName,
+          shareCode,
+        ),
       });
     } catch (error) {
       console.error("[SharedLedgerBookCard] Share sheet failed", error);
@@ -139,21 +137,9 @@ export function SharedLedgerBookCard({
             {bookName ?? AppMessages.accountBookFallback}
           </Text>
         )}
-        {isSharedBook ? (
-          <View style={[styles.stateBadge, styles.sharedBadge]}>
-            <Text style={[styles.stateBadgeText, styles.sharedBadgeText]}>
-              {AppMessages.accountBookSharedState}
-            </Text>
-          </View>
-        ) : null}
       </View>
       {shareCode ? (
-        <View
-          style={[
-            styles.codeBlock,
-            shouldShowJoinRequests || canLeaveSharedBook ? null : styles.sectionBottomInset,
-          ]}
-        >
+        <View style={[styles.codeBlock, shouldShowJoinRequests ? null : styles.sectionBottomInset]}>
           <Text style={styles.helpText}>{AppMessages.accountShareCodeHint}</Text>
           <View style={styles.shareCodeRow}>
             <ActionButton
@@ -178,30 +164,12 @@ export function SharedLedgerBookCard({
         </View>
       ) : null}
       {shouldShowJoinRequests ? (
-        <View
-          style={[
-            styles.sectionContent,
-            styles.subsection,
-            canLeaveSharedBook ? null : styles.sectionBottomInset,
-          ]}
-        >
+        <View style={[styles.sectionContent, styles.subsection, styles.sectionBottomInset]}>
           <LedgerBookJoinRequests
             onApproveRequest={onApproveJoinRequest}
             onRejectRequest={onRejectJoinRequest}
             requests={pendingJoinRequests}
           />
-        </View>
-      ) : null}
-      {canLeaveSharedBook ? (
-        <View style={[styles.sectionContent, styles.subsection, styles.sectionBottomInset]}>
-          <View style={styles.leaveSection}>
-            <Text style={styles.helpText}>{AppMessages.accountDisconnectHint}</Text>
-            <ActionButton
-              label={AppMessages.accountDisconnectAction}
-              onPress={onLeave}
-              variant="destructive"
-            />
-          </View>
         </View>
       ) : null}
     </View>

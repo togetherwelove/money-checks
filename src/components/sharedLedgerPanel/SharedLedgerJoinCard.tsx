@@ -24,8 +24,11 @@ export function SharedLedgerJoinCard({
         autoCapitalize="characters"
         maxLength={SHARE_CODE_LENGTH}
         onChangeText={onChangeShareCodeInput}
+        onSubmitEditing={onJoin}
         placeholder={AppMessages.accountJoinPlaceholder}
+        returnKeyType="done"
         style={styles.input}
+        submitBehavior="blurAndSubmit"
         value={shareCodeInput}
       />
       <View style={styles.actionRow}>

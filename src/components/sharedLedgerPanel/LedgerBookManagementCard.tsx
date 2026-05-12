@@ -3,6 +3,7 @@ import { Alert, Text, TextInput, View } from "react-native";
 
 import { CommonActionCopy } from "../../constants/commonActions";
 import { LedgerBookManagementCopy } from "../../constants/ledgerBookManagement";
+import { AppMessages } from "../../constants/messages";
 import {
   SubscriptionConfig,
   type SubscriptionTier,
@@ -11,20 +12,25 @@ import {
 import { appPlatform } from "../../lib/appPlatform";
 import { showNativeToast } from "../../lib/nativeToast";
 import type { AccessibleLedgerBook, LedgerBook } from "../../types/ledgerBook";
+import type { LedgerBookJoinRequestCountByBookId } from "../../types/ledgerBookJoinRequest";
 import type { LedgerBookMember } from "../../types/ledgerBookMember";
 import { IconActionButton } from "../IconActionButton";
 import { LedgerBookMembers } from "../LedgerBookMembers";
+import { TextLinkButton } from "../TextLinkButton";
 import { sharedLedgerPanelStyles as styles } from "./sharedLedgerPanelStyles";
 
 type LedgerBookManagementCardProps = {
   accessibleBooks: AccessibleLedgerBook[];
   activeBook: LedgerBook | null;
+  canLeaveSharedBook: boolean;
   currentUserId: string;
   members: LedgerBookMember[];
   onCreateLedgerBook: (nextName: string) => Promise<boolean>;
   onKickMember: (targetUserId: string) => Promise<boolean>;
+  onLeave: () => unknown;
   onOpenSubscription: () => void;
   onSwitchLedgerBook: (bookId: string) => Promise<boolean>;
+  pendingJoinRequestCountsByBookId: LedgerBookJoinRequestCountByBookId;
   shouldShowSharedMemberLimitNotice: boolean;
   subscriptionTier: SubscriptionTier;
 };
@@ -32,12 +38,15 @@ type LedgerBookManagementCardProps = {
 export function LedgerBookManagementCard({
   accessibleBooks,
   activeBook,
+  canLeaveSharedBook,
   currentUserId,
   members,
   onCreateLedgerBook,
   onKickMember,
+  onLeave,
   onOpenSubscription,
   onSwitchLedgerBook,
+  pendingJoinRequestCountsByBookId,
   shouldShowSharedMemberLimitNotice,
   subscriptionTier,
 }: LedgerBookManagementCardProps) {
@@ -188,22 +197,29 @@ export function LedgerBookManagementCard({
             const ownershipLabel = isOwner
               ? LedgerBookManagementCopy.ownerBadge
               : LedgerBookManagementCopy.sharedBadge;
+            const shouldShowPendingRequestBadge =
+              isOwner && (pendingJoinRequestCountsByBookId[book.id] ?? 0) > 0;
             return (
               <View
                 key={book.id}
                 style={[styles.ledgerBookItem, isActiveBook ? styles.activeLedgerBookItem : null]}
               >
                 <View style={styles.ledgerBookItemContent}>
-                  <Text numberOfLines={1} style={styles.ledgerBookItemName}>
-                    {book.name}
-                  </Text>
+                  <View style={styles.ledgerBookItemNameRow}>
+                    {shouldShowPendingRequestBadge ? (
+                      <View style={styles.pendingRequestBadge} />
+                    ) : null}
+                    <Text numberOfLines={1} style={styles.ledgerBookItemName}>
+                      {book.name}
+                    </Text>
+                  </View>
                   <View style={styles.ledgerBookItemMetaRow}>
                     <Text style={styles.ledgerBookItemMeta}>{ownershipLabel}</Text>
                   </View>
                 </View>
                 <IconActionButton
                   accessibilityLabel={LedgerBookManagementCopy.switchActionAccessibilityLabel}
-                  icon={isActiveBook ? "check" : "repeat"}
+                  icon={isActiveBook ? "check" : "log-in"}
                   isActive={isActiveBook}
                   onPress={() => {
                     void handleSwitchLedgerBook(book.id);
@@ -221,7 +237,7 @@ export function LedgerBookManagementCard({
           style={[
             styles.ledgerBookList,
             styles.ledgerBookMembersBlock,
-            shouldUseNativeNamePrompt ? styles.sectionBottomInset : null,
+            shouldUseNativeNamePrompt && !canLeaveSharedBook ? styles.sectionBottomInset : null,
           ]}
         >
           <LedgerBookMembers
@@ -234,7 +250,7 @@ export function LedgerBookManagementCard({
         </View>
       ) : null}
       {!shouldUseNativeNamePrompt ? (
-        <View style={[styles.createBookRow, styles.sectionBottomInset]}>
+        <View style={[styles.createBookRow, canLeaveSharedBook ? null : styles.sectionBottomInset]}>
           <TextInput
             autoCapitalize="words"
             autoComplete="off"
@@ -252,6 +268,15 @@ export function LedgerBookManagementCard({
             submitBehavior="blurAndSubmit"
             textContentType="none"
             value={newBookName}
+          />
+        </View>
+      ) : null}
+      {canLeaveSharedBook ? (
+        <View style={[styles.disconnectActionRow, styles.sectionBottomInset]}>
+          <TextLinkButton
+            label={AppMessages.accountDisconnectAction}
+            onPress={onLeave}
+            tone="destructive"
           />
         </View>
       ) : null}

@@ -51,7 +51,7 @@ export const SupportPackageCatalog: readonly SupportPackageCatalogItem[] = selec
   ],
   ko: [
     {
-      description: "개발자가 좋아해요.",
+      description: "개발자가 가장 좋아합니다.",
       iconBackgroundColor: AppColors.accentSoft,
       iconColor: AppColors.accent,
       iconName: "cup-outline",
@@ -59,7 +59,7 @@ export const SupportPackageCatalog: readonly SupportPackageCatalogItem[] = selec
       title: "바나나우유",
     },
     {
-      description: "앱 개발에 큰 도움이 돼요.",
+      description: "앱 개선에 큰 도움이 됩니다.",
       iconBackgroundColor: AppColors.surfaceStrong,
       iconColor: AppColors.primary,
       iconName: "coffee-outline",
@@ -67,7 +67,7 @@ export const SupportPackageCatalog: readonly SupportPackageCatalogItem[] = selec
       title: "커피 한 잔",
     },
     {
-      description: "개발자 가족의 하루가 완벽해져요.",
+      description: "개발자 가족의 하루가 완벽해집니다.",
       iconBackgroundColor: AppColors.expenseSoft,
       iconColor: AppColors.expense,
       iconName: "food-drumstick-outline",

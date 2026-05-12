@@ -44,6 +44,7 @@ export function AllEntriesScreen({
   trackBlockingTask,
 }: AllEntriesScreenProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [openSwipeEntryId, setOpenSwipeEntryId] = useState<string | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const deferredSearchQuery = useDeferredValue(searchQuery.trim());
   const categories = useLedgerCategories();
@@ -90,6 +91,7 @@ export function AllEntriesScreen({
           autoCorrect={false}
           clearButtonMode="while-editing"
           onChangeText={setSearchQuery}
+          onFocus={closeOpenSwipeEntry}
           placeholder={AllEntriesCopy.searchPlaceholder}
           returnKeyType="search"
           style={styles.searchInput}
@@ -102,7 +104,10 @@ export function AllEntriesScreen({
           style={styles.categoryFilterList}
         >
           <Pressable
-            onPress={() => setSelectedCategoryId(null)}
+            onPress={() => {
+              closeOpenSwipeEntry();
+              setSelectedCategoryId(null);
+            }}
             style={[
               styles.categoryFilterChip,
               selectedCategoryId === null ? styles.activeCategoryFilterChip : null,
@@ -122,11 +127,12 @@ export function AllEntriesScreen({
               category={category}
               isSelected={selectedCategoryId === category.id}
               key={category.id}
-              onPress={() =>
+              onPress={() => {
+                closeOpenSwipeEntry();
                 setSelectedCategoryId((currentCategoryId) =>
                   currentCategoryId === category.id ? null : category.id,
-                )
-              }
+                );
+              }}
             />
           ))}
         </ScrollView>
@@ -159,6 +165,8 @@ export function AllEntriesScreen({
             void loadMoreEntries();
           }}
           onEndReachedThreshold={0.4}
+          onScrollBeginDrag={closeOpenSwipeEntry}
+          onTouchStart={closeOpenSwipeEntry}
           refreshControl={
             <RefreshControl
               onRefresh={() => {
@@ -176,6 +184,8 @@ export function AllEntriesScreen({
                 categoryIconByKey={categoryIconByKey}
                 categoryLabelById={categoryLabelById}
                 entry={item.entry}
+                hasOpenSwipe={openSwipeEntryId !== null}
+                isSwipeOpen={openSwipeEntryId === item.entry.id}
                 onDeleteEntry={(entry) => {
                   Alert.alert(
                     AppMessages.editorDeleteConfirmTitle,
@@ -196,6 +206,13 @@ export function AllEntriesScreen({
                   );
                 }}
                 onEditEntry={onEditEntry}
+                onRequestCloseOpenSwipe={closeOpenSwipeEntry}
+                onSwipeClose={(entryId) => {
+                  setOpenSwipeEntryId((currentEntryId) =>
+                    currentEntryId === entryId ? null : currentEntryId,
+                  );
+                }}
+                onSwipeOpen={setOpenSwipeEntryId}
                 showsDate
                 showsInstallmentStatusLine
               />
@@ -213,6 +230,10 @@ export function AllEntriesScreen({
     if (!didDelete) {
       restoreEntryToFeed(entry);
     }
+  }
+
+  function closeOpenSwipeEntry() {
+    setOpenSwipeEntryId(null);
   }
 }
 

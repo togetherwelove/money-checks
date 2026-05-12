@@ -1,16 +1,12 @@
 import { selectStaticCopy } from "../i18n/staticCopy";
 
-export const SharedLedgerInviteConfig = {
-  appStoreUrl: "https://apps.apple.com/kr/app/id6762341315",
-} as const;
-
 export const SharedLedgerInviteMessages = selectStaticCopy({
   en: {
-    appLinkLabel: "Install Alttle",
     codeLabel: "Share code",
+    inviteMessageSuffix: "invites you.",
   },
   ko: {
-    appLinkLabel: "알뜰 설치하기",
     codeLabel: "공유코드",
+    inviteMessageSuffix: "(으)로 초대합니다.",
   },
 } as const);

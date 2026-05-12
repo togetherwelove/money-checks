@@ -7,9 +7,15 @@ import {
 } from "../../constants/monthlyInsightCharts";
 import { OneLineTextFitProps } from "../../constants/textLayout";
 import type { MonthlyTrendPoint } from "../../types/ledger";
+import { formatChartAxisCurrency } from "../../utils/currency";
 
 type MonthlyTrendBarChartProps = {
   trendMonths: MonthlyTrendPoint[];
+};
+
+type YAxisTick = {
+  amount: number;
+  key: string;
 };
 
 export function MonthlyTrendBarChart({ trendMonths }: MonthlyTrendBarChartProps) {
@@ -17,6 +23,8 @@ export function MonthlyTrendBarChart({ trendMonths }: MonthlyTrendBarChartProps)
     ...trendMonths.flatMap((point) => [point.incomeAmount, point.expenseAmount]),
     0,
   );
+  const yAxisTicks = buildYAxisTicks(maxAmount);
+
   return (
     <View style={styles.section}>
       <View style={styles.headerRow}>
@@ -27,29 +35,52 @@ export function MonthlyTrendBarChart({ trendMonths }: MonthlyTrendBarChartProps)
         </View>
       </View>
       <View style={styles.card}>
-        <View style={styles.chartRow}>
-          {trendMonths.map((point) => (
-            <View key={point.key} style={styles.monthColumn}>
-              <View style={styles.barArea}>
-                <TrendBar
-                  amount={point.incomeAmount}
-                  color={AppColors.income}
-                  maxAmount={maxAmount}
-                />
-                <TrendBar
-                  amount={point.expenseAmount}
-                  color={AppColors.expense}
-                  maxAmount={maxAmount}
-                />
-              </View>
-              <Text
-                {...OneLineTextFitProps}
-                style={[styles.monthLabel, point.isCurrentMonth ? styles.activeMonth : null]}
-              >
-                {point.monthLabel}
+        <View style={styles.plotRow}>
+          <View style={styles.yAxis}>
+            {yAxisTicks.map((tick) => (
+              <Text key={tick.key} {...OneLineTextFitProps} style={styles.yAxisLabel}>
+                {formatChartAxisCurrency(tick.amount)}
               </Text>
+            ))}
+          </View>
+          <View style={styles.chartContent}>
+            <View style={styles.chartBody}>
+              <View pointerEvents="none" style={styles.gridLayer}>
+                {yAxisTicks.map((tick) => (
+                  <View key={tick.key} style={styles.gridLine} />
+                ))}
+              </View>
+              <View style={styles.chartRow}>
+                {trendMonths.map((point) => (
+                  <View key={point.key} style={styles.monthColumn}>
+                    <View style={styles.barArea}>
+                      <TrendBar
+                        amount={point.incomeAmount}
+                        color={AppColors.income}
+                        maxAmount={maxAmount}
+                      />
+                      <TrendBar
+                        amount={point.expenseAmount}
+                        color={AppColors.expense}
+                        maxAmount={maxAmount}
+                      />
+                    </View>
+                  </View>
+                ))}
+              </View>
             </View>
-          ))}
+            <View style={styles.monthLabelRow}>
+              {trendMonths.map((point) => (
+                <Text
+                  key={point.key}
+                  {...OneLineTextFitProps}
+                  style={[styles.monthLabel, point.isCurrentMonth ? styles.activeMonth : null]}
+                >
+                  {point.monthLabel}
+                </Text>
+              ))}
+            </View>
+          </View>
         </View>
       </View>
     </View>
@@ -85,6 +116,21 @@ function LegendItem({ color, label }: { color: string; label: string }) {
   );
 }
 
+function buildYAxisTicks(maxAmount: number): YAxisTick[] {
+  if (maxAmount <= 0) {
+    return [{ amount: 0, key: "zero" }];
+  }
+
+  const labelCount = MonthlyInsightChartLayout.trendYAxisLabelCount;
+  return Array.from({ length: labelCount }, (_, tickNumber) => {
+    const reverseTickNumber = labelCount - tickNumber - 1;
+    return {
+      amount: Math.round((maxAmount * reverseTickNumber) / (labelCount - 1)),
+      key: `tick-${reverseTickNumber}`,
+    };
+  });
+}
+
 const styles = StyleSheet.create({
   activeMonth: {
     color: AppColors.text,
@@ -96,7 +142,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 5,
   },
   barArea: {
-    height: MonthlyInsightChartLayout.trendBarHeight,
+    height: "100%",
     flexDirection: "row",
     alignItems: "flex-end",
     justifyContent: "center",
@@ -110,10 +156,28 @@ const styles = StyleSheet.create({
     padding: 14,
     gap: 12,
   },
+  chartBody: {
+    height: MonthlyInsightChartLayout.trendBarHeight,
+    justifyContent: "flex-end",
+  },
+  chartContent: {
+    flex: 1,
+    gap: 6,
+    minWidth: 0,
+  },
   chartRow: {
+    height: "100%",
     flexDirection: "row",
     alignItems: "flex-end",
     gap: 6,
+  },
+  gridLayer: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "space-between",
+  },
+  gridLine: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: AppColors.border,
   },
   headerRow: {
     flexDirection: "row",
@@ -143,14 +207,25 @@ const styles = StyleSheet.create({
   },
   monthColumn: {
     flex: 1,
-    gap: 6,
+    alignItems: "center",
+    justifyContent: "flex-end",
     minWidth: 0,
   },
   monthLabel: {
+    flex: 1,
+    minWidth: 0,
     color: AppColors.mutedText,
     fontSize: 11,
     fontWeight: "600",
     textAlign: "center",
+  },
+  monthLabelRow: {
+    flexDirection: "row",
+    gap: 6,
+  },
+  plotRow: {
+    flexDirection: "row",
+    gap: MonthlyInsightChartLayout.trendYAxisGap,
   },
   section: {
     gap: 8,
@@ -159,5 +234,16 @@ const styles = StyleSheet.create({
     color: AppColors.text,
     fontSize: 13,
     fontWeight: "700",
+  },
+  yAxis: {
+    alignItems: "flex-end",
+    height: MonthlyInsightChartLayout.trendBarHeight,
+    justifyContent: "space-between",
+  },
+  yAxisLabel: {
+    color: AppColors.mutedText,
+    fontSize: 10,
+    fontWeight: "600",
+    textAlign: "right",
   },
 });

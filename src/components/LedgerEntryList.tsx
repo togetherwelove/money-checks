@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
@@ -9,14 +10,31 @@ import type { LedgerEntry } from "../types/ledger";
 import { LedgerEntryListItem } from "./LedgerEntryListItem";
 
 type LedgerEntryListProps = {
+  closeSwipeRevision?: number;
   entries: LedgerEntry[];
   onDeleteEntry: (entry: LedgerEntry) => void | Promise<void>;
   onEditEntry: (entry: LedgerEntry) => void;
 };
 
-export function LedgerEntryList({ entries, onDeleteEntry, onEditEntry }: LedgerEntryListProps) {
+export function LedgerEntryList({
+  closeSwipeRevision = 0,
+  entries,
+  onDeleteEntry,
+  onEditEntry,
+}: LedgerEntryListProps) {
+  const [openSwipeEntryId, setOpenSwipeEntryId] = useState<string | null>(null);
+  const closeSwipeRevisionRef = useRef(closeSwipeRevision);
   const categoryIconByKey = useLedgerCategoryIconMap();
   const categoryLabelById = useLedgerCategoryLabelMap();
+
+  useEffect(() => {
+    if (closeSwipeRevisionRef.current === closeSwipeRevision) {
+      return;
+    }
+
+    closeSwipeRevisionRef.current = closeSwipeRevision;
+    setOpenSwipeEntryId(null);
+  });
 
   if (entries.length === 0) {
     return (
@@ -33,9 +51,18 @@ export function LedgerEntryList({ entries, onDeleteEntry, onEditEntry }: LedgerE
           categoryIconByKey={categoryIconByKey}
           categoryLabelById={categoryLabelById}
           entry={entry}
+          hasOpenSwipe={openSwipeEntryId !== null}
+          isSwipeOpen={openSwipeEntryId === entry.id}
           key={entry.id}
           onDeleteEntry={onDeleteEntry}
           onEditEntry={onEditEntry}
+          onRequestCloseOpenSwipe={() => setOpenSwipeEntryId(null)}
+          onSwipeClose={(entryId) => {
+            setOpenSwipeEntryId((currentEntryId) =>
+              currentEntryId === entryId ? null : currentEntryId,
+            );
+          }}
+          onSwipeOpen={setOpenSwipeEntryId}
         />
       ))}
     </View>

@@ -125,6 +125,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
     alignItems: "stretch",
+    backgroundColor: AppColors.surfaceMuted,
   },
   metric: {
     flex: 1,

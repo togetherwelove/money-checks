@@ -60,8 +60,12 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
     refreshSharedLedgerBook,
     switchLedgerBook,
   } = useActiveLedgerBook(session.user.id, trackBusyTask);
-  const { approveLedgerJoinRequest, pendingJoinRequests, rejectLedgerJoinRequest } =
-    useLedgerJoinRequests(activeBook, session.user.id, trackBusyTask);
+  const {
+    approveLedgerJoinRequest,
+    pendingJoinRequestCountsByBookId,
+    pendingJoinRequests,
+    rejectLedgerJoinRequest,
+  } = useLedgerJoinRequests(activeBook, accessibleBooks, session.user.id, trackBusyTask);
   const { dateNoteByDate, refreshLedgerDayNotes, removeLedgerDayNote, saveLedgerDayNote } =
     useLedgerDayNotes(activeBook?.id ?? null, trackBusyTask, session.user.id, visibleMonth);
   const {
@@ -338,6 +342,7 @@ export function useLedgerScreenState(session: Session): LedgerScreenState {
     monthlyInsights,
     nextMonthPage,
     nextChartMonth,
+    pendingJoinRequestCountsByBookId,
     pendingJoinRequests,
     previousMonthPage,
     previousChartMonth,

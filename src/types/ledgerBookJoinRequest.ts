@@ -1,7 +1,7 @@
 import type { LedgerBook } from "./ledgerBook";
 
 export const JoinSharedLedgerBookResolutions = {
-  mergePersonalBookOnApproval: "merge_personal_book_on_approval",
+  discardPersonalBookOnApproval: "discard_personal_book_on_approval",
   standard: "standard",
 } as const;
 
@@ -17,7 +17,7 @@ export type JoinSharedLedgerBookPreviewStatus =
   | "blocked_shared_owner_free"
   | "blocked_target_member_limit"
   | "can_request"
-  | "can_request_with_personal_book_merge"
+  | "can_request_with_personal_book_discard"
   | "expired_code"
   | "invalid_code"
   | "join_cooldown"
@@ -42,8 +42,7 @@ export type LedgerBookJoinApprovalStatus =
   | "blocked_shared_owner_free"
   | "blocked_target_member_limit"
   | "can_approve"
-  | "can_approve_with_personal_book_merge"
-  | "needs_personal_book_merge_confirmation";
+  | "can_approve_with_personal_book_discard";
 
 export type LedgerBookJoinRequest = {
   approvalStatus: LedgerBookJoinApprovalStatus;
@@ -53,6 +52,8 @@ export type LedgerBookJoinRequest = {
   requesterDisplayName: string;
   requesterUserId: string;
 };
+
+export type LedgerBookJoinRequestCountByBookId = Record<string, number>;
 
 export type LedgerBookJoinApprovalAttempt = {
   didApprove: boolean;

@@ -277,9 +277,11 @@ export const NotificationEventCopy: Record<NotificationEventType, NotificationEv
       other_member_created_entry: {
         bodyTemplate: "{actorName}님이 {category} {amountLabel}을 추가했어요.\n{noteSentence}",
         defaultEnabled: true,
-        expenseBodyTemplate: "{actorName}님이 {category} {amountLabel}을 썼어요.\n{noteSentence}",
+        expenseBodyTemplate:
+          "{actorName}님이 {category}에서 {amountLabel} 나갔어요.\n{noteSentence}",
         groupId: "sharedLedger",
-        incomeBodyTemplate: "{actorName}님이 {category} {amountLabel}을 벌었어요.\n{noteSentence}",
+        incomeBodyTemplate:
+          "{actorName}님이 {category}에서 {amountLabel} 들어왔어요.\n{noteSentence}",
         label: "다른 멤버가 등록했을 때 내게 알립니다.",
         title: "기록 추가",
       },

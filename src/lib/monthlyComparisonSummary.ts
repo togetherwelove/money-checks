@@ -5,9 +5,17 @@ import { formatCurrency } from "../utils/calendar";
 export type MonthlyComparisonTone = "expense" | "income" | "muted";
 export type MonthlyComparisonVariant = "expense" | "income";
 
+export type MonthlyComparisonSentenceParts = {
+  prefix: string;
+  subject: string;
+  suffix: string;
+};
+
 export type MonthlyComparisonSummary = {
-  changeRateLabel: string | null;
+  comparisonSentence: string;
   currentAmountLabel: string;
+  currentSentence: string;
+  currentSentenceParts: MonthlyComparisonSentenceParts;
   previousAmountLabel: string;
   summaryMessage: string;
   tone: MonthlyComparisonTone;
@@ -25,26 +33,70 @@ export type PushNotificationContent = {
 
 const MonthlyComparisonCopy = selectStaticCopy({
   en: {
-    expenseDecrease: "Spent {amount} less than last month",
-    expenseIncrease: "Spent {amount} more than last month",
-    incomeDecrease: "Earned {amount} less than last month",
-    incomeIncrease: "Earned {amount} more than last month",
+    currentExpense: {
+      prefix: "This month's ",
+      subject: "expense",
+      suffix: " was {amount}.",
+    },
+    currentIncome: {
+      prefix: "This month's ",
+      subject: "income",
+      suffix: " was {amount}.",
+    },
+    expenseDecrease: "That is {amount} less than last month.",
+    expenseIncrease: "That is {amount} more than last month.",
+    incomeDecrease: "That is {amount} less than last month.",
+    incomeIncrease: "That is {amount} more than last month.",
     previousAmountPrefix: "Previous",
-    previousDataUnavailable: "No previous month data",
-    rateDecrease: "{rate}% decrease from {monthLabel}",
-    rateIncrease: "{rate}% increase from {monthLabel}",
-    same: "Same as last month",
+    previousDataUnavailable:
+      "There is no previous month record yet, so comparison will be available next month.",
+    same: "That is the same as last month.",
   },
   ko: {
-    expenseDecrease: "전월보다 {amount} 덜 썼어요",
-    expenseIncrease: "전월보다 {amount} 더 썼어요",
-    incomeDecrease: "전월보다 {amount} 덜 벌었어요",
-    incomeIncrease: "전월보다 {amount} 더 벌었어요",
+    currentExpense: {
+      prefix: "이번 달의 ",
+      subject: "지출",
+      suffix: "은 {amount}이에요.",
+    },
+    currentIncome: {
+      prefix: "이번 달의 ",
+      subject: "수입",
+      suffix: "은 {amount}이에요.",
+    },
+    expenseDecrease: "지난달보다 {amount} 덜 썼어요.",
+    expenseIncrease: "지난달보다 {amount} 더 썼어요.",
+    incomeDecrease: "지난달보다 {amount} 덜 들어왔어요.",
+    incomeIncrease: "지난달보다 {amount} 더 들어왔어요.",
     previousAmountPrefix: "전월",
-    previousDataUnavailable: "전월 데이터 없음",
-    rateDecrease: "{monthLabel} 대비 {rate}% 감소",
-    rateIncrease: "{monthLabel} 대비 {rate}% 증가",
-    same: "전월과 같아요",
+    previousDataUnavailable: "지난달 기록이 아직 없어 다음 달부터 비교할 수 있어요.",
+    same: "지난달과 같아요.",
+  },
+} as const);
+
+const MonthlyComparisonCurrentSentenceFallbackCopy = selectStaticCopy({
+  en: {
+    expense: {
+      prefix: "This month's ",
+      subject: "expense",
+      suffix: " was {amount}.",
+    },
+    income: {
+      prefix: "This month's ",
+      subject: "income",
+      suffix: " was {amount}.",
+    },
+  },
+  ko: {
+    expense: {
+      prefix: "이번 달의 ",
+      subject: "지출",
+      suffix: "은 {amount}이에요.",
+    },
+    income: {
+      prefix: "이번 달의 ",
+      subject: "수입",
+      suffix: "은 {amount}이에요.",
+    },
   },
 } as const);
 
@@ -64,13 +116,17 @@ export function buildMonthlyComparisonSummary(
   previousMonthLabel: string,
   variant: MonthlyComparisonVariant,
 ): MonthlyComparisonSummary {
-  const currentAmountLabel = formatComparisonAmount(metric.currentAmount, variant);
-  const previousAmountLabel = `${MonthlyComparisonCopy.previousAmountPrefix} ${previousMonthLabel} ${formatComparisonAmount(metric.previousAmount, variant)}`;
+  const currentAmountLabel = formatCurrency(metric.currentAmount);
+  const previousAmountLabel = `${MonthlyComparisonCopy.previousAmountPrefix} ${previousMonthLabel} ${formatCurrency(metric.previousAmount)}`;
+  const currentSentenceParts = buildCurrentSentenceParts(metric.currentAmount, variant);
+  const currentSentence = formatCurrentSentence(currentSentenceParts);
 
   if (metric.previousAmount <= 0) {
     return {
-      changeRateLabel: null,
+      comparisonSentence: MonthlyComparisonCopy.previousDataUnavailable,
       currentAmountLabel,
+      currentSentence,
+      currentSentenceParts,
       previousAmountLabel,
       summaryMessage: MonthlyComparisonCopy.previousDataUnavailable,
       tone: "muted",
@@ -79,29 +135,29 @@ export function buildMonthlyComparisonSummary(
 
   if (isMeaningfullyFlat(metric)) {
     return {
-      changeRateLabel: null,
+      comparisonSentence: MonthlyComparisonCopy.same,
       currentAmountLabel,
+      currentSentence,
+      currentSentenceParts,
       previousAmountLabel,
       summaryMessage: MonthlyComparisonCopy.same,
       tone: "muted",
     };
   }
 
-  const deltaAmountLabel = formatCurrency(metric.deltaAmount);
-  const changeRateLabel =
-    metric.previousAmount > 0
-      ? formatChangeRateLabel(
-          metric.deltaAmount / metric.previousAmount,
-          metric.direction,
-          previousMonthLabel,
-        )
-      : null;
+  const comparisonSentence = formatSummaryMessage(
+    formatCurrency(metric.deltaAmount),
+    metric.direction,
+    variant,
+  );
 
   return {
-    changeRateLabel,
+    comparisonSentence,
     currentAmountLabel,
+    currentSentence,
+    currentSentenceParts,
     previousAmountLabel,
-    summaryMessage: formatSummaryMessage(deltaAmountLabel, metric.direction, variant),
+    summaryMessage: comparisonSentence,
     tone: resolveComparisonTone(metric.direction, variant),
   };
 }
@@ -139,25 +195,24 @@ export function buildPreviousMonthSummaryPushContent(
   };
 }
 
-function formatComparisonAmount(amount: number, variant: MonthlyComparisonVariant): string {
-  const prefix = variant === "income" ? "+" : "-";
-  return `${prefix} ${formatCurrency(amount)}`;
+function buildCurrentSentenceParts(
+  amount: number,
+  variant: MonthlyComparisonVariant,
+): MonthlyComparisonSentenceParts {
+  const template =
+    variant === "income"
+      ? (MonthlyComparisonCopy.currentIncome ?? MonthlyComparisonCurrentSentenceFallbackCopy.income)
+      : (MonthlyComparisonCopy.currentExpense ??
+        MonthlyComparisonCurrentSentenceFallbackCopy.expense);
+
+  return {
+    ...template,
+    suffix: template.suffix.replace("{amount}", formatCurrency(amount)),
+  };
 }
 
-function formatChangeRateLabel(
-  changeRate: number,
-  direction: MonthlyComparisonMetric["direction"],
-  previousMonthLabel: string,
-): string {
-  const roundedRate = Math.round(changeRate * 100);
-  const template =
-    direction === "increase"
-      ? MonthlyComparisonCopy.rateIncrease
-      : MonthlyComparisonCopy.rateDecrease;
-
-  return template
-    .replace("{monthLabel}", previousMonthLabel)
-    .replace("{rate}", String(roundedRate));
+function formatCurrentSentence(parts: MonthlyComparisonSentenceParts): string {
+  return `${parts.prefix}${parts.subject}${parts.suffix}`;
 }
 
 function formatSummaryMessage(

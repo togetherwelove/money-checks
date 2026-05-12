@@ -3,6 +3,7 @@ import { Alert, View } from "react-native";
 
 import { DEFAULT_MEMBER_DISPLAY_NAME } from "../constants/ledgerDisplay";
 import { AppMessages } from "../constants/messages";
+import { SharedLedgerJoinCopy } from "../constants/sharedLedgerJoin";
 import { SharedLedgerJoinPreviewCopy } from "../constants/sharedLedgerJoinPreview";
 import {
   SubscriptionConfig,
@@ -26,6 +27,7 @@ import type {
   JoinSharedLedgerBookResolution,
   LedgerBookJoinApprovalAttempt,
   LedgerBookJoinRequest,
+  LedgerBookJoinRequestCountByBookId,
 } from "../types/ledgerBookJoinRequest";
 import { JoinSharedLedgerBookResolutions } from "../types/ledgerBookJoinRequest";
 import type { LedgerBookMember } from "../types/ledgerBookMember";
@@ -65,6 +67,7 @@ type SharedLedgerPanelProps = {
     targetUserIds: string[],
     bookId?: string,
   ) => Promise<void>;
+  pendingJoinRequestCountsByBookId: LedgerBookJoinRequestCountByBookId;
   pendingJoinRequests: LedgerBookJoinRequest[];
   subscriptionTier: SubscriptionTier;
 };
@@ -89,6 +92,7 @@ export function SharedLedgerPanel({
   onSendPendingJoinRequestNotification,
   onSendPushNotificationToBookMembers,
   onSendPushNotificationToUsers,
+  pendingJoinRequestCountsByBookId,
   pendingJoinRequests,
   subscriptionTier,
 }: SharedLedgerPanelProps) {
@@ -118,6 +122,7 @@ export function SharedLedgerPanel({
   const handleJoin = async () => {
     const nextShareCode = shareCodeInput.trim();
     if (!nextShareCode) {
+      showNativeToast(SharedLedgerJoinCopy.requiredShareCodeError);
       return;
     }
 
@@ -132,6 +137,7 @@ export function SharedLedgerPanel({
     }
 
     const joinAttempt = await onJoinSharedLedgerBook(nextShareCode, joinResolution);
+
     const didSucceed = Boolean(joinAttempt.result);
     showNativeToast(
       joinAttempt.result === "requested"
@@ -161,12 +167,7 @@ export function SharedLedgerPanel({
   };
 
   const handleLeave = async () => {
-    const didLeave = await onLeaveSharedLedgerBook();
-    showNativeToast(
-      didLeave ? AppMessages.accountDisconnectSuccess : AppMessages.accountDisconnectError,
-    );
-
-    if (didLeave && activeBook) {
+    if (activeBook) {
       const actorName = await resolveCurrentActorName();
       await onSendPushNotificationToBookMembers(
         activeBook.id,
@@ -174,6 +175,11 @@ export function SharedLedgerPanel({
         [currentUserId],
       );
     }
+
+    const didLeave = await onLeaveSharedLedgerBook();
+    showNativeToast(
+      didLeave ? AppMessages.accountDisconnectSuccess : AppMessages.accountDisconnectError,
+    );
   };
 
   const handleKickMember = async (targetUserId: string) => {
@@ -229,12 +235,15 @@ export function SharedLedgerPanel({
       <LedgerBookManagementCard
         accessibleBooks={accessibleBooks}
         activeBook={activeBook}
+        canLeaveSharedBook={canLeaveSharedBook}
         currentUserId={currentUserId}
         members={members}
         onCreateLedgerBook={onCreateLedgerBook}
         onKickMember={handleKickMember}
+        onLeave={handleLeave}
         onOpenSubscription={onOpenSubscription}
         onSwitchLedgerBook={onSwitchLedgerBook}
+        pendingJoinRequestCountsByBookId={pendingJoinRequestCountsByBookId}
         shouldShowSharedMemberLimitNotice={shouldShowSharedMemberLimitNotice}
         subscriptionTier={subscriptionTier}
       />
@@ -242,11 +251,9 @@ export function SharedLedgerPanel({
         activeBook={activeBook}
         bookName={displayedBookName}
         bookNameInput={bookNameInput}
-        canLeaveSharedBook={canLeaveSharedBook}
         canEditBookName={canEditDisplayedBookName}
         currentUserId={currentUserId}
         isOwner={currentMemberRole === "owner"}
-        onLeave={handleLeave}
         onApproveJoinRequest={handleApproveJoinRequest}
         onBeforeCopyShareCode={onBeforeCopyShareCode}
         onChangeBookName={handleChangeBookName}
@@ -290,13 +297,13 @@ export function SharedLedgerPanel({
       return didConfirm ? JoinSharedLedgerBookResolutions.standard : null;
     }
 
-    if (joinPreview.status === "can_request_with_personal_book_merge") {
+    if (joinPreview.status === "can_request_with_personal_book_discard") {
       const didConfirm = await confirmJoinRequest(
-        SharedLedgerJoinPreviewCopy.confirmMergeTitle,
-        SharedLedgerJoinPreviewCopy.confirmMergeMessage,
-        SharedLedgerJoinPreviewCopy.confirmMergeAction,
+        SharedLedgerJoinPreviewCopy.confirmDiscardTitle,
+        SharedLedgerJoinPreviewCopy.confirmDiscardMessage,
+        SharedLedgerJoinPreviewCopy.confirmDiscardAction,
       );
-      return didConfirm ? JoinSharedLedgerBookResolutions.mergePersonalBookOnApproval : null;
+      return didConfirm ? JoinSharedLedgerBookResolutions.discardPersonalBookOnApproval : null;
     }
 
     showNativeToast(resolveJoinPreviewBlockedMessage(joinPreview.status));
@@ -305,7 +312,7 @@ export function SharedLedgerPanel({
 }
 
 function shouldShowAdBeforeJoinRequest(status: JoinSharedLedgerBookPreviewStatus): boolean {
-  return status === "can_request" || status === "can_request_with_personal_book_merge";
+  return status === "can_request" || status === "can_request_with_personal_book_discard";
 }
 
 function confirmJoinRequest(title: string, message: string, confirmAction: string) {

@@ -12,10 +12,14 @@ export const SharedLedgerPanelUi = {
   joinRequestStatusPaddingHorizontal: 8,
   joinRequestStatusPaddingVertical: 4,
   joinRequestStatusRadius: 8,
+  joinRequestStatusBottom: 12,
+  joinRequestStatusReservedWidth: 112,
   joinRequestStatusTextLineHeight: 16,
   copyActionGap: 6,
   copyActionIconSize: 16,
   copyActionTextFontSize: 15,
+  ledgerBookMembersBlockTopPadding: 8,
+  pendingRequestBadgeSize: 8,
 } as const;
 
 export const SharedLedgerJoinRequestUi = {

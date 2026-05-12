@@ -65,7 +65,7 @@ export type LedgerBookJoinRequestRow = {
   book_id: string;
   created_at: string;
   id: string;
-  join_resolution: "merge_personal_book_on_approval" | "standard";
+  join_resolution: "discard_personal_book_on_approval" | "standard";
   requester_user_id: string;
   reviewed_at: string | null;
   reviewed_by: string | null;
@@ -79,12 +79,11 @@ export type LedgerBookJoinRequestProfileRow = {
     | "blocked_shared_owner_free"
     | "blocked_target_member_limit"
     | "can_approve"
-    | "can_approve_with_personal_book_merge"
-    | "needs_personal_book_merge_confirmation";
+    | "can_approve_with_personal_book_discard";
   created_at: string;
   display_name: string | null;
   id: string;
-  join_resolution: "merge_personal_book_on_approval" | "standard";
+  join_resolution: "discard_personal_book_on_approval" | "standard";
   requester_user_id: string;
 };
 
@@ -96,7 +95,7 @@ export type LedgerBookJoinPreviewRow = {
     | "blocked_shared_owner_free"
     | "blocked_target_member_limit"
     | "can_request"
-    | "can_request_with_personal_book_merge"
+    | "can_request_with_personal_book_discard"
     | "expired_code"
     | "invalid_code"
     | "join_cooldown"

@@ -22,6 +22,12 @@ describe("resolveSharedLedgerJoinErrorMessage", () => {
         message: "Shared ledger member limit reached for owner subscription tier.",
       }),
     ).toBe(SharedLedgerJoinPreviewCopy.targetMemberLimit);
+
+    expect(
+      resolveSharedLedgerJoinErrorMessage({
+        message: "Join request requires personal ledger merge confirmation.",
+      }),
+    ).toBe(ShareLedgerMessages.joinRequiresPersonalLedgerMergeConfirmationError);
   });
 
   it("falls back to the generic join error for unknown cases", () => {

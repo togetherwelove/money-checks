@@ -9,6 +9,7 @@ import {
   purchasePlusPackage,
   restoreSubscriptionPurchases,
 } from "../lib/subscription/subscriptionClient";
+import { syncRevenueCatSubscriptionTier } from "../lib/subscription/syncRevenueCatSubscription";
 
 type SubscriptionPlanState = {
   currentTier: SubscriptionTier;
@@ -33,11 +34,13 @@ export function useSubscriptionPlan(userId: string): SubscriptionPlanState {
       try {
         await configureSubscriptionClient(userId);
         const nextSnapshot = await loadSubscriptionSnapshot();
+        const syncedTier = await trySyncRevenueCatSubscriptionTier(userId);
+        const nextTier = syncedTier ?? nextSnapshot.tier;
         if (!isMounted) {
           return;
         }
 
-        setCurrentTier(nextSnapshot.tier);
+        setCurrentTier(nextTier);
         setHasAvailablePlusPackage(nextSnapshot.hasAvailablePlusPackage);
         setPlusPriceLabel(nextSnapshot.plusPriceLabel);
       } catch (error) {
@@ -82,18 +85,34 @@ export function useSubscriptionPlan(userId: string): SubscriptionPlanState {
     purchasePlus: async () => {
       await configureSubscriptionClient(userId);
       const nextSnapshot = await purchasePlusPackage();
-      setCurrentTier(nextSnapshot.tier);
+      const syncedTier = await trySyncRevenueCatSubscriptionTier(userId);
+      const nextTier = syncedTier ?? nextSnapshot.tier;
+      setCurrentTier(nextTier);
       setHasAvailablePlusPackage(nextSnapshot.hasAvailablePlusPackage);
       setPlusPriceLabel(nextSnapshot.plusPriceLabel);
-      return nextSnapshot.tier;
+      return nextTier;
     },
     restorePurchases: async () => {
       await configureSubscriptionClient(userId);
       const nextSnapshot = await restoreSubscriptionPurchases();
-      setCurrentTier(nextSnapshot.tier);
+      const syncedTier = await trySyncRevenueCatSubscriptionTier(userId);
+      const nextTier = syncedTier ?? nextSnapshot.tier;
+      setCurrentTier(nextTier);
       setHasAvailablePlusPackage(nextSnapshot.hasAvailablePlusPackage);
       setPlusPriceLabel(nextSnapshot.plusPriceLabel);
-      return nextSnapshot.tier;
+      return nextTier;
     },
   };
+}
+
+async function trySyncRevenueCatSubscriptionTier(userId: string): Promise<SubscriptionTier | null> {
+  try {
+    return await syncRevenueCatSubscriptionTier();
+  } catch (error) {
+    logAppError("SubscriptionPlan", error, {
+      step: "sync_revenuecat_subscription_tier",
+      userId,
+    });
+    return null;
+  }
 }

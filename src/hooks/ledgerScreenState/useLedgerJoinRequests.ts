@@ -1,35 +1,46 @@
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   approveLedgerBookJoinRequest,
+  fetchPendingLedgerBookJoinRequestCounts,
   fetchPendingLedgerBookJoinRequests,
   rejectLedgerBookJoinRequest,
 } from "../../lib/ledgerBooks";
 import { resolveSharedLedgerJoinErrorMessage } from "../../lib/sharedLedgerJoinError";
 import { supabase } from "../../lib/supabase";
-import type { LedgerBook } from "../../types/ledgerBook";
+import type { AccessibleLedgerBook, LedgerBook } from "../../types/ledgerBook";
 import type {
   LedgerBookJoinApprovalAttempt,
   LedgerBookJoinRequest,
+  LedgerBookJoinRequestCountByBookId,
 } from "../../types/ledgerBookJoinRequest";
 import type { LedgerBookJoinRequestRow } from "../../types/supabase";
 import type { BusyTaskTracker } from "./types";
 
 type LedgerJoinRequestsState = {
   approveLedgerJoinRequest: (requestId: string) => Promise<LedgerBookJoinApprovalAttempt>;
+  pendingJoinRequestCountsByBookId: LedgerBookJoinRequestCountByBookId;
   pendingJoinRequests: LedgerBookJoinRequest[];
   rejectLedgerJoinRequest: (requestId: string) => Promise<boolean>;
 };
 
 export function useLedgerJoinRequests(
   activeBook: LedgerBook | null,
+  accessibleBooks: AccessibleLedgerBook[],
   userId: string,
   trackBusyTask: BusyTaskTracker,
 ): LedgerJoinRequestsState {
   const [pendingJoinRequests, setPendingJoinRequests] = useState<LedgerBookJoinRequest[]>([]);
+  const [pendingJoinRequestCountsByBookId, setPendingJoinRequestCountsByBookId] =
+    useState<LedgerBookJoinRequestCountByBookId>({});
   const seenRequestIdsRef = useRef<Set<string>>(new Set());
   const canManageJoinRequests = Boolean(activeBook && activeBook.ownerId === userId);
+  const ownedBookIds = useMemo(
+    () => accessibleBooks.filter((book) => book.ownerId === userId).map((book) => book.id),
+    [accessibleBooks, userId],
+  );
+  const ownedBookIdsKey = ownedBookIds.join("|");
 
   useEffect(() => {
     let isMounted = true;
@@ -88,10 +99,67 @@ export function useLedgerJoinRequests(
     };
   }, [activeBook, canManageJoinRequests]);
 
+  useEffect(() => {
+    let isMounted = true;
+    const targetBookIds = ownedBookIdsKey ? ownedBookIdsKey.split("|") : [];
+
+    const loadPendingJoinRequestCounts = async () => {
+      if (targetBookIds.length === 0) {
+        setPendingJoinRequestCountsByBookId({});
+        return;
+      }
+
+      try {
+        const nextCounts = await fetchPendingLedgerBookJoinRequestCounts(targetBookIds);
+        if (isMounted) {
+          setPendingJoinRequestCountsByBookId(nextCounts);
+        }
+      } catch {
+        if (isMounted) {
+          setPendingJoinRequestCountsByBookId({});
+        }
+      }
+    };
+
+    void loadPendingJoinRequestCounts();
+
+    if (targetBookIds.length === 0) {
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    const channels = targetBookIds.map((bookId) =>
+      supabase
+        .channel(`ledger-book-join-request-counts-${bookId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "ledger_book_join_requests",
+            filter: `book_id=eq.${bookId}`,
+          },
+          () => {
+            void loadPendingJoinRequestCounts();
+          },
+        )
+        .subscribe(),
+    );
+
+    return () => {
+      isMounted = false;
+      for (const channel of channels) {
+        void supabase.removeChannel(channel);
+      }
+    };
+  }, [ownedBookIdsKey]);
+
   const approveLedgerJoinRequest = async (requestId: string) => {
     try {
       await trackBusyTask(() => approveLedgerBookJoinRequest(requestId));
       seenRequestIdsRef.current.delete(requestId);
+      decrementPendingJoinRequestCount(activeBook?.id ?? null);
       setPendingJoinRequests((currentRequests) =>
         currentRequests.filter((request) => request.id !== requestId),
       );
@@ -108,6 +176,7 @@ export function useLedgerJoinRequests(
     try {
       await trackBusyTask(() => rejectLedgerBookJoinRequest(requestId));
       seenRequestIdsRef.current.delete(requestId);
+      decrementPendingJoinRequestCount(activeBook?.id ?? null);
       setPendingJoinRequests((currentRequests) =>
         currentRequests.filter((request) => request.id !== requestId),
       );
@@ -119,9 +188,21 @@ export function useLedgerJoinRequests(
 
   return {
     approveLedgerJoinRequest,
+    pendingJoinRequestCountsByBookId,
     pendingJoinRequests,
     rejectLedgerJoinRequest,
   };
+
+  function decrementPendingJoinRequestCount(bookId: string | null) {
+    if (!bookId) {
+      return;
+    }
+
+    setPendingJoinRequestCountsByBookId((currentCounts) => ({
+      ...currentCounts,
+      [bookId]: Math.max((currentCounts[bookId] ?? 0) - 1, 0),
+    }));
+  }
 
   async function handleJoinRequestChange(
     payload: RealtimePostgresChangesPayload<Record<string, unknown>>,

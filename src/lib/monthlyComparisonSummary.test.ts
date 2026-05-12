@@ -8,7 +8,7 @@ import {
 } from "./monthlyComparisonSummary";
 
 describe("buildMonthlyComparisonSummary", () => {
-  it("formats expense decreases with rate labels", () => {
+  it("describes expense decreases without rate labels", () => {
     const summary = buildMonthlyComparisonSummary(
       {
         currentAmount: 60000,
@@ -20,14 +20,20 @@ describe("buildMonthlyComparisonSummary", () => {
       "expense",
     );
 
-    expect(summary.summaryMessage).toBe("전월보다 40,000원 덜 썼어요");
-    expect(summary.changeRateLabel).toBe("3월 대비 40% 감소");
-    expect(summary.currentAmountLabel).toBe("- 60,000원");
-    expect(summary.previousAmountLabel).toBe("전월 3월 - 100,000원");
+    expect(summary.currentSentence).toBe("이번 달의 지출은 60,000원이에요.");
+    expect(summary.currentSentenceParts).toEqual({
+      prefix: "이번 달의 ",
+      subject: "지출",
+      suffix: "은 60,000원이에요.",
+    });
+    expect(summary.comparisonSentence).toBe("지난달보다 40,000원 덜 썼어요.");
+    expect(summary.summaryMessage).toBe("지난달보다 40,000원 덜 썼어요.");
+    expect(summary.currentAmountLabel).toBe("60,000원");
+    expect(summary.previousAmountLabel).toBe("전월 3월 100,000원");
     expect(summary.tone).toBe("income");
   });
 
-  it("describes small changes with the exact delta amount", () => {
+  it("describes income changes with the exact delta amount", () => {
     const summary = buildMonthlyComparisonSummary(
       {
         currentAmount: 100500,
@@ -39,8 +45,14 @@ describe("buildMonthlyComparisonSummary", () => {
       "income",
     );
 
-    expect(summary.summaryMessage).toBe("전월보다 500원 더 벌었어요");
-    expect(summary.changeRateLabel).toBe("3월 대비 1% 증가");
+    expect(summary.currentSentence).toBe("이번 달의 수입은 100,500원이에요.");
+    expect(summary.currentSentenceParts).toEqual({
+      prefix: "이번 달의 ",
+      subject: "수입",
+      suffix: "은 100,500원이에요.",
+    });
+    expect(summary.comparisonSentence).toBe("지난달보다 500원 더 들어왔어요.");
+    expect(summary.summaryMessage).toBe("지난달보다 500원 더 들어왔어요.");
     expect(summary.tone).toBe("income");
   });
 
@@ -56,8 +68,8 @@ describe("buildMonthlyComparisonSummary", () => {
       "expense",
     );
 
-    expect(summary.summaryMessage).toBe("전월과 같아요");
-    expect(summary.changeRateLabel).toBeNull();
+    expect(summary.comparisonSentence).toBe("지난달과 같아요.");
+    expect(summary.summaryMessage).toBe("지난달과 같아요.");
     expect(summary.tone).toBe("muted");
   });
 
@@ -73,8 +85,10 @@ describe("buildMonthlyComparisonSummary", () => {
       "income",
     );
 
-    expect(summary.summaryMessage).toBe("전월 데이터 없음");
-    expect(summary.changeRateLabel).toBeNull();
+    expect(summary.comparisonSentence).toBe(
+      "지난달 기록이 아직 없어 다음 달부터 비교할 수 있어요.",
+    );
+    expect(summary.summaryMessage).toBe("지난달 기록이 아직 없어 다음 달부터 비교할 수 있어요.");
     expect(summary.tone).toBe("muted");
   });
 
@@ -101,11 +115,11 @@ describe("buildMonthlyComparisonSummary", () => {
     const summaryLines = buildPreviousMonthSummaryLines(insights);
     const pushContent = buildPreviousMonthSummaryPushContent(insights);
 
-    expect(summaryLines.expenseSummary).toBe("전월보다 40,000원 덜 썼어요");
-    expect(summaryLines.incomeSummary).toBe("전월보다 50,000원 더 벌었어요");
+    expect(summaryLines.expenseSummary).toBe("지난달보다 40,000원 덜 썼어요.");
+    expect(summaryLines.incomeSummary).toBe("지난달보다 50,000원 더 들어왔어요.");
     expect(pushContent.title).toBe("4월 수입·지출 돌아보기");
     expect(pushContent.body).toBe(
-      "수입: 전월보다 50,000원 더 벌었어요\n지출: 전월보다 40,000원 덜 썼어요",
+      "수입: 지난달보다 50,000원 더 들어왔어요.\n지출: 지난달보다 40,000원 덜 썼어요.",
     );
   });
 });

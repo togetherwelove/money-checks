@@ -62,6 +62,7 @@ export function EntryScreen({
   } = state;
   const activeBookId = state.activeBook?.id ?? null;
   const editingEntry = entries.find((entry) => entry.id === editingEntryId) ?? null;
+  const entryFormDate = editingEntryId ? draft.date : selectedDate;
 
   useEffect(() => {
     let isMounted = true;
@@ -118,7 +119,12 @@ export function EntryScreen({
     updateDraftField("targetMemberId", fallbackMemberId);
     updateDraftField("targetMemberName", fallbackMember.displayName);
   }, [currentUserId, draft.targetMemberId, draft.targetMemberName, members, updateDraftField]);
-  const applySelectedDate = (isoDate: string) => {
+  const applyEntryFormDate = (isoDate: string) => {
+    if (editingEntryId) {
+      updateDraftField("date", isoDate);
+      return;
+    }
+
     handleSelectDate(isoDate);
   };
 
@@ -126,13 +132,13 @@ export function EntryScreen({
     if (appPlatform.usesAndroidDatePickerDialog) {
       DateTimePickerAndroid.open({
         mode: "date",
-        value: parseIsoDate(selectedDate),
+        value: parseIsoDate(entryFormDate),
         onChange: (_event, nextDate) => {
           if (!nextDate) {
             return;
           }
 
-          applySelectedDate(toIsoDate(nextDate));
+          applyEntryFormDate(toIsoDate(nextDate));
         },
       });
       return;
@@ -214,12 +220,12 @@ export function EntryScreen({
         {showsBannerAd ? <AppBannerAd /> : null}
         {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
         <EntryDateToolbar
-          dateLabel={formatSelectedDate(selectedDate)}
-          onMoveToToday={() => handleSelectDate(todayIsoDate)}
+          dateLabel={formatSelectedDate(entryFormDate)}
+          onMoveToToday={() => applyEntryFormDate(todayIsoDate)}
           onPressDateLabel={handleOpenDatePicker}
           onSelectType={updateDraftType}
           selectedType={draft.type}
-          showMoveToToday={selectedDate !== todayIsoDate}
+          showMoveToToday={entryFormDate !== todayIsoDate}
         />
         <LedgerEditorPanel
           draft={draft}
@@ -246,8 +252,8 @@ export function EntryScreen({
       <EntryDatePickerModal
         isOpen={isDatePickerOpen}
         onClose={() => setIsDatePickerOpen(false)}
-        onSelectDate={applySelectedDate}
-        selectedDate={selectedDate}
+        onSelectDate={applyEntryFormDate}
+        selectedDate={entryFormDate}
       />
     </>
   );

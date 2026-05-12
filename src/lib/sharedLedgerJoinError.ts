@@ -23,6 +23,13 @@ export function resolveSharedLedgerJoinErrorMessage(error: unknown): string {
     return ShareLedgerMessages.joinCooldownError;
   }
 
+  if (
+    errorText.includes("Join request was invoked too recently.") ||
+    errorText.includes("Join preview was invoked too recently.")
+  ) {
+    return ShareLedgerMessages.joinCooldownError;
+  }
+
   if (errorText.includes("Ledger book not found for code")) {
     return ShareLedgerMessages.joinInvalidCodeError;
   }

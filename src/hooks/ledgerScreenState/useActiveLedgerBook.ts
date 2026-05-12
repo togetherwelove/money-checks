@@ -29,7 +29,7 @@ import type {
   JoinSharedLedgerBookPreview,
   JoinSharedLedgerBookResolution,
 } from "../../types/ledgerBookJoinRequest";
-import type { LedgerBookRow, ProfileRow } from "../../types/supabase";
+import type { LedgerBookMemberRow, LedgerBookRow, ProfileRow } from "../../types/supabase";
 import { mapLedgerBookRow } from "../../utils/ledgerBookMapper";
 import type { BusyTaskTracker } from "./types";
 
@@ -66,6 +66,13 @@ export function useActiveLedgerBook(
   const [accessibleBooks, setAccessibleBooks] = useState<AccessibleLedgerBook[]>([]);
   const [activeBookError, setActiveBookError] = useState<string | null>(null);
   const [isLoadingBook, setIsLoadingBook] = useState(true);
+
+  const refreshAccessibleLedgerBookState = async () => {
+    const nextBooks = await fetchAccessibleLedgerBooks();
+    const nextActiveBook = await fetchActiveLedgerBook(userId);
+    setActiveBook(nextActiveBook);
+    setAccessibleBooks(nextBooks);
+  };
 
   const loadActiveBook = async () => {
     setIsLoadingBook(true);
@@ -212,6 +219,78 @@ export function useActiveLedgerBook(
     };
   }, [activeBook?.id]);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const handleMembershipChange = async (
+      payload: RealtimePostgresChangesPayload<LedgerBookMemberRow>,
+    ) => {
+      const changedMembership =
+        payload.eventType === "DELETE"
+          ? (payload.old as Partial<LedgerBookMemberRow>)
+          : (payload.new as Partial<LedgerBookMemberRow>);
+      const changedBookId = changedMembership.book_id;
+      if (!changedBookId) {
+        return;
+      }
+
+      if (payload.eventType === "DELETE") {
+        setAccessibleBooks((currentBooks) =>
+          currentBooks.filter((book) => book.id !== changedBookId),
+        );
+      }
+
+      try {
+        const nextBooks = await fetchAccessibleLedgerBooks();
+        const shouldRefreshActiveBook =
+          !activeBook ||
+          changedBookId === activeBook.id ||
+          !nextBooks.some((book) => book.id === activeBook.id);
+        const nextActiveBook = shouldRefreshActiveBook
+          ? await fetchActiveLedgerBook(userId)
+          : activeBook;
+
+        if (isMounted) {
+          setAccessibleBooks(nextBooks);
+          setActiveBook(nextActiveBook);
+        }
+      } catch (error) {
+        logAppError("ActiveLedgerBook", error, {
+          changedBookId,
+          eventType: payload.eventType,
+          step: "handle_membership_change",
+          userId,
+        });
+        if (isMounted) {
+          setActiveBookError(AppMessages.ledgerError);
+        }
+      }
+    };
+
+    const channel = supabase
+      .channel(createRealtimeChannelName("ledger-book-membership", userId))
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "ledger_book_members",
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          void handleMembershipChange(
+            payload as RealtimePostgresChangesPayload<LedgerBookMemberRow>,
+          );
+        },
+      )
+      .subscribe();
+
+    return () => {
+      isMounted = false;
+      void supabase.removeChannel(channel);
+    };
+  }, [activeBook, userId]);
+
   const previewSharedLedgerBookJoinByCode = async (shareCode: string) => {
     const normalizedCode = shareCode.trim();
     if (!normalizedCode) {
@@ -264,6 +343,10 @@ export function useActiveLedgerBook(
         step: "join_shared_ledger_book",
         userId,
       });
+      if (__DEV__) {
+        throw createDebugLedgerJoinError(error);
+      }
+
       const errorMessage = resolveSharedLedgerJoinErrorMessage(error);
       setActiveBookError(errorMessage);
       return {
@@ -381,7 +464,18 @@ export function useActiveLedgerBook(
       setAccessibleBooks(await fetchAccessibleLedgerBooks());
       return true;
     } catch (error) {
-      setActiveBook(previousBook);
+      if (isInaccessibleLedgerBookError(error)) {
+        await refreshAccessibleLedgerBookState().catch((refreshError) => {
+          logAppError("ActiveLedgerBook", refreshError, {
+            bookId,
+            step: "refresh_after_inaccessible_switch",
+            userId,
+          });
+          setActiveBook(previousBook);
+        });
+      } else {
+        setActiveBook(previousBook);
+      }
       logAppError("ActiveLedgerBook", error, {
         bookId,
         step: "switch_ledger_book",
@@ -405,4 +499,40 @@ export function useActiveLedgerBook(
     refreshSharedLedgerBook,
     switchLedgerBook,
   };
+}
+
+function isInaccessibleLedgerBookError(error: unknown): boolean {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const candidate = error as { message?: string | null };
+  return Boolean(candidate.message?.includes("is not accessible to user"));
+}
+
+function createDebugLedgerJoinError(error: unknown): Error {
+  if (error instanceof Error) {
+    return error;
+  }
+
+  if (!error || typeof error !== "object") {
+    return new Error(String(error));
+  }
+
+  const candidate = error as {
+    code?: string | null;
+    details?: string | null;
+    hint?: string | null;
+    message?: string | null;
+  };
+  const debugMessage = [
+    candidate.message,
+    candidate.details ? `details: ${candidate.details}` : null,
+    candidate.hint ? `hint: ${candidate.hint}` : null,
+    candidate.code ? `code: ${candidate.code}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  return new Error(debugMessage || JSON.stringify(error));
 }

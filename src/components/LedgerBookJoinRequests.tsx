@@ -33,6 +33,7 @@ export function LedgerBookJoinRequests({
       <View style={styles.list}>
         {requests.map((request) => (
           <View key={request.id} style={styles.requestCard}>
+            <JoinRequestStatusText approvalStatus={request.approvalStatus} />
             <View style={styles.requestHeader}>
               <View style={styles.avatar}>
                 <Text style={styles.avatarText}>
@@ -46,22 +47,23 @@ export function LedgerBookJoinRequests({
                 <Text style={styles.requestedAt}>{formatRelativeTime(request.requestedAt)}</Text>
               </View>
             </View>
-            <JoinRequestStatusText approvalStatus={request.approvalStatus} />
-            <View style={styles.actions}>
-              <ActionButton
-                label={AppMessages.accountJoinRejectAction}
-                onPress={() => onRejectRequest(request.id)}
-                size="inline"
-                variant="secondary"
-              />
-              {canApproveJoinRequest(request.approvalStatus) ? (
+            <View style={styles.cardFooter}>
+              <View style={styles.actions}>
                 <ActionButton
-                  label={AppMessages.accountJoinApproveAction}
-                  onPress={() => onApproveRequest(request.id)}
+                  label={AppMessages.accountJoinRejectAction}
+                  onPress={() => onRejectRequest(request.id)}
                   size="inline"
-                  variant="primary"
+                  variant="secondary"
                 />
-              ) : null}
+                {canApproveJoinRequest(request.approvalStatus) ? (
+                  <ActionButton
+                    label={AppMessages.accountJoinApproveAction}
+                    onPress={() => onApproveRequest(request.id)}
+                    size="inline"
+                    variant="primary"
+                  />
+                ) : null}
+              </View>
             </View>
           </View>
         ))}
@@ -83,13 +85,7 @@ function JoinRequestStatusText({
   const tone = resolveApprovalStatusTone(approvalStatus);
 
   return (
-    <View
-      style={[
-        styles.statusBadge,
-        tone === "warning" ? styles.warningStatusBadge : null,
-        tone === "blocked" ? styles.blockedStatusBadge : null,
-      ]}
-    >
+    <View style={styles.statusBadgeSlot}>
       <Text
         style={[
           styles.status,
@@ -105,7 +101,7 @@ function JoinRequestStatusText({
 
 function canApproveJoinRequest(approvalStatus: LedgerBookJoinApprovalStatus): boolean {
   return (
-    approvalStatus === "can_approve" || approvalStatus === "can_approve_with_personal_book_merge"
+    approvalStatus === "can_approve" || approvalStatus === "can_approve_with_personal_book_discard"
   );
 }
 
@@ -114,12 +110,8 @@ function resolveApprovalStatusMessage(approvalStatus: LedgerBookJoinApprovalStat
     return null;
   }
 
-  if (approvalStatus === "can_approve_with_personal_book_merge") {
-    return SharedLedgerJoinPreviewCopy.approvalMergeReady;
-  }
-
-  if (approvalStatus === "needs_personal_book_merge_confirmation") {
-    return SharedLedgerJoinPreviewCopy.approvalNeedsMergeConfirmation;
+  if (approvalStatus === "can_approve_with_personal_book_discard") {
+    return SharedLedgerJoinPreviewCopy.approvalDiscardReady;
   }
 
   if (approvalStatus === "blocked_shared_owner_free") {
@@ -140,10 +132,7 @@ function resolveApprovalStatusMessage(approvalStatus: LedgerBookJoinApprovalStat
 function resolveApprovalStatusTone(
   approvalStatus: LedgerBookJoinApprovalStatus,
 ): "blocked" | "warning" {
-  if (
-    approvalStatus === "can_approve_with_personal_book_merge" ||
-    approvalStatus === "needs_personal_book_merge_confirmation"
-  ) {
+  if (approvalStatus === "can_approve_with_personal_book_discard") {
     return "warning";
   }
 
@@ -179,6 +168,12 @@ const styles = StyleSheet.create({
     borderRadius: SharedLedgerPanelUi.joinRequestCardRadius,
     backgroundColor: AppColors.background,
   },
+  cardFooter: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: SharedLedgerPanelUi.joinRequestActionGap,
+  },
   requestHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -212,24 +207,19 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "600",
   },
-  statusBadge: {
-    alignSelf: "flex-start",
-    borderRadius: SharedLedgerPanelUi.joinRequestStatusRadius,
-    backgroundColor: AppColors.surfaceMuted,
-    paddingHorizontal: SharedLedgerPanelUi.joinRequestStatusPaddingHorizontal,
-    paddingVertical: SharedLedgerPanelUi.joinRequestStatusPaddingVertical,
-  },
-  warningStatusBadge: {
-    backgroundColor: AppColors.accentSoft,
-  },
-  blockedStatusBadge: {
-    backgroundColor: AppColors.expenseSoft,
+  statusBadgeSlot: {
+    alignItems: "flex-end",
+    bottom: SharedLedgerPanelUi.joinRequestStatusBottom,
+    left: SharedLedgerPanelUi.joinRequestCardPaddingHorizontal,
+    position: "absolute",
+    right: SharedLedgerPanelUi.joinRequestCardPaddingHorizontal,
   },
   status: {
     color: AppColors.mutedStrongText,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "700",
     lineHeight: SharedLedgerPanelUi.joinRequestStatusTextLineHeight,
+    textAlign: "right",
   },
   warningStatusText: {
     color: AppColors.accent,
@@ -241,5 +231,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: SharedLedgerPanelUi.joinRequestActionGap,
+    paddingRight: SharedLedgerPanelUi.joinRequestStatusReservedWidth,
   },
 });

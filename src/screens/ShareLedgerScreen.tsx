@@ -8,6 +8,10 @@ import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import { DEFAULT_MEMBER_DISPLAY_NAME } from "../constants/ledgerDisplay";
 import type { SubscriptionTier } from "../constants/subscription";
+import {
+  readCachedLedgerBookMembers,
+  writeCachedLedgerBookMembers,
+} from "../lib/ledgerBookMembersCache";
 import { fetchLedgerBookMembers } from "../lib/ledgerBooks";
 import { fetchProfileDisplayName } from "../lib/profiles";
 import { supabase } from "../lib/supabase";
@@ -20,6 +24,7 @@ import type {
   JoinSharedLedgerBookResolution,
   LedgerBookJoinApprovalAttempt,
   LedgerBookJoinRequest,
+  LedgerBookJoinRequestCountByBookId,
 } from "../types/ledgerBookJoinRequest";
 import type { LedgerBookMember } from "../types/ledgerBookMember";
 import type { LedgerBookMemberRow } from "../types/supabase";
@@ -60,6 +65,7 @@ type ShareLedgerScreenProps = {
     bookId?: string,
   ) => Promise<void>;
   onSwitchLedgerBook: (bookId: string) => Promise<boolean>;
+  pendingJoinRequestCountsByBookId: LedgerBookJoinRequestCountByBookId;
   pendingJoinRequests: LedgerBookJoinRequest[];
   subscriptionTier: SubscriptionTier;
   userId: string;
@@ -83,6 +89,7 @@ export function ShareLedgerScreen({
   onSendPushNotificationToBookMembers,
   onSendPushNotificationToUsers,
   onSwitchLedgerBook,
+  pendingJoinRequestCountsByBookId,
   pendingJoinRequests,
   subscriptionTier,
   userId,
@@ -99,13 +106,19 @@ export function ShareLedgerScreen({
         return;
       }
 
+      const cachedMembers = readCachedLedgerBookMembers(activeBookId);
+      if (cachedMembers) {
+        setMembers(cachedMembers);
+      }
+
       try {
         const nextMembers = await fetchLedgerBookMembers(activeBookId);
+        writeCachedLedgerBookMembers(activeBookId, nextMembers);
         if (isMounted) {
           setMembers(nextMembers);
         }
       } catch {
-        if (isMounted) {
+        if (isMounted && !cachedMembers) {
           setMembers([]);
         }
       }
@@ -146,9 +159,13 @@ export function ShareLedgerScreen({
   const handleKickMember = async (targetUserId: string) => {
     const didKick = await onRemoveSharedLedgerMember(targetUserId);
     if (didKick) {
-      setMembers((currentMembers) =>
-        currentMembers.filter((member) => member.userId !== targetUserId),
-      );
+      setMembers((currentMembers) => {
+        const nextMembers = currentMembers.filter((member) => member.userId !== targetUserId);
+        if (activeBookId) {
+          writeCachedLedgerBookMembers(activeBookId, nextMembers);
+        }
+        return nextMembers;
+      });
     }
     return didKick;
   };
@@ -175,6 +192,7 @@ export function ShareLedgerScreen({
         onSendPendingJoinRequestNotification={onSendPendingJoinRequestNotification}
         onSendPushNotificationToBookMembers={onSendPushNotificationToBookMembers}
         onSendPushNotificationToUsers={onSendPushNotificationToUsers}
+        pendingJoinRequestCountsByBookId={pendingJoinRequestCountsByBookId}
         pendingJoinRequests={pendingJoinRequests}
         subscriptionTier={subscriptionTier}
       />
@@ -191,7 +209,9 @@ export function ShareLedgerScreen({
       }
 
       setMembers((currentMembers) =>
-        currentMembers.filter((member) => member.userId !== deletedUserId),
+        persistActiveBookMembers(
+          currentMembers.filter((member) => member.userId !== deletedUserId),
+        ),
       );
       return;
     }
@@ -221,8 +241,16 @@ export function ShareLedgerScreen({
           )
         : [...currentMembers, nextMember];
 
-      return sortLedgerBookMembers(nextMembers);
+      return persistActiveBookMembers(sortLedgerBookMembers(nextMembers));
     });
+  }
+
+  function persistActiveBookMembers(nextMembers: LedgerBookMember[]) {
+    if (activeBookId) {
+      writeCachedLedgerBookMembers(activeBookId, nextMembers);
+    }
+
+    return nextMembers;
   }
 }
 
