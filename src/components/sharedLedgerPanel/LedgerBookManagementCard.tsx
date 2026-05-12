@@ -5,6 +5,7 @@ import { CommonActionCopy } from "../../constants/commonActions";
 import { LedgerBookManagementCopy } from "../../constants/ledgerBookManagement";
 import { LedgerEditabilityCopy } from "../../constants/ledgerEditability";
 import { AppMessages } from "../../constants/messages";
+import { SharedLedgerPanelUi } from "../../constants/sharedLedgerPanel";
 import {
   SubscriptionConfig,
   type SubscriptionTier,
@@ -243,6 +244,8 @@ export function LedgerBookManagementCard({
             const shouldShowPendingRequestBadge =
               isOwner && (pendingJoinRequestCountsByBookId[book.id] ?? 0) > 0;
             const switchIcon = isActiveBook ? "check" : "chevrons-right";
+            const visibleShareCode =
+              isActiveBook && book.shareCode ? formatVisibleShareCode(book.shareCode) : null;
             return (
               <Pressable
                 accessibilityLabel={LedgerBookManagementCopy.switchActionAccessibilityLabel}
@@ -277,6 +280,13 @@ export function LedgerBookManagementCard({
                   </View>
                   <View style={styles.ledgerBookItemMetaRow}>
                     <Text style={styles.ledgerBookItemMeta}>{ownershipLabel}</Text>
+                    {visibleShareCode ? (
+                      <View style={styles.shareCodePreviewRow}>
+                        <Text selectable style={styles.shareCodePreviewValue}>
+                          {visibleShareCode}
+                        </Text>
+                      </View>
+                    ) : null}
                   </View>
                 </View>
                 <IconActionButton
@@ -356,4 +366,10 @@ export function LedgerBookManagementCard({
       ) : null}
     </View>
   );
+}
+
+function formatVisibleShareCode(shareCode: string): string {
+  return `${shareCode.slice(0, SharedLedgerPanelUi.shareCodePreviewPrefixLength)}${
+    SharedLedgerPanelUi.shareCodePreviewMask
+  }`;
 }

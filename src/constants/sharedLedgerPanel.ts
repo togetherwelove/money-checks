@@ -20,6 +20,8 @@ export const SharedLedgerPanelUi = {
   copyActionTextFontSize: 15,
   ledgerBookMembersBlockTopPadding: 8,
   pendingRequestBadgeSize: 8,
+  shareCodePreviewPrefixLength: 4,
+  shareCodePreviewMask: "••••",
 } as const;
 
 export const SharedLedgerJoinRequestUi = {

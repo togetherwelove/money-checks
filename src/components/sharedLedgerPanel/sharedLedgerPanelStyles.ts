@@ -93,6 +93,17 @@ export const sharedLedgerPanelStyles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: AppLayout.cardContentPadding,
   },
+  shareCodePreviewRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+  },
+  shareCodePreviewValue: {
+    color: AppColors.mutedStrongText,
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 1.2,
+  },
   shareCodeRow: {
     flexDirection: "row",
   },
@@ -206,6 +217,7 @@ export const sharedLedgerPanelStyles = StyleSheet.create({
   ledgerBookItemMetaRow: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     gap: 6,
   },
   pendingRequestBadge: {
