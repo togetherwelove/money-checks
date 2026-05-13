@@ -10,6 +10,7 @@ import type {
 import type { LedgerBookMember } from "../types/ledgerBookMember";
 import type {
   AccessibleLedgerBookRow,
+  AccessibleLedgerBookStateRow,
   LedgerBookJoinPreviewRow,
   LedgerBookJoinRequestProfileRow,
   LedgerBookMemberProfileRow,
@@ -18,9 +19,11 @@ import type {
 } from "../types/supabase";
 import { mapAccessibleLedgerBookRow, mapLedgerBookRow } from "../utils/ledgerBookMapper";
 import { logAppError, logAppWarning } from "./logAppError";
+import { createPerformanceTrace } from "./performanceTrace";
 import { supabase } from "./supabase";
 
 const GET_ACCESSIBLE_LEDGER_BOOK_FUNCTION = "get_accessible_ledger_book";
+const GET_ACCESSIBLE_LEDGER_BOOK_STATE_FUNCTION = "get_accessible_ledger_book_state";
 const GET_ACCESSIBLE_LEDGER_BOOKS_FUNCTION = "get_accessible_ledger_books";
 const GET_ACTIVE_LEDGER_BOOK_FUNCTION = "get_active_ledger_book";
 const ENSURE_OWN_PERSONAL_LEDGER_BOOK_FUNCTION = "ensure_own_personal_ledger_book";
@@ -47,9 +50,14 @@ export async function fetchLedgerBookById(bookId: string): Promise<LedgerBook> {
 }
 
 export async function fetchActiveLedgerBook(userId: string): Promise<LedgerBook | null> {
+  const trace = createPerformanceTrace("LedgerBooksQuery", {
+    step: "get_active_ledger_book",
+    userId,
+  });
   const { data, error } = await supabase
     .rpc(GET_ACTIVE_LEDGER_BOOK_FUNCTION)
     .returns<LedgerBookRow[]>();
+  trace("fetched_active_ledger_book", { rowCount: Array.isArray(data) ? data.length : 0 });
 
   const activeBook = resolveLedgerBookRow(data);
   if (error) {
@@ -75,10 +83,39 @@ export async function fetchActiveLedgerBook(userId: string): Promise<LedgerBook 
   return mapLedgerBookRow(activeBook);
 }
 
+export async function fetchAccessibleLedgerBookState(userId: string): Promise<{
+  activeBook: LedgerBook | null;
+  books: AccessibleLedgerBook[];
+}> {
+  const trace = createPerformanceTrace("LedgerBooksQuery", {
+    step: "get_accessible_ledger_book_state",
+    userId,
+  });
+  const { data, error } = await supabase
+    .rpc(GET_ACCESSIBLE_LEDGER_BOOK_STATE_FUNCTION)
+    .returns<AccessibleLedgerBookStateRow[]>();
+  const rows = Array.isArray(data) ? data : [];
+  trace("fetched_accessible_ledger_book_state", { rowCount: rows.length });
+
+  if (error) {
+    throw error;
+  }
+
+  const activeRow = rows.find((row) => row.is_active) ?? rows[0] ?? null;
+  return {
+    activeBook: activeRow ? mapLedgerBookRow(activeRow) : null,
+    books: rows.filter(isAccessibleLedgerBookRow).map(mapAccessibleLedgerBookRow),
+  };
+}
+
 export async function fetchAccessibleLedgerBooks(): Promise<AccessibleLedgerBook[]> {
+  const trace = createPerformanceTrace("LedgerBooksQuery", {
+    step: "get_accessible_ledger_books",
+  });
   const { data, error } = await supabase
     .rpc(GET_ACCESSIBLE_LEDGER_BOOKS_FUNCTION)
     .returns<AccessibleLedgerBookRow[]>();
+  trace("fetched_accessible_ledger_books", { rowCount: Array.isArray(data) ? data.length : 0 });
 
   if (error) {
     throw error;

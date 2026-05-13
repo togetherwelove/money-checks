@@ -8,9 +8,11 @@ const CALENDAR_BACKGROUND_PRELOAD_MONTH_OFFSETS = [-6, -5, -4, -3] as const;
 const CALENDAR_VISIBLE_WINDOW_OFFSETS = [-1, 0, 1] as const;
 
 export function getVisibleWindowMonthKeys(visibleMonth: Date): string[] {
-  return CALENDAR_VISIBLE_WINDOW_OFFSETS.map((monthOffset) =>
-    getMonthKey(addMonths(visibleMonth, monthOffset)),
-  );
+  return getVisibleWindowMonths(visibleMonth).map((month) => getMonthKey(month));
+}
+
+export function getVisibleWindowMonths(visibleMonth: Date): Date[] {
+  return CALENDAR_VISIBLE_WINDOW_OFFSETS.map((monthOffset) => addMonths(visibleMonth, monthOffset));
 }
 
 export function getCalendarPreloadMonths(visibleMonth: Date): Date[] {

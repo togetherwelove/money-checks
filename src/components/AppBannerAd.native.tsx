@@ -8,7 +8,11 @@ import { logAdMobLoadError } from "../lib/ads/adMobLoadError";
 import { getAdRequestOptions } from "../lib/ads/adRequestOptions";
 import { appPlatform } from "../lib/appPlatform";
 
-export function AppBannerAd() {
+type AppBannerAdProps = {
+  variant?: "default" | "embedded";
+};
+
+export function AppBannerAd({ variant = "default" }: AppBannerAdProps) {
   const configuredAdUnitId = appPlatform.isIOS
     ? AdMobConfig.iosBannerAdUnitId
     : AdMobConfig.androidBannerAdUnitId;
@@ -22,7 +26,7 @@ export function AppBannerAd() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, variant === "embedded" ? styles.embeddedContainer : null]}>
       <BannerAd
         onAdLoaded={() => {
           console.log("[AdMob] Banner ad loaded", {
@@ -55,5 +59,10 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     justifyContent: "center",
     width: "100%",
+  },
+  embeddedContainer: {
+    backgroundColor: "transparent",
+    borderBottomWidth: 0,
+    borderTopWidth: 0,
   },
 });

@@ -7,8 +7,8 @@ import { useLedgerCategories } from "./useLedgerCategories";
 
 type CategoryLabelCopy = Record<string, Record<string, string>>;
 
-export function useLedgerCategoryIconMap(): Map<string, CategoryIconName> {
-  const categories = useLedgerCategories();
+export function useLedgerCategoryIconMap(bookId?: string | null): Map<string, CategoryIconName> {
+  const categories = useLedgerCategories(bookId);
 
   return useMemo(() => {
     const iconByKey = new Map<string, CategoryIconName>();

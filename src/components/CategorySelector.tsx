@@ -1,226 +1,209 @@
-import { type LayoutRectangle, StyleSheet, Text, View } from "react-native";
+import { useMemo, useState } from "react";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 
-import { useMemo, useRef, useState } from "react";
-import { CUSTOM_CATEGORY_DEFAULT_ICON } from "../constants/categoryCustomizer";
 import {
+  CUSTOM_CATEGORY_DEFAULT_ICON,
+  CategoryContextMenuCopy,
+  CategoryCustomizerCopy,
+} from "../constants/categoryCustomizer";
+import {
+  CATEGORY_CONTEXT_MENU_ITEM_HEIGHT,
+  CATEGORY_CONTEXT_MENU_OFFSET,
+  CATEGORY_CONTEXT_MENU_TAIL_SIZE,
+  CATEGORY_CONTEXT_MENU_WIDTH,
   CATEGORY_GRID_GAP,
-  CATEGORY_INLINE_ICON_PICKER_ANCHOR_GAP,
-  CATEGORY_INLINE_ICON_PICKER_ARROW_SIZE,
-  CATEGORY_INLINE_ICON_PICKER_HEIGHT,
-  CATEGORY_INLINE_ICON_PICKER_WIDTH,
 } from "../constants/categorySelector";
+import { AppColors } from "../constants/colors";
+import { CommonActionCopy } from "../constants/commonActions";
 import { FormLabelTextStyle } from "../constants/uiStyles";
-import { useCategoryGridDrag } from "../hooks/useCategoryGridDrag";
-import { useCategoryOrder } from "../hooks/useCategoryOrder";
 import { useCustomCategories } from "../hooks/useCustomCategories";
-import { resolveCategoryGridHeight, resolveCategoryGridPosition } from "../lib/categoryGrid";
+import {
+  resolveCategoryGridHeight,
+  resolveCategoryGridMetrics,
+  resolveCategoryGridPosition,
+} from "../lib/categoryGrid";
 import {
   createCustomCategory,
   mergeCustomCategories,
   normalizeCustomCategoryLabel,
   resolveCustomCategoryError,
-  sortCustomCategoriesByVisibleOrder,
+  sortCategoriesByOrderIds,
 } from "../lib/customCategories";
 import type { CategoryDefinition, CategoryIconName } from "../types/category";
 import type { LedgerEntryType } from "../types/ledger";
 import { CategoryAddGridItem } from "./categorySelector/CategoryAddGridItem";
-import { CategoryDeleteDropZone } from "./categorySelector/CategoryDeleteDropZone";
+import { CategoryCreateModal } from "./categorySelector/CategoryCreateModal";
 import { CategoryGridItem } from "./categorySelector/CategoryGridItem";
-import { CategoryIconPickerList } from "./categorySelector/CategoryIconPickerList";
-import { InlineCategoryCreator } from "./categorySelector/InlineCategoryCreator";
+import { CategoryManageModal } from "./categorySelector/CategoryManageModal";
 
 type CategorySelectorProps = {
+  bookId?: string | null;
   categories: readonly CategoryDefinition[];
   entryType: LedgerEntryType;
-  onDraggingChange?: (isDragging: boolean) => void;
   selectedCategoryId: string;
   title: string;
   onSelectCategory: (category: CategoryDefinition | null) => void;
 };
 
 export function CategorySelector({
+  bookId = null,
   categories,
   entryType,
-  onDraggingChange,
   selectedCategoryId,
   title,
   onSelectCategory,
 }: CategorySelectorProps) {
-  const optionsRef = useRef<View>(null);
-  const optionsBoundsRef = useRef<LayoutRectangle | null>(null);
-  const deleteDropZoneRef = useRef<View>(null);
-  const deleteDropZoneBoundsRef = useRef<LayoutRectangle | null>(null);
-  const isSubmittingNewCategoryRef = useRef(false);
-  const isInteractingWithIconPickerRef = useRef(false);
   const [gridWidth, setGridWidth] = useState(0);
-  const [isAddingCategory, setIsAddingCategory] = useState(false);
-  const [isIconPickerOpen, setIsIconPickerOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isManageModalOpen, setIsManageModalOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<CategoryDefinition | null>(null);
+  const [contextMenu, setContextMenu] = useState<{
+    category: CategoryDefinition;
+    left: number;
+    top: number;
+  } | null>(null);
   const [newCategoryLabel, setNewCategoryLabel] = useState("");
   const [newCategoryIconName, setNewCategoryIconName] = useState<CategoryIconName>(
     CUSTOM_CATEGORY_DEFAULT_ICON,
   );
   const [newCategoryError, setNewCategoryError] = useState<string | null>(null);
-  const [isDeleteDropZoneActive, setIsDeleteDropZoneActive] = useState(false);
   const {
+    categoryOrderIds,
     customCategories,
     hiddenSystemCategoryIds,
     systemCategoryIconOverrides,
+    systemCategoryLabelOverrides,
+    saveCategoryOrderIds,
     saveCustomCategories,
     saveHiddenSystemCategoryIds,
-  } = useCustomCategories(entryType);
+    saveSystemCategoryCustomizations,
+  } = useCustomCategories(entryType, bookId);
   const overriddenBaseCategories = useMemo(
     () =>
       categories.map((category) => ({
         ...category,
         iconName: systemCategoryIconOverrides[category.id] ?? category.iconName,
+        label: systemCategoryLabelOverrides[category.id] ?? category.label,
       })),
-    [categories, systemCategoryIconOverrides],
+    [categories, systemCategoryIconOverrides, systemCategoryLabelOverrides],
   );
   const visibleBaseCategories = useMemo(
     () =>
       overriddenBaseCategories.filter((category) => !hiddenSystemCategoryIds.includes(category.id)),
     [hiddenSystemCategoryIds, overriddenBaseCategories],
   );
-  const mergedCategories = useMemo(
-    () => mergeCustomCategories(visibleBaseCategories, customCategories),
-    [customCategories, visibleBaseCategories],
+  const displayedCategories = useMemo(
+    () =>
+      sortCategoriesByOrderIds(
+        mergeCustomCategories(visibleBaseCategories, customCategories),
+        categoryOrderIds,
+      ),
+    [categoryOrderIds, customCategories, visibleBaseCategories],
   );
-  const { commitOrderedCategories, orderedCategories, replaceOrderedCategories, saveCurrentOrder } =
-    useCategoryOrder(entryType, mergedCategories);
-  const {
-    cellSize,
-    columns,
-    draggingCategoryId,
-    getAnimatedPosition,
-    handleContainerLayout,
-    handleDragEnd,
-    handleDragMove,
-    handleDragStart,
-  } = useCategoryGridDrag({
-    isReorderEnabled: false,
-    onDeleteCategory: (categoryId) => {
-      setIsDeleteDropZoneActive(false);
-      deleteCategory(categoryId);
-    },
-    onDraggingChange,
-    orderedCategories,
-    replaceOrderedCategories,
-    saveCurrentOrder,
-    shouldDeleteCategory: isPointInDeleteDropZone,
-  });
-
+  const { cellSize, columns } = resolveCategoryGridMetrics(gridWidth);
   const addButtonPosition = resolveCategoryGridPosition(
-    orderedCategories.length,
+    displayedCategories.length,
     cellSize,
     columns,
   );
-  const iconPickerLeft = resolveIconPickerLeft(addButtonPosition.x, cellSize, gridWidth);
-  const iconPickerTop = Math.max(
-    0,
-    addButtonPosition.y -
-      CATEGORY_INLINE_ICON_PICKER_ANCHOR_GAP -
-      CATEGORY_INLINE_ICON_PICKER_HEIGHT,
-  );
-  const iconPickerArrowLeft =
-    addButtonPosition.x + cellSize / 2 - iconPickerLeft - CATEGORY_INLINE_ICON_PICKER_ARROW_SIZE;
-  const gridHeight = resolveCategoryGridHeight(orderedCategories.length + 1, cellSize, columns);
+  const gridHeight = resolveCategoryGridHeight(displayedCategories.length + 1, cellSize, columns);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{title}</Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.title}>{title}</Text>
+        <Pressable onPress={openCategoryManageModal}>
+          <Text style={styles.manageAction}>{CategoryCustomizerCopy.manageAction}</Text>
+        </Pressable>
+      </View>
       <View
         onLayout={(event) => {
           setGridWidth(event.nativeEvent.layout.width);
-          measureOptionsBounds();
-          handleContainerLayout(optionsRef.current, event.nativeEvent.layout.width);
         }}
-        onTouchStart={(event) => {
-          if (!isAddingCategory) {
-            return;
-          }
-
-          const { pageX, pageY } = event.nativeEvent;
-          if (!isPointInInlineEditor(pageX, pageY)) {
-            cancelInlineCategory();
-          }
-        }}
-        ref={optionsRef}
         style={[styles.options, { height: gridHeight }]}
       >
-        {orderedCategories.map((category) => {
+        {displayedCategories.map((category, index) => {
+          const position = resolveCategoryGridPosition(index, cellSize, columns);
           return (
             <CategoryGridItem
-              animatedPosition={getAnimatedPosition(category.id)}
               category={category}
               cellSize={cellSize}
               isActive={selectedCategoryId === category.id}
-              isDragging={draggingCategoryId === category.id}
               key={category.id}
-              onDragEnd={handleDragEnd}
-              onDragMove={(categoryId, pageX, pageY) => {
-                setIsDeleteDropZoneActive(isPointInDeleteDropZone(pageX, pageY));
-                handleDragMove(categoryId, pageX, pageY);
-              }}
-              onDragStart={handleDragStart}
+              left={position.x}
+              onLongPressCategory={() => openCategoryContextMenu(category, position.x, position.y)}
               onPressCategory={selectCategory}
+              top={position.y}
             />
           );
         })}
-        {cellSize > 0 && isAddingCategory ? (
-          <InlineCategoryCreator
-            errorMessage={newCategoryError}
-            height={cellSize}
-            iconName={newCategoryIconName}
-            label={newCategoryLabel}
-            left={addButtonPosition.x}
-            onChangeLabel={(label) => {
-              setNewCategoryLabel(label);
-              setNewCategoryError(null);
-            }}
-            onCancel={cancelInlineCategory}
-            onPressIcon={handlePressInlineIcon}
-            onPressInIcon={markIconPickerInteraction}
-            onSubmit={createInlineCategory}
-            top={addButtonPosition.y}
-            width={cellSize}
-          />
-        ) : cellSize > 0 ? (
+        {cellSize > 0 ? (
           <CategoryAddGridItem
             cellSize={cellSize}
             left={addButtonPosition.x}
-            onPress={startInlineCategory}
+            onPress={startCategoryCreation}
             top={addButtonPosition.y}
           />
         ) : null}
-        {cellSize > 0 && isAddingCategory && isIconPickerOpen ? (
-          <CategoryIconPickerList
-            activeIconName={newCategoryIconName}
-            arrowLeft={iconPickerArrowLeft}
-            left={iconPickerLeft}
-            onPressIn={markIconPickerInteraction}
-            onSelectIcon={(iconName) => {
-              setNewCategoryIconName(iconName);
-              setIsIconPickerOpen(false);
-              releaseIconPickerInteraction();
-            }}
-            top={iconPickerTop}
-            width={CATEGORY_INLINE_ICON_PICKER_WIDTH}
-          />
-        ) : null}
       </View>
-      {draggingCategoryId ? (
-        <View ref={deleteDropZoneRef} style={styles.deleteDropZoneWrapper}>
-          <CategoryDeleteDropZone
-            isActive={isDeleteDropZoneActive}
-            onLayout={measureDeleteDropZone}
-          />
-        </View>
+      <CategoryCreateModal
+        actionLabel={editingCategory ? CommonActionCopy.save : undefined}
+        errorMessage={newCategoryError}
+        iconName={newCategoryIconName}
+        isOpen={isCreateModalOpen}
+        label={newCategoryLabel}
+        title={editingCategory ? CategoryContextMenuCopy.editModalTitle : undefined}
+        onCancel={cancelCategoryCreation}
+        onChangeIcon={setNewCategoryIconName}
+        onChangeLabel={(label) => {
+          setNewCategoryLabel(label);
+          setNewCategoryError(null);
+        }}
+        onSubmit={submitCategoryForm}
+      />
+      <CategoryManageModal
+        categories={displayedCategories}
+        isOpen={isManageModalOpen}
+        onChangeOrder={saveCategoryOrder}
+        onClose={() => setIsManageModalOpen(false)}
+      />
+      {contextMenu ? (
+        <Pressable onPress={closeCategoryContextMenu} style={styles.contextOverlay}>
+          <View
+            style={[
+              styles.contextMenu,
+              {
+                left: contextMenu.left,
+                top: contextMenu.top,
+              },
+            ]}
+          >
+            <Pressable onPress={editContextCategory} style={styles.contextMenuItem}>
+              <Text style={styles.contextMenuText}>{CategoryContextMenuCopy.editAction}</Text>
+            </Pressable>
+            <Pressable onPress={deleteContextCategory} style={styles.contextMenuItem}>
+              <Text style={[styles.contextMenuText, styles.deleteContextMenuText]}>
+                {CategoryCustomizerCopy.deleteAction}
+              </Text>
+            </Pressable>
+            <View style={styles.contextMenuTailBorder} />
+            <View style={styles.contextMenuTailFill} />
+          </View>
+        </Pressable>
       ) : null}
     </View>
   );
 
-  function createInlineCategory() {
-    isSubmittingNewCategoryRef.current = true;
+  function submitCategoryForm() {
+    if (editingCategory) {
+      updateCategory();
+      return;
+    }
+
+    createCategory();
+  }
+
+  function createCategory() {
     const nextLabel = normalizeCustomCategoryLabel(newCategoryLabel);
     const nextCategory: CategoryDefinition = {
       ...createCustomCategory(entryType, customCategories.length + 1),
@@ -228,159 +211,194 @@ export function CategorySelector({
       label: nextLabel,
     };
     const nextCustomCategories = [...customCategories, nextCategory];
-    const errorMessage = resolveCustomCategoryError(categories, nextCustomCategories);
+    const errorMessage = resolveCustomCategoryError(overriddenBaseCategories, nextCustomCategories);
 
     if (errorMessage) {
-      isSubmittingNewCategoryRef.current = false;
       setNewCategoryError(errorMessage);
       return;
     }
 
-    const nextCategories = [...orderedCategories, nextCategory];
-    saveCustomCategories(sortCustomCategoriesByVisibleOrder(nextCustomCategories, nextCategories));
-    commitOrderedCategories(nextCategories);
+    saveCustomCategories(nextCustomCategories);
     onSelectCategory(nextCategory);
-    setIsAddingCategory(false);
-    setIsIconPickerOpen(false);
-    setNewCategoryLabel("");
-    setNewCategoryIconName(CUSTOM_CATEGORY_DEFAULT_ICON);
-    setNewCategoryError(null);
-    isInteractingWithIconPickerRef.current = false;
-    requestAnimationFrame(() => {
-      isSubmittingNewCategoryRef.current = false;
+    resetCategoryCreationState();
+  }
+
+  function updateSystemCategory(category: CategoryDefinition) {
+    const nextLabel = normalizeCustomCategoryLabel(newCategoryLabel);
+    const nextCategory: CategoryDefinition = {
+      ...category,
+      iconName: newCategoryIconName,
+      label: nextLabel,
+    };
+    const nextDisplayedCategories = displayedCategories.map((displayedCategory) =>
+      displayedCategory.id === category.id ? nextCategory : displayedCategory,
+    );
+    const errorMessage = resolveCustomCategoryError([], nextDisplayedCategories);
+
+    if (errorMessage) {
+      setNewCategoryError(errorMessage);
+      return;
+    }
+
+    saveSystemCategoryCustomizations({
+      hiddenSystemCategoryIds,
+      systemCategoryIconOverrides: {
+        ...systemCategoryIconOverrides,
+        [category.id]: newCategoryIconName,
+      },
+      systemCategoryLabelOverrides: {
+        ...systemCategoryLabelOverrides,
+        [category.id]: nextLabel,
+      },
     });
+    if (selectedCategoryId === category.id) {
+      onSelectCategory(nextCategory);
+    }
+    resetCategoryCreationState();
   }
 
   function selectCategory(nextCategory: CategoryDefinition) {
-    if (selectedCategoryId === nextCategory.id) {
-      clearSelectedCategory();
-      return;
-    }
-
-    setIsAddingCategory(false);
-    setIsIconPickerOpen(false);
+    setIsCreateModalOpen(false);
+    closeCategoryContextMenu();
     onSelectCategory(nextCategory);
   }
 
-  function clearSelectedCategory() {
-    onSelectCategory(null);
-  }
-
-  function startInlineCategory() {
-    setIsAddingCategory(true);
-    setIsIconPickerOpen(true);
-  }
-
-  function cancelInlineCategory() {
-    if (isSubmittingNewCategoryRef.current || isInteractingWithIconPickerRef.current) {
+  function updateCategory() {
+    if (!editingCategory) {
       return;
     }
 
-    setIsAddingCategory(false);
-    setIsIconPickerOpen(false);
-    setNewCategoryLabel("");
-    setNewCategoryIconName(CUSTOM_CATEGORY_DEFAULT_ICON);
+    if (editingCategory.source === "system") {
+      updateSystemCategory(editingCategory);
+      return;
+    }
+
+    const nextLabel = normalizeCustomCategoryLabel(newCategoryLabel);
+    const nextCustomCategories = customCategories.map((customCategory) =>
+      customCategory.id === editingCategory.id
+        ? {
+            ...customCategory,
+            iconName: newCategoryIconName,
+            label: nextLabel,
+          }
+        : customCategory,
+    );
+    const errorMessage = resolveCustomCategoryError(overriddenBaseCategories, nextCustomCategories);
+
+    if (errorMessage) {
+      setNewCategoryError(errorMessage);
+      return;
+    }
+
+    const nextCategory = nextCustomCategories.find(
+      (category) => category.id === editingCategory.id,
+    );
+    saveCustomCategories(nextCustomCategories);
+    if (selectedCategoryId === editingCategory.id && nextCategory) {
+      onSelectCategory(nextCategory);
+    }
+    resetCategoryCreationState();
+  }
+
+  function openCategoryContextMenu(category: CategoryDefinition, left: number, top: number) {
+    const menuHeight = CATEGORY_CONTEXT_MENU_ITEM_HEIGHT * 2;
+    const menuLeft = Math.min(
+      Math.max(0, left + cellSize / 2 - CATEGORY_CONTEXT_MENU_WIDTH / 2),
+      Math.max(0, gridWidth - CATEGORY_CONTEXT_MENU_WIDTH),
+    );
+    const menuTop = Math.max(0, top - menuHeight - CATEGORY_CONTEXT_MENU_OFFSET);
+
+    setIsCreateModalOpen(false);
+    setContextMenu({
+      category,
+      left: menuLeft,
+      top: menuTop,
+    });
+  }
+
+  function openCategoryManageModal() {
+    setIsCreateModalOpen(false);
+    closeCategoryContextMenu();
+    setIsManageModalOpen(true);
+  }
+
+  function saveCategoryOrder(nextCategories: CategoryDefinition[]) {
+    saveCategoryOrderIds([...new Set(nextCategories.map((category) => category.id))]);
+  }
+
+  function closeCategoryContextMenu() {
+    setContextMenu(null);
+  }
+
+  function editContextCategory() {
+    const category = contextMenu?.category;
+    if (!category) {
+      return;
+    }
+
+    setEditingCategory(category);
+    setNewCategoryLabel(category.label);
+    setNewCategoryIconName(category.iconName);
     setNewCategoryError(null);
-    isInteractingWithIconPickerRef.current = false;
+    setIsCreateModalOpen(true);
+    closeCategoryContextMenu();
   }
 
-  function markIconPickerInteraction() {
-    isInteractingWithIconPickerRef.current = true;
-  }
-
-  function handlePressInlineIcon() {
-    setIsIconPickerOpen((isOpen) => {
-      return !isOpen;
-    });
-    releaseIconPickerInteraction();
-  }
-
-  function releaseIconPickerInteraction() {
-    requestAnimationFrame(() => {
-      isInteractingWithIconPickerRef.current = false;
-    });
-  }
-
-  function deleteCategory(categoryId: string) {
-    const deletingCategory = orderedCategories.find((category) => category.id === categoryId);
-
-    if (!deletingCategory) {
+  function deleteContextCategory() {
+    const category = contextMenu?.category;
+    if (!category) {
       return;
     }
 
-    const nextCategories = orderedCategories.filter((category) => category.id !== categoryId);
-
-    if (deletingCategory.source === "system") {
-      saveHiddenSystemCategoryIds([...new Set([...hiddenSystemCategoryIds, deletingCategory.id])]);
-    } else {
-      const nextCustomCategories = customCategories.filter(
-        (category) => category.id !== deletingCategory.id,
-      );
-      saveCustomCategories(
-        sortCustomCategoriesByVisibleOrder(nextCustomCategories, nextCategories),
-      );
-    }
-
-    commitOrderedCategories(nextCategories);
-
-    if (selectedCategoryId === deletingCategory.id) {
-      onSelectCategory(nextCategories[0] ?? null);
-    }
-  }
-
-  function isPointInDeleteDropZone(pageX: number, pageY: number): boolean {
-    const bounds = deleteDropZoneBoundsRef.current;
-    return Boolean(
-      bounds &&
-        pageX >= bounds.x &&
-        pageX <= bounds.x + bounds.width &&
-        pageY >= bounds.y &&
-        pageY <= bounds.y + bounds.height,
+    closeCategoryContextMenu();
+    Alert.alert(
+      CategoryContextMenuCopy.deleteConfirmTitle,
+      CategoryContextMenuCopy.deleteConfirmMessage,
+      [
+        {
+          style: "cancel",
+          text: CommonActionCopy.cancel,
+        },
+        {
+          onPress: () => deleteCategory(category),
+          style: "destructive",
+          text: CategoryCustomizerCopy.deleteAction,
+        },
+      ],
     );
   }
 
-  function measureDeleteDropZone() {
-    deleteDropZoneRef.current?.measureInWindow((x, y, width, height) => {
-      deleteDropZoneBoundsRef.current = { height, width, x, y };
-    });
-  }
-
-  function measureOptionsBounds() {
-    optionsRef.current?.measureInWindow((x, y, width, height) => {
-      optionsBoundsRef.current = { height, width, x, y };
-    });
-  }
-
-  function isPointInInlineEditor(pageX: number, pageY: number): boolean {
-    const bounds = optionsBoundsRef.current;
-    if (!bounds || cellSize <= 0) {
-      return false;
+  function deleteCategory(category: CategoryDefinition) {
+    if (category.source === "custom") {
+      saveCustomCategories(
+        customCategories.filter((customCategory) => customCategory.id !== category.id),
+      );
+    } else {
+      saveHiddenSystemCategoryIds([...new Set([...hiddenSystemCategoryIds, category.id])]);
     }
 
-    const localX = pageX - bounds.x;
-    const localY = pageY - bounds.y;
-    const isInCreator =
-      localX >= addButtonPosition.x &&
-      localX <= addButtonPosition.x + cellSize &&
-      localY >= addButtonPosition.y &&
-      localY <= addButtonPosition.y + cellSize;
-    const isInIconPicker =
-      isIconPickerOpen &&
-      localX >= iconPickerLeft &&
-      localX <= iconPickerLeft + CATEGORY_INLINE_ICON_PICKER_WIDTH &&
-      localY >= iconPickerTop &&
-      localY <= iconPickerTop + CATEGORY_INLINE_ICON_PICKER_HEIGHT;
-
-    return isInCreator || isInIconPicker;
+    if (selectedCategoryId === category.id) {
+      onSelectCategory(null);
+    }
   }
-}
 
-function resolveIconPickerLeft(anchorLeft: number, anchorWidth: number, containerWidth: number) {
-  const centeredLeft = anchorLeft + anchorWidth / 2 - CATEGORY_INLINE_ICON_PICKER_WIDTH / 2;
-  return Math.min(
-    Math.max(centeredLeft, 0),
-    Math.max(containerWidth - CATEGORY_INLINE_ICON_PICKER_WIDTH, 0),
-  );
+  function startCategoryCreation() {
+    resetCategoryCreationState();
+    closeCategoryContextMenu();
+    setIsCreateModalOpen(true);
+  }
+
+  function cancelCategoryCreation() {
+    resetCategoryCreationState();
+  }
+
+  function resetCategoryCreationState() {
+    setIsCreateModalOpen(false);
+    setEditingCategory(null);
+    setNewCategoryLabel("");
+    setNewCategoryIconName(CUSTOM_CATEGORY_DEFAULT_ICON);
+    setNewCategoryError(null);
+  }
 }
 
 const styles = StyleSheet.create({
@@ -388,16 +406,75 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   title: FormLabelTextStyle,
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  manageAction: {
+    color: AppColors.primary,
+    fontSize: 13,
+    fontWeight: "800",
+  },
   options: {
     position: "relative",
     width: "100%",
     marginTop: CATEGORY_GRID_GAP,
   },
-  deleteDropZoneWrapper: {
+  contextOverlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  contextMenu: {
     position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
+    width: CATEGORY_CONTEXT_MENU_WIDTH,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+    borderRadius: 12,
+    backgroundColor: AppColors.surface,
+    shadowColor: AppColors.calendarShadow,
+    shadowOpacity: 0.16,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  contextMenuTailBorder: {
+    position: "absolute",
+    bottom: -CATEGORY_CONTEXT_MENU_TAIL_SIZE,
+    left: CATEGORY_CONTEXT_MENU_WIDTH / 2 - CATEGORY_CONTEXT_MENU_TAIL_SIZE,
+    width: 0,
+    height: 0,
+    borderLeftWidth: CATEGORY_CONTEXT_MENU_TAIL_SIZE,
+    borderRightWidth: CATEGORY_CONTEXT_MENU_TAIL_SIZE,
+    borderTopWidth: CATEGORY_CONTEXT_MENU_TAIL_SIZE,
+    borderLeftColor: "transparent",
+    borderRightColor: "transparent",
+    borderTopColor: AppColors.border,
+  },
+  contextMenuTailFill: {
+    position: "absolute",
+    bottom: -CATEGORY_CONTEXT_MENU_TAIL_SIZE + 1,
+    left: CATEGORY_CONTEXT_MENU_WIDTH / 2 - CATEGORY_CONTEXT_MENU_TAIL_SIZE + 1,
+    width: 0,
+    height: 0,
+    borderLeftWidth: CATEGORY_CONTEXT_MENU_TAIL_SIZE - 1,
+    borderRightWidth: CATEGORY_CONTEXT_MENU_TAIL_SIZE - 1,
+    borderTopWidth: CATEGORY_CONTEXT_MENU_TAIL_SIZE - 1,
+    borderLeftColor: "transparent",
+    borderRightColor: "transparent",
+    borderTopColor: AppColors.surface,
+  },
+  contextMenuItem: {
+    height: CATEGORY_CONTEXT_MENU_ITEM_HEIGHT,
+    paddingHorizontal: 12,
     alignItems: "center",
+    justifyContent: "center",
+  },
+  contextMenuText: {
+    color: AppColors.text,
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  deleteContextMenuText: {
+    color: AppColors.expense,
   },
 });

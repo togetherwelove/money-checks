@@ -19,6 +19,11 @@ export type LedgerEntryRow = {
   updated_at: string;
 };
 
+export type LedgerEntrySummaryRow = LedgerEntryRow & {
+  author_display_name: string | null;
+  target_member_display_name: string | null;
+};
+
 export type LedgerEntryAttachmentRow = {
   created_at: string;
   id: string;
@@ -49,10 +54,25 @@ export type AccessibleLedgerBookRow = LedgerBookRow & {
   member_role: "editor" | "owner";
 };
 
+export type AccessibleLedgerBookStateRow = AccessibleLedgerBookRow & {
+  is_active: boolean;
+};
+
 export type LedgerBookMemberRow = {
   book_id: string;
   role: "editor" | "owner";
   user_id: string;
+};
+
+export type LedgerBookCategoryCustomizationRow = {
+  book_id: string;
+  category_id: string;
+  entry_type: "expense" | "income";
+  icon_name: string | null;
+  is_hidden: boolean;
+  is_system: boolean;
+  label: string | null;
+  sort_order: number | null;
 };
 
 export type LedgerBookMemberProfileRow = {

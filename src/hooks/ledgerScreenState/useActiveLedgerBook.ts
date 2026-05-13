@@ -7,6 +7,7 @@ import { signOutFromApp } from "../../lib/auth/signOut";
 import {
   createOwnedLedgerBook,
   deleteOwnedLedgerBook,
+  fetchAccessibleLedgerBookState,
   fetchAccessibleLedgerBooks,
   fetchActiveLedgerBook,
   fetchLedgerBookById,
@@ -18,6 +19,7 @@ import {
   updateActiveLedgerBookName,
 } from "../../lib/ledgerBooks";
 import { logAppError } from "../../lib/logAppError";
+import { createPerformanceTrace } from "../../lib/performanceTrace";
 import {
   clearSharedLedgerExitIntent,
   markSharedLedgerExitIntent,
@@ -39,6 +41,22 @@ let realtimeChannelSequence = 0;
 function createRealtimeChannelName(prefix: string, identifier: string) {
   realtimeChannelSequence += 1;
   return `${prefix}-${identifier}-${realtimeChannelSequence}`;
+}
+
+async function fetchLedgerBookState(userId: string): Promise<{
+  nextActiveBook: LedgerBook | null;
+  nextBooks: AccessibleLedgerBook[];
+}> {
+  const trace = createPerformanceTrace("ActiveLedgerBook", { step: "load_book_state", userId });
+  const { activeBook: nextActiveBook, books: nextBooks } =
+    await fetchAccessibleLedgerBookState(userId);
+
+  trace("loaded_book_state", {
+    activeBookId: nextActiveBook?.id ?? null,
+    bookCount: nextBooks.length,
+  });
+
+  return { nextActiveBook, nextBooks };
 }
 
 type ActiveLedgerBookState = {
@@ -70,8 +88,7 @@ export function useActiveLedgerBook(
   const [isLoadingBook, setIsLoadingBook] = useState(true);
 
   const refreshAccessibleLedgerBookState = async () => {
-    const nextBooks = await fetchAccessibleLedgerBooks();
-    const nextActiveBook = await fetchActiveLedgerBook(userId);
+    const { nextActiveBook, nextBooks } = await fetchLedgerBookState(userId);
     setActiveBook(nextActiveBook);
     setAccessibleBooks(nextBooks);
   };
@@ -81,9 +98,9 @@ export function useActiveLedgerBook(
     setActiveBookError(null);
 
     try {
-      const nextBook = await fetchActiveLedgerBook(userId);
-      setActiveBook(nextBook);
-      setAccessibleBooks(await fetchAccessibleLedgerBooks());
+      const { nextActiveBook, nextBooks } = await fetchLedgerBookState(userId);
+      setActiveBook(nextActiveBook);
+      setAccessibleBooks(nextBooks);
     } catch (error) {
       logAppError("ActiveLedgerBook", error, { step: "refresh_active_book", userId });
       if (isMissingUserRecordError(error)) {
@@ -104,10 +121,9 @@ export function useActiveLedgerBook(
       setActiveBookError(null);
 
       try {
-        const nextBook = await fetchActiveLedgerBook(userId);
-        const nextBooks = await fetchAccessibleLedgerBooks();
+        const { nextActiveBook, nextBooks } = await fetchLedgerBookState(userId);
         if (isMounted) {
-          setActiveBook(nextBook);
+          setActiveBook(nextActiveBook);
           setAccessibleBooks(nextBooks);
         }
       } catch (error) {

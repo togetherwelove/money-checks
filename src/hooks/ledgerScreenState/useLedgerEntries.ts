@@ -12,17 +12,18 @@ import {
   subscribeToLedgerEntryChanges,
 } from "../../lib/ledgerEntryRealtime";
 import { logAppError } from "../../lib/logAppError";
+import { createPerformanceTrace } from "../../lib/performanceTrace";
 import { fetchProfileDisplayName } from "../../lib/profiles";
 import type { LedgerEntry } from "../../types/ledger";
 import { getMonthKey } from "../../utils/calendar";
 import { mapLedgerEntryRow } from "../../utils/ledgerMapper";
-import { loadLedgerMonthEntries } from "./helpers";
+import { loadLedgerMonthsEntries } from "./helpers";
 import {
   type LedgerEntryCache,
   getCalendarBackgroundPreloadMonths,
   getCalendarPagePreloadMonths,
-  getCalendarPreloadMonths,
   getVisibleWindowEntries,
+  getVisibleWindowMonths,
   hasCachedMonth,
   removeEntryFromCache,
   replaceVisibleWindowEntries,
@@ -49,7 +50,7 @@ export function useLedgerEntries(
   const [isLoadingEntries, setIsLoadingEntries] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const cachedBookIdRef = useRef<string | null>(activeBookId);
-  const preloadMonths = useMemo(() => getCalendarPreloadMonths(visibleMonth), [visibleMonth]);
+  const refreshMonths = useMemo(() => getVisibleWindowMonths(visibleMonth), [visibleMonth]);
   const pagePreloadMonths = useMemo(
     () => getCalendarPagePreloadMonths(visibleMonth),
     [visibleMonth],
@@ -113,19 +114,21 @@ export function useLedgerEntries(
         return;
       }
 
-      const nextEntriesByMonth = await Promise.all(
-        months.map((month) => loadLedgerMonthEntries(activeBookId, month)),
-      );
+      const trace = createPerformanceTrace("LedgerEntries", {
+        monthCount: months.length,
+        step: "load_month_group",
+      });
+      const nextEntriesByMonth = await loadLedgerMonthsEntries(activeBookId, months);
+      trace("loaded_month_group", { entryCount: countLedgerEntriesByMonth(nextEntriesByMonth) });
       if (!isMounted) {
         return;
       }
 
       setEntryCache((currentCache) =>
-        months.reduce(
-          (nextCache, month, index) =>
-            setMonthEntriesInCache(nextCache, month, nextEntriesByMonth[index] ?? []),
-          currentCache,
-        ),
+        months.reduce((nextCache, month) => {
+          const monthKey = getMonthKey(month);
+          return setMonthEntriesInCache(nextCache, month, nextEntriesByMonth[monthKey] ?? []);
+        }, currentCache),
       );
     };
 
@@ -271,19 +274,23 @@ export function useLedgerEntries(
     setEntriesError(null);
 
     try {
-      const nextEntriesByMonth = await Promise.all(
-        preloadMonths.map((month) => loadLedgerMonthEntries(activeBookId, month)),
-      );
+      const trace = createPerformanceTrace("LedgerEntries", {
+        monthCount: refreshMonths.length,
+        step: "refresh_visible_window_entries",
+      });
+      const nextEntriesByMonth = await loadLedgerMonthsEntries(activeBookId, refreshMonths);
+      trace("refreshed_visible_window_entries", {
+        entryCount: countLedgerEntriesByMonth(nextEntriesByMonth),
+      });
       setEntryCache((currentCache) => {
         const nextCache = { ...currentCache };
-        for (const month of preloadMonths) {
+        for (const month of refreshMonths) {
           delete nextCache[getMonthKey(month)];
         }
-        return preloadMonths.reduce(
-          (updatedCache, month, index) =>
-            setMonthEntriesInCache(updatedCache, month, nextEntriesByMonth[index] ?? []),
-          nextCache,
-        );
+        return refreshMonths.reduce((updatedCache, month) => {
+          const monthKey = getMonthKey(month);
+          return setMonthEntriesInCache(updatedCache, month, nextEntriesByMonth[monthKey] ?? []);
+        }, nextCache);
       });
     } catch (error) {
       logAppError("LedgerEntries", error, {
@@ -311,4 +318,8 @@ export function useLedgerEntries(
         return replaceVisibleWindowEntries(currentCache, visibleMonth, nextEntries);
       }),
   };
+}
+
+function countLedgerEntriesByMonth(entriesByMonth: Record<string, LedgerEntry[]>): number {
+  return Object.values(entriesByMonth).reduce((count, entries) => count + entries.length, 0);
 }

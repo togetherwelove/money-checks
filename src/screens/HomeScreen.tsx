@@ -1,21 +1,19 @@
 import { useIsFocused } from "@react-navigation/native";
-import { useEffect, useMemo, useRef, useState } from "react";
-import type { ComponentRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
   type TextInput,
   View,
-  findNodeHandle,
 } from "react-native";
 
 import { AppBannerAd } from "../components/AppBannerAd";
 import { CalendarToolbar } from "../components/CalendarToolbar";
 import { DateMemoToggleButton } from "../components/DateMemoToggleButton";
-import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { LedgerEntryList } from "../components/LedgerEntryList";
 import { MonthCalendarPager } from "../components/MonthCalendarPager";
 import { MonthlySummary } from "../components/MonthlySummary";
@@ -23,7 +21,6 @@ import { SelectedDateMemoAccordion } from "../components/SelectedDateMemoAccordi
 import { WeekdayHeader } from "../components/WeekdayHeader";
 import { AppColors } from "../constants/colors";
 import { CommonActionCopy } from "../constants/commonActions";
-import { DateMemoUi } from "../constants/dateMemo";
 import { AppLayout } from "../constants/layout";
 import { LedgerEditabilityCopy } from "../constants/ledgerEditability";
 import { AppMessages } from "../constants/messages";
@@ -46,10 +43,6 @@ type HomeScreenProps = {
   state: LedgerScreenState;
 };
 
-type KeyboardAwareScrollViewRef = ComponentRef<typeof KeyboardAwareScrollView> & {
-  scrollToFocusedInput?: (nodeHandle: number) => void;
-};
-
 export function HomeScreen({
   onDeleteSelectedEntry,
   onEditSelectedEntry,
@@ -61,17 +54,16 @@ export function HomeScreen({
   const todayIsoDate = toIsoDate(new Date());
   const isScreenFocused = useIsFocused();
   const [isDateMemoExpanded, setIsDateMemoExpanded] = useState(false);
-  const [isDateMemoEditing, setIsDateMemoEditing] = useState(false);
-  const [dateMemoPanelHeight, setDateMemoPanelHeight] = useState(0);
   const [calendarFocusRevision, setCalendarFocusRevision] = useState(0);
   const wasScreenFocusedRef = useRef(isScreenFocused);
-  const scrollViewRef = useRef<ComponentRef<typeof KeyboardAwareScrollView>>(null);
   const {
     handleDeleteSelectedDateNote,
     errorMessage,
     handleSaveSelectedDateNote,
     isLoadingSelectedDateEntries,
+    isRefreshing,
     monthlyLedger,
+    refreshLedger,
     selectedDate,
     selectedEntries,
     selectedDateNote,
@@ -85,65 +77,32 @@ export function HomeScreen({
   }, [selectedDateNote]);
 
   useEffect(() => {
-    if (!isDateMemoExpanded) {
-      setIsDateMemoEditing(false);
-      setDateMemoPanelHeight(0);
-    }
-  }, [isDateMemoExpanded]);
-
-  useEffect(() => {
     if (!wasScreenFocusedRef.current && isScreenFocused) {
       setCalendarFocusRevision((currentRevision) => currentRevision + 1);
     }
     wasScreenFocusedRef.current = isScreenFocused;
   }, [isScreenFocused]);
 
-  const handleBeginDateMemoEditing = (input: TextInput | null) => {
-    const inputNodeHandle = input ? findNodeHandle(input) : null;
-    const keyboardAwareScrollView = scrollViewRef.current as KeyboardAwareScrollViewRef | null;
-
-    if (!inputNodeHandle || !keyboardAwareScrollView?.scrollToFocusedInput) {
-      return;
-    }
-
-    requestAnimationFrame(() => {
-      keyboardAwareScrollView.scrollToFocusedInput?.(inputNodeHandle);
-    });
-  };
-
-  const dateMemoKeyboardExtraScrollHeight = resolveDateMemoKeyboardExtraScrollHeight(
-    isDateMemoEditing,
-    dateMemoPanelHeight,
-  );
-  const contentBottomPadding = dateMemoKeyboardExtraScrollHeight;
-  const contentContainerStyle = useMemo(
-    () => [styles.content, { paddingBottom: contentBottomPadding }],
-    [contentBottomPadding],
-  );
+  const handleBeginDateMemoEditing = (_input: TextInput | null) => {};
 
   return (
-    <KeyboardAwareScrollView
-      ref={scrollViewRef}
-      contentContainerStyle={contentContainerStyle}
-      extraScrollHeight={dateMemoKeyboardExtraScrollHeight}
-      scrollEnabled={false}
-      showsVerticalScrollIndicator={false}
-      style={styles.screen}
-    >
+    <View style={styles.screen}>
       <KeyboardAwareContent
         errorMessage={errorMessage}
         calendarFocusRevision={calendarFocusRevision}
         handleBeginDateMemoEditing={handleBeginDateMemoEditing}
         isDateMemoExpanded={isDateMemoExpanded}
         isLoadingSelectedDateEntries={isLoadingSelectedDateEntries}
+        isRefreshing={isRefreshing}
         isReadOnlyDueToPlanLimit={state.isReadOnlyDueToPlanLimit}
         monthlyLedger={monthlyLedger}
         onDeleteSelectedEntry={onDeleteSelectedEntry}
         onDeleteSelectedDateNote={handleDeleteSelectedDateNote}
         onEditSelectedEntry={onEditSelectedEntry}
-        onDateMemoEditingChange={setIsDateMemoEditing}
-        onDateMemoHeightChange={setDateMemoPanelHeight}
+        onDateMemoEditingChange={() => {}}
+        onDateMemoHeightChange={() => {}}
         onOpenMonthPicker={onOpenMonthPicker}
+        onRefreshLedger={refreshLedger}
         onSaveSelectedDateNote={handleSaveSelectedDateNote}
         onSelectCalendarDate={onSelectCalendarDate}
         selectedDate={selectedDate}
@@ -157,7 +116,7 @@ export function HomeScreen({
         todayIsoDate={todayIsoDate}
         visibleMonth={visibleMonth}
       />
-    </KeyboardAwareScrollView>
+    </View>
   );
 }
 
@@ -167,6 +126,7 @@ function KeyboardAwareContent({
   handleBeginDateMemoEditing,
   isDateMemoExpanded,
   isLoadingSelectedDateEntries,
+  isRefreshing,
   isReadOnlyDueToPlanLimit,
   monthlyLedger,
   onDeleteSelectedEntry,
@@ -175,6 +135,7 @@ function KeyboardAwareContent({
   onDateMemoEditingChange,
   onDateMemoHeightChange,
   onOpenMonthPicker,
+  onRefreshLedger,
   onSaveSelectedDateNote,
   onSelectCalendarDate,
   selectedDate,
@@ -193,6 +154,7 @@ function KeyboardAwareContent({
   handleBeginDateMemoEditing: (input: TextInput | null) => void;
   isDateMemoExpanded: boolean;
   isLoadingSelectedDateEntries: boolean;
+  isRefreshing: boolean;
   isReadOnlyDueToPlanLimit: boolean;
   monthlyLedger: LedgerScreenState["monthlyLedger"];
   onDeleteSelectedEntry: (entry: LedgerEntry) => Promise<boolean>;
@@ -201,6 +163,7 @@ function KeyboardAwareContent({
   onDateMemoEditingChange: (isEditing: boolean) => void;
   onDateMemoHeightChange: (height: number) => void;
   onOpenMonthPicker: () => void;
+  onRefreshLedger: () => Promise<void>;
   onSaveSelectedDateNote: (note: string) => Promise<void>;
   onSelectCalendarDate: (isoDate: string) => void;
   selectedDate: string;
@@ -218,37 +181,38 @@ function KeyboardAwareContent({
 
   return (
     <View style={styles.screenContent}>
-      <View style={styles.fixedSection}>
-        {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
-        <View style={styles.monthHeaderSection}>
-          <CalendarToolbar
-            monthLabel={formatMonthYear(visibleMonth)}
-            onPressMonthLabel={onOpenMonthPicker}
-            onSelectToday={() => {
-              onSelectCalendarDate(todayIsoDate);
-            }}
-            showMoveToCurrent={selectedDate !== todayIsoDate}
+      <View style={styles.adPanel}>
+        {showsBannerAd ? <AppBannerAd variant="embedded" /> : null}
+      </View>
+      {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
+      <View style={styles.monthHeaderSection}>
+        <CalendarToolbar
+          monthLabel={formatMonthYear(visibleMonth)}
+          onPressMonthLabel={onOpenMonthPicker}
+          onSelectToday={() => {
+            onSelectCalendarDate(todayIsoDate);
+          }}
+          showMoveToCurrent={selectedDate !== todayIsoDate}
+        />
+      </View>
+      <View style={styles.calendarAdSection}>
+        <WeekdayHeader />
+        <MonthCalendarPager
+          key={calendarFocusRevision}
+          currentPage={state.currentMonthPage}
+          nextPage={state.nextMonthPage}
+          onMoveMonth={(monthOffset) => moveMonth(visibleMonth, monthOffset, setVisibleMonth)}
+          onSelectDate={onSelectCalendarDate}
+          previousPage={state.previousMonthPage}
+          selectedDate={selectedDate}
+        />
+        <View style={styles.summaryPanel}>
+          <MonthlySummary
+            balanceAmount={monthlyLedger.balance}
+            totalExpense={formatCurrency(monthlyLedger.totalExpense)}
+            totalIncome={formatCurrency(monthlyLedger.totalIncome)}
+            variant="embedded"
           />
-          <View style={styles.summarySection}>
-            <MonthlySummary
-              balanceAmount={monthlyLedger.balance}
-              totalExpense={formatCurrency(monthlyLedger.totalExpense)}
-              totalIncome={formatCurrency(monthlyLedger.totalIncome)}
-            />
-          </View>
-        </View>
-        <View style={styles.calendarAdSection}>
-          <WeekdayHeader />
-          <MonthCalendarPager
-            key={calendarFocusRevision}
-            currentPage={state.currentMonthPage}
-            nextPage={state.nextMonthPage}
-            onMoveMonth={(monthOffset) => moveMonth(visibleMonth, monthOffset, setVisibleMonth)}
-            onSelectDate={onSelectCalendarDate}
-            previousPage={state.previousMonthPage}
-            selectedDate={selectedDate}
-          />
-          {showsBannerAd ? <AppBannerAd /> : null}
         </View>
       </View>
       <View style={styles.transactionSection}>
@@ -277,9 +241,17 @@ function KeyboardAwareContent({
         </View>
         <ScrollView
           contentContainerStyle={styles.transactionScrollContent}
+          keyboardShouldPersistTaps="handled"
           nestedScrollEnabled
-          onTouchStart={() => setCloseEntrySwipeRevision((revision) => revision + 1)}
-          onScrollBeginDrag={() => setCloseEntrySwipeRevision((revision) => revision + 1)}
+          refreshControl={
+            <RefreshControl
+              onRefresh={() => {
+                void onRefreshLedger();
+              }}
+              refreshing={isRefreshing}
+              tintColor={AppColors.primary}
+            />
+          }
           showsVerticalScrollIndicator={false}
           style={styles.transactionScroll}
         >
@@ -299,6 +271,7 @@ function KeyboardAwareContent({
                 onSave={onSaveSelectedDateNote}
               />
               <LedgerEntryList
+                activeBookId={state.activeBook?.id ?? null}
                 closeSwipeRevision={closeEntrySwipeRevision}
                 entries={selectedEntries}
                 onDeleteEntry={(entry) => {
@@ -344,34 +317,14 @@ function moveMonth(
   setVisibleMonth(addMonths(visibleMonth, monthOffset));
 }
 
-function resolveDateMemoKeyboardExtraScrollHeight(isEditing: boolean, panelHeight: number) {
-  if (!isEditing || panelHeight <= 0) {
-    return 0;
-  }
-
-  const measuredExtraHeight = panelHeight * DateMemoUi.keyboardExtraScrollHeightRatio;
-  return Math.min(
-    DateMemoUi.keyboardExtraScrollHeightMax,
-    Math.max(DateMemoUi.keyboardExtraScrollHeightMin, measuredExtraHeight),
-  );
-}
-
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: AppColors.background,
-  },
-  content: {
-    flexGrow: 1,
     paddingHorizontal: AppLayout.screenPadding,
   },
   screenContent: {
     flex: 1,
-    minHeight: 0,
-    gap: AppLayout.cardGap,
-  },
-  fixedSection: {
-    gap: AppLayout.cardGap,
   },
   monthHeaderSection: {
     gap: AppLayout.calendarGap,
@@ -391,8 +344,17 @@ const styles = StyleSheet.create({
   transactionScrollContent: {
     gap: AppLayout.compactGap,
   },
-  summarySection: {
-    gap: AppLayout.compactGap,
+  adPanel: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: AppColors.border,
+    backgroundColor: AppColors.surfaceMuted,
+  },
+  summaryPanel: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: AppColors.border,
+    backgroundColor: AppColors.surfaceMuted,
+    paddingVertical: 2,
   },
   error: {
     color: AppColors.expense,

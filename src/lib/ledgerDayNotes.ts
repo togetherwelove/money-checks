@@ -1,35 +1,37 @@
 import type { LedgerDayNote } from "../types/ledger";
 import type { LedgerDayNoteRow } from "../types/supabase";
+import { createPerformanceTrace } from "./performanceTrace";
 import { supabase } from "./supabase";
 
 const LEDGER_DAY_NOTE_TABLE = "ledger_day_notes";
+const GET_LEDGER_DAY_NOTES_IN_RANGE_FUNCTION = "get_ledger_day_notes_in_range";
 
 export async function fetchLedgerDayNotes(
   bookId: string,
   dateFrom?: string,
   dateTo?: string,
 ): Promise<LedgerDayNote[]> {
-  let query = supabase
-    .from(LEDGER_DAY_NOTE_TABLE)
-    .select("*")
-    .eq("book_id", bookId)
-    .order("occurred_on", { ascending: true });
-
-  if (dateFrom) {
-    query = query.gte("occurred_on", dateFrom);
-  }
-
-  if (dateTo) {
-    query = query.lte("occurred_on", dateTo);
-  }
-
-  const { data, error } = await query.returns<LedgerDayNoteRow[]>();
+  const trace = createPerformanceTrace("LedgerDayNotesQuery", {
+    bookId,
+    dateFrom: dateFrom ?? null,
+    dateTo: dateTo ?? null,
+    step: "fetch_ledger_day_notes",
+  });
+  const { data, error } = await supabase
+    .rpc(GET_LEDGER_DAY_NOTES_IN_RANGE_FUNCTION, {
+      date_from: dateFrom ?? null,
+      date_to: dateTo ?? null,
+      target_book_id: bookId,
+    })
+    .returns<LedgerDayNoteRow[]>();
+  const rows = Array.isArray(data) ? data : [];
+  trace("fetched_ledger_day_notes", { rowCount: rows.length });
 
   if (error) {
     throw error;
   }
 
-  return (data ?? []).map(mapLedgerDayNoteRow);
+  return rows.map(mapLedgerDayNoteRow);
 }
 
 export async function upsertLedgerDayNote(

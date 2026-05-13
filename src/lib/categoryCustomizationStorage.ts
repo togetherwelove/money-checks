@@ -8,87 +8,149 @@ type StoredCategoryCustomization = Partial<
   Record<
     LedgerEntryType,
     {
+      categoryOrderIds: string[];
       customCategories: StoredCustomCategory[];
       hiddenSystemCategoryIds: string[];
-      orderIds: string[];
       systemCategoryIconOverrides: Record<string, CategoryIconName>;
+      systemCategoryLabelOverrides: Record<string, string>;
     }
   >
 >;
 
-export function loadStoredCustomCategories(type: LedgerEntryType): StoredCustomCategory[] {
-  return loadStoredCategoryCustomization()[type]?.customCategories ?? [];
+export function loadStoredCustomCategories(
+  type: LedgerEntryType,
+  storageScope?: string | null,
+): StoredCustomCategory[] {
+  return loadStoredCategoryCustomization(storageScope)[type]?.customCategories ?? [];
+}
+
+export function loadStoredCategoryOrderIds(
+  type: LedgerEntryType,
+  storageScope?: string | null,
+): string[] {
+  return loadStoredCategoryCustomization(storageScope)[type]?.categoryOrderIds ?? [];
 }
 
 export function saveStoredCustomCategories(
   type: LedgerEntryType,
   customCategories: StoredCustomCategory[],
+  storageScope?: string | null,
 ): void {
-  const currentValue = loadStoredCategoryCustomization();
+  const currentValue = loadStoredCategoryCustomization(storageScope);
   currentValue[type] = {
+    categoryOrderIds: currentValue[type]?.categoryOrderIds ?? [],
     customCategories,
     hiddenSystemCategoryIds: currentValue[type]?.hiddenSystemCategoryIds ?? [],
-    orderIds: currentValue[type]?.orderIds ?? [],
     systemCategoryIconOverrides: currentValue[type]?.systemCategoryIconOverrides ?? {},
+    systemCategoryLabelOverrides: currentValue[type]?.systemCategoryLabelOverrides ?? {},
   };
-  appStorage.setItem(CATEGORY_CUSTOMIZATION_STORAGE_KEY, JSON.stringify(currentValue));
+  appStorage.setItem(
+    resolveCategoryCustomizationStorageKey(storageScope),
+    JSON.stringify(currentValue),
+  );
 }
 
-export function loadStoredHiddenSystemCategoryIds(type: LedgerEntryType): string[] {
-  return loadStoredCategoryCustomization()[type]?.hiddenSystemCategoryIds ?? [];
+export function saveStoredCategoryOrderIds(
+  type: LedgerEntryType,
+  categoryOrderIds: string[],
+  storageScope?: string | null,
+): void {
+  const currentValue = loadStoredCategoryCustomization(storageScope);
+  currentValue[type] = {
+    categoryOrderIds,
+    customCategories: currentValue[type]?.customCategories ?? [],
+    hiddenSystemCategoryIds: currentValue[type]?.hiddenSystemCategoryIds ?? [],
+    systemCategoryIconOverrides: currentValue[type]?.systemCategoryIconOverrides ?? {},
+    systemCategoryLabelOverrides: currentValue[type]?.systemCategoryLabelOverrides ?? {},
+  };
+  appStorage.setItem(
+    resolveCategoryCustomizationStorageKey(storageScope),
+    JSON.stringify(currentValue),
+  );
+}
+
+export function loadStoredHiddenSystemCategoryIds(
+  type: LedgerEntryType,
+  storageScope?: string | null,
+): string[] {
+  return loadStoredCategoryCustomization(storageScope)[type]?.hiddenSystemCategoryIds ?? [];
 }
 
 export function saveStoredHiddenSystemCategoryIds(
   type: LedgerEntryType,
   hiddenSystemCategoryIds: string[],
+  storageScope?: string | null,
 ): void {
-  const currentValue = loadStoredCategoryCustomization();
+  const currentValue = loadStoredCategoryCustomization(storageScope);
   currentValue[type] = {
+    categoryOrderIds: currentValue[type]?.categoryOrderIds ?? [],
     customCategories: currentValue[type]?.customCategories ?? [],
     hiddenSystemCategoryIds,
-    orderIds: currentValue[type]?.orderIds ?? [],
     systemCategoryIconOverrides: currentValue[type]?.systemCategoryIconOverrides ?? {},
+    systemCategoryLabelOverrides: currentValue[type]?.systemCategoryLabelOverrides ?? {},
   };
-  appStorage.setItem(CATEGORY_CUSTOMIZATION_STORAGE_KEY, JSON.stringify(currentValue));
-}
-
-export function loadStoredCategoryOrderIds(type: LedgerEntryType): string[] {
-  return loadStoredCategoryCustomization()[type]?.orderIds ?? [];
-}
-
-export function saveStoredCategoryOrderIds(type: LedgerEntryType, orderIds: string[]): void {
-  const currentValue = loadStoredCategoryCustomization();
-  currentValue[type] = {
-    customCategories: currentValue[type]?.customCategories ?? [],
-    hiddenSystemCategoryIds: currentValue[type]?.hiddenSystemCategoryIds ?? [],
-    orderIds,
-    systemCategoryIconOverrides: currentValue[type]?.systemCategoryIconOverrides ?? {},
-  };
-  appStorage.setItem(CATEGORY_CUSTOMIZATION_STORAGE_KEY, JSON.stringify(currentValue));
+  appStorage.setItem(
+    resolveCategoryCustomizationStorageKey(storageScope),
+    JSON.stringify(currentValue),
+  );
 }
 
 export function loadStoredSystemCategoryIconOverrides(
   type: LedgerEntryType,
+  storageScope?: string | null,
 ): Record<string, CategoryIconName> {
-  return loadStoredCategoryCustomization()[type]?.systemCategoryIconOverrides ?? {};
+  return loadStoredCategoryCustomization(storageScope)[type]?.systemCategoryIconOverrides ?? {};
+}
+
+export function loadStoredSystemCategoryLabelOverrides(
+  type: LedgerEntryType,
+  storageScope?: string | null,
+): Record<string, string> {
+  return loadStoredCategoryCustomization(storageScope)[type]?.systemCategoryLabelOverrides ?? {};
 }
 
 export function saveStoredSystemCategoryIconOverrides(
   type: LedgerEntryType,
   systemCategoryIconOverrides: Record<string, CategoryIconName>,
+  storageScope?: string | null,
 ): void {
-  const currentValue = loadStoredCategoryCustomization();
+  const currentValue = loadStoredCategoryCustomization(storageScope);
   currentValue[type] = {
+    categoryOrderIds: currentValue[type]?.categoryOrderIds ?? [],
     customCategories: currentValue[type]?.customCategories ?? [],
     hiddenSystemCategoryIds: currentValue[type]?.hiddenSystemCategoryIds ?? [],
-    orderIds: currentValue[type]?.orderIds ?? [],
     systemCategoryIconOverrides,
+    systemCategoryLabelOverrides: currentValue[type]?.systemCategoryLabelOverrides ?? {},
   };
-  appStorage.setItem(CATEGORY_CUSTOMIZATION_STORAGE_KEY, JSON.stringify(currentValue));
+  appStorage.setItem(
+    resolveCategoryCustomizationStorageKey(storageScope),
+    JSON.stringify(currentValue),
+  );
 }
 
-function loadStoredCategoryCustomization(): StoredCategoryCustomization {
-  const storedValue = appStorage.getItem(CATEGORY_CUSTOMIZATION_STORAGE_KEY);
+export function saveStoredSystemCategoryLabelOverrides(
+  type: LedgerEntryType,
+  systemCategoryLabelOverrides: Record<string, string>,
+  storageScope?: string | null,
+): void {
+  const currentValue = loadStoredCategoryCustomization(storageScope);
+  currentValue[type] = {
+    categoryOrderIds: currentValue[type]?.categoryOrderIds ?? [],
+    customCategories: currentValue[type]?.customCategories ?? [],
+    hiddenSystemCategoryIds: currentValue[type]?.hiddenSystemCategoryIds ?? [],
+    systemCategoryIconOverrides: currentValue[type]?.systemCategoryIconOverrides ?? {},
+    systemCategoryLabelOverrides,
+  };
+  appStorage.setItem(
+    resolveCategoryCustomizationStorageKey(storageScope),
+    JSON.stringify(currentValue),
+  );
+}
+
+function loadStoredCategoryCustomization(
+  storageScope?: string | null,
+): StoredCategoryCustomization {
+  const storedValue = appStorage.getItem(resolveCategoryCustomizationStorageKey(storageScope));
   if (!storedValue) {
     return {};
   }
@@ -98,4 +160,10 @@ function loadStoredCategoryCustomization(): StoredCategoryCustomization {
   } catch {
     return {};
   }
+}
+
+function resolveCategoryCustomizationStorageKey(storageScope?: string | null): string {
+  return storageScope
+    ? `${CATEGORY_CUSTOMIZATION_STORAGE_KEY}.${storageScope}`
+    : CATEGORY_CUSTOMIZATION_STORAGE_KEY;
 }

@@ -11,7 +11,8 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "verify:doctor": "npx -y expo-doctor",
-    "verify:prebuild": "pnpm verify:doctor && tsc --noEmit -p tsconfig.json"
+    "verify:prebuild": "pnpm verify:doctor && tsc --noEmit -p tsconfig.json",
+    "db": "pnpm supabase db push --debug"
   },
   "dependencies": {
     "@expo/metro-runtime": "~55.0.11",

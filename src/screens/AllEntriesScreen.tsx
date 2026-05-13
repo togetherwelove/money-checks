@@ -47,8 +47,9 @@ export function AllEntriesScreen({
   const [openSwipeEntryId, setOpenSwipeEntryId] = useState<string | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const deferredSearchQuery = useDeferredValue(searchQuery.trim());
-  const categories = useLedgerCategories();
-  const categoryIconByKey = useLedgerCategoryIconMap();
+  const activeBookId = activeBook?.id ?? null;
+  const categories = useLedgerCategories(activeBookId);
+  const categoryIconByKey = useLedgerCategoryIconMap(activeBookId);
   const categoryLabelById = useMemo(
     () => new Map(categories.map((category) => [category.id, category.label])),
     [categories],
@@ -64,7 +65,7 @@ export function AllEntriesScreen({
     removeEntryFromFeed,
     restoreEntryToFeed,
   } = useAllLedgerEntries({
-    activeBookId: activeBook?.id ?? null,
+    activeBookId,
     selectedCategoryId,
     searchQuery: deferredSearchQuery,
     trackBlockingTask,

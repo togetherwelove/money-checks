@@ -1,5 +1,3 @@
-import { StyleSheet, View } from "react-native";
-
 import { DateNavigationToolbar } from "./DateNavigationToolbar";
 
 type CalendarToolbarProps = {
@@ -16,21 +14,11 @@ export function CalendarToolbar({
   showMoveToCurrent,
 }: CalendarToolbarProps) {
   return (
-    <View>
-      <View style={styles.labelArea}>
-        <DateNavigationToolbar
-          label={monthLabel}
-          onMoveToCurrent={onSelectToday}
-          onPressLabel={onPressMonthLabel}
-          showMoveToCurrent={showMoveToCurrent}
-        />
-      </View>
-    </View>
+    <DateNavigationToolbar
+      label={monthLabel}
+      onMoveToCurrent={onSelectToday}
+      onPressLabel={onPressMonthLabel}
+      showMoveToCurrent={showMoveToCurrent}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  labelArea: {
-    flex: 1,
-  },
-});

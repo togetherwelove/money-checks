@@ -40,35 +40,24 @@ export function mergeCustomCategories(
   return [...baseCategories, ...customCategories];
 }
 
-export function mergeCustomCategoryOrder(
-  orderedCategories: readonly CategoryDefinition[],
-  nextCustomCategories: readonly CategoryDefinition[],
+export function sortCategoriesByOrderIds(
+  categories: readonly CategoryDefinition[],
+  categoryOrderIds: readonly string[],
 ): CategoryDefinition[] {
-  const nextCustomMap = new Map(nextCustomCategories.map((category) => [category.id, category]));
-  const nextCustomIds = nextCustomCategories.map((category) => category.id);
-  const mergedCategories: CategoryDefinition[] = [];
-  let customIndex = 0;
-
-  for (const category of orderedCategories) {
-    if (category.source !== "custom") {
-      mergedCategories.push(category);
-      continue;
-    }
-
-    const nextCustom = nextCustomMap.get(nextCustomIds[customIndex]);
-    if (nextCustom) {
-      mergedCategories.push(nextCustom);
-    }
-    customIndex += 1;
+  if (categoryOrderIds.length === 0) {
+    return [...categories];
   }
 
-  for (const category of nextCustomCategories) {
-    if (!mergedCategories.some((currentCategory) => currentCategory.id === category.id)) {
-      mergedCategories.push(category);
-    }
-  }
+  const categoryById = new Map(categories.map((category) => [category.id, category]));
+  const sortedCategories = categoryOrderIds
+    .map((categoryId) => categoryById.get(categoryId))
+    .filter((category): category is CategoryDefinition => Boolean(category));
+  const sortedCategoryIds = new Set(sortedCategories.map((category) => category.id));
 
-  return mergedCategories;
+  return [
+    ...sortedCategories,
+    ...categories.filter((category) => !sortedCategoryIds.has(category.id)),
+  ];
 }
 
 export function normalizeCustomCategoryLabel(label: string): string {
@@ -95,22 +84,4 @@ export function resolveCustomCategoryError(
   }
 
   return null;
-}
-
-export function sortCustomCategoriesByVisibleOrder(
-  customCategories: readonly CategoryDefinition[],
-  orderedCategories: readonly CategoryDefinition[],
-): CategoryDefinition[] {
-  const orderedCustomIds = orderedCategories
-    .filter((category) => category.source === "custom")
-    .map((category) => category.id);
-  const orderedCustomMap = new Map(customCategories.map((category) => [category.id, category]));
-  const visibleCategories = orderedCustomIds
-    .map((id) => orderedCustomMap.get(id))
-    .filter((category): category is CategoryDefinition => Boolean(category));
-  const remainingCategories = customCategories.filter(
-    (category) => !orderedCustomIds.includes(category.id),
-  );
-
-  return [...visibleCategories, ...remainingCategories];
 }

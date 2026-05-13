@@ -8,10 +8,11 @@ import {
   upsertLedgerDayNote,
 } from "../../lib/ledgerDayNotes";
 import { logAppError } from "../../lib/logAppError";
+import { createPerformanceTrace } from "../../lib/performanceTrace";
 import { supabase } from "../../lib/supabase";
 import type { LedgerDayNote } from "../../types/ledger";
 import type { LedgerDayNoteRow } from "../../types/supabase";
-import { getMonthKey } from "../../utils/calendar";
+import { getMonthKey, parseIsoDate } from "../../utils/calendar";
 import { getLedgerMonthEnd, getLedgerMonthStart } from "../../utils/ledgerMonthWindow";
 import {
   type LedgerDayNoteCache,
@@ -21,7 +22,7 @@ import {
   setMonthDateNotesInCache,
   upsertDateNoteInCache,
 } from "./ledgerDayNoteCache";
-import { getCalendarPreloadMonths } from "./ledgerEntryCache";
+import { getVisibleWindowMonths } from "./ledgerEntryCache";
 import type { BusyTaskTracker } from "./types";
 
 type LedgerDayNotesState = {
@@ -39,7 +40,7 @@ export function useLedgerDayNotes(
 ): LedgerDayNotesState {
   const [dateNoteCache, setDateNoteCache] = useState<LedgerDayNoteCache>({});
   const cachedBookIdRef = useRef<string | null>(activeBookId);
-  const preloadMonths = useMemo(() => getCalendarPreloadMonths(visibleMonth), [visibleMonth]);
+  const preloadMonths = useMemo(() => getVisibleWindowMonths(visibleMonth), [visibleMonth]);
   const missingPreloadMonths = useMemo(
     () => preloadMonths.filter((month) => !hasCachedLedgerDayNoteMonth(dateNoteCache, month)),
     [dateNoteCache, preloadMonths],
@@ -77,22 +78,25 @@ export function useLedgerDayNotes(
       };
     }
 
-    void Promise.all(
-      missingPreloadMonths.map((month) =>
-        fetchLedgerDayNotes(activeBookId, getLedgerMonthStart(month), getLedgerMonthEnd(month)),
-      ),
-    )
+    const trace = createPerformanceTrace("LedgerDayNotes", {
+      monthCount: missingPreloadMonths.length,
+      step: "load_day_note_group",
+    });
+
+    void loadLedgerDayNoteMonths(activeBookId, missingPreloadMonths)
       .then((nextDateNotesByMonth) => {
+        trace("loaded_day_note_group", {
+          noteCount: countLedgerDayNotesByMonth(nextDateNotesByMonth),
+        });
         if (!isMounted) {
           return;
         }
 
         setDateNoteCache((currentCache) =>
-          missingPreloadMonths.reduce(
-            (nextCache, month, index) =>
-              setMonthDateNotesInCache(nextCache, month, nextDateNotesByMonth[index] ?? []),
-            currentCache,
-          ),
+          missingPreloadMonths.reduce((nextCache, month) => {
+            const monthKey = getMonthKey(month);
+            return setMonthDateNotesInCache(nextCache, month, nextDateNotesByMonth[monthKey] ?? []);
+          }, currentCache),
         );
       })
       .catch((error) => {
@@ -159,22 +163,28 @@ export function useLedgerDayNotes(
     }
 
     try {
-      const nextDateNotesByMonth = await Promise.all(
-        preloadMonths.map((month) =>
-          fetchLedgerDayNotes(activeBookId, getLedgerMonthStart(month), getLedgerMonthEnd(month)),
-        ),
-      );
+      const trace = createPerformanceTrace("LedgerDayNotes", {
+        monthCount: preloadMonths.length,
+        step: "refresh_day_notes",
+      });
+      const nextDateNotesByMonth = await loadLedgerDayNoteMonths(activeBookId, preloadMonths);
+      trace("refreshed_day_notes", {
+        noteCount: countLedgerDayNotesByMonth(nextDateNotesByMonth),
+      });
       setDateNoteCache((currentCache) => {
         const nextCache = { ...currentCache };
         for (const month of preloadMonths) {
           delete nextCache[getMonthKey(month)];
         }
 
-        return preloadMonths.reduce(
-          (updatedCache, month, index) =>
-            setMonthDateNotesInCache(updatedCache, month, nextDateNotesByMonth[index] ?? []),
-          nextCache,
-        );
+        return preloadMonths.reduce((updatedCache, month) => {
+          const monthKey = getMonthKey(month);
+          return setMonthDateNotesInCache(
+            updatedCache,
+            month,
+            nextDateNotesByMonth[monthKey] ?? [],
+          );
+        }, nextCache);
       });
     } catch (error) {
       logAppError("LedgerDayNotes", error, {
@@ -218,6 +228,47 @@ export function useLedgerDayNotes(
     removeLedgerDayNote,
     saveLedgerDayNote,
   };
+}
+
+async function loadLedgerDayNoteMonths(
+  bookId: string,
+  months: Date[],
+): Promise<Record<string, LedgerDayNote[]>> {
+  if (months.length === 0) {
+    return {};
+  }
+
+  const sortedMonths = [...months].sort((left, right) => left.getTime() - right.getTime());
+  const firstMonth = sortedMonths[0];
+  const lastMonth = sortedMonths[sortedMonths.length - 1];
+  if (!firstMonth || !lastMonth) {
+    return {};
+  }
+
+  const requestedMonthKeys = new Set(months.map(getMonthKey));
+  const notesByMonthKey = Object.fromEntries(
+    months.map((month) => [getMonthKey(month), [] as LedgerDayNote[]]),
+  );
+  const notes = await fetchLedgerDayNotes(
+    bookId,
+    getLedgerMonthStart(firstMonth),
+    getLedgerMonthEnd(lastMonth),
+  );
+
+  for (const note of notes) {
+    const monthKey = getMonthKey(parseIsoDate(note.date));
+    if (!requestedMonthKeys.has(monthKey)) {
+      continue;
+    }
+
+    notesByMonthKey[monthKey]?.push(note);
+  }
+
+  return notesByMonthKey;
+}
+
+function countLedgerDayNotesByMonth(notesByMonth: Record<string, LedgerDayNote[]>): number {
+  return Object.values(notesByMonth).reduce((count, notes) => count + notes.length, 0);
 }
 
 function mapLedgerDayNoteRow(row: LedgerDayNoteRow): LedgerDayNote {

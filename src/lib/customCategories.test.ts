@@ -1,33 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { mergeCustomCategoryOrder, resolveCustomCategoryError } from "./customCategories";
+import { resolveCustomCategoryError } from "./customCategories";
 
 const baseCategories = [
   { iconName: "shopping-cart", id: "food", label: "식비", source: "system", type: "expense" },
   { iconName: "navigation", id: "transport", label: "교통", source: "system", type: "expense" },
 ] as const;
-
-describe("mergeCustomCategoryOrder", () => {
-  it("replaces visible custom positions with the saved custom order", () => {
-    const orderedCategories = [
-      baseCategories[0],
-      { iconName: "coffee", id: "custom-1", label: "커피값", source: "custom", type: "expense" },
-      baseCategories[1],
-      { iconName: "gift", id: "custom-2", label: "선물", source: "custom", type: "expense" },
-    ] as const;
-    const nextCustomCategories = [
-      { iconName: "gift", id: "custom-2", label: "선물", source: "custom", type: "expense" },
-      { iconName: "coffee", id: "custom-1", label: "커피값", source: "custom", type: "expense" },
-    ] as const;
-
-    expect(mergeCustomCategoryOrder(orderedCategories, nextCustomCategories)).toEqual([
-      baseCategories[0],
-      nextCustomCategories[0],
-      baseCategories[1],
-      nextCustomCategories[1],
-    ]);
-  });
-});
 
 describe("resolveCustomCategoryError", () => {
   it("rejects duplicate labels against base categories", () => {

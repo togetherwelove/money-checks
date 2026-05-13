@@ -14,7 +14,7 @@ type CategoryAddGridItemProps = {
 export function CategoryAddGridItem({ cellSize, left, top, onPress }: CategoryAddGridItemProps) {
   return (
     <Pressable
-      accessibilityLabel={CategoryCustomizerCopy.inlineAddAccessibilityLabel}
+      accessibilityLabel={CategoryCustomizerCopy.addAccessibilityLabel}
       onPress={onPress}
       style={[
         styles.button,

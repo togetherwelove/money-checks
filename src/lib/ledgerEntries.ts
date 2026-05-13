@@ -1,7 +1,12 @@
 import { DEFAULT_MEMBER_DISPLAY_NAME } from "../constants/ledgerDisplay";
 import { LedgerEntrySelectColumns } from "../constants/ledgerQueries";
 import type { LedgerEntry } from "../types/ledger";
-import type { LedgerBookMemberRow, LedgerEntryRow, ProfileDisplayRow } from "../types/supabase";
+import type {
+  LedgerBookMemberRow,
+  LedgerEntryRow,
+  LedgerEntrySummaryRow,
+  ProfileDisplayRow,
+} from "../types/supabase";
 import { mapLedgerEntryRow } from "../utils/ledgerMapper";
 import { resolveDisplayCurrency } from "./currencyPreference";
 import { buildLedgerEntryMetadata, resolveLedgerEntryTargetMemberId } from "./ledgerEntryMetadata";
@@ -10,11 +15,13 @@ import {
   fetchLedgerEntryPhotoAttachmentMap,
   syncLedgerEntryPhotoAttachments,
 } from "./ledgerEntryPhotoAttachments";
+import { createPerformanceTrace } from "./performanceTrace";
 import { supabase } from "./supabase";
 
 const LEDGER_TABLE = "ledger_entries";
 const LEDGER_BOOK_MEMBERS_TABLE = "ledger_book_members";
 const PROFILE_TABLE = "profiles";
+const GET_LEDGER_ENTRY_SUMMARIES_FUNCTION = "get_ledger_entry_summaries_with_names";
 const DEFAULT_SOURCE_TYPE = "manual";
 const ENTRY_PARTICIPANT_ACCESS_KEY_SEPARATOR = ":";
 
@@ -32,6 +39,12 @@ export async function fetchLedgerEntries(
     orderBy?: "created_at" | "occurred_on";
   },
 ): Promise<LedgerEntry[]> {
+  const trace = createPerformanceTrace("LedgerEntriesQuery", {
+    bookId,
+    dateFrom: dateFrom ?? null,
+    dateTo: dateTo ?? null,
+    step: "fetch_ledger_entries",
+  });
   let query = supabase
     .from(LEDGER_TABLE)
     .select(LedgerEntrySelectColumns.list)
@@ -47,44 +60,45 @@ export async function fetchLedgerEntries(
   }
 
   const { data, error } = await query.returns<LedgerEntryRow[]>();
+  trace("fetched_ledger_entries_rows", { rowCount: data?.length ?? 0 });
 
   if (error) {
     throw error;
   }
 
-  return mapLedgerEntries(data ?? []);
+  const entries = await mapLedgerEntries(data ?? []);
+  trace("mapped_ledger_entries", { entryCount: entries.length });
+  return entries;
 }
 
 export async function fetchLedgerEntriesSummary(
   bookId: string,
   dateFrom?: string,
   dateTo?: string,
-  options?: {
-    ascending?: boolean;
-    orderBy?: "created_at" | "occurred_on";
-  },
 ): Promise<LedgerEntry[]> {
-  let query = supabase
-    .from(LEDGER_TABLE)
-    .select(LedgerEntrySelectColumns.list)
-    .eq("book_id", bookId)
-    .order(options?.orderBy ?? "occurred_on", { ascending: options?.ascending ?? true });
-
-  if (dateFrom) {
-    query = query.gte("occurred_on", dateFrom);
-  }
-
-  if (dateTo) {
-    query = query.lte("occurred_on", dateTo);
-  }
-
-  const { data, error } = await query.returns<LedgerEntryRow[]>();
+  const trace = createPerformanceTrace("LedgerEntriesQuery", {
+    bookId,
+    dateFrom: dateFrom ?? null,
+    dateTo: dateTo ?? null,
+    step: "fetch_ledger_entries_summary",
+  });
+  const { data, error } = await supabase
+    .rpc(GET_LEDGER_ENTRY_SUMMARIES_FUNCTION, {
+      date_from: dateFrom ?? null,
+      date_to: dateTo ?? null,
+      target_book_id: bookId,
+    })
+    .returns<LedgerEntrySummaryRow[]>();
+  const rows = Array.isArray(data) ? data : [];
+  trace("fetched_ledger_entry_summary_rows", { rowCount: rows.length });
 
   if (error) {
     throw error;
   }
 
-  return mapLedgerEntrySummaries(data ?? []);
+  const entries = mapLedgerEntrySummaries(rows);
+  trace("mapped_ledger_entry_summaries", { entryCount: entries.length });
+  return entries;
 }
 
 export async function fetchLedgerEntriesPage(
@@ -417,13 +431,13 @@ async function mapLedgerEntriesWithoutPhotoAttachments(
   }));
 }
 
-async function mapLedgerEntrySummaries(rows: LedgerEntryRow[]): Promise<LedgerEntry[]> {
-  const participantNameMap = await fetchEntryParticipantNameMap(rows);
-
+function mapLedgerEntrySummaries(rows: LedgerEntrySummaryRow[]): LedgerEntry[] {
   return rows.map((row) => ({
-    ...mapLedgerEntryRow(row, participantNameMap.get(row.user_id) ?? DEFAULT_MEMBER_DISPLAY_NAME),
+    ...mapLedgerEntryRow(row, row.author_display_name?.trim() || DEFAULT_MEMBER_DISPLAY_NAME),
     targetMemberName:
-      participantNameMap.get(resolveLedgerEntryTargetMemberId(row)) ?? DEFAULT_MEMBER_DISPLAY_NAME,
+      row.target_member_display_name?.trim() ||
+      row.author_display_name?.trim() ||
+      DEFAULT_MEMBER_DISPLAY_NAME,
   }));
 }
 
@@ -505,34 +519,6 @@ async function fetchEntryParticipantAccessMap(
     (data ?? []).map((member) => [
       buildEntryParticipantAccessKey(member.book_id, member.user_id),
       true,
-    ]),
-  );
-}
-
-async function fetchEntryParticipantNameMap(rows: LedgerEntryRow[]): Promise<Map<string, string>> {
-  const participantIds = [
-    ...new Set(
-      rows.flatMap((row) => [row.user_id, resolveLedgerEntryTargetMemberId(row)]).filter(Boolean),
-    ),
-  ];
-  if (participantIds.length === 0) {
-    return new Map();
-  }
-
-  const { data, error } = await supabase
-    .from(PROFILE_TABLE)
-    .select("id, display_name")
-    .in("id", participantIds)
-    .returns<ProfileDisplayRow[]>();
-
-  if (error) {
-    throw error;
-  }
-
-  return new Map(
-    (data ?? []).map((profile) => [
-      profile.id,
-      profile.display_name?.trim() || DEFAULT_MEMBER_DISPLAY_NAME,
     ]),
   );
 }

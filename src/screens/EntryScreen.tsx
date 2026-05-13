@@ -45,7 +45,6 @@ export function EntryScreen({
   const todayIsoDate = toIsoDate(actualToday);
   const scrollViewRef = useRef<ComponentRef<typeof KeyboardAwareScrollView>>(null);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
-  const [isCategoryDragging, setIsCategoryDragging] = useState(false);
   const [focusedInputHeight, setFocusedInputHeight] = useState(0);
   const [members, setMembers] = useState<LedgerBookMember[]>([]);
   const {
@@ -214,7 +213,6 @@ export function EntryScreen({
         ref={scrollViewRef}
         contentContainerStyle={contentContainerStyle}
         extraScrollHeight={entryKeyboardExtraScrollHeight}
-        scrollEnabled={!isCategoryDragging}
         style={styles.screen}
       >
         {showsBannerAd ? <AppBannerAd /> : null}
@@ -228,10 +226,10 @@ export function EntryScreen({
           showMoveToToday={entryFormDate !== todayIsoDate}
         />
         <LedgerEditorPanel
+          activeBookId={activeBookId}
           draft={draft}
           editingEntryId={editingEntryId}
           members={members}
-          onCategoryDraggingChange={setIsCategoryDragging}
           onChangeDraft={updateDraftField}
           onChangeInstallmentMonths={updateDraftInstallmentMonths}
           onInputBlur={() => setFocusedInputHeight(0)}
@@ -278,7 +276,6 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: AppLayout.screenPadding,
-    paddingTop: AppLayout.screenTopPadding,
   },
   error: {
     color: AppColors.expense,

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { AppMessages } from "../../constants/messages";
 import { fetchLedgerEntries } from "../../lib/ledgerEntries";
 import { logAppError } from "../../lib/logAppError";
+import { createPerformanceTrace } from "../../lib/performanceTrace";
 import type { LedgerEntry } from "../../types/ledger";
 import { buildLedgerEntryListSignature } from "../../utils/ledgerEntrySignature";
 
@@ -49,6 +50,30 @@ export function useSelectedDateEntries(
     const hasCachedSelectedEntries = selectedDate in entriesByDate;
     const cachedSignature = signatureByDate[selectedDate] ?? null;
 
+    if (!selectedDateEntrySignature) {
+      setEntriesByDate((currentEntriesByDate) =>
+        selectedDate in currentEntriesByDate
+          ? currentEntriesByDate
+          : {
+              ...currentEntriesByDate,
+              [selectedDate]: [],
+            },
+      );
+      setSignatureByDate((currentSignatureByDate) =>
+        currentSignatureByDate[selectedDate] === selectedDateEntrySignature
+          ? currentSignatureByDate
+          : {
+              ...currentSignatureByDate,
+              [selectedDate]: selectedDateEntrySignature,
+            },
+      );
+      setIsLoadingSelectedDateEntries(false);
+      setSelectedEntriesError(null);
+      return () => {
+        isMounted = false;
+      };
+    }
+
     if (hasCachedSelectedEntries && cachedSignature === selectedDateEntrySignature) {
       setIsLoadingSelectedDateEntries(false);
       setSelectedEntriesError(null);
@@ -60,8 +85,15 @@ export function useSelectedDateEntries(
     setIsLoadingSelectedDateEntries(!hasCachedSelectedEntries);
     setSelectedEntriesError(null);
 
+    const trace = createPerformanceTrace("SelectedDateEntries", {
+      activeBookId,
+      selectedDate,
+      step: "load_selected_date_entries",
+    });
+
     void fetchLedgerEntries(activeBookId, selectedDate, selectedDate)
       .then((nextEntries) => {
+        trace("loaded_selected_date_entries", { entryCount: nextEntries.length });
         if (!isMounted) {
           return;
         }
@@ -106,7 +138,13 @@ export function useSelectedDateEntries(
       setIsLoadingSelectedDateEntries(true);
       setSelectedEntriesError(null);
       try {
+        const trace = createPerformanceTrace("SelectedDateEntries", {
+          activeBookId,
+          selectedDate,
+          step: "refresh_selected_date_entries",
+        });
         const nextEntries = await fetchLedgerEntries(activeBookId, selectedDate, selectedDate);
+        trace("refreshed_selected_date_entries", { entryCount: nextEntries.length });
         setEntriesByDate((currentEntriesByDate) => ({
           ...currentEntriesByDate,
           [selectedDate]: nextEntries,

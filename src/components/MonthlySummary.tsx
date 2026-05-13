@@ -9,6 +9,7 @@ type MonthlySummaryProps = {
   balanceAmount: number;
   totalExpense: string;
   totalIncome: string;
+  variant?: "default" | "embedded";
 };
 
 type SummaryTone = "balance" | "income" | "expense";
@@ -31,9 +32,14 @@ const summaryToneStyles = {
   },
 } as const;
 
-export function MonthlySummary({ balanceAmount, totalExpense, totalIncome }: MonthlySummaryProps) {
+export function MonthlySummary({
+  balanceAmount,
+  totalExpense,
+  totalIncome,
+  variant = "default",
+}: MonthlySummaryProps) {
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, variant === "embedded" ? styles.embeddedContainer : null]}>
       <SummaryMetric title={MonthlySummaryCopy.incomeLabel} tone="income" value={totalIncome} />
       <FormulaOperator value={MonthlySummaryCopy.formulaMinus} />
       <SummaryMetric title={MonthlySummaryCopy.expenseLabel} tone="expense" value={totalExpense} />
@@ -126,6 +132,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "stretch",
     backgroundColor: AppColors.surfaceMuted,
+  },
+  embeddedContainer: {
+    borderTopWidth: 0,
+    borderBottomWidth: 0,
+    backgroundColor: "transparent",
   },
   metric: {
     flex: 1,

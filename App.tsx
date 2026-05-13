@@ -1,5 +1,6 @@
 import { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import {
+  CommonActions,
   NavigationContainer,
   StackActions,
   createNavigationContainerRef,
@@ -431,7 +432,7 @@ function SignedInApp({ session }: { session: Session }) {
       }
 
       clearFooterNotificationBadge(screen);
-      navigationRef.navigate(screen);
+      navigateToSingleInstanceStackScreen(navigationRef, screen);
     },
     [clearFooterNotificationBadge, navigationRef],
   );
@@ -664,7 +665,7 @@ function SignedInApp({ session }: { session: Session }) {
       },
     ];
   }, [entryActionMenuDraft, handleApplyEntryActionMenuDraft, handleOpenManualEntryFromActionMenu]);
-  const showsFooterTabBar = currentScreen !== "entry";
+  const showsFooterTabBar = true;
   const activeFooterScreen =
     showsFooterTabBar && isFooterTabScreen(currentScreen) ? currentScreen : null;
   const hasPendingLedgerJoinRequest = Object.values(
@@ -928,9 +929,7 @@ function SignedInApp({ session }: { session: Session }) {
     }
 
     ledgerState.handleEditEntry(entry);
-    if (navigationRef.isReady()) {
-      navigationRef.navigate("entry");
-    }
+    navigateToStackScreen("entry");
   };
 
   const handleSettleInstallmentEntry = async (entry: LedgerEntry) => {
@@ -1453,6 +1452,34 @@ function resolveFooterNotificationBadgeScreen(screen: LedgerAppScreen): FooterTa
   }
 
   return null;
+}
+
+function navigateToSingleInstanceStackScreen(
+  navigationRef: ReturnType<typeof createNavigationContainerRef<SignedInStackParamList>>,
+  screen: Exclude<LedgerAppScreen, "calendar">,
+) {
+  const rootState = navigationRef.getRootState();
+  const targetRouteIndex = rootState.routes.findIndex((route) => route.name === screen);
+
+  if (targetRouteIndex < 0) {
+    navigationRef.navigate(screen);
+    return;
+  }
+
+  if (rootState.index === targetRouteIndex) {
+    return;
+  }
+
+  const routes = rootState.routes.slice(0, targetRouteIndex + 1).map((route) => ({
+    name: route.name as keyof SignedInStackParamList,
+  }));
+
+  navigationRef.dispatch(
+    CommonActions.reset({
+      index: routes.length - 1,
+      routes,
+    }),
+  );
 }
 
 function resolveLedgerSaveErrorMessage(error: unknown): string {

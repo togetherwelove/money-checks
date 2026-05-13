@@ -58,9 +58,7 @@ export function ChartScreen({ showsBannerAd, state, userId }: ChartScreenProps) 
   return (
     <View style={styles.screen}>
       {showsBannerAd ? (
-        <View style={styles.bannerSection}>
-          <AppBannerAd />
-        </View>
+        <AppBannerAd />
       ) : null}
       <Animated.View style={[styles.pagerLayer, animatedStyle]}>
         <ChartMonthPager
@@ -84,8 +82,6 @@ export function ChartScreen({ showsBannerAd, state, userId }: ChartScreenProps) 
 
 const styles = StyleSheet.create({
   bannerSection: {
-    paddingHorizontal: AppLayout.screenPadding,
-    paddingBottom: 0,
   },
   pagerLayer: {
     flex: 1,

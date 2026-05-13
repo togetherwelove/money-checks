@@ -10,6 +10,7 @@ import type { LedgerEntry } from "../types/ledger";
 import { LedgerEntryListItem } from "./LedgerEntryListItem";
 
 type LedgerEntryListProps = {
+  activeBookId?: string | null;
   closeSwipeRevision?: number;
   entries: LedgerEntry[];
   onDeleteEntry: (entry: LedgerEntry) => void | Promise<void>;
@@ -17,6 +18,7 @@ type LedgerEntryListProps = {
 };
 
 export function LedgerEntryList({
+  activeBookId = null,
   closeSwipeRevision = 0,
   entries,
   onDeleteEntry,
@@ -24,8 +26,8 @@ export function LedgerEntryList({
 }: LedgerEntryListProps) {
   const [openSwipeEntryId, setOpenSwipeEntryId] = useState<string | null>(null);
   const closeSwipeRevisionRef = useRef(closeSwipeRevision);
-  const categoryIconByKey = useLedgerCategoryIconMap();
-  const categoryLabelById = useLedgerCategoryLabelMap();
+  const categoryIconByKey = useLedgerCategoryIconMap(activeBookId);
+  const categoryLabelById = useLedgerCategoryLabelMap(activeBookId);
 
   useEffect(() => {
     if (closeSwipeRevisionRef.current === closeSwipeRevision) {

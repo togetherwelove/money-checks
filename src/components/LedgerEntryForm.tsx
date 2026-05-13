@@ -38,13 +38,13 @@ const CONTENT_INPUT_FOCUS_DELAY_MS = 80;
 type EntryInputName = "amount" | "content" | "note";
 
 type LedgerEntryFormProps = {
+  activeBookId?: string | null;
   draft: LedgerEntryDraft;
   editingEntryId: string | null;
   members: LedgerBookMember[];
   onChangeDraft: (field: keyof LedgerEntryDraft, value: string) => void;
   onChangeInstallmentMonths: (installmentMonths: number) => void;
   onPickPhotoAttachments: () => void | Promise<void>;
-  onCategoryDraggingChange?: (isDragging: boolean) => void;
   onInputBlur?: (() => void) | null;
   onInputFocus?: ((input: TextInput | null, inputHeight: number) => void) | null;
   onRemovePhotoAttachment: (attachmentId: string) => void;
@@ -54,13 +54,13 @@ type LedgerEntryFormProps = {
 };
 
 export function LedgerEntryForm({
+  activeBookId = null,
   draft,
   editingEntryId,
   members,
   onChangeDraft,
   onChangeInstallmentMonths,
   onPickPhotoAttachments,
-  onCategoryDraggingChange,
   onInputBlur = null,
   onInputFocus = null,
   onRemovePhotoAttachment,
@@ -144,9 +144,9 @@ export function LedgerEntryForm({
         selectedMemberId={draft.targetMemberId}
       />
       <CategorySelector
+        bookId={activeBookId}
         categories={categories}
         entryType={draft.type}
-        onDraggingChange={onCategoryDraggingChange}
         onSelectCategory={(category) => {
           onChangeDraft("category", category?.label ?? "");
           onChangeDraft("categoryId", category?.id ?? "");
