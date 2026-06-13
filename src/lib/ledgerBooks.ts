@@ -1,0 +1,459 @@
+import { DEFAULT_MEMBER_DISPLAY_NAME } from "../constants/ledgerDisplay";
+import { SharedLedgerPolicy } from "../constants/sharedLedgerPolicy";
+import type { AccessibleLedgerBook, LedgerBook } from "../types/ledgerBook";
+import type {
+  JoinSharedLedgerBookPreview,
+  JoinSharedLedgerBookResolution,
+  JoinSharedLedgerBookResult,
+  LedgerBookJoinRequest,
+} from "../types/ledgerBookJoinRequest";
+import type { LedgerBookMember } from "../types/ledgerBookMember";
+import type {
+  AccessibleLedgerBookRow,
+  AccessibleLedgerBookStateRow,
+  LedgerBookJoinPreviewRow,
+  LedgerBookJoinRequestProfileRow,
+  LedgerBookMemberProfileRow,
+  LedgerBookRow,
+  ReceiptFileStoragePathRow,
+} from "../types/supabase";
+import { mapAccessibleLedgerBookRow, mapLedgerBookRow } from "../utils/ledgerBookMapper";
+import { logAppError, logAppWarning } from "./logAppError";
+import { createPerformanceTrace } from "./performanceTrace";
+import { supabase } from "./supabase";
+
+const GET_ACCESSIBLE_LEDGER_BOOK_FUNCTION = "get_accessible_ledger_book";
+const GET_ACCESSIBLE_LEDGER_BOOK_STATE_FUNCTION = "get_accessible_ledger_book_state";
+const GET_ACCESSIBLE_LEDGER_BOOKS_FUNCTION = "get_accessible_ledger_books";
+const GET_ACTIVE_LEDGER_BOOK_FUNCTION = "get_active_ledger_book";
+const ENSURE_OWN_PERSONAL_LEDGER_BOOK_FUNCTION = "ensure_own_personal_ledger_book";
+const CREATE_OWNED_LEDGER_BOOK_FUNCTION = "create_owned_ledger_book";
+const DELETE_OWNED_LEDGER_BOOK_FUNCTION = "delete_owned_ledger_book";
+const LIST_LEDGER_BOOK_RECEIPT_FILES_FUNCTION = "list_ledger_book_receipt_files";
+const SWITCH_ACTIVE_LEDGER_BOOK_FUNCTION = "switch_active_ledger_book";
+const UPDATE_ACTIVE_LEDGER_BOOK_NAME_FUNCTION = "update_active_ledger_book_name";
+const PREVIEW_LEDGER_BOOK_JOIN_FUNCTION = "preview_ledger_book_join_by_code";
+const REQUEST_LEDGER_BOOK_JOIN_FUNCTION = "request_ledger_book_join_by_code";
+const TRANSFER_LEDGER_BOOK_OWNERSHIP_FUNCTION = "transfer_ledger_book_ownership";
+
+export async function fetchLedgerBookById(bookId: string): Promise<LedgerBook> {
+  const { data, error: bookError } = await supabase
+    .rpc(GET_ACCESSIBLE_LEDGER_BOOK_FUNCTION, { target_book_id: bookId })
+    .returns<LedgerBookRow[]>();
+
+  const book = resolveLedgerBookRow(data);
+
+  if (bookError || !book) {
+    throw bookError ?? new Error("Failed to load the requested ledger book.");
+  }
+
+  return mapLedgerBookRow(book);
+}
+
+export async function fetchActiveLedgerBook(userId: string): Promise<LedgerBook | null> {
+  const trace = createPerformanceTrace("LedgerBooksQuery", {
+    step: "get_active_ledger_book",
+    userId,
+  });
+  const { data, error } = await supabase
+    .rpc(GET_ACTIVE_LEDGER_BOOK_FUNCTION)
+    .returns<LedgerBookRow[]>();
+  trace("fetched_active_ledger_book", { rowCount: Array.isArray(data) ? data.length : 0 });
+
+  const activeBook = resolveLedgerBookRow(data);
+  if (error) {
+    logAppError("LedgerBooks", error, {
+      step: "get_active_ledger_book",
+      userId,
+    });
+    throw error;
+  }
+
+  if (!activeBook) {
+    const { data: ensuredBookId, error: ensureBookError } = await supabase.rpc(
+      ENSURE_OWN_PERSONAL_LEDGER_BOOK_FUNCTION,
+    );
+
+    if (ensureBookError || typeof ensuredBookId !== "string" || !ensuredBookId) {
+      throw ensureBookError ?? new Error("Failed to provision the personal ledger book.");
+    }
+
+    return fetchLedgerBookById(ensuredBookId);
+  }
+
+  return mapLedgerBookRow(activeBook);
+}
+
+export async function fetchAccessibleLedgerBookState(userId: string): Promise<{
+  activeBook: LedgerBook | null;
+  books: AccessibleLedgerBook[];
+}> {
+  const trace = createPerformanceTrace("LedgerBooksQuery", {
+    step: "get_accessible_ledger_book_state",
+    userId,
+  });
+  const { data, error } = await supabase
+    .rpc(GET_ACCESSIBLE_LEDGER_BOOK_STATE_FUNCTION)
+    .returns<AccessibleLedgerBookStateRow[]>();
+  const rows = Array.isArray(data) ? data : [];
+  trace("fetched_accessible_ledger_book_state", { rowCount: rows.length });
+
+  if (error) {
+    throw error;
+  }
+
+  const activeRow = rows.find((row) => row.is_active) ?? rows[0] ?? null;
+  return {
+    activeBook: activeRow ? mapLedgerBookRow(activeRow) : null,
+    books: rows.filter(isAccessibleLedgerBookRow).map(mapAccessibleLedgerBookRow),
+  };
+}
+
+export async function fetchAccessibleLedgerBooks(): Promise<AccessibleLedgerBook[]> {
+  const trace = createPerformanceTrace("LedgerBooksQuery", {
+    step: "get_accessible_ledger_books",
+  });
+  const { data, error } = await supabase
+    .rpc(GET_ACCESSIBLE_LEDGER_BOOKS_FUNCTION)
+    .returns<AccessibleLedgerBookRow[]>();
+  trace("fetched_accessible_ledger_books", { rowCount: Array.isArray(data) ? data.length : 0 });
+
+  if (error) {
+    throw error;
+  }
+
+  const bookRows = Array.isArray(data) ? data : [];
+  return bookRows.filter(isAccessibleLedgerBookRow).map(mapAccessibleLedgerBookRow);
+}
+
+export async function createOwnedLedgerBook(nextName: string): Promise<LedgerBook> {
+  const { data, error } = await supabase
+    .rpc(CREATE_OWNED_LEDGER_BOOK_FUNCTION, { next_name: nextName })
+    .returns<LedgerBookRow[]>();
+
+  const createdBook = resolveLedgerBookRow(data);
+
+  if (error || !createdBook) {
+    throw error ?? new Error("Failed to create the ledger book.");
+  }
+
+  return mapLedgerBookRow(createdBook);
+}
+
+export async function deleteOwnedLedgerBook(bookId: string): Promise<string> {
+  await removeLedgerBookReceiptFileStorageObjects(bookId);
+
+  const { data, error } = await supabase.rpc(DELETE_OWNED_LEDGER_BOOK_FUNCTION, {
+    target_book_id: bookId,
+  });
+
+  if (error || typeof data !== "string") {
+    throw error ?? new Error("Failed to delete the ledger book.");
+  }
+
+  return data;
+}
+
+async function removeLedgerBookReceiptFileStorageObjects(bookId: string): Promise<void> {
+  const { data, error } = await supabase
+    .rpc(LIST_LEDGER_BOOK_RECEIPT_FILES_FUNCTION, { target_book_id: bookId })
+    .returns<ReceiptFileStoragePathRow[]>();
+
+  if (error) {
+    logAppWarning("LedgerBooks", "Failed to list receipt files before deleting ledger book.", {
+      bookId,
+      error,
+      step: "list_ledger_book_receipt_files_before_delete",
+    });
+    return;
+  }
+
+  const receiptFiles = Array.isArray(data) ? data : [];
+  const storagePathsByBucket = groupReceiptFileStoragePaths(receiptFiles);
+  for (const [bucketName, storagePaths] of storagePathsByBucket) {
+    for (const storagePath of storagePaths) {
+      const { error: removeStorageError } = await supabase.storage
+        .from(bucketName)
+        .remove([storagePath]);
+
+      if (removeStorageError) {
+        logAppWarning("LedgerBooks", "Failed to remove receipt file before deleting ledger book.", {
+          bookId,
+          bucketName,
+          error: removeStorageError,
+          step: "remove_ledger_book_receipt_file_before_delete",
+          storagePath,
+        });
+      }
+    }
+  }
+}
+
+function groupReceiptFileStoragePaths(
+  receiptFiles: readonly ReceiptFileStoragePathRow[],
+): Map<string, string[]> {
+  const storagePathsByBucket = new Map<string, string[]>();
+
+  for (const receiptFile of receiptFiles) {
+    const currentPaths = storagePathsByBucket.get(receiptFile.storage_bucket) ?? [];
+    currentPaths.push(receiptFile.storage_path);
+    storagePathsByBucket.set(receiptFile.storage_bucket, currentPaths);
+  }
+
+  return storagePathsByBucket;
+}
+
+export async function switchActiveLedgerBook(bookId: string): Promise<LedgerBook> {
+  const { data, error } = await supabase
+    .rpc(SWITCH_ACTIVE_LEDGER_BOOK_FUNCTION, { target_book_id: bookId })
+    .returns<LedgerBookRow[]>();
+
+  const switchedBook = resolveLedgerBookRow(data);
+
+  if (error || !switchedBook) {
+    throw error ?? new Error("Failed to switch the active ledger book.");
+  }
+
+  return mapLedgerBookRow(switchedBook);
+}
+
+export async function updateActiveLedgerBookName(nextName: string): Promise<LedgerBook> {
+  const { data, error } = await supabase
+    .rpc(UPDATE_ACTIVE_LEDGER_BOOK_NAME_FUNCTION, { next_name: nextName })
+    .returns<LedgerBookRow[]>();
+
+  const updatedBook = resolveLedgerBookRow(data);
+
+  if (error || !updatedBook) {
+    throw error ?? new Error("Failed to update the active ledger book name.");
+  }
+
+  return mapLedgerBookRow(updatedBook);
+}
+
+export async function previewLedgerBookJoinByCode(
+  shareCode: string,
+): Promise<JoinSharedLedgerBookPreview> {
+  const { data, error } = await supabase
+    .rpc(PREVIEW_LEDGER_BOOK_JOIN_FUNCTION, { input_code: shareCode })
+    .returns<LedgerBookJoinPreviewRow[]>();
+
+  const previewRow = Array.isArray(data) ? data[0] : null;
+  if (error || !isLedgerBookJoinPreviewRow(previewRow)) {
+    throw error ?? new Error("Failed to preview shared ledger book access.");
+  }
+
+  return {
+    status: previewRow.status,
+    targetBookId: previewRow.target_book_id,
+    targetBookName: previewRow.target_book_name,
+  };
+}
+
+export async function requestLedgerBookJoinByCode(
+  shareCode: string,
+  joinResolution?: JoinSharedLedgerBookResolution,
+): Promise<JoinSharedLedgerBookResult> {
+  const { data, error } = await supabase.rpc(REQUEST_LEDGER_BOOK_JOIN_FUNCTION, {
+    input_code: shareCode,
+    join_resolution: joinResolution ?? "standard",
+  });
+
+  if (
+    (joinResolution ?? "standard") === "standard" &&
+    error &&
+    shouldRetryLegacyJoinRequestRpc(error)
+  ) {
+    const legacyAttempt = await supabase.rpc(REQUEST_LEDGER_BOOK_JOIN_FUNCTION, {
+      input_code: shareCode,
+    });
+    return resolveLedgerBookJoinResult(legacyAttempt.data, legacyAttempt.error);
+  }
+
+  return resolveLedgerBookJoinResult(data, error);
+}
+
+function resolveLedgerBookJoinResult(data: unknown, error: unknown): JoinSharedLedgerBookResult {
+  if (error || (data !== "joined" && data !== "requested")) {
+    throw error ?? new Error("Failed to request shared ledger book access.");
+  }
+
+  return data;
+}
+
+function shouldRetryLegacyJoinRequestRpc(error: unknown): boolean {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const candidate = error as { code?: string | null; details?: string | null; message?: string };
+  const errorText = [candidate.code, candidate.message, candidate.details]
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    errorText.includes("PGRST202") ||
+    (errorText.includes(REQUEST_LEDGER_BOOK_JOIN_FUNCTION) && errorText.includes("join_resolution"))
+  );
+}
+
+export async function approveLedgerBookJoinRequest(requestId: string): Promise<void> {
+  const { error } = await supabase.rpc("approve_ledger_book_join_request", {
+    target_request_id: requestId,
+  });
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function rejectLedgerBookJoinRequest(requestId: string): Promise<void> {
+  const { error } = await supabase.rpc("reject_ledger_book_join_request", {
+    target_request_id: requestId,
+  });
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function fetchPendingLedgerBookJoinRequests(
+  bookId: string,
+): Promise<LedgerBookJoinRequest[]> {
+  const { data, error } = await supabase
+    .rpc("get_pending_ledger_book_join_requests", { target_book_id: bookId })
+    .returns<LedgerBookJoinRequestProfileRow[]>();
+
+  if (error) {
+    throw error;
+  }
+
+  const requestRows = Array.isArray(data) ? data : [];
+
+  return requestRows.map((request) => ({
+    approvalStatus: request.approval_status,
+    id: request.id,
+    joinResolution: request.join_resolution,
+    requestedAt: request.created_at,
+    requesterDisplayName: request.display_name?.trim() || DEFAULT_MEMBER_DISPLAY_NAME,
+    requesterUserId: request.requester_user_id,
+  }));
+}
+
+export async function fetchPendingLedgerBookJoinRequestCounts(
+  bookIds: readonly string[],
+): Promise<Record<string, number>> {
+  if (bookIds.length === 0) {
+    return {};
+  }
+
+  const { data, error } = await supabase
+    .from("ledger_book_join_requests")
+    .select("book_id, created_at")
+    .eq("status", "pending")
+    .in("book_id", [...bookIds]);
+
+  if (error) {
+    throw error;
+  }
+
+  const countsByBookId: Record<string, number> = {};
+  const validSince = Date.now() - SharedLedgerPolicy.joinRequestTimeToLiveMs;
+  for (const request of Array.isArray(data) ? data : []) {
+    const bookId = typeof request.book_id === "string" ? request.book_id : null;
+    const createdAt =
+      typeof request.created_at === "string" ? Date.parse(request.created_at) : Number.NaN;
+    if (bookId && Number.isFinite(createdAt) && createdAt > validSince) {
+      countsByBookId[bookId] = (countsByBookId[bookId] ?? 0) + 1;
+    }
+  }
+
+  return countsByBookId;
+}
+
+export async function leaveActiveLedgerBook(): Promise<void> {
+  const { error } = await supabase.rpc("leave_active_ledger_book");
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function removeMemberFromActiveLedgerBook(targetUserId: string): Promise<void> {
+  const { error } = await supabase.rpc("remove_member_from_active_ledger_book", {
+    target_user_id: targetUserId,
+  });
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function transferActiveLedgerBookOwnership(targetUserId: string): Promise<void> {
+  const { error } = await supabase.rpc(TRANSFER_LEDGER_BOOK_OWNERSHIP_FUNCTION, {
+    target_user_id: targetUserId,
+  });
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function fetchLedgerBookMembers(bookId: string): Promise<LedgerBookMember[]> {
+  const { data, error } = await supabase
+    .rpc("get_ledger_book_members", { target_book_id: bookId })
+    .returns<LedgerBookMemberProfileRow[]>();
+
+  if (error) {
+    throw error;
+  }
+
+  const memberRows = Array.isArray(data) ? data : [];
+
+  return memberRows.map((member: LedgerBookMemberProfileRow) => ({
+    displayName: member.display_name?.trim() || DEFAULT_MEMBER_DISPLAY_NAME,
+    role: member.role,
+    userId: member.user_id,
+  }));
+}
+
+function resolveLedgerBookRow(data: unknown): LedgerBookRow | null {
+  if (Array.isArray(data)) {
+    const firstRow = data[0];
+    return isLedgerBookRow(firstRow) ? firstRow : null;
+  }
+
+  return isLedgerBookRow(data) ? data : null;
+}
+
+function isLedgerBookRow(value: unknown): value is LedgerBookRow {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const candidate = value as Partial<LedgerBookRow>;
+  return (
+    typeof candidate.id === "string" &&
+    typeof candidate.name === "string" &&
+    typeof candidate.owner_id === "string" &&
+    typeof candidate.share_code === "string"
+  );
+}
+
+function isAccessibleLedgerBookRow(value: unknown): value is AccessibleLedgerBookRow {
+  if (!isLedgerBookRow(value)) {
+    return false;
+  }
+
+  const candidate = value as Partial<AccessibleLedgerBookRow>;
+  return candidate.member_role === "owner" || candidate.member_role === "editor";
+}
+
+function isLedgerBookJoinPreviewRow(value: unknown): value is LedgerBookJoinPreviewRow {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const candidate = value as Partial<LedgerBookJoinPreviewRow>;
+  return typeof candidate.status === "string";
+}

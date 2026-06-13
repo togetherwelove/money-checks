@@ -1,0 +1,66 @@
+import { StyleSheet, Text, View } from "react-native";
+
+import { AppColors } from "../constants/colors";
+import { AppLayout } from "../constants/layout";
+import { AppMessages } from "../constants/messages";
+import { useLedgerCategoryIconMap } from "../hooks/useLedgerCategoryIconMap";
+import { useLedgerCategoryLabelMap } from "../hooks/useLedgerCategoryLabelMap";
+import type { LedgerEntry } from "../types/ledger";
+import { LedgerEntryListItem } from "./LedgerEntryListItem";
+
+type LedgerEntryListProps = {
+  activeBookId?: string | null;
+  entries: LedgerEntry[];
+  onDeleteEntry: (entry: LedgerEntry) => void | Promise<void>;
+  onEditEntry: (entry: LedgerEntry) => void;
+};
+
+export function LedgerEntryList({
+  activeBookId = null,
+  entries,
+  onDeleteEntry,
+  onEditEntry,
+}: LedgerEntryListProps) {
+  const categoryIconByKey = useLedgerCategoryIconMap(activeBookId);
+  const categoryLabelById = useLedgerCategoryLabelMap(activeBookId);
+
+  if (entries.length === 0) {
+    return (
+      <View style={styles.emptyState}>
+        <Text style={styles.emptyText}>{AppMessages.editorEmpty}</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.list}>
+      {entries.map((entry) => (
+        <LedgerEntryListItem
+          categoryIconByKey={categoryIconByKey}
+          categoryLabelById={categoryLabelById}
+          entry={entry}
+          key={entry.id}
+          onDeleteEntry={onDeleteEntry}
+          onEditEntry={onEditEntry}
+        />
+      ))}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  list: {
+    gap: AppLayout.listItemGap,
+  },
+  emptyState: {
+    flex: 1,
+    minHeight: 160,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyText: {
+    color: AppColors.mutedText,
+    fontSize: 12,
+    textAlign: "center",
+  },
+});

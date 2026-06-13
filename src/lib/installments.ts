@@ -1,0 +1,183 @@
+import { CurrencyFormatConfig } from "../constants/currency";
+import { selectStaticCopy } from "../i18n/staticCopy";
+import type { LedgerEntry, LedgerEntryDraft } from "../types/ledger";
+import { parseIsoDate, toIsoDate } from "../utils/calendar";
+import { ONE_TIME_INSTALLMENT_MONTHS } from "../utils/ledgerEntries";
+import { resolveDisplayCurrency } from "./currencyPreference";
+
+const INSTALLMENT_GROUP_PREFIX = "installment";
+const INSTALLMENT_NOTE_PATTERN = /\(\d+\/\d+\)$/;
+const InstallmentCopy = selectStaticCopy({
+  en: {
+    oneTimeLabel: "One-time",
+    progressLabel: "Installment",
+    progressSuffix: "in progress",
+    settlementNoteSuffix: "Remaining installment settled",
+    monthsSuffix: " months",
+  },
+  ko: {
+    oneTimeLabel: "일시불",
+    progressLabel: "할부",
+    progressSuffix: "진행 중",
+    settlementNoteSuffix: "남은 할부 정리",
+    monthsSuffix: "개월",
+  },
+} as const);
+export const MAX_INSTALLMENT_MONTHS = 24;
+
+export function buildLedgerEntriesFromDraft(draft: LedgerEntryDraft): LedgerEntry[] {
+  const currency = resolveDisplayCurrency();
+  const amount = Number(draft.amount);
+  const trimmedContent = draft.content.trim();
+  const trimmedCategory = draft.category.trim();
+  const trimmedCategoryId = draft.categoryId.trim();
+  const trimmedNote = draft.note.trim();
+  const photoAttachments = draft.photoAttachments;
+
+  if (draft.installmentMonths <= ONE_TIME_INSTALLMENT_MONTHS) {
+    return [
+      {
+        id: "",
+        date: draft.date,
+        type: draft.type,
+        amount,
+        currency,
+        targetMemberId: draft.targetMemberId,
+        content: trimmedContent,
+        category: trimmedCategory,
+        categoryId: trimmedCategoryId,
+        note: trimmedNote,
+        photoAttachments,
+        sourceType: "manual",
+      },
+    ];
+  }
+
+  const installmentGroupId = createInstallmentGroupId();
+  const installmentAmounts = splitInstallmentAmount(
+    amount,
+    draft.installmentMonths,
+    CurrencyFormatConfig[currency].maximumFractionDigits,
+  );
+
+  return installmentAmounts.map((installmentAmount, index) => {
+    const installmentOrder = index + 1;
+    return {
+      id: "",
+      date: resolveInstallmentDate(draft.date, index),
+      type: draft.type,
+      amount: installmentAmount,
+      currency,
+      targetMemberId: draft.targetMemberId,
+      content: trimmedContent,
+      category: trimmedCategory,
+      categoryId: trimmedCategoryId,
+      installmentGroupId,
+      installmentMonths: draft.installmentMonths,
+      installmentOrder,
+      note: appendInstallmentNote(trimmedNote, installmentOrder, draft.installmentMonths),
+      photoAttachments,
+      sourceType: "manual",
+    };
+  });
+}
+
+export function formatInstallmentLabel(installmentMonths: number): string {
+  if (installmentMonths <= ONE_TIME_INSTALLMENT_MONTHS) {
+    return InstallmentCopy.oneTimeLabel;
+  }
+
+  return `${installmentMonths}${InstallmentCopy.monthsSuffix}`;
+}
+
+export function formatInstallmentProgressLabel(entry: LedgerEntry): string | null {
+  if (
+    !entry.installmentMonths ||
+    entry.installmentMonths <= ONE_TIME_INSTALLMENT_MONTHS ||
+    !entry.installmentOrder
+  ) {
+    return null;
+  }
+
+  if (entry.installmentOrder < entry.installmentMonths) {
+    return `${InstallmentCopy.progressLabel} ${entry.installmentOrder}/${entry.installmentMonths} ${InstallmentCopy.progressSuffix}`;
+  }
+
+  return `${InstallmentCopy.progressLabel} ${entry.installmentOrder}/${entry.installmentMonths}`;
+}
+
+export function buildInstallmentSettlementEntry(
+  currentEntry: LedgerEntry,
+  remainingAmount: number,
+): LedgerEntry {
+  return {
+    id: "",
+    date: currentEntry.date,
+    type: currentEntry.type,
+    amount: remainingAmount,
+    targetMemberId: currentEntry.targetMemberId,
+    content: currentEntry.content,
+    category: currentEntry.category,
+    categoryId: currentEntry.categoryId,
+    note: appendSettlementNote(currentEntry),
+    photoAttachments: [],
+    sourceType: "manual",
+  };
+}
+
+export function stripInstallmentNoteSuffix(note: string): string {
+  return removeInstallmentNote(note);
+}
+
+function appendSettlementNote(entry: LedgerEntry): string {
+  const baseNote = removeInstallmentNote(entry.note).trim();
+  if (!baseNote) {
+    return InstallmentCopy.settlementNoteSuffix;
+  }
+
+  return `${baseNote} ${InstallmentCopy.settlementNoteSuffix}`;
+}
+
+function appendInstallmentNote(note: string, installmentOrder: number, installmentMonths: number) {
+  const installmentSuffix = `(${installmentOrder}/${installmentMonths})`;
+  if (!note) {
+    return installmentSuffix;
+  }
+
+  return `${note} ${installmentSuffix}`;
+}
+
+function removeInstallmentNote(note: string): string {
+  return note.replace(INSTALLMENT_NOTE_PATTERN, "").trim();
+}
+
+function createInstallmentGroupId(): string {
+  const timestamp = Date.now();
+  const randomPart = Math.floor(Math.random() * 1_000_000_000).toString(36);
+  return `${INSTALLMENT_GROUP_PREFIX}-${timestamp}-${randomPart}`;
+}
+
+function splitInstallmentAmount(
+  amount: number,
+  installmentMonths: number,
+  fractionDigits: number,
+): number[] {
+  const multiplier = 10 ** fractionDigits;
+  const scaledAmount = Math.round(amount * multiplier);
+  const baseAmount = Math.floor(scaledAmount / installmentMonths);
+  const remainder = scaledAmount % installmentMonths;
+
+  return Array.from(
+    { length: installmentMonths },
+    (_value, index) => (index < remainder ? baseAmount + 1 : baseAmount) / multiplier,
+  );
+}
+
+function resolveInstallmentDate(isoDate: string, monthOffset: number): string {
+  const baseDate = parseIsoDate(isoDate);
+  const targetYear = baseDate.getFullYear();
+  const targetMonthIndex = baseDate.getMonth() + monthOffset;
+  const targetLastDay = new Date(targetYear, targetMonthIndex + 1, 0).getDate();
+  const targetDay = Math.min(baseDate.getDate(), targetLastDay);
+  return toIsoDate(new Date(targetYear, targetMonthIndex, targetDay));
+}

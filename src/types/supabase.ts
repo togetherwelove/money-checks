@@ -1,0 +1,180 @@
+export type LedgerEntryRow = {
+  book_id: string;
+  id: string;
+  user_id: string | null;
+  source_type: string;
+  entry_type: "income" | "expense";
+  occurred_on: string;
+  amount: number;
+  currency: string;
+  content: string;
+  category: string;
+  category_id: string;
+  installment_group_id: string | null;
+  installment_months: number | null;
+  installment_order: number | null;
+  target_member_id?: string | null;
+  note: string;
+  metadata: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+};
+
+export type LedgerEntrySummaryRow = LedgerEntryRow & {
+  author_display_name: string | null;
+  target_member_display_name: string | null;
+};
+
+export type EnrichedLedgerEntryPhotoAttachmentRow = {
+  content_type: string;
+  id: string;
+  original_filename: string;
+  storage_bucket: string;
+  storage_path: string;
+};
+
+export type EnrichedLedgerEntryRow = LedgerEntryRow & {
+  author_display_name: string | null;
+  author_has_book_access: boolean;
+  photo_attachments: EnrichedLedgerEntryPhotoAttachmentRow[];
+  target_member_display_name: string | null;
+  target_member_has_book_access: boolean;
+};
+
+export type LedgerEntryAttachmentRow = {
+  created_at: string;
+  id: string;
+  installment_group_id: string | null;
+  ledger_entry_id: string | null;
+  receipt_file_id: string;
+  user_id: string | null;
+};
+
+export type LedgerBookRow = {
+  id: string;
+  name: string;
+  owner_id: string;
+  share_code: string;
+};
+
+export type AccessibleLedgerBookRow = LedgerBookRow & {
+  member_role: "editor" | "owner";
+};
+
+export type AccessibleLedgerBookStateRow = AccessibleLedgerBookRow & {
+  is_active: boolean;
+};
+
+export type LedgerBookMemberRow = {
+  book_id: string;
+  role: "editor" | "owner";
+  user_id: string;
+};
+
+export type LedgerBookCategoryCustomizationRow = {
+  book_id: string;
+  category_id: string;
+  entry_type: "expense" | "income";
+  icon_name: string | null;
+  is_hidden: boolean;
+  is_system: boolean;
+  label: string | null;
+  sort_order: number | null;
+};
+
+export type LedgerBookMemberProfileRow = {
+  display_name: string | null;
+  role: "editor" | "owner";
+  user_id: string;
+};
+
+export type LedgerBookJoinRequestRow = {
+  book_id: string;
+  created_at: string;
+  id: string;
+  join_resolution: "discard_personal_book_on_approval" | "standard";
+  requester_user_id: string;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+  status: "approved" | "pending" | "rejected";
+};
+
+export type LedgerBookJoinRequestProfileRow = {
+  approval_status:
+    | "blocked_accessible_limit"
+    | "blocked_shared_editor_free"
+    | "blocked_shared_owner_free"
+    | "blocked_target_member_limit"
+    | "can_approve"
+    | "can_approve_with_personal_book_discard";
+  created_at: string;
+  display_name: string | null;
+  id: string;
+  join_resolution: "discard_personal_book_on_approval" | "standard";
+  requester_user_id: string;
+};
+
+export type LedgerBookJoinPreviewRow = {
+  status:
+    | "already_member"
+    | "blocked_accessible_limit"
+    | "blocked_shared_editor_free"
+    | "blocked_shared_owner_free"
+    | "blocked_target_member_limit"
+    | "can_request"
+    | "can_request_with_personal_book_discard"
+    | "expired_code"
+    | "invalid_code"
+    | "join_cooldown"
+    | "own_book"
+    | "pending_request";
+  target_book_id: string | null;
+  target_book_name: string | null;
+};
+
+export type NotificationPreferencesRow = {
+  enabled_by_event: Record<string, boolean> | null;
+  enabled_thresholds: Record<string, boolean> | null;
+  last_monthly_summary_sent_month: string | null;
+  summary_timezone: string | null;
+  threshold_periods: Record<string, string> | null;
+  thresholds: Record<string, number> | null;
+  user_id: string;
+};
+
+export type ProfileRow = {
+  active_book_id: string | null;
+  subscription_tier: "free" | "plus" | null;
+};
+
+export type ProfileDisplayRow = {
+  display_name: string;
+  id: string;
+};
+
+export type ProfileSubscriptionRow = {
+  id: string;
+  subscription_tier: "free" | "plus" | null;
+};
+
+export type PushDeviceTokenRow = {
+  expo_push_token: string;
+  platform: "android" | "ios";
+  updated_at: string;
+  user_id: string;
+};
+
+export type ReceiptFileRow = {
+  content_type: string;
+  created_at: string;
+  id: string;
+  original_filename: string;
+  storage_bucket: string;
+  storage_path: string;
+  user_id: string | null;
+};
+
+export type ReceiptFileStoragePathRow = {
+  storage_bucket: string;
+  storage_path: string;
+};

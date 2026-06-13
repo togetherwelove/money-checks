@@ -1,0 +1,64 @@
+import { forwardRef } from "react";
+import type { ComponentRef, PropsWithChildren, ReactElement } from "react";
+import { StyleSheet } from "react-native";
+import type { RefreshControlProps } from "react-native";
+import type { StyleProp, ViewStyle } from "react-native";
+import { KeyboardAwareScrollView as NativeKeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+
+import { KeyboardLayout } from "../constants/keyboard";
+
+type KeyboardAwareScrollViewProps = PropsWithChildren<{
+  centerContent?: boolean;
+  contentContainerStyle?: StyleProp<ViewStyle>;
+  extraScrollHeight?: number;
+  fillAvailableHeight?: boolean;
+  refreshControl?: ReactElement<RefreshControlProps>;
+  scrollEnabled?: boolean;
+  showsVerticalScrollIndicator?: boolean;
+  style?: StyleProp<ViewStyle>;
+}>;
+
+export const KeyboardAwareScrollView = forwardRef<
+  ComponentRef<typeof NativeKeyboardAwareScrollView>,
+  KeyboardAwareScrollViewProps
+>(function KeyboardAwareScrollView(
+  {
+    centerContent = false,
+    children,
+    contentContainerStyle,
+    extraScrollHeight = 0,
+    fillAvailableHeight = true,
+    refreshControl,
+    scrollEnabled = true,
+    showsVerticalScrollIndicator = true,
+    style,
+  },
+  ref,
+) {
+  return (
+    <NativeKeyboardAwareScrollView
+      ref={ref}
+      enableAutomaticScroll
+      contentContainerStyle={[centerContent && styles.centerContent, contentContainerStyle]}
+      extraScrollHeight={extraScrollHeight}
+      keyboardDismissMode={KeyboardLayout.dismissMode}
+      keyboardShouldPersistTaps={KeyboardLayout.persistTaps}
+      refreshControl={refreshControl}
+      scrollEnabled={scrollEnabled}
+      showsVerticalScrollIndicator={showsVerticalScrollIndicator}
+      style={[fillAvailableHeight ? styles.scroll : null, style]}
+    >
+      {children}
+    </NativeKeyboardAwareScrollView>
+  );
+});
+
+const styles = StyleSheet.create({
+  scroll: {
+    flex: 1,
+  },
+  centerContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+  },
+});

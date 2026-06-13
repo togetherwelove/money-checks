@@ -1,0 +1,351 @@
+import { useIsFocused } from "@react-navigation/native";
+import { useEffect, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+
+import { AppBannerAd } from "../components/AppBannerAd";
+import { CalendarToolbar } from "../components/CalendarToolbar";
+import { LedgerEntryList } from "../components/LedgerEntryList";
+import { MonthCalendarPager } from "../components/MonthCalendarPager";
+import { MonthlySummary } from "../components/MonthlySummary";
+import { WeekdayHeader } from "../components/WeekdayHeader";
+import { AppColors } from "../constants/colors";
+import { AppLayout } from "../constants/layout";
+import { AppMessages } from "../constants/messages";
+import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
+import type { LedgerEntry } from "../types/ledger";
+import {
+  addMonths,
+  formatCurrency,
+  formatLedgerListHeaderDate,
+  formatMonthYear,
+  startOfMonth,
+  toIsoDate,
+} from "../utils/calendar";
+
+type HomeScreenProps = {
+  onDeleteSelectedEntry: (entry: LedgerEntry) => Promise<boolean>;
+  onEditSelectedEntry: (entry: LedgerEntry) => void;
+  onOpenMonthPicker: () => void;
+  onSelectCalendarDate: (isoDate: string) => void;
+  showsBannerAd: boolean;
+  state: LedgerScreenState;
+};
+
+export function HomeScreen({
+  onDeleteSelectedEntry,
+  onEditSelectedEntry,
+  onOpenMonthPicker,
+  onSelectCalendarDate,
+  showsBannerAd,
+  state,
+}: HomeScreenProps) {
+  const todayIsoDate = toIsoDate(new Date());
+  const isScreenFocused = useIsFocused();
+  const [calendarFocusRevision, setCalendarFocusRevision] = useState(0);
+  const wasScreenFocusedRef = useRef(isScreenFocused);
+  const {
+    errorMessage,
+    isLoadingSelectedDateEntries,
+    isRefreshing,
+    monthlyLedger,
+    refreshLedger,
+    selectedDate,
+    selectedEntries,
+    visibleMonth,
+  } = state;
+  const selectedDateLabel = formatLedgerListHeaderDate(selectedDate);
+
+  useEffect(() => {
+    if (!wasScreenFocusedRef.current && isScreenFocused) {
+      setCalendarFocusRevision((currentRevision) => currentRevision + 1);
+    }
+    wasScreenFocusedRef.current = isScreenFocused;
+  }, [isScreenFocused]);
+
+  return (
+    <View style={styles.screen}>
+      <KeyboardAwareContent
+        errorMessage={errorMessage}
+        calendarFocusRevision={calendarFocusRevision}
+        isLoadingSelectedDateEntries={isLoadingSelectedDateEntries}
+        isRefreshing={isRefreshing}
+        isReadOnlyDueToPlanLimit={state.isReadOnlyDueToPlanLimit}
+        monthlyLedger={monthlyLedger}
+        onDeleteSelectedEntry={onDeleteSelectedEntry}
+        onEditSelectedEntry={onEditSelectedEntry}
+        onOpenMonthPicker={onOpenMonthPicker}
+        onRefreshLedger={refreshLedger}
+        onSelectCalendarDate={onSelectCalendarDate}
+        selectedDate={selectedDate}
+        selectedDateLabel={selectedDateLabel}
+        selectedEntries={selectedEntries}
+        showsBannerAd={showsBannerAd}
+        state={state}
+        todayIsoDate={todayIsoDate}
+        visibleMonth={visibleMonth}
+      />
+    </View>
+  );
+}
+
+function KeyboardAwareContent({
+  errorMessage,
+  calendarFocusRevision,
+  isLoadingSelectedDateEntries,
+  isRefreshing,
+  isReadOnlyDueToPlanLimit,
+  monthlyLedger,
+  onDeleteSelectedEntry,
+  onEditSelectedEntry,
+  onOpenMonthPicker,
+  onRefreshLedger,
+  onSelectCalendarDate,
+  selectedDate,
+  selectedDateLabel,
+  selectedEntries,
+  showsBannerAd,
+  state,
+  todayIsoDate,
+  visibleMonth,
+}: {
+  errorMessage: string | null;
+  calendarFocusRevision: number;
+  isLoadingSelectedDateEntries: boolean;
+  isRefreshing: boolean;
+  isReadOnlyDueToPlanLimit: boolean;
+  monthlyLedger: LedgerScreenState["monthlyLedger"];
+  onDeleteSelectedEntry: (entry: LedgerEntry) => Promise<boolean>;
+  onEditSelectedEntry: (entry: LedgerEntry) => void;
+  onOpenMonthPicker: () => void;
+  onRefreshLedger: () => Promise<void>;
+  onSelectCalendarDate: (isoDate: string) => void;
+  selectedDate: string;
+  selectedDateLabel: string;
+  selectedEntries: LedgerEntry[];
+  showsBannerAd: boolean;
+  state: LedgerScreenState;
+  todayIsoDate: string;
+  visibleMonth: Date;
+}) {
+  return (
+    <View style={styles.screenContent}>
+      <View style={styles.adPanel}>
+        {showsBannerAd ? <AppBannerAd variant="embedded" /> : null}
+      </View>
+      {errorMessage ? (
+        <Pressable
+          accessibilityRole="button"
+          disabled={isRefreshing}
+          onPress={() => {
+            if (isRefreshing) {
+              return;
+            }
+
+            void onRefreshLedger();
+          }}
+          style={({ pressed }) => [
+            styles.errorRetry,
+            pressed && !isRefreshing ? styles.errorRetryPressed : null,
+            isRefreshing ? styles.errorRetryDisabled : null,
+          ]}
+        >
+          <Text style={styles.error}>{errorMessage}</Text>
+          <Text style={styles.errorRetryLabel}>재시도</Text>
+        </Pressable>
+      ) : null}
+      <View style={styles.monthHeaderSection}>
+        <CalendarToolbar
+          monthLabel={formatMonthYear(visibleMonth)}
+          onPressMonthLabel={onOpenMonthPicker}
+          onSelectToday={() => {
+            onSelectCalendarDate(todayIsoDate);
+          }}
+          showMoveToCurrent={selectedDate !== todayIsoDate}
+        />
+      </View>
+      <View style={styles.calendarAdSection}>
+        <WeekdayHeader />
+        <MonthCalendarPager
+          key={calendarFocusRevision}
+          currentPage={state.currentMonthPage}
+          isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
+          nextPage={state.nextMonthPage}
+          onMoveMonth={(monthOffset) => moveMonth(visibleMonth, monthOffset, onSelectCalendarDate)}
+          onSelectDate={onSelectCalendarDate}
+          previousPage={state.previousMonthPage}
+          selectedDate={selectedDate}
+        />
+        <View style={styles.summaryPanel}>
+          <MonthlySummary
+            balanceAmount={monthlyLedger.balance}
+            totalExpense={formatCurrency(monthlyLedger.totalExpense)}
+            totalIncome={formatCurrency(monthlyLedger.totalIncome)}
+            variant="embedded"
+          />
+        </View>
+      </View>
+      <View style={styles.transactionSection}>
+        <View style={styles.selectionRow}>
+          <View style={styles.selectedDateInfo}>
+            <Text style={styles.selectedDate}>{selectedDateLabel}</Text>
+          </View>
+        </View>
+        <ScrollView
+          contentContainerStyle={styles.transactionScrollContent}
+          keyboardShouldPersistTaps="handled"
+          nestedScrollEnabled
+          refreshControl={
+            <RefreshControl
+              onRefresh={() => {
+                void onRefreshLedger();
+              }}
+              refreshing={isRefreshing}
+              tintColor={AppColors.primary}
+            />
+          }
+          showsVerticalScrollIndicator={false}
+          style={styles.transactionScroll}
+        >
+          {isLoadingSelectedDateEntries && selectedEntries.length === 0 ? (
+            <ActivityIndicatorContainer />
+          ) : (
+            <>
+              <LedgerEntryList
+                activeBookId={state.activeBook?.id ?? null}
+                entries={selectedEntries}
+                onDeleteEntry={(entry) => {
+                  Alert.alert(
+                    AppMessages.editorDeleteConfirmTitle,
+                    AppMessages.editorDeleteConfirmMessage,
+                    [
+                      {
+                        style: "cancel",
+                        text: "취소",
+                      },
+                      {
+                        onPress: () => {
+                          void onDeleteSelectedEntry(entry);
+                        },
+                        style: "destructive",
+                        text: AppMessages.editorDeleteConfirmAction,
+                      },
+                    ],
+                  );
+                }}
+                onEditEntry={onEditSelectedEntry}
+              />
+            </>
+          )}
+        </ScrollView>
+      </View>
+    </View>
+  );
+}
+
+function ActivityIndicatorContainer() {
+  return (
+    <ActivityIndicator color={AppColors.primary} size="small" style={styles.selectedDateLoading} />
+  );
+}
+
+function moveMonth(
+  visibleMonth: Date,
+  monthOffset: number,
+  onSelectDate: (isoDate: string) => void,
+) {
+  onSelectDate(toIsoDate(startOfMonth(addMonths(visibleMonth, monthOffset))));
+}
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: AppColors.background,
+    paddingHorizontal: AppLayout.screenPadding,
+  },
+  screenContent: {
+    flex: 1,
+  },
+  monthHeaderSection: {
+    gap: AppLayout.calendarGap,
+  },
+  calendarAdSection: {
+    gap: AppLayout.calendarGap,
+  },
+  transactionSection: {
+    flex: 1,
+    minHeight: 0,
+    gap: AppLayout.compactGap,
+  },
+  transactionScroll: {
+    flex: 1,
+    minHeight: 0,
+  },
+  transactionScrollContent: {
+    gap: AppLayout.compactGap,
+  },
+  adPanel: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: AppColors.border,
+    backgroundColor: AppColors.surfaceMuted,
+  },
+  summaryPanel: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: AppColors.border,
+    backgroundColor: AppColors.surfaceMuted,
+    paddingVertical: 2,
+  },
+  error: {
+    color: AppColors.expense,
+    fontSize: 12,
+  },
+  errorRetry: {
+    gap: 2,
+    alignItems: "flex-start",
+  },
+  errorRetryPressed: {
+    opacity: 0.7,
+  },
+  errorRetryDisabled: {
+    opacity: 0.5,
+  },
+  errorRetryLabel: {
+    color: AppColors.primary,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  selectedDate: {
+    color: AppColors.text,
+    fontSize: 13,
+    fontWeight: "700",
+    paddingTop: 8
+  },
+  selectionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    gap: AppLayout.compactGap,
+  },
+  selectedDateInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    minWidth: 0,
+  },
+  selectionActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: AppLayout.compactGap,
+  },
+  selectedDateLoading: {
+    minHeight: 160,
+  },
+});

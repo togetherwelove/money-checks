@@ -1,0 +1,12 @@
+.expo/
+.pnpm-store/
+.vscode/
+.supabase/
+node_modules/
+coverage/
+.env
+.env.*
+*.log
+.codex-logs/
+.eas-build-state/
+GoogleService-Info.plist

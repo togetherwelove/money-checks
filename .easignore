@@ -1,0 +1,13 @@
+.expo/
+.pnpm-store/
+.vscode/
+.supabase/
+coverage/
+dist/
+node_modules/
+.env
+.env.*
+*.log
+.codex-logs/
+.eas-build-state/
+/ios

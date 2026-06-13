@@ -1,0 +1,45 @@
+export const AppColors = {
+  background: "#f5f1e8",
+  sessionLoadingBackground: "#F3EBD4",
+  surface: "#fffaf2",
+  surfaceStrong: "#efe4cf",
+  surfaceMuted: "#f3ecde",
+  primary: "#235347",
+  primarySoft: "#d9e7df",
+  accent: "#c96c50",
+  accentSoft: "#f2d4ca",
+  income: "#1d7a63",
+  incomeSoft: "#e6f5ef",
+  expense: "#b8543c",
+  expenseSoft: "#fbe8e2",
+  text: "#1f2a28",
+  mutedText: "#5f6d68",
+  mutedStrongText: "#788680",
+  inverseText: "#fffaf2",
+  border: "#d8cfbf",
+  transparent: "transparent",
+  overlay: "rgba(31, 42, 40, 0.18)",
+} as const;
+
+export const AppChartColors = [
+  AppColors.primary,
+  AppColors.accent,
+  "#d7a44a",
+  "#6d8b74",
+  "#8f6f95",
+  "#4f759b",
+] as const;
+
+export const AppGradientColors = {
+  subscriptionPlusBase: [AppColors.accentSoft, AppColors.surfaceStrong, AppColors.surface] as const,
+  subscriptionPlusWarmOverlay: [
+    "rgba(201, 108, 80, 0.26)",
+    "rgba(239, 228, 207, 0.18)",
+    "rgba(255, 250, 242, 0)",
+  ] as const,
+  subscriptionPlusSoftOverlay: [
+    "rgba(255, 250, 242, 0)",
+    "rgba(242, 212, 202, 0.14)",
+    "rgba(255, 250, 242, 0.38)",
+  ] as const,
+} as const;
