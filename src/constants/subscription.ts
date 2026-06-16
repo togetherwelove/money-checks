@@ -1,4 +1,3 @@
-import { selectStaticCopy } from "../i18n/staticCopy";
 
 export const SubscriptionTiers = {
   free: "free",
@@ -28,30 +27,7 @@ export const AdMobConfig = {
   iosBannerAdUnitId: process.env.EXPO_PUBLIC_ADMOB_IOS_BANNER_AD_UNIT_ID ?? "",
 } as const;
 
-export const SubscriptionMessages = selectStaticCopy({
-  en: {
-    freePlanLabel: "Free Plan",
-    heroDescription:
-      "Manage multiple ledgers without ads\nand invite more shared members\nwith Alttle plus.",
-    heroPriceLabel: "₩770/mo",
-    inactiveRestoreMessage: "No active Alttle plus subscription was found.",
-    monthlyPriceSuffix: "/mo",
-    plusSummary: "Your subscription is active.",
-    purchaseAction: "Join Alttle plus",
-    purchaseError: "Could not process Alttle plus.",
-    purchaseInfoDefaultPeriodValue: "Every month",
-    purchaseInfoNameLabel: "Subscription",
-    purchaseInfoPeriodLabel: "Period",
-    purchaseInfoPriceLabel: "Price",
-    purchaseSuccess: "Alttle plus is active.",
-    restoreAction: "Restore Purchases",
-    restoreError: "Could not restore purchases.",
-    restoreSuccess: "Purchases restored.",
-    screenTitle: "Alttle plus",
-    sharedLedgerLimitDescription: "You reached the Free plan limit.",
-    statusLabel: "Current Plan",
-  },
-  ko: {
+export const SubscriptionMessages = {
     freePlanLabel: "Free 플랜",
     heroDescription:
       "알뜰에서 광고로 불편함 없이\n하나 이상의 가계부를 관리하고,\n더 많은 공유 멤버와 함께하세요.",
@@ -72,5 +48,4 @@ export const SubscriptionMessages = selectStaticCopy({
     screenTitle: "알뜰 plus",
     sharedLedgerLimitDescription: "Free 플랜 한도에 도달했어요.",
     statusLabel: "현재 플랜",
-  },
-} as const);
+  } as const;

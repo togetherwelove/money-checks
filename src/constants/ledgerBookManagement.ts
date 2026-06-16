@@ -1,36 +1,5 @@
-import { selectStaticCopy } from "../i18n/staticCopy";
 
-export const LedgerBookManagementCopy = selectStaticCopy({
-  en: {
-    createAction: "Add Ledger",
-    createError:
-      "Could not create a ledger. If you just joined plus, restore purchases and try again.",
-    createConfirmMessageSuffix: "Add this ledger?",
-    createConfirmTitle: "Confirm Add Ledger",
-    createFreePlanLimitReached: "Adding another ledger requires Alttle plus.",
-    createLimitReached: "You have used all available ledgers.",
-    createNamePromptMessage: "Enter a new ledger name.",
-    createNamePromptTitle: "Create this ledger?",
-    createNameRequired: "Enter a ledger name.",
-    createNamePlaceholder: "New ledger name",
-    createSuccess: "Switched to the new ledger.",
-    currentBadge: "Current",
-    deleteAction: "Delete Ledger",
-    deleteConfirmMessage:
-      "This ledger and all records in it will be permanently deleted. This cannot be undone.",
-    deleteConfirmTitle: "Delete this ledger?",
-    deleteError: "Could not delete this ledger.",
-    deleteSuccess: "Ledger deleted.",
-    emptyList: "No ledgers available.",
-    listTitle: "My Ledgers",
-    ownerBadge: "Owner",
-    sharedBadge: "Shared",
-    activeStateLabel: "Current",
-    switchActionAccessibilityLabel: "Switch ledger",
-    switchError: "Could not switch ledgers.",
-    switchSuccess: "Ledger switched.",
-  },
-  ko: {
+export const LedgerBookManagementCopy = {
     createAction: "가계부 추가",
     createError: "가계부를 만들지 못했어요. 구독을 복원한 뒤 다시 시도해주세요.",
     createConfirmMessageSuffix: "가계부를 추가할까요?",
@@ -56,5 +25,4 @@ export const LedgerBookManagementCopy = selectStaticCopy({
     switchActionAccessibilityLabel: "가계부 전환",
     switchError: "가계부를 전환하지 못했어요.",
     switchSuccess: "가계부를 전환했어요.",
-  },
-} as const);
+  } as const;

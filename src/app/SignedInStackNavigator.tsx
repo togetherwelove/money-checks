@@ -50,7 +50,6 @@ type SignedInStackNavigatorProps = {
   onEditSelectedEntryFromAllEntries: (entry: LedgerEntry) => void;
   onEditSelectedEntryFromCalendar: (entry: LedgerEntry) => void;
   onVisibleAllEntriesChange: (entries: readonly LedgerEntry[]) => void;
-  onOpenMonthPicker: () => void;
   onOpenSubscription: () => void;
   onOpenAdTrackingSettings: () => void;
   onOpenSubscriptionManagement: () => Promise<void>;
@@ -109,7 +108,6 @@ export function SignedInStackNavigator({
   onEditSelectedEntryFromAllEntries,
   onEditSelectedEntryFromCalendar,
   onVisibleAllEntriesChange,
-  onOpenMonthPicker,
   onOpenAdTrackingSettings,
   onOpenSubscription,
   onOpenSubscriptionManagement,
@@ -151,7 +149,6 @@ export function SignedInStackNavigator({
           <HomeScreen
             onDeleteSelectedEntry={onDeleteSelectedEntry}
             onEditSelectedEntry={onEditSelectedEntryFromCalendar}
-            onOpenMonthPicker={onOpenMonthPicker}
             onSelectCalendarDate={onSelectCalendarDate}
             showsBannerAd={showsBannerAd}
             state={ledgerState}

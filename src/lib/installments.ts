@@ -1,5 +1,4 @@
 import { CurrencyFormatConfig } from "../constants/currency";
-import { selectStaticCopy } from "../i18n/staticCopy";
 import type { LedgerEntry, LedgerEntryDraft } from "../types/ledger";
 import { parseIsoDate, toIsoDate } from "../utils/calendar";
 import { ONE_TIME_INSTALLMENT_MONTHS } from "../utils/ledgerEntries";
@@ -7,22 +6,13 @@ import { resolveDisplayCurrency } from "./currencyPreference";
 
 const INSTALLMENT_GROUP_PREFIX = "installment";
 const INSTALLMENT_NOTE_PATTERN = /\(\d+\/\d+\)$/;
-const InstallmentCopy = selectStaticCopy({
-  en: {
-    oneTimeLabel: "One-time",
-    progressLabel: "Installment",
-    progressSuffix: "in progress",
-    settlementNoteSuffix: "Remaining installment settled",
-    monthsSuffix: " months",
-  },
-  ko: {
+const InstallmentCopy = {
     oneTimeLabel: "일시불",
     progressLabel: "할부",
     progressSuffix: "진행 중",
     settlementNoteSuffix: "남은 할부 정리",
     monthsSuffix: "개월",
-  },
-} as const);
+  } as const;
 export const MAX_INSTALLMENT_MONTHS = 24;
 
 export function buildLedgerEntriesFromDraft(draft: LedgerEntryDraft): LedgerEntry[] {

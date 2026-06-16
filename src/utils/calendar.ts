@@ -3,12 +3,11 @@ import {
   CALENDAR_WEEK_ROWS,
 } from "../components/monthCalendarPager/calendarLayout";
 import { EMPTY_CATEGORY_LABEL, formatMonthLabel } from "../constants/ledgerDisplay";
-import { resolveStaticCopyLanguage } from "../i18n/staticCopy";
 import type { CalendarDay, LedgerEntry, MonthlyLedgerSummary } from "../types/ledger";
 import { formatAmountNumber } from "./amount";
 import { formatCurrency as formatDisplayCurrency } from "./currency";
 
-const CALENDAR_FORMAT_LOCALE = resolveStaticCopyLanguage() === "en" ? "en-US" : "ko-KR";
+const CALENDAR_FORMAT_LOCALE = "ko-KR";
 
 const selectedDateFormatter = new Intl.DateTimeFormat(CALENDAR_FORMAT_LOCALE, {
   month: "long",
@@ -56,10 +55,6 @@ export function formatEntryMetaDate(isoDate: string): string {
 }
 
 export function formatMonthYear(date: Date): string {
-  if (resolveStaticCopyLanguage() === "en") {
-    return monthYearFormatter.format(date);
-  }
-
   const formatted = monthYearFormatter.formatToParts(date);
   const year = formatted.find((part) => part.type === "year")?.value;
   const month = formatted.find((part) => part.type === "month")?.value;
@@ -68,7 +63,7 @@ export function formatMonthYear(date: Date): string {
     return monthYearFormatter.format(date);
   }
 
-  return `${year}\uB144 ${month}`;
+  return `${year}년 ${month}`;
 }
 
 export function startOfMonth(date: Date): Date {
@@ -241,10 +236,6 @@ function parseMonthKey(monthKey: string): Date {
 
 function formatDateWithOptionalYear(date: Date, includeYear: boolean): string {
   const formatter = includeYear ? selectedDateWithYearFormatter : selectedDateFormatter;
-  if (resolveStaticCopyLanguage() === "en") {
-    return formatter.format(date);
-  }
-
   const formatted = formatter.formatToParts(date);
   const year = formatted.find((part) => part.type === "year")?.value;
   const month = formatted.find((part) => part.type === "month")?.value;

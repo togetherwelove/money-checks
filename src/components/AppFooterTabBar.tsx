@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppColors } from "../constants/colors";
@@ -73,6 +73,14 @@ export function AppFooterTabBar({
                 />
                 {hasBadge ? <View style={styles.badgeDot} /> : null}
               </View>
+              {tab.isPrimary ? null : (
+                <Text
+                  numberOfLines={1}
+                  style={[styles.tabLabel, isActive ? styles.activeTabLabel : null]}
+                >
+                  {tab.label}
+                </Text>
+              )}
             </Pressable>
           );
         })}
@@ -121,19 +129,20 @@ const styles = StyleSheet.create({
     minWidth: 0,
     alignItems: "center",
     justifyContent: "center",
+    gap: FooterTabBarUi.labelGap,
     paddingVertical: FooterTabBarUi.tabPaddingVertical,
   },
   iconButton: {
-    width: FooterTabBarUi.activeIconButtonSize,
-    height: FooterTabBarUi.activeIconButtonSize,
+    width: FooterTabBarUi.iconButtonSize,
+    height: FooterTabBarUi.iconButtonSize,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: FooterTabBarUi.activeIconButtonSize / 2,
+    borderRadius: FooterTabBarUi.iconButtonSize / 2,
   },
   primaryIconButton: {
-    width: FooterTabBarUi.activeIconButtonSize,
-    height: FooterTabBarUi.activeIconButtonSize,
-    borderRadius: FooterTabBarUi.activeIconButtonSize / 2,
+    width: FooterTabBarUi.primaryIconButtonSize,
+    height: FooterTabBarUi.primaryIconButtonSize,
+    borderRadius: FooterTabBarUi.primaryIconButtonSize / 2,
     backgroundColor: AppColors.primary,
   },
   disabledPrimaryIconButton: {
@@ -150,5 +159,15 @@ const styles = StyleSheet.create({
     borderWidth: FooterTabBarUi.badgeDotBorderWidth,
     borderColor: AppColors.surface,
     backgroundColor: AppColors.expense,
+  },
+  tabLabel: {
+    color: AppColors.mutedText,
+    fontSize: FooterTabBarUi.labelFontSize,
+    fontWeight: "700",
+    lineHeight: FooterTabBarUi.labelLineHeight,
+    maxWidth: "100%",
+  },
+  activeTabLabel: {
+    color: AppColors.primary,
   },
 });

@@ -1,30 +1,5 @@
-import { selectStaticCopy } from "../i18n/staticCopy";
 
-export const EntryRegistrationCopy = selectStaticCopy({
-  en: {
-    amountRequiredError: "Enter an amount.",
-    categoryLabel: "Category",
-    categoryRequiredError: "Choose a category.",
-    contentLabel: "Description",
-    contentPlaceholder: "Enter description",
-    contentRequiredError: "Enter a description.",
-    dailyFirstEntryAdNoticeMessage: "This runs once for your first entry of the day.",
-    dailyFirstEntryAdNoticeTitle: "Ad will open before saving",
-    dailyFirstEntryAdUnavailableError: "Could not load the ad. Please try saving again shortly.",
-    dailyFirstEntryRewardRequiredError: "Ad viewing was not completed, so the entry was not saved.",
-    installmentPickerTitle: "Select Installments",
-    installmentSettleAction: "Settle Installments",
-    installmentSettleConfirmMessage: "Settle the remaining installment amount this month?",
-    installmentSettleSuccess: "Installments settled.",
-    installmentSettleUnavailable: "There are no installments to settle.",
-    noteLabel: "Memo",
-    saveCreateSuccess: "Entry saved.",
-    saveError: "Could not save the entry.",
-    saveMigrationError: "A DB migration is required.",
-    saveUpdateSuccess: "Entry updated.",
-    targetMemberLabel: "Target Member",
-  },
-  ko: {
+export const EntryRegistrationCopy = {
     amountRequiredError: "금액을 입력해 주세요.",
     categoryLabel: "분류",
     categoryRequiredError: "분류를 선택해 주세요.",
@@ -46,5 +21,4 @@ export const EntryRegistrationCopy = selectStaticCopy({
     saveMigrationError: "DB 마이그레이션 적용이 필요해요.",
     saveUpdateSuccess: "내역을 수정했어요.",
     targetMemberLabel: "대상 구성원",
-  },
-} as const);
+  } as const;

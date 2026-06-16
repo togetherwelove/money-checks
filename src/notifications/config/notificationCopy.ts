@@ -1,4 +1,3 @@
-import { selectStaticCopy } from "../../i18n/staticCopy";
 import type {
   NotificationEventType,
   NotificationPreferenceGroupId,
@@ -15,35 +14,7 @@ type NotificationEventDefinition = {
   title: string;
 };
 
-const NotificationUiLocalizedCopy = selectStaticCopy({
-  en: {
-    entryTypeLabels: {
-      expense: "Expense",
-      income: "Income",
-    },
-    fallbackActorName: "Member",
-    fallbackBookName: "Shared ledger",
-    fallbackCategory: "Uncategorized",
-    fallbackContent: "No description",
-    fallbackDateLabel: "Today",
-    fallbackEntryTypeLabel: "Entry",
-    fallbackTargetName: "Member",
-    helpAccessibilitySuffix: "help",
-    menuDescription: "Manage alert permissions and limits.",
-    noteSegmentPrefix: " / Memo ",
-    noteSentencePrefix: " Memo: ",
-    permissionBlocked: "Alerts are blocked. Enable them in iPhone or Safari settings.",
-    permissionGranted: "Allowed",
-    permissionPrompt: "Not selected yet",
-    permissionSectionTitle: "Device Alerts",
-    permissionUnsupported: "Alerts are not supported here.",
-    periodFieldLabel: "Period",
-    screenSubtitle: "Turn alert types on or off.",
-    screenTitle: "Alert Settings",
-    unsupportedStatus: "Device alerts are only available in supported browsers.",
-    zeroAmountLabel: "0 KRW",
-  },
-  ko: {
+const NotificationUiLocalizedCopy = {
     entryTypeLabels: {
       expense: "지출",
       income: "수입",
@@ -70,8 +41,7 @@ const NotificationUiLocalizedCopy = selectStaticCopy({
     screenTitle: "푸시 알림 설정",
     unsupportedStatus: "현재는 추가 설정 없이 지원 브라우저에서만 기기 알림을 사용할 수 있습니다.",
     zeroAmountLabel: "0원",
-  },
-} as const);
+  } as const;
 
 export const NotificationUiCopy = {
   ...NotificationUiLocalizedCopy,
@@ -84,24 +54,14 @@ export const NotificationSettingsUi = {
 } as const;
 
 export const NotificationGroupCopy: Record<NotificationPreferenceGroupId, { title: string }> =
-  selectStaticCopy({
-    en: {
-      sharedLedger: {
-        title: "Shared Activity",
-      },
-      threshold: {
-        title: "Expense Limits",
-      },
-    },
-    ko: {
+  {
       sharedLedger: {
         title: "공유 가계부 활동",
       },
       threshold: {
         title: "금액 기준 알림",
       },
-    },
-  });
+    };
 
 export const NotificationGroupOrder = [
   "sharedLedger",
@@ -109,19 +69,7 @@ export const NotificationGroupOrder = [
 ] as const satisfies readonly NotificationPreferenceGroupId[];
 
 export const NotificationThresholdCopy: Record<NotificationThresholdKey, { label: string }> =
-  selectStaticCopy({
-    en: {
-      expenseAmountDay: {
-        label: "Daily limit",
-      },
-      expenseAmountWeek: {
-        label: "Weekly limit",
-      },
-      expenseAmountMonth: {
-        label: "Monthly limit",
-      },
-    },
-    ko: {
+  {
       expenseAmountDay: {
         label: "하루 지출 기준",
       },
@@ -131,8 +79,7 @@ export const NotificationThresholdCopy: Record<NotificationThresholdKey, { label
       expenseAmountMonth: {
         label: "한 달 지출 기준",
       },
-    },
-  });
+    };
 
 export const NotificationDefaultThresholds: Record<NotificationThresholdKey, number> = {
   expenseAmountDay: 200000,
@@ -147,18 +94,11 @@ export const NotificationDefaultThresholdEnabled: Record<NotificationThresholdKe
 };
 
 export const NotificationThresholdPeriodCopy: Record<NotificationThresholdPeriod, string> =
-  selectStaticCopy({
-    en: {
-      day: "Day",
-      week: "Week",
-      month: "Month",
-    },
-    ko: {
+  {
       day: "하루",
       week: "한 주",
       month: "한 달",
-    },
-  });
+    };
 
 export const NotificationThresholdPeriodOrder = [
   "day",
@@ -176,46 +116,7 @@ export const NotificationDefaultThresholdPeriods: Record<
 };
 
 export const NotificationEventCopy: Record<NotificationEventType, NotificationEventDefinition> =
-  selectStaticCopy({
-    en: {
-      expense_limit_exceeded: {
-        bodyTemplate:
-          "{periodLabel} expense limit was reached.\nTotal expense: {totalAmountLabel}.",
-        defaultEnabled: true,
-        groupId: "threshold",
-        label: "Expense limit reached",
-        title: "Expense Limit Reached",
-      },
-      member_left_book: {
-        bodyTemplate: "{actorName} left {bookName}.",
-        defaultEnabled: true,
-        groupId: "sharedLedger",
-        label: "Other member left",
-        title: "Shared Member Left",
-      },
-      member_joined_book: {
-        bodyTemplate: "{actorName} joined {bookName}.",
-        defaultEnabled: true,
-        groupId: "sharedLedger",
-        label: "New member joined",
-        title: "Shared Member Joined",
-      },
-      member_removed_from_book: {
-        bodyTemplate: "{actorName} removed you from {bookName}.",
-        defaultEnabled: true,
-        groupId: "sharedLedger",
-        label: "Removed from shared ledger",
-        title: "Removed from Shared Ledger",
-      },
-      other_member_created_entry: {
-        bodyTemplate: "{actorName} · {amountLabel} · {content}",
-        defaultEnabled: true,
-        groupId: "sharedLedger",
-        label: "Member adds entry",
-        title: "{category} · {entryTypeLabel} Entry Alert",
-      },
-    },
-    ko: {
+  {
       expense_limit_exceeded: {
         bodyTemplate:
           "{periodLabel} 지출 합계 기준을 넘었어요.\n현재 총 {totalAmountLabel} 지출했어요.",
@@ -252,21 +153,15 @@ export const NotificationEventCopy: Record<NotificationEventType, NotificationEv
         label: "다른 멤버가 등록했을 때 내게 알립니다.",
         title: "{category} · {entryTypeLabel}",
       },
-    },
-  });
+    };
 
 export const NotificationEntryChangeEventTypes = [
   "other_member_created_entry",
 ] as const satisfies readonly NotificationEventType[];
 
-export const NotificationEntryChangePreferenceCopy = selectStaticCopy({
-  en: {
-    label: "When another member adds entries",
-  },
-  ko: {
+export const NotificationEntryChangePreferenceCopy = {
     label: "다른 멤버가 내역을 등록할 때",
-  },
-} as const);
+  } as const;
 
 export const NotificationRequiredEvents = [
   "member_joined_book",
@@ -289,26 +184,13 @@ export const NotificationEventOrder = [
 ] as const satisfies readonly NotificationEventType[];
 
 export const NotificationThresholdFieldLabels: Record<NotificationThresholdKey, string> =
-  selectStaticCopy({
-    en: {
-      expenseAmountDay: "Daily",
-      expenseAmountWeek: "Weekly",
-      expenseAmountMonth: "Monthly",
-    },
-    ko: {
+  {
       expenseAmountDay: "하루에",
       expenseAmountWeek: "한 주에",
       expenseAmountMonth: "한 달에",
-    },
-  });
+    };
 
-export const NotificationThresholdAmountCopy = selectStaticCopy({
-  en: {
-    exceededLabel: "exceeded",
-    placeholder: "Amount",
-  },
-  ko: {
+export const NotificationThresholdAmountCopy = {
     exceededLabel: "초과 시",
     placeholder: "금액",
-  },
-} as const);
+  } as const;

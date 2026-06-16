@@ -1,6 +1,5 @@
 import type * as Notifications from "expo-notifications";
 
-import type { AppLanguage } from "../../i18n/types";
 import type { LedgerAppScreen } from "../../types/app";
 
 export const NotificationCategoryIds = {
@@ -31,26 +30,18 @@ export type NotificationActionPayload = {
   actionRoute?: NotificationActionPayloadRoute;
 };
 
-const NotificationActionCopyByLanguage = {
-  en: {
-    openBook: "View Ledger",
-    openCharts: "View Charts",
-    openEntry: "View Entries",
-    reviewJoinRequest: "Review Request",
-  },
-  ko: {
-    openBook: "가계부 보기",
-    openCharts: "차트 보기",
-    openEntry: "내역 보기",
-    reviewJoinRequest: "요청 확인",
-  },
-} as const satisfies Record<AppLanguage, Record<string, string>>;
+const NotificationActionCopy = {
+  openBook: "가계부 보기",
+  openCharts: "차트 보기",
+  openEntry: "내역 보기",
+  reviewJoinRequest: "요청 확인",
+} as const;
 
-export function buildNotificationActionCategoryDefinitions(language: AppLanguage): readonly {
+export function buildNotificationActionCategoryDefinitions(): readonly {
   actions: Notifications.NotificationAction[];
   identifier: string;
 }[] {
-  const notificationActionCopy = NotificationActionCopyByLanguage[language];
+  const notificationActionCopy = NotificationActionCopy;
 
   return [
     {

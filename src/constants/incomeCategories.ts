@@ -1,5 +1,3 @@
-import { selectStaticCopy } from "../i18n/staticCopy";
-import type { AppLanguage } from "../i18n/types";
 import { createSystemCategory } from "./categoryFactory";
 
 type IncomeCategoryLabelKey =
@@ -11,20 +9,7 @@ type IncomeCategoryLabelKey =
   | "salary"
   | "sideIncome";
 
-export const INCOME_CATEGORY_LABEL_COPY: Record<
-  AppLanguage,
-  Record<IncomeCategoryLabelKey, string>
-> = {
-  en: {
-    bonus: "Bonus",
-    interest: "Interest",
-    other: "Other",
-    refund: "Refund",
-    resale: "Resale",
-    salary: "Salary",
-    sideIncome: "Side Income",
-  },
-  ko: {
+export const INCOME_CATEGORY_LABELS: Record<IncomeCategoryLabelKey, string> = {
     bonus: "성과급",
     interest: "이자",
     other: "기타",
@@ -32,10 +17,7 @@ export const INCOME_CATEGORY_LABEL_COPY: Record<
     resale: "중고판매",
     salary: "급여",
     sideIncome: "부수입",
-  },
 } as const;
-
-export const INCOME_CATEGORY_LABELS = selectStaticCopy(INCOME_CATEGORY_LABEL_COPY);
 
 export const INCOME_CATEGORIES = [
   createSystemCategory("income-salary", INCOME_CATEGORY_LABELS.salary, "briefcase", "income"),

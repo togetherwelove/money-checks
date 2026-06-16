@@ -28,7 +28,7 @@ export function MonthlyBreakdownDonutChart({
   items,
   title,
 }: MonthlyBreakdownDonutChartProps) {
-  const totalExpense = items.reduce((sum, item) => sum + item.amount, 0);
+  const totalAmount = items.reduce((sum, item) => sum + item.amount, 0);
 
   return (
     <View style={styles.section}>
@@ -72,7 +72,7 @@ export function MonthlyBreakdownDonutChart({
               </Svg>
               <View pointerEvents="none" style={styles.chartCenter}>
                 <Text style={styles.centerLabel}>{centerLabel}</Text>
-                <Text style={styles.centerValue}>{formatCurrency(totalExpense)}</Text>
+                <Text style={styles.centerValue}>{formatCurrency(totalAmount)}</Text>
               </View>
             </View>
             <View style={styles.legend}>

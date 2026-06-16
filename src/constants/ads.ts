@@ -1,4 +1,3 @@
-import { selectStaticCopy } from "../i18n/staticCopy";
 
 export const AdMobTestUnitIds = {
   iosBanner: "ca-app-pub-3940256099942544/2934735716",
@@ -17,6 +16,8 @@ export const AdMobRewardedInterstitialConfig = {
 
 export const RewardedInterstitialNoticeConfig = {
   previewDurationMs: 900,
+  readyPollIntervalMs: 120,
+  readyWaitTimeoutMs: 1_800,
 } as const;
 
 export const RewardedInterstitialNoticeOverlayUi = {
@@ -51,15 +52,10 @@ export const NativeAdListConfig = {
   insertionIntervalMin: 6,
   insertionIntervalRandomMultiplier: 37,
   insertionIntervalRandomSeed: 11,
-  sponsoredLabel: selectStaticCopy({
-    en: "Ad ",
-    ko: "광고 ",
-  }),
+  sponsoredLabel: "광고 ",
 } as const;
 
 export const NativeAdCardUi = {
-  advertiserFontSize: 11,
-  advertiserGap: 4,
   callToActionGap: 4,
   callToActionIconButtonSize: 32,
   callToActionIconSize: 15,
@@ -71,12 +67,9 @@ export const NativeAdCardUi = {
   contentPaddingVertical: 6,
   contentGap: 8,
   headerAdChoicesReservedWidth: 56,
-  headerGap: 6,
-  iconBorderRadius: 5,
-  iconFrameBorderRadius: 8,
-  iconFrameSize: 48,
-  iconSize: 40,
-  minHeight: 62,
+  iconBorderRadius: 8,
+  iconSize: 38,
+  minHeight: 54,
   primaryRowGap: 8,
   bodyFontSize: 12,
   bodyLineHeight: 16,

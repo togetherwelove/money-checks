@@ -91,7 +91,6 @@ import { scheduleIdleTask } from "./lib/idleScheduler";
 import { logAppError } from "./lib/logAppError";
 import { buildAppMenuSections } from "./lib/menuItems";
 import { showNativeToast } from "./lib/nativeToast";
-import { DEFAULT_STATIC_COPY_LANGUAGE } from "./i18n/staticCopy";
 import { resolveNotificationActionRoute } from "./lib/notifications/notificationActions";
 import {
   type UnreadNotificationBadgeEvent,
@@ -119,7 +118,7 @@ import { PasswordResetScreen } from "./screens/PasswordResetScreen";
 import type { LedgerAppScreen } from "./types/app";
 import type { CategoryDefinition } from "./types/category";
 import type { LedgerEntry, LedgerEntryDraft } from "./types/ledger";
-import { getMonthKey, toIsoDate } from "./utils/calendar";
+import { formatMonthYear, getMonthKey, toIsoDate } from "./utils/calendar";
 import { createDraft } from "./utils/ledgerEntries";
 import { resolveFallbackDisplayName } from "./utils/sessionDisplayName";
 
@@ -1095,11 +1094,8 @@ function SignedInApp({ session }: { session: Session }) {
   };
 
   useEffect(() => {
-    const currentLanguage = DEFAULT_STATIC_COPY_LANGUAGE;
-
-    void notifications.registerActionCategories(currentLanguage).catch((error) => {
+    void notifications.registerActionCategories().catch((error) => {
       logAppError("App", error, {
-        language: currentLanguage,
         step: "register_notification_action_categories",
       });
     });
@@ -1295,19 +1291,21 @@ function SignedInApp({ session }: { session: Session }) {
       <SafeAreaView edges={["top"]} style={styles.headerSafeArea}>
         <View style={styles.headerShell}>
           <AppHeader
-            canSwitchTitle={canSwitchHeaderLedgerBook}
+            canSwitchTitle={currentScreen === "calendar"}
             isMenuOpen={isMenuOpen}
             isReadOnlyTitle={currentScreen === "calendar" && ledgerState.isReadOnlyDueToPlanLimit}
-            onPressTitle={() => setIsLedgerSwitcherOpen(true)}
-            showsPlusBadge={
-              currentScreen === "calendar" && subscription.currentTier === SubscriptionTiers.plus
-            }
+            onPressTitle={currentScreen === "calendar" ? handleOpenYearPicker : undefined}
+            showsPlusBadge={false}
             titleLabel={
               currentScreen === "calendar"
-                ? annualReport.bookName
+                ? null
+                : currentScreen === "charts"
+                ? `${formatMonthYear(ledgerState.visibleMonth)} 차트`
                 : getAppScreenLabel(currentScreen)
             }
-            yearLabel={null}
+            yearLabel={
+              currentScreen === "calendar" ? `${ledgerState.visibleMonth.getFullYear()}년` : null
+            }
             onOpenMenu={() => setIsMenuOpen((currentValue) => !currentValue)}
           />
         </View>
@@ -1340,7 +1338,6 @@ function SignedInApp({ session }: { session: Session }) {
                 onEditSelectedEntryFromAllEntries={handleEditEntryFromAllEntries}
                 onEditSelectedEntryFromCalendar={handleEditEntryFromCalendar}
                 onVisibleAllEntriesChange={handleVisibleAllEntriesChange}
-                onOpenMonthPicker={handleOpenYearPicker}
                 onOpenAdTrackingSettings={handleOpenAdTrackingSettings}
                 onOpenSubscription={handleOpenSubscription}
                 onOpenSubscriptionManagement={handleOpenSubscriptionManagement}

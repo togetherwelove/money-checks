@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
+import { AppLayout } from "../constants/layout";
 import { AppMessages } from "../constants/messages";
 
 const CELL_WIDTH = "14.2857%";
@@ -22,6 +23,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     borderBottomColor: AppColors.border,
     borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingTop: AppLayout.compactGap,
     paddingBottom: 4,
   },
   weekdayCell: {

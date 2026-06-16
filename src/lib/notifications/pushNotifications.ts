@@ -2,7 +2,6 @@ import Constants from "expo-constants";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 
-import type { AppLanguage } from "../../i18n/types";
 import { buildNotificationActionCategoryDefinitions } from "./notificationActions";
 import { syncPushDeviceToken } from "./pushDeviceTokens";
 
@@ -71,9 +70,9 @@ export async function syncPushRegistration(userId: string): Promise<void> {
   await syncPushDeviceToken(expoPushToken, "ios", userId);
 }
 
-export async function registerNotificationActionCategories(language: AppLanguage): Promise<void> {
+export async function registerNotificationActionCategories(): Promise<void> {
   await Promise.all(
-    buildNotificationActionCategoryDefinitions(language).map((category) =>
+    buildNotificationActionCategoryDefinitions().map((category) =>
       Notifications.setNotificationCategoryAsync(category.identifier, [...category.actions]),
     ),
   );

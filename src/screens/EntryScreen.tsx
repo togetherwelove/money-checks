@@ -228,7 +228,7 @@ export function EntryScreen({
           onPressDateLabel={handleOpenDatePicker}
           onSelectType={updateDraftType}
           selectedType={draft.type}
-          showMoveToToday={entryFormDate !== todayIsoDate}
+          showMoveToToday={false}
         />
         <LedgerEditorPanel
           activeBookId={activeBookId}

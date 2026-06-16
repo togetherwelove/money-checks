@@ -20,13 +20,14 @@ import { WeekdayHeader } from "../components/WeekdayHeader";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import { AppMessages } from "../constants/messages";
+import { formatMonthLabel } from "../constants/ledgerDisplay";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
 import type { LedgerEntry } from "../types/ledger";
 import {
   addMonths,
   formatCurrency,
   formatLedgerListHeaderDate,
-  formatMonthYear,
+  parseIsoDate,
   startOfMonth,
   toIsoDate,
 } from "../utils/calendar";
@@ -34,7 +35,7 @@ import {
 type HomeScreenProps = {
   onDeleteSelectedEntry: (entry: LedgerEntry) => Promise<boolean>;
   onEditSelectedEntry: (entry: LedgerEntry) => void;
-  onOpenMonthPicker: () => void;
+  onOpenMonthPicker?: () => void;
   onSelectCalendarDate: (isoDate: string) => void;
   showsBannerAd: boolean;
   state: LedgerScreenState;
@@ -125,7 +126,7 @@ function KeyboardAwareContent({
   monthlyLedger: LedgerScreenState["monthlyLedger"];
   onDeleteSelectedEntry: (entry: LedgerEntry) => Promise<boolean>;
   onEditSelectedEntry: (entry: LedgerEntry) => void;
-  onOpenMonthPicker: () => void;
+  onOpenMonthPicker?: () => void;
   onRefreshLedger: () => Promise<void>;
   onSelectCalendarDate: (isoDate: string) => void;
   selectedDate: string;
@@ -138,9 +139,6 @@ function KeyboardAwareContent({
 }) {
   return (
     <View style={styles.screenContent}>
-      <View style={styles.adPanel}>
-        {showsBannerAd ? <AppBannerAd variant="embedded" /> : null}
-      </View>
       {errorMessage ? (
         <Pressable
           accessibilityRole="button"
@@ -164,12 +162,12 @@ function KeyboardAwareContent({
       ) : null}
       <View style={styles.monthHeaderSection}>
         <CalendarToolbar
-          monthLabel={formatMonthYear(visibleMonth)}
+          monthLabel={formatMonthLabel(visibleMonth)}
           onPressMonthLabel={onOpenMonthPicker}
           onSelectToday={() => {
             onSelectCalendarDate(todayIsoDate);
           }}
-          showMoveToCurrent={selectedDate !== todayIsoDate}
+          showMoveToCurrent={false}
         />
       </View>
       <View style={styles.calendarAdSection}>
@@ -179,12 +177,15 @@ function KeyboardAwareContent({
           currentPage={state.currentMonthPage}
           isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
           nextPage={state.nextMonthPage}
-          onMoveMonth={(monthOffset) => moveMonth(visibleMonth, monthOffset, onSelectCalendarDate)}
+          onMoveMonth={(monthOffset) =>
+            moveMonth(visibleMonth, monthOffset, onSelectCalendarDate, todayIsoDate)
+          }
           onSelectDate={onSelectCalendarDate}
           previousPage={state.previousMonthPage}
           selectedDate={selectedDate}
         />
         <View style={styles.summaryPanel}>
+          {showsBannerAd ? <AppBannerAd variant="embedded" /> : null}
           <MonthlySummary
             balanceAmount={monthlyLedger.balance}
             totalExpense={formatCurrency(monthlyLedger.totalExpense)}
@@ -261,8 +262,20 @@ function moveMonth(
   visibleMonth: Date,
   monthOffset: number,
   onSelectDate: (isoDate: string) => void,
+  todayIsoDate: string,
 ) {
-  onSelectDate(toIsoDate(startOfMonth(addMonths(visibleMonth, monthOffset))));
+  const targetDate = addMonths(visibleMonth, monthOffset);
+  const todayDate = parseIsoDate(todayIsoDate);
+
+  if (
+    targetDate.getFullYear() === todayDate.getFullYear() &&
+    targetDate.getMonth() === todayDate.getMonth()
+  ) {
+    onSelectDate(todayIsoDate);
+    return;
+  }
+
+  onSelectDate(toIsoDate(startOfMonth(targetDate)));
 }
 
 const styles = StyleSheet.create({
@@ -302,7 +315,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderColor: AppColors.border,
     backgroundColor: AppColors.surfaceMuted,
-    paddingVertical: 2,
   },
   error: {
     color: AppColors.expense,

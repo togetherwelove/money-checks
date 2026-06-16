@@ -1,27 +1,6 @@
-import { selectStaticCopy } from "../i18n/staticCopy";
 
 export const SharedLedgerJoinPreviewCopy = {
-  ...selectStaticCopy({
-    en: {
-      accessibleLimit: "You have used all available ledgers.",
-      alreadyPending: "A join request is already pending.",
-      approvalDiscardReady: "Personal ledger will be deleted on approval.",
-      confirmDiscardAction: "Delete Records",
-      confirmDiscardMessage:
-        "If the owner approves your request, your current personal ledger and its records will be deleted.",
-      confirmDiscardTitle: "Delete Personal Ledger",
-      confirmRequestAction: "Send Request",
-      confirmRequestMessage: "After approval, this ledger will be added to your ledger list.",
-      confirmRequestTitle: "Request Access",
-      editorBlocked:
-        "Free plan can use one ledger. Leave your current shared ledger before joining another one.",
-      invalidCode: "Enter a valid share code.",
-      joinCooldown: "Please wait before requesting this ledger again.",
-      ownerBlocked:
-        "Owners of shared ledgers with members cannot join another ledger on the Free plan.",
-      targetMemberLimit: "This shared ledger has reached its member limit.",
-    },
-    ko: {
+  ...{
       accessibleLimit: "사용 가능한 가계부 개수를 모두 사용했어요.",
       alreadyPending: "이미 참여 요청이 대기 중이에요.",
       approvalDiscardReady: "승인 시 개인 가계부 내역이 삭제돼요.",
@@ -37,7 +16,6 @@ export const SharedLedgerJoinPreviewCopy = {
       joinCooldown: "이 가계부에는 잠시 뒤 다시 요청할 수 있어요.",
       ownerBlocked: "구성원이 있는 가계부의 소유자는 Free 플랜에서 다른 가계부에 참여할 수 없어요.",
       targetMemberLimit: "이 공유 가계부는 구성원 한도에 도달했어요.",
-    },
-  } as const),
+    } as const,
   cancelAction: "취소",
 } as const;

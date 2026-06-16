@@ -1,4 +1,3 @@
-import { selectStaticCopy } from "../i18n/staticCopy";
 import type { MonthlyComparisonMetric, MonthlyInsights } from "../types/ledger";
 import { formatCurrency } from "../utils/calendar";
 
@@ -31,28 +30,7 @@ export type PushNotificationContent = {
   title: string;
 };
 
-const MonthlyComparisonCopy = selectStaticCopy({
-  en: {
-    currentExpense: {
-      prefix: "This month's ",
-      subject: "expense",
-      suffix: " was {amount}.",
-    },
-    currentIncome: {
-      prefix: "This month's ",
-      subject: "income",
-      suffix: " was {amount}.",
-    },
-    expenseDecrease: "That is {amount} less than last month.",
-    expenseIncrease: "That is {amount} more than last month.",
-    incomeDecrease: "That is {amount} less than last month.",
-    incomeIncrease: "That is {amount} more than last month.",
-    previousAmountPrefix: "Previous",
-    previousDataUnavailable:
-      "There is no previous month record yet, so comparison will be available next month.",
-    same: "That is the same as last month.",
-  },
-  ko: {
+const MonthlyComparisonCopy = {
     currentExpense: {
       prefix: "이번 달의 ",
       subject: "지출",
@@ -70,23 +48,9 @@ const MonthlyComparisonCopy = selectStaticCopy({
     previousAmountPrefix: "전월",
     previousDataUnavailable: "지난달 기록이 아직 없어 다음 달부터 비교할 수 있어요.",
     same: "지난달과 같아요.",
-  },
-} as const);
+  } as const;
 
-const MonthlyComparisonCurrentSentenceFallbackCopy = selectStaticCopy({
-  en: {
-    expense: {
-      prefix: "This month's ",
-      subject: "expense",
-      suffix: " was {amount}.",
-    },
-    income: {
-      prefix: "This month's ",
-      subject: "income",
-      suffix: " was {amount}.",
-    },
-  },
-  ko: {
+const MonthlyComparisonCurrentSentenceFallbackCopy = {
     expense: {
       prefix: "이번 달의 ",
       subject: "지출",
@@ -97,19 +61,12 @@ const MonthlyComparisonCurrentSentenceFallbackCopy = selectStaticCopy({
       subject: "수입",
       suffix: "은 {amount}이에요.",
     },
-  },
-} as const);
+  } as const;
 
-const PreviousMonthSummaryCopy = selectStaticCopy({
-  en: {
-    body: "Income: {incomeSummary}\nExpense: {expenseSummary}",
-    title: "{currentMonthLabel} Income & Expense Review",
-  },
-  ko: {
+const PreviousMonthSummaryCopy = {
     body: "수입: {incomeSummary}\n지출: {expenseSummary}",
     title: "{currentMonthLabel} 수입·지출 돌아보기",
-  },
-} as const);
+  } as const;
 
 export function buildMonthlyComparisonSummary(
   metric: MonthlyComparisonMetric,

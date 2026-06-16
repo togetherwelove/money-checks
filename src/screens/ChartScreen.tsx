@@ -9,7 +9,6 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
-import { AppBannerAd } from "../components/AppBannerAd";
 import { ChartMonthPager } from "../components/chartScreen/ChartMonthPager";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
@@ -60,7 +59,6 @@ export function ChartScreen({ showsBannerAd, state, userId }: ChartScreenProps) 
 
   return (
     <View style={styles.screen}>
-      {showsBannerAd ? <AppBannerAd /> : null}
       <Animated.View style={[styles.pagerLayer, animatedStyle]}>
         <ChartMonthPager
           currentMonth={state.currentChartMonth}
@@ -75,6 +73,7 @@ export function ChartScreen({ showsBannerAd, state, userId }: ChartScreenProps) 
             )
           }
           previousMonth={state.previousChartMonth}
+          showsBannerAd={showsBannerAd}
         />
       </Animated.View>
     </View>
@@ -82,10 +81,8 @@ export function ChartScreen({ showsBannerAd, state, userId }: ChartScreenProps) 
 }
 
 const styles = StyleSheet.create({
-  bannerSection: {},
   pagerLayer: {
     flex: 1,
-    paddingTop: AppLayout.screenTopPadding,
   },
   screen: {
     flex: 1,

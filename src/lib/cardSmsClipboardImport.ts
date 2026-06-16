@@ -1,7 +1,6 @@
 import * as Clipboard from "expo-clipboard";
 
 import { CardSmsClipboardCopy } from "../constants/cardSmsClipboard";
-import { resolveStaticCopyLanguage } from "../i18n/staticCopy";
 import type { LedgerEntryType } from "../types/ledger";
 import { formatAmountInput } from "../utils/amount";
 import { parseIsoDate, toIsoDate } from "../utils/calendar";
@@ -110,18 +109,10 @@ function formatCardSmsClipboardDraftDateLabel(date: string | null, now: Date): s
 }
 
 function formatCardSmsClipboardDateDaysAgoSuffix(): string {
-  if (resolveStaticCopyLanguage() === "en") {
-    return ` ${CardSmsClipboardCopy.dateDaysAgoSuffix}`;
-  }
-
   return CardSmsClipboardCopy.dateDaysAgoSuffix;
 }
 
 function formatCardSmsClipboardFutureDateLabel(dayOffset: number): string {
-  if (resolveStaticCopyLanguage() === "en") {
-    return `${CardSmsClipboardCopy.dateDaysLaterPrefix} ${dayOffset} ${CardSmsClipboardCopy.dateDaysLaterSuffix}`;
-  }
-
   return `${dayOffset}${CardSmsClipboardCopy.dateDaysLaterSuffix}`;
 }
 

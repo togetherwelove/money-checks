@@ -1,21 +1,11 @@
-import { selectStaticCopy } from "../i18n/staticCopy";
 
-export const MenuCopy = selectStaticCopy({
-  en: {
-    sections: {
-      account: "Account & Alerts",
-      ledger: "Export",
-      support: "Plans & Support",
-    },
-  },
-  ko: {
+export const MenuCopy = {
     sections: {
       account: "계정 및 알림",
       ledger: "내보내기",
       support: "이용 및 지원",
     },
-  },
-} as const);
+  } as const;
 
 export const MenuUi = {
   drawerAnimationDurationMs: 220,
@@ -36,20 +26,27 @@ export const MenuUi = {
 } as const;
 
 export const FooterTabBarUi = {
-  activeIconButtonSize: 44,
+  iconButtonSize: 24,
+  primaryIconButtonSize: 36,
   barPaddingHorizontal: 8,
   borderTopWidth: 1,
   badgeDotBorderWidth: 2,
-  badgeDotOffset: 6,
+  badgeDotOffset: -1,
   badgeDotSize: 10,
-  iconSize: 24,
+  iconSize: 21,
+  labelFontSize: 10,
+  labelGap: 1,
+  labelLineHeight: 12,
   tabGap: 3,
-  tabPaddingVertical: 5,
+  tabPaddingVertical: 4,
 } as const;
 
 export const FooterTabBarMetrics = {
   height:
-    FooterTabBarUi.activeIconButtonSize +
+    Math.max(
+      FooterTabBarUi.primaryIconButtonSize,
+      FooterTabBarUi.iconButtonSize + FooterTabBarUi.labelGap + FooterTabBarUi.labelLineHeight,
+    ) +
     FooterTabBarUi.tabPaddingVertical * 2 +
     FooterTabBarUi.borderTopWidth,
 } as const;

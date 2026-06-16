@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 
-import type { AppLanguage } from "../i18n/types";
 import { logAppError } from "../lib/logAppError";
 import {
   isPushNotificationRateLimitError,
@@ -39,7 +38,7 @@ type LedgerNotificationsState = {
   permissionLabel: string;
   permissionState: NotificationPermissionState;
   preferenceGroups: NotificationPreferenceGroup[];
-  registerActionCategories: (language: AppLanguage) => Promise<void>;
+  registerActionCategories: () => Promise<void>;
   requestNotifications: () => Promise<boolean>;
   sendPendingJoinRequestNotification: () => Promise<void>;
   sendPushNotificationToBookMembers: (

@@ -82,7 +82,19 @@ export type MonthlyCategoryExpense = {
   share: number;
 };
 
+export type MonthlyCategoryIncome = {
+  amount: number;
+  category: string;
+  share: number;
+};
+
 export type MonthlyMemberExpense = {
+  amount: number;
+  memberName: string;
+  share: number;
+};
+
+export type MonthlyMemberIncome = {
   amount: number;
   memberName: string;
   share: number;
@@ -102,6 +114,8 @@ export type MonthlyInsights = {
   expenseComparison: MonthlyComparisonMetric;
   incomeComparison: MonthlyComparisonMetric;
   categoryExpenses: MonthlyCategoryExpense[];
+  categoryIncomes: MonthlyCategoryIncome[];
   memberExpenses: MonthlyMemberExpense[];
+  memberIncomes: MonthlyMemberIncome[];
   trendMonths: MonthlyTrendPoint[];
 };

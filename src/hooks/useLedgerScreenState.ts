@@ -108,6 +108,7 @@ export function useLedgerScreenState(
   );
   const {
     isLoadingSelectedDateEntries,
+    removeSelectedDateEntry,
     refreshSelectedDateEntries,
     selectedEntries,
     selectedEntriesError,
@@ -255,6 +256,7 @@ export function useLedgerScreenState(
 
     await removeLedgerEntry(entryId);
     setEntries((currentEntries) => currentEntries.filter((entry) => entry.id !== entryId));
+    removeSelectedDateEntry(entryId);
     if (editingEntryId === entryId) {
       resetEditor(selectedDate);
     }

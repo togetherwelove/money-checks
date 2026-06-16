@@ -7,10 +7,12 @@ import {
 import type {
   LedgerEntry,
   MonthlyCategoryExpense,
+  MonthlyCategoryIncome,
   MonthlyChangeDirection,
   MonthlyComparisonMetric,
   MonthlyInsights,
   MonthlyMemberExpense,
+  MonthlyMemberIncome,
   MonthlyTrendPoint,
 } from "../types/ledger";
 import { addMonths } from "./calendar";
@@ -51,11 +53,13 @@ export function buildMonthlyInsightsFromMonths(
 
   return {
     categoryExpenses: buildCategoryExpenses(currentMonthEntries),
+    categoryIncomes: buildCategoryIncomes(currentMonthEntries),
     currentMonthLabel: formatMonthLabel(currentMonthDate),
     expenseComparison: buildComparisonMetric(currentMonthEntries, previousMonthEntries, "expense"),
     incomeComparison: buildComparisonMetric(currentMonthEntries, previousMonthEntries, "income"),
     previousMonthLabel: formatMonthLabel(previousMonthDate),
     memberExpenses: buildMemberExpenses(currentMonthEntries),
+    memberIncomes: buildMemberIncomes(currentMonthEntries),
     trendMonths: buildTrendMonths(currentMonthDate, trendMonths),
   };
 }
@@ -78,14 +82,25 @@ function buildComparisonMetric(
 }
 
 function buildCategoryExpenses(entries: LedgerEntry[]): MonthlyCategoryExpense[] {
-  const expenseEntries = entries.filter((entry) => entry.type === "expense");
-  const totalExpense = expenseEntries.reduce((sum, entry) => sum + entry.amount, 0);
-  if (!totalExpense) {
+  return buildCategoryBreakdown(entries, "expense");
+}
+
+function buildCategoryIncomes(entries: LedgerEntry[]): MonthlyCategoryIncome[] {
+  return buildCategoryBreakdown(entries, "income");
+}
+
+function buildCategoryBreakdown(
+  entries: LedgerEntry[],
+  type: "expense" | "income",
+): MonthlyCategoryExpense[] {
+  const typedEntries = entries.filter((entry) => entry.type === type);
+  const totalAmount = typedEntries.reduce((sum, entry) => sum + entry.amount, 0);
+  if (!totalAmount) {
     return [];
   }
 
   const amountByCategory = new Map<string, number>();
-  for (const entry of expenseEntries) {
+  for (const entry of typedEntries) {
     const categoryLabel = entry.category.trim() || EMPTY_CATEGORY_LABEL;
     amountByCategory.set(categoryLabel, (amountByCategory.get(categoryLabel) ?? 0) + entry.amount);
   }
@@ -95,19 +110,30 @@ function buildCategoryExpenses(entries: LedgerEntry[]): MonthlyCategoryExpense[]
     .map(([category, amount]) => ({
       amount,
       category,
-      share: amount / totalExpense,
+      share: amount / totalAmount,
     }));
 }
 
 function buildMemberExpenses(entries: LedgerEntry[]): MonthlyMemberExpense[] {
-  const expenseEntries = entries.filter((entry) => entry.type === "expense");
-  const totalExpense = expenseEntries.reduce((sum, entry) => sum + entry.amount, 0);
-  if (!totalExpense) {
+  return buildMemberBreakdown(entries, "expense");
+}
+
+function buildMemberIncomes(entries: LedgerEntry[]): MonthlyMemberIncome[] {
+  return buildMemberBreakdown(entries, "income");
+}
+
+function buildMemberBreakdown(
+  entries: LedgerEntry[],
+  type: "expense" | "income",
+): MonthlyMemberExpense[] {
+  const typedEntries = entries.filter((entry) => entry.type === type);
+  const totalAmount = typedEntries.reduce((sum, entry) => sum + entry.amount, 0);
+  if (!totalAmount) {
     return [];
   }
 
   const amountByMember = new Map<string, number>();
-  for (const entry of expenseEntries) {
+  for (const entry of typedEntries) {
     const memberName =
       entry.targetMemberName?.trim() || entry.authorName?.trim() || DEFAULT_MEMBER_DISPLAY_NAME;
     amountByMember.set(memberName, (amountByMember.get(memberName) ?? 0) + entry.amount);
@@ -118,7 +144,7 @@ function buildMemberExpenses(entries: LedgerEntry[]): MonthlyMemberExpense[] {
     .map(([memberName, amount]) => ({
       amount,
       memberName,
-      share: amount / totalExpense,
+      share: amount / totalAmount,
     }));
 }
 

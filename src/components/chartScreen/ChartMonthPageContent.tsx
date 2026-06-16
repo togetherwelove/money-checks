@@ -8,9 +8,10 @@ import { MonthlyInsightsSection } from "../MonthlyInsightsSection";
 
 type ChartMonthPageContentProps = {
   month: ChartMonthData;
+  showsBannerAd: boolean;
 };
 
-export function ChartMonthPageContent({ month }: ChartMonthPageContentProps) {
+export function ChartMonthPageContent({ month, showsBannerAd }: ChartMonthPageContentProps) {
   const safeAreaInsets = useSafeAreaInsets();
   const contentPaddingBottom = AppLayout.chartPageBottomPadding + safeAreaInsets.bottom;
 
@@ -22,8 +23,7 @@ export function ChartMonthPageContent({ month }: ChartMonthPageContentProps) {
         showsVerticalScrollIndicator={false}
         style={styles.scroll}
       >
-        <Text style={styles.title}>{month.title}</Text>
-        <MonthlyInsightsSection insights={month.monthlyInsights} />
+        <MonthlyInsightsSection insights={month.monthlyInsights} showsBannerAd={showsBannerAd} />
       </ScrollView>
     </View>
   );
@@ -41,10 +41,5 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: AppLayout.screenPadding,
     gap: AppLayout.cardGap,
-  },
-  title: {
-    color: AppColors.text,
-    fontSize: 22,
-    fontWeight: "800",
   },
 });

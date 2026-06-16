@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { AppMessages } from "../../constants/messages";
 import { fetchLedgerEntries } from "../../lib/ledgerEntries";
@@ -9,6 +9,7 @@ import { buildLedgerEntryListSignature } from "../../utils/ledgerEntrySignature"
 
 type SelectedDateEntriesState = {
   isLoadingSelectedDateEntries: boolean;
+  removeSelectedDateEntry: (entryId: string) => void;
   refreshSelectedDateEntries: () => Promise<void>;
   selectedEntries: LedgerEntry[];
   selectedEntriesError: string | null;
@@ -128,8 +129,29 @@ export function useSelectedDateEntries(
     };
   }, [activeBookId, entriesByDate, selectedDate, selectedDateEntrySignature, signatureByDate]);
 
+  const removeSelectedDateEntry = useCallback(
+    (entryId: string) => {
+      const currentEntries = entriesByDate[selectedDate];
+      if (!currentEntries?.some((entry) => entry.id === entryId)) {
+        return;
+      }
+
+      const nextEntries = currentEntries.filter((entry) => entry.id !== entryId);
+      setEntriesByDate({
+        ...entriesByDate,
+        [selectedDate]: nextEntries,
+      });
+      setSignatureByDate({
+        ...signatureByDate,
+        [selectedDate]: buildLedgerEntryListSignature(nextEntries),
+      });
+    },
+    [entriesByDate, selectedDate, signatureByDate],
+  );
+
   return {
     isLoadingSelectedDateEntries,
+    removeSelectedDateEntry,
     refreshSelectedDateEntries: async () => {
       if (!activeBookId) {
         return;

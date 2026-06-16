@@ -1,19 +1,5 @@
-import { selectStaticCopy } from "../i18n/staticCopy";
 
-const CardSmsClipboardLocalizedCopy = selectStaticCopy({
-  en: {
-    applyAction: "Register",
-    amountCurrencySuffix: " KRW",
-    dateDaysAgoSuffix: "days ago",
-    dateDaysLaterPrefix: "in",
-    dateDaysLaterSuffix: "days",
-    directEntryAction: "Enter Manually",
-    fallbackDateLabel: "No date",
-    todayDateLabel: "Today",
-    tomorrowDateLabel: "Tomorrow",
-    yesterdayDateLabel: "Yesterday",
-  },
-  ko: {
+const CardSmsClipboardLocalizedCopy = {
     applyAction: "등록",
     amountCurrencySuffix: "원",
     dateDaysAgoSuffix: "일 전",
@@ -24,8 +10,7 @@ const CardSmsClipboardLocalizedCopy = selectStaticCopy({
     todayDateLabel: "오늘",
     tomorrowDateLabel: "내일",
     yesterdayDateLabel: "어제",
-  },
-} as const);
+  } as const;
 
 export const CardSmsClipboardCopy = {
   ...CardSmsClipboardLocalizedCopy,

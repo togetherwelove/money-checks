@@ -40,10 +40,7 @@ export function AdTrackingPermissionCard({
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>맞춤형 광고</Text>
-      <Text {...AppTextBreakProps} style={styles.description}>
-        Free 플랜에서 더 관련성 높은 광고를 제공하고 광고 성과를 측정하는 데 사용돼요.
-      </Text>
+      <Text style={styles.title}>앱 추적 권한 허용하기</Text>
       <View style={styles.actionRow}>
         <Text style={styles.status}>{resolveAdTrackingStatusLabel(permissionState)}</Text>
         {action}
@@ -74,11 +71,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   title: CardTitleTextStyle,
-  description: {
-    ...SupportingTextStyle,
-    fontSize: 12,
-    lineHeight: 18,
-  },
   actionRow: {
     flexDirection: "row",
     alignItems: "center",

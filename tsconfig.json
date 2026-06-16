@@ -3,7 +3,8 @@
   "compilerOptions": {
     "moduleSuffixes": [".native", ""],
     "strict": true,
-    "types": ["node"]
+    "types": ["node"],
+    "jsx": "react-jsx"
   },
   "exclude": ["dist", "node_modules", "supabase/functions"]
 }

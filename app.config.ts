@@ -7,6 +7,7 @@ const packageJsonPath = path.join(__dirname, "package.json");
 const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8")) as { version?: string };
 const appVersion = packageJson.version ?? "0.0.0";
 const admobIosAppId = process.env.EXPO_PUBLIC_ADMOB_IOS_APP_ID ?? "";
+const nativeAdDebuggerEnable = false;
 const appIconPath = "./assets/app/icon.png";
 const iosGoogleServicesFilePath = resolveIosGoogleServicesFilePath();
 const iosDevelopmentRegion = "ko";
@@ -65,6 +66,7 @@ const config: ExpoConfig = {
     infoPlist: {
       CFBundleDevelopmentRegion: iosDevelopmentRegion,
       CFBundleLocalizations: iosBundleLocalizations,
+      GADNativeAdValidatorEnabled: nativeAdDebuggerEnable,
       ITSAppUsesNonExemptEncryption: false,
       NSUserTrackingUsageDescription: iosUserTrackingPermission,
     },

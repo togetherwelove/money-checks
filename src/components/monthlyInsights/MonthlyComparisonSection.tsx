@@ -24,7 +24,6 @@ type ComparisonCardProps = {
 export function MonthlyComparisonSection({ insights }: MonthlyComparisonSectionProps) {
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{MonthlyInsightChartCopy.previousComparisonTitle}</Text>
       <View style={styles.comparisonList}>
         <ComparisonRow
           comparison={insights.incomeComparison}

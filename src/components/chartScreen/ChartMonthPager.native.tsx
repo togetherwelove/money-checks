@@ -12,6 +12,7 @@ type ChartMonthPagerProps = {
   nextMonth: ChartMonthData;
   onMoveMonth: (monthOffset: -1 | 1) => void;
   previousMonth: ChartMonthData;
+  showsBannerAd: boolean;
 };
 
 export function ChartMonthPager({
@@ -19,6 +20,7 @@ export function ChartMonthPager({
   nextMonth,
   onMoveMonth,
   previousMonth,
+  showsBannerAd,
 }: ChartMonthPagerProps) {
   const currentMonthKey = currentMonth.key;
   const currentMonthKeyRef = useRef(currentMonthKey);
@@ -58,9 +60,9 @@ export function ChartMonthPager({
         handlePageSelected(event.nativeEvent.position);
       }}
     >
-      <ChartMonthPageContent month={previousMonth} />
-      <ChartMonthPageContent month={currentMonth} />
-      <ChartMonthPageContent month={nextMonth} />
+      <ChartMonthPageContent month={previousMonth} showsBannerAd={showsBannerAd} />
+      <ChartMonthPageContent month={currentMonth} showsBannerAd={showsBannerAd} />
+      <ChartMonthPageContent month={nextMonth} showsBannerAd={showsBannerAd} />
     </PagerView>
   );
 }

@@ -99,17 +99,6 @@ export function AppNativeAdCard({ slotIndex }: AppNativeAdCardProps) {
                 </NativeAsset>
               ) : null}
             </View>
-            <View style={styles.footerRow}>
-              <View style={styles.advertiserRow}>
-                {nativeAd.advertiser ? (
-                  <NativeAsset assetType={NativeAssetType.ADVERTISER}>
-                    <Text {...OneLineTextFitProps} style={styles.advertiser}>
-                      {nativeAd.advertiser}
-                    </Text>
-                  </NativeAsset>
-                ) : null}
-              </View>
-            </View>
           </View>
           {nativeAd.callToAction ? (
             <NativeAsset assetType={NativeAssetType.CALL_TO_ACTION}>
@@ -163,7 +152,6 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: NativeAdCardUi.textBlockGap,
     minWidth: 0,
-    paddingRight: NativeAdCardUi.headerAdChoicesReservedWidth,
   },
   mainCopy: {
     flexShrink: 1,
@@ -176,34 +164,19 @@ const styles = StyleSheet.create({
     gap: NativeAdCardUi.textBlockGap,
     minWidth: 0,
   },
+  icon: {
+    height: "100%",
+    width: "100%",
+  },
   iconFrame: {
     alignItems: "center",
     backgroundColor: AppColors.surfaceMuted,
-    borderRadius: NativeAdCardUi.iconFrameBorderRadius,
+    borderRadius: NativeAdCardUi.iconBorderRadius,
     flexShrink: 0,
-    height: NativeAdCardUi.iconFrameSize,
+    height: NativeAdCardUi.iconSize,
     justifyContent: "center",
     overflow: "hidden",
-    width: NativeAdCardUi.iconFrameSize,
-  },
-  icon: {
-    borderRadius: NativeAdCardUi.iconBorderRadius,
-    height: NativeAdCardUi.iconSize,
     width: NativeAdCardUi.iconSize,
-  },
-  advertiserRow: {
-    alignItems: "center",
-    flex: 1,
-    flexDirection: "row",
-    gap: NativeAdCardUi.advertiserGap,
-    minWidth: 0,
-  },
-  footerRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: NativeAdCardUi.headerGap,
-    justifyContent: "space-between",
-    minWidth: 0,
   },
   sponsoredLabel: {
     color: AppColors.mutedText,
@@ -219,11 +192,6 @@ const styles = StyleSheet.create({
     flex: 1,
     lineHeight: NativeAdCardUi.headlineLineHeight,
     minWidth: 0,
-  },
-  advertiser: {
-    color: AppColors.mutedText,
-    fontSize: NativeAdCardUi.advertiserFontSize,
-    fontWeight: "600",
   },
   body: {
     color: AppColors.mutedText,

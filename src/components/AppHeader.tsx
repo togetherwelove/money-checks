@@ -1,6 +1,5 @@
 import { Feather } from "@expo/vector-icons";
-import { StyleSheet, Text, View } from "react-native";
-import { Pressable } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
 import { SubscriptionMessages } from "../constants/subscription";
@@ -49,7 +48,7 @@ export function AppHeader({
             </View>
           ) : null}
           {canSwitchTitle ? (
-            <Feather color={AppColors.mutedStrongText} name="chevron-down" size={16} />
+            <Feather color={AppColors.mutedStrongText} name="chevron-down" size={18} />
           ) : null}
         </>
       )}
@@ -59,7 +58,6 @@ export function AppHeader({
 
   return (
     <View style={styles.container}>
-      <View style={styles.sideSlot} />
       <View style={styles.titleSlot}>
         {canPressTitle ? (
           <Pressable accessibilityRole="button" onPress={onPressTitle} style={styles.titleButton}>
@@ -69,8 +67,13 @@ export function AppHeader({
           titleContent
         )}
       </View>
-      <View style={[styles.sideSlot, styles.trailingSlot]}>
-        <IconActionButton icon={menuIcon} isActive={isMenuOpen} onPress={onOpenMenu} />
+      <View style={styles.trailingSlot}>
+        <IconActionButton
+          icon={menuIcon}
+          isActive={isMenuOpen}
+          onPress={onOpenMenu}
+          size="compact"
+        />
       </View>
     </View>
   );
@@ -80,26 +83,25 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 8,
-    paddingBottom: 6,
-  },
-  sideSlot: {
-    width: 104,
-    justifyContent: "center",
+    minHeight: 36,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
   },
   trailingSlot: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "flex-end",
-    gap: 4,
+    flexShrink: 0,
   },
   titleSlot: {
     flex: 1,
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "center",
+    minWidth: 0,
   },
   titleButton: {
     minWidth: 0,
+    maxWidth: "100%",
   },
   titleRow: {
     flexDirection: "row",
@@ -117,8 +119,8 @@ const styles = StyleSheet.create({
   readOnlyChip: {
     borderRadius: 999,
     backgroundColor: AppColors.surfaceStrong,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
   },
   readOnlyChipText: {
     color: AppColors.expense,

@@ -1,6 +1,5 @@
 import type * as AppleAuthentication from "expo-apple-authentication";
 
-import { resolveStaticCopyLanguage } from "../../i18n/staticCopy";
 
 type AppleNameParts = {
   familyName: string | null;
@@ -14,10 +13,7 @@ export function resolveAppleDisplayName(
   const givenName = normalizeNamePart(credential.fullName?.givenName);
   const middleName = normalizeNamePart(credential.fullName?.middleName);
   const familyName = normalizeNamePart(credential.fullName?.familyName);
-  const fullName =
-    resolveStaticCopyLanguage() === "ko"
-      ? [familyName, givenName, middleName].filter(Boolean).join("")
-      : [givenName, middleName, familyName].filter(Boolean).join(" ");
+  const fullName = [familyName, givenName, middleName].filter(Boolean).join("");
 
   if (!fullName) {
     return null;

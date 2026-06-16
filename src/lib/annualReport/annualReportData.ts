@@ -1,9 +1,8 @@
 import { DEFAULT_MEMBER_DISPLAY_NAME } from "../../constants/ledgerDisplay";
-import { resolveStaticCopyLanguage } from "../../i18n/staticCopy";
 import type { LedgerEntry, LedgerEntryType } from "../../types/ledger";
 import { formatMonthYear, getMonthKey, parseIsoDate, startOfMonth } from "../../utils/calendar";
 
-const ANNUAL_REPORT_DATE_LOCALE = resolveStaticCopyLanguage() === "en" ? "en-US" : "ko-KR";
+const ANNUAL_REPORT_DATE_LOCALE = "ko-KR";
 
 export type AnnualReportMonthRow = {
   balance: number;

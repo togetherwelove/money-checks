@@ -80,7 +80,7 @@ export function LedgerBookManagementCard({
     activeBook?.ownerId === currentUserId && members.length === 1,
   );
   const isCreateActionDisabled =
-    !canCreateOwnedBook || (!shouldUseNativeNamePrompt && !newBookName.trim());
+    canCreateOwnedBook && !shouldUseNativeNamePrompt && !newBookName.trim();
 
   const createLedgerBook = async (normalizedName: string) => {
     const didCreate = await onCreateLedgerBook(normalizedName);

@@ -1,80 +1,5 @@
-import { selectStaticCopy } from "../i18n/staticCopy";
 
-export const AnnualReportCopy = selectStaticCopy({
-  en: {
-    confirmTitle: "Download report?",
-    customRangeOption: "Choose custom range",
-    customRangeTitle: "Choose a period.",
-    customRangeInvalidMessage: "Start date cannot be later than end date.",
-    downloadAction: "Download",
-    firstToLastOption: "First to last entry date",
-    headerAccessibilityLabel: "Download report",
-    authorSummarySheetName: "Member Summary",
-    categorySummarySheetName: "Category Summary",
-    chartSheetName: "Charts",
-    ledgerSheetName: "Ledger",
-    monthlySummarySheetName: "Monthly Summary",
-    noEntriesMessage: "There are no transactions yet, so a report cannot be created.",
-    optionTitle: "Choose report range.",
-    rangeEndLabel: "End Date",
-    rangeStartLabel: "Start Date",
-    summarySheetName: "Summary",
-    errorMessage: "Could not create the report.",
-    successMessage: "Report is ready.",
-    chartTitleSuffix: "Charts",
-    confirmMessageSuffix: "report will be downloaded.",
-    selectedYearOptionSuffix: " full year",
-    ledgerHeaders: [
-      "Date",
-      "Month",
-      "Type",
-      "Description",
-      "Category",
-      "Income",
-      "Expense",
-      "Balance",
-      "Target Member",
-      "Author",
-      "Memo",
-      "Receipts",
-      "Installment",
-      "Created At",
-      "Updated At",
-      "Entry ID",
-    ],
-    monthlySummaryHeaders: ["Month", "Income", "Expense", "Balance", "Count"],
-    expenseCategoryHeaders: ["Expense Category", "Expense", "Share", "Count"],
-    incomeCategoryHeaders: ["Income Category", "Income", "Share", "Count"],
-    memberSummaryHeaders: ["Member", "Income", "Expense", "Balance", "Count"],
-    summaryRows: {
-      balance: "Period Balance",
-      entryCount: "Entry Count",
-      expense: "Total Expense",
-      generatedAt: "Generated At",
-      income: "Total Income",
-      ledger: "Ledger",
-      note: "Note",
-      noteValue: "Reference material for organizing and sharing group ledgers.",
-      period: "Period",
-      topExpenseCategory: "Top Expense Category",
-      topIncomeCategory: "Top Income Category",
-    },
-    typeLabels: {
-      expense: "Expense",
-      income: "Income",
-    },
-    emptyCategoryLabels: {
-      expense: "No expenses",
-      income: "No income",
-    },
-    chartTitles: {
-      expenseCategory: "Expense by Category",
-      incomeCategory: "Income by Category",
-      member: "Income and Expense by Member",
-      monthly: "Monthly Income and Expense",
-    },
-  },
-  ko: {
+export const AnnualReportCopy = {
     confirmTitle: "보고서를 다운로드할까요?",
     customRangeOption: "날짜 선택하기",
     customRangeTitle: "기간을 선택해 주세요.",
@@ -146,8 +71,7 @@ export const AnnualReportCopy = selectStaticCopy({
       member: "담당자별 수입과 지출",
       monthly: "월별 수입과 지출",
     },
-  },
-} as const);
+  } as const;
 
 export type AnnualReportRangeMode = "custom-range" | "first-to-last" | "selected-year";
 

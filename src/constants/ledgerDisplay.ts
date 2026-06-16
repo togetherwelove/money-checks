@@ -1,15 +1,8 @@
-import { resolveStaticCopyLanguage, selectStaticCopy } from "../i18n/staticCopy";
 
-const LEDGER_DISPLAY_LOCALE = resolveStaticCopyLanguage() === "en" ? "en-US" : "ko-KR";
+const LEDGER_DISPLAY_LOCALE = "ko-KR";
 
-export const DEFAULT_MEMBER_DISPLAY_NAME = selectStaticCopy({
-  en: "User",
-  ko: "사용자",
-});
-export const DELETED_MEMBER_DISPLAY_NAME = selectStaticCopy({
-  en: "Deleted user",
-  ko: "알 수 없음",
-});
+export const DEFAULT_MEMBER_DISPLAY_NAME = "사용자";
+export const DELETED_MEMBER_DISPLAY_NAME = "알 수 없음";
 export const EMPTY_VALUE_PLACEHOLDER = "-";
 export const EMPTY_CATEGORY_LABEL = EMPTY_VALUE_PLACEHOLDER;
 export const SHARE_CODE_LENGTH = 16;
