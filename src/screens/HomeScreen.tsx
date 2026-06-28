@@ -37,6 +37,7 @@ type HomeScreenProps = {
   onEditSelectedEntry: (entry: LedgerEntry) => void;
   onOpenMonthPicker?: () => void;
   onSelectCalendarDate: (isoDate: string) => void;
+  isCalendarHeatmapEnabled: boolean;
   showsBannerAd: boolean;
   state: LedgerScreenState;
 };
@@ -46,6 +47,7 @@ export function HomeScreen({
   onEditSelectedEntry,
   onOpenMonthPicker,
   onSelectCalendarDate,
+  isCalendarHeatmapEnabled,
   showsBannerAd,
   state,
 }: HomeScreenProps) {
@@ -77,6 +79,7 @@ export function HomeScreen({
       <KeyboardAwareContent
         errorMessage={errorMessage}
         calendarFocusRevision={calendarFocusRevision}
+        isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
         isLoadingSelectedDateEntries={isLoadingSelectedDateEntries}
         isRefreshing={isRefreshing}
         isReadOnlyDueToPlanLimit={state.isReadOnlyDueToPlanLimit}
@@ -101,6 +104,7 @@ export function HomeScreen({
 function KeyboardAwareContent({
   errorMessage,
   calendarFocusRevision,
+  isCalendarHeatmapEnabled,
   isLoadingSelectedDateEntries,
   isRefreshing,
   isReadOnlyDueToPlanLimit,
@@ -120,6 +124,7 @@ function KeyboardAwareContent({
 }: {
   errorMessage: string | null;
   calendarFocusRevision: number;
+  isCalendarHeatmapEnabled: boolean;
   isLoadingSelectedDateEntries: boolean;
   isRefreshing: boolean;
   isReadOnlyDueToPlanLimit: boolean;
@@ -164,10 +169,6 @@ function KeyboardAwareContent({
         <CalendarToolbar
           monthLabel={formatMonthLabel(visibleMonth)}
           onPressMonthLabel={onOpenMonthPicker}
-          onSelectToday={() => {
-            onSelectCalendarDate(todayIsoDate);
-          }}
-          showMoveToCurrent={false}
         />
       </View>
       <View style={styles.calendarAdSection}>
@@ -175,6 +176,7 @@ function KeyboardAwareContent({
         <MonthCalendarPager
           key={calendarFocusRevision}
           currentPage={state.currentMonthPage}
+          isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
           isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
           nextPage={state.nextMonthPage}
           onMoveMonth={(monthOffset) =>
@@ -315,6 +317,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderColor: AppColors.border,
     backgroundColor: AppColors.surfaceMuted,
+    marginTop: AppLayout.compactGap,
   },
   error: {
     color: AppColors.expense,
@@ -339,7 +342,7 @@ const styles = StyleSheet.create({
     color: AppColors.text,
     fontSize: 13,
     fontWeight: "700",
-    paddingTop: 8
+    paddingTop: 8,
   },
   selectionRow: {
     flexDirection: "row",

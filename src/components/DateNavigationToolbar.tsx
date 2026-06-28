@@ -2,23 +2,18 @@ import type { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
-import { ICON_ACTION_BUTTON_COMPACT_SIZE, IconActionButton } from "./IconActionButton";
 
 type DateNavigationToolbarProps = {
   label: string;
-  onMoveToCurrent: () => void;
   onPressLabel?: (() => void) | null;
   spacing?: "compactBottom" | "default";
-  showMoveToCurrent?: boolean;
   trailing?: ReactNode;
 };
 
 export function DateNavigationToolbar({
   label,
-  onMoveToCurrent,
   onPressLabel = null,
   spacing = "default",
-  showMoveToCurrent = true,
   trailing = null,
 }: DateNavigationToolbarProps) {
   const labelNode = onPressLabel ? (
@@ -39,16 +34,6 @@ export function DateNavigationToolbar({
       style={[styles.container, spacing === "compactBottom" ? styles.compactBottomContainer : null]}
     >
       {labelNode}
-      <View style={styles.currentButtonSlot}>
-        {showMoveToCurrent ? (
-          <IconActionButton
-            accessibilityLabel="오늘 날짜로 이동"
-            icon="crosshair"
-            onPress={onMoveToCurrent}
-            size="compact"
-          />
-        ) : null}
-      </View>
       {trailing ? <View style={styles.trailingSlot}>{trailing}</View> : null}
     </View>
   );
@@ -59,7 +44,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     gap: 6,
-    minHeight: ICON_ACTION_BUTTON_COMPACT_SIZE,
     paddingBottom: 8,
     paddingTop: 8,
   },
@@ -92,10 +76,6 @@ const styles = StyleSheet.create({
     color: AppColors.text,
     fontSize: 18,
     fontWeight: "700",
-  },
-  currentButtonSlot: {
-    width: ICON_ACTION_BUTTON_COMPACT_SIZE,
-    height: ICON_ACTION_BUTTON_COMPACT_SIZE,
   },
   trailingSlot: {
     marginLeft: "auto",

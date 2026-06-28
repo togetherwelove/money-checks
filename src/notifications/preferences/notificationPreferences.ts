@@ -2,11 +2,19 @@ import type {
   NotificationEventType,
   NotificationPreferenceGroupId,
   NotificationThresholdKey,
+  NotificationThresholdPeriod,
 } from "../domain/notificationEvents";
+
+export type NotificationThresholdCopyValue = {
+  body: string;
+  title: string;
+};
 
 export type NotificationPreferences = {
   enabledByEvent: Record<NotificationEventType, boolean>;
   enabledThresholds: Record<NotificationThresholdKey, boolean>;
+  selectedThresholdPeriod: NotificationThresholdPeriod;
+  thresholdCopy: NotificationThresholdCopyValue;
   thresholds: Record<NotificationThresholdKey, number>;
 };
 
@@ -21,13 +29,20 @@ export type NotificationPreferenceItem = {
 export type NotificationPreferenceGroup = {
   id: NotificationPreferenceGroupId;
   items: NotificationPreferenceItem[];
-  thresholdFields?: NotificationThresholdField[];
+  thresholdSettings?: NotificationThresholdSettings;
   title: string;
 };
 
-export type NotificationThresholdField = {
-  enabled: boolean;
+export type NotificationThresholdPeriodOption = {
   key: NotificationThresholdKey;
   label: string;
-  value: string;
+};
+
+export type NotificationThresholdSettings = {
+  amountValue: string;
+  body: string;
+  enabled: boolean;
+  periodOptions: NotificationThresholdPeriodOption[];
+  selectedKey: NotificationThresholdKey;
+  title: string;
 };

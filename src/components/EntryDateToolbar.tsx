@@ -3,37 +3,25 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { AppColors } from "../constants/colors";
 import type { LedgerEntryType } from "../types/ledger";
 import { EntryTypeToggleButton } from "./EntryTypeToggleButton";
-import { ICON_ACTION_BUTTON_COMPACT_SIZE, IconActionButton } from "./IconActionButton";
+import { ICON_ACTION_BUTTON_COMPACT_SIZE } from "./IconActionButton";
 
 type EntryDateToolbarProps = {
   dateLabel: string;
   onPressDateLabel: () => void;
-  onMoveToToday: () => void;
   onSelectType: (type: LedgerEntryType) => void;
   selectedType: LedgerEntryType;
-  showMoveToToday: boolean;
 };
 
 export function EntryDateToolbar({
   dateLabel,
   onPressDateLabel,
-  onMoveToToday,
   onSelectType,
   selectedType,
-  showMoveToToday,
 }: EntryDateToolbarProps) {
   return (
     <View style={styles.container}>
       <EntryTypeToggleButton onSelectType={onSelectType} selectedType={selectedType} />
       <View style={styles.dateGroup}>
-        {showMoveToToday ? (
-          <IconActionButton
-            accessibilityLabel="오늘 날짜로 이동"
-            icon="crosshair"
-            onPress={onMoveToToday}
-            size="compact"
-          />
-        ) : null}
         <Pressable onPress={onPressDateLabel} style={styles.labelButton}>
           <View style={styles.labelContent}>
             <Text style={styles.labelText}>{dateLabel}</Text>

@@ -16,6 +16,7 @@ import {
 
 export function MonthCalendarPager({
   currentPage,
+  isCalendarHeatmapEnabled,
   isReadOnlyDueToPlanLimit = false,
   nextPage,
   onMoveMonth,
@@ -110,16 +111,19 @@ export function MonthCalendarPager({
         }}
       >
         <MonthPageSlot
+          isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
           isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
           page={previousPage}
           {...{ onSelectDate, selectedDate }}
         />
         <MonthPageSlot
+          isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
           isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
           page={currentPage}
           {...{ onSelectDate, selectedDate }}
         />
         <MonthPageSlot
+          isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
           isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
           page={nextPage}
           {...{ onSelectDate, selectedDate }}
@@ -130,11 +134,13 @@ export function MonthCalendarPager({
 }
 
 function MonthPageSlot({
+  isCalendarHeatmapEnabled,
   isReadOnlyDueToPlanLimit,
   onSelectDate,
   page,
   selectedDate,
 }: {
+  isCalendarHeatmapEnabled: boolean;
   isReadOnlyDueToPlanLimit: boolean;
   onSelectDate: (isoDate: string) => void;
   page: MonthPage;
@@ -143,6 +149,7 @@ function MonthPageSlot({
   return (
     <MonthCalendarPageView
       days={page.summary.days}
+      isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
       isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
       onSelectDate={onSelectDate}
       pageHeight={page.height}

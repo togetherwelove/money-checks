@@ -6,6 +6,7 @@ import { MonthCalendar } from "../MonthCalendar";
 
 type MonthCalendarPageViewProps = {
   days: MonthlyLedgerSummary["days"];
+  isCalendarHeatmapEnabled: boolean;
   isReadOnlyDueToPlanLimit?: boolean;
   onSelectDate: (isoDate: string) => void;
   pageHeight: number;
@@ -14,6 +15,7 @@ type MonthCalendarPageViewProps = {
 
 function MonthCalendarPageViewComponent({
   days,
+  isCalendarHeatmapEnabled,
   isReadOnlyDueToPlanLimit = false,
   onSelectDate,
   pageHeight,
@@ -23,6 +25,7 @@ function MonthCalendarPageViewComponent({
     <View collapsable={false} style={[styles.page, { height: pageHeight }]}>
       <MonthCalendar
         days={days}
+        isHeatmapEnabled={isCalendarHeatmapEnabled}
         isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
         onSelectDate={onSelectDate}
         selectedDate={selectedDate}

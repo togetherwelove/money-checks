@@ -18,7 +18,7 @@ import { logAppError } from "../lib/logAppError";
 import { showNativeToast } from "../lib/nativeToast";
 import type { LedgerEntry } from "../types/ledger";
 import type { LedgerBookMember } from "../types/ledgerBookMember";
-import { formatSelectedDate, toIsoDate } from "../utils/calendar";
+import { formatSelectedDate } from "../utils/calendar";
 
 type EntryScreenProps = {
   currentUserId: string;
@@ -39,8 +39,6 @@ export function EntryScreen({
   showsBannerAd,
   state,
 }: EntryScreenProps) {
-  const actualToday = new Date();
-  const todayIsoDate = toIsoDate(actualToday);
   const scrollViewRef = useRef<ComponentRef<typeof KeyboardAwareScrollView>>(null);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [focusedInputHeight, setFocusedInputHeight] = useState(0);
@@ -224,11 +222,9 @@ export function EntryScreen({
         ) : null}
         <EntryDateToolbar
           dateLabel={formatSelectedDate(entryFormDate)}
-          onMoveToToday={() => applyEntryFormDate(todayIsoDate)}
           onPressDateLabel={handleOpenDatePicker}
           onSelectType={updateDraftType}
           selectedType={draft.type}
-          showMoveToToday={false}
         />
         <LedgerEditorPanel
           activeBookId={activeBookId}

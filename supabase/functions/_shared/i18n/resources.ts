@@ -31,7 +31,7 @@ export const functionI18nResources = {
     push: {
       entryCreated: {
         body: "{{actorName}} · {{amount}} · {{content}}",
-        title: "{{entryType}} 내역 알림 · {{category}}",
+        title: "{{entryType}} · {{category}}",
       },
       entryTypes: {
         expense: "지출",

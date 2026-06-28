@@ -44,6 +44,7 @@ import { SubscriptionMessages, SubscriptionTiers } from "./constants/subscriptio
 import { SupportMessages, type SupportPackageIdentifier } from "./constants/support";
 import { useAnnualLedgerReportAction } from "./hooks/useAnnualLedgerReportAction";
 import { useAuthOnboarding } from "./hooks/useAuthOnboarding";
+import { useCalendarHeatmapSetting } from "./hooks/useCalendarHeatmapSetting";
 import { useGoogleAuthRedirectCompletion } from "./hooks/useGoogleAuthRedirectCompletion";
 import { useLedgerCategories } from "./hooks/useLedgerCategories";
 import { useLedgerNotifications } from "./hooks/useLedgerNotifications";
@@ -205,6 +206,7 @@ function SignedInApp({ session }: { session: Session }) {
     metadataDisplayName || (authProvider === "apple" ? "사용자" : "");
   const accountProviderLabel = resolveSessionAuthProviderLabel(session);
   const notifications = useLedgerNotifications(session.user.id);
+  const calendarHeatmapSetting = useCalendarHeatmapSetting();
   const subscription = useSubscriptionPlan(session.user.id);
   const shouldServeAdMobAds =
     !subscription.isLoading && subscription.currentTier === SubscriptionTiers.free;
@@ -736,7 +738,7 @@ function SignedInApp({ session }: { session: Session }) {
   const handleOpenSubscription = useCallback(() => {
     navigateToStackScreen("subscription");
   }, [navigateToStackScreen]);
-  const menuSections = buildAppMenuSections(notifications.showNotificationSettings, {
+  const menuSections = buildAppMenuSections({
     showAnnualReportDownload: Boolean(annualReport.bookName),
   });
   const footerTabs = buildFooterTabs();
@@ -777,10 +779,14 @@ function SignedInApp({ session }: { session: Session }) {
   }, [hasPendingLedgerJoinRequest, unreadNotificationBadgeEvents]);
 
   useEffect(() => {
-    clearConfirmedUnreadEntryBadgeEvents(ledgerState.selectedEntries, ledgerState.activeBook?.id);
+    clearConfirmedUnreadEntryBadgeEvents(
+      [...ledgerState.selectedEntries, ...ledgerState.entries],
+      ledgerState.activeBook?.id,
+    );
   }, [
     clearConfirmedUnreadEntryBadgeEvents,
     ledgerState.activeBook?.id,
+    ledgerState.entries,
     ledgerState.selectedEntries,
   ]);
 
@@ -1324,6 +1330,7 @@ function SignedInApp({ session }: { session: Session }) {
                 email={session.user.email ?? ""}
                 fallbackDisplayName={fallbackDisplayName}
                 hasAvailablePlusPackage={subscription.hasAvailablePlusPackage}
+                isCalendarHeatmapEnabled={calendarHeatmapSetting.isCalendarHeatmapEnabled}
                 isPlusActive={subscription.isPlusActive}
                 ledgerState={ledgerState}
                 notificationPreferenceGroups={notifications.preferenceGroups}
@@ -1333,7 +1340,9 @@ function SignedInApp({ session }: { session: Session }) {
                 onBeforeCopyShareCode={handleBeforeCopyShareCode}
                 onBeforeSendJoinRequest={handleBeforeSendJoinRequest}
                 onChangeNotificationThreshold={notifications.updateThresholdValue}
+                onChangeNotificationThresholdCopy={notifications.updateThresholdCopy}
                 onChangeNotificationThresholdEnabled={notifications.updateThresholdEnabled}
+                onChangeNotificationThresholdPeriod={notifications.updateThresholdPeriod}
                 onDeleteSelectedEntry={handleDeleteEntryFromCalendar}
                 onEditSelectedEntryFromAllEntries={handleEditEntryFromAllEntries}
                 onEditSelectedEntryFromCalendar={handleEditEntryFromCalendar}
@@ -1359,6 +1368,7 @@ function SignedInApp({ session }: { session: Session }) {
                 }
                 onSendPushNotificationToUsers={notifications.sendPushNotificationToUsers}
                 onSettleInstallmentEntry={handleSettleInstallmentEntry}
+                onToggleCalendarHeatmap={calendarHeatmapSetting.updateCalendarHeatmapEnabled}
                 onToggleNotificationPreference={notifications.updatePreference}
                 plusPriceLabel={subscription.plusPriceLabel}
                 showAdTrackingPermissionCard={showAdTrackingPermissionCard}

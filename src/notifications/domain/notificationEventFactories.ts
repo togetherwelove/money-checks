@@ -35,8 +35,11 @@ export function createExpenseLimitExceededEvent(
   period: NotificationThresholdPeriod,
   totalAmount: number,
   thresholdAmount: number,
+  customCopy?: { body?: string; title?: string },
 ): NotificationEvent {
   return {
+    customBody: customCopy?.body,
+    customTitle: customCopy?.title,
     period,
     thresholdAmount,
     totalAmount,

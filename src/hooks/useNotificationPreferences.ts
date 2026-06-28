@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
+import { logAppError } from "../lib/logAppError";
 import {
   NotificationDefaultThresholdEnabled,
   NotificationEntryChangeEventTypes,
@@ -9,13 +10,16 @@ import {
   NotificationGroupCopy,
   NotificationGroupOrder,
   NotificationThresholdCopy,
+  NotificationDefaultThresholdPeriods,
   NotificationThresholdFieldLabels,
+  NotificationThresholdMessageDefaults,
   isRequiredNotificationEvent,
 } from "../notifications/config/notificationCopy";
 import { clampNotificationThresholdAmount } from "../notifications/config/notificationThresholdLimits";
 import type {
   NotificationEventType,
   NotificationThresholdKey,
+  NotificationThresholdPeriod,
 } from "../notifications/domain/notificationEvents";
 import type {
   NotificationPreferenceGroup,
@@ -35,7 +39,9 @@ type NotificationPreferencesState = {
     eventTypes: NotificationEventType | readonly NotificationEventType[],
     enabled: boolean,
   ) => void;
-  updateThresholdEnabled: (key: NotificationThresholdKey, enabled: boolean) => void;
+  updateThresholdCopy: (field: "body" | "title", value: string) => void;
+  updateThresholdEnabled: (enabled: boolean) => void;
+  updateThresholdPeriod: (period: NotificationThresholdPeriod) => void;
   updateThresholdValue: (key: NotificationThresholdKey, value: string) => void;
 };
 
@@ -86,20 +92,47 @@ export function useNotificationPreferences(userId: string): NotificationPreferen
           ...currentPreferences,
           enabledByEvent: nextEnabledByEvent,
         };
-        void saveNotificationPreferences(userId, nextPreferences);
+        void persistNotificationPreferences(userId, nextPreferences);
         return nextPreferences;
       });
     },
-    updateThresholdEnabled: (key, enabled) => {
+    updateThresholdCopy: (field, value) => {
+      const nextValue = sanitizeThresholdCopyValue(field, value);
+
       setPreferences((currentPreferences) => {
         const nextPreferences = {
           ...currentPreferences,
-          enabledThresholds: {
-            ...currentPreferences.enabledThresholds,
-            [key]: enabled,
+          thresholdCopy: {
+            ...currentPreferences.thresholdCopy,
+            [field]: nextValue,
           },
         };
-        void saveNotificationPreferences(userId, nextPreferences);
+        void persistNotificationPreferences(userId, nextPreferences);
+        return nextPreferences;
+      });
+    },
+    updateThresholdEnabled: (enabled) => {
+      setPreferences((currentPreferences) => {
+        const selectedKey = resolveThresholdKeyFromPeriod(currentPreferences.selectedThresholdPeriod);
+        const nextPreferences = {
+          ...currentPreferences,
+          enabledThresholds: createSingleSelectedThresholdState(selectedKey, enabled),
+        };
+        void persistNotificationPreferences(userId, nextPreferences);
+        return nextPreferences;
+      });
+    },
+    updateThresholdPeriod: (period) => {
+      const selectedKey = resolveThresholdKeyFromPeriod(period);
+
+      setPreferences((currentPreferences) => {
+        const isEnabled = hasEnabledThreshold(currentPreferences.enabledThresholds);
+        const nextPreferences = {
+          ...currentPreferences,
+          enabledThresholds: createSingleSelectedThresholdState(selectedKey, isEnabled),
+          selectedThresholdPeriod: period,
+        };
+        void persistNotificationPreferences(userId, nextPreferences);
         return nextPreferences;
       });
     },
@@ -117,7 +150,7 @@ export function useNotificationPreferences(userId: string): NotificationPreferen
             [key]: nextThreshold,
           },
         };
-        void saveNotificationPreferences(userId, nextPreferences);
+        void persistNotificationPreferences(userId, nextPreferences);
         return nextPreferences;
       });
     },
@@ -127,14 +160,18 @@ export function useNotificationPreferences(userId: string): NotificationPreferen
 function buildPreferenceGroups(
   preferences: NotificationPreferences,
 ): NotificationPreferenceGroup[] {
-  const thresholdFields = Object.entries(NotificationThresholdCopy).map(([key, fieldCopy]) => ({
-    enabled:
-      preferences.enabledThresholds[key as NotificationThresholdKey] ??
-      NotificationDefaultThresholdEnabled[key as NotificationThresholdKey],
-    key: key as NotificationThresholdKey,
-    label: NotificationThresholdFieldLabels[key as NotificationThresholdKey],
-    value: formatThresholdValue(preferences.thresholds[key as NotificationThresholdKey]),
-  })) as NotificationPreferenceGroup["thresholdFields"];
+  const selectedThresholdKey = resolveThresholdKeyFromPeriod(preferences.selectedThresholdPeriod);
+  const thresholdSettings: NotificationPreferenceGroup["thresholdSettings"] = {
+    amountValue: formatThresholdValue(preferences.thresholds[selectedThresholdKey]),
+    body: preferences.thresholdCopy.body,
+    enabled: preferences.enabledThresholds[selectedThresholdKey],
+    periodOptions: Object.keys(NotificationThresholdCopy).map((key) => ({
+      key: key as NotificationThresholdKey,
+      label: NotificationThresholdFieldLabels[key as NotificationThresholdKey],
+    })),
+    selectedKey: selectedThresholdKey,
+    title: preferences.thresholdCopy.title,
+  };
 
   const entryChangeEventTypeSet = new Set<NotificationEventType>(NotificationEntryChangeEventTypes);
 
@@ -144,9 +181,35 @@ function buildPreferenceGroups(
       groupId === "threshold"
         ? []
         : buildNotificationPreferenceItems(groupId, preferences, entryChangeEventTypeSet),
-    thresholdFields: groupId === "threshold" ? thresholdFields : undefined,
+    thresholdSettings: groupId === "threshold" ? thresholdSettings : undefined,
     title: NotificationGroupCopy[groupId].title,
   })) as NotificationPreferenceGroup[];
+}
+
+function resolveThresholdKeyFromPeriod(period: NotificationThresholdPeriod): NotificationThresholdKey {
+  const matchedKey = Object.entries(NotificationDefaultThresholdPeriods).find(
+    ([, thresholdPeriod]) => thresholdPeriod === period,
+  )?.[0] as NotificationThresholdKey | undefined;
+
+  return matchedKey ?? "expenseAmountDay";
+}
+
+function createSingleSelectedThresholdState(
+  selectedKey: NotificationThresholdKey,
+  isEnabled: boolean,
+): NotificationPreferences["enabledThresholds"] {
+  return Object.fromEntries(
+    Object.keys(NotificationDefaultThresholdEnabled).map((key) => [
+      key,
+      isEnabled && key === selectedKey,
+    ]),
+  ) as NotificationPreferences["enabledThresholds"];
+}
+
+function hasEnabledThreshold(
+  enabledThresholds: NotificationPreferences["enabledThresholds"],
+): boolean {
+  return Object.values(enabledThresholds).some(Boolean);
 }
 
 function buildNotificationPreferenceItems(
@@ -195,4 +258,27 @@ function buildNotificationPreferenceItems(
 
 function formatThresholdValue(value: number): string {
   return value > 0 ? String(value) : "";
+}
+
+function sanitizeThresholdCopyValue(field: "body" | "title", value: string): string {
+  const trimmedValue = value.trim();
+  if (trimmedValue) {
+    return trimmedValue;
+  }
+
+  return NotificationThresholdMessageDefaults[field];
+}
+
+async function persistNotificationPreferences(
+  userId: string,
+  preferences: NotificationPreferences,
+): Promise<void> {
+  try {
+    await saveNotificationPreferences(userId, preferences);
+  } catch (error) {
+    logAppError("NotificationPreferences", error, {
+      step: "save_notification_preferences",
+      userId,
+    });
+  }
 }

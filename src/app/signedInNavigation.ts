@@ -3,6 +3,7 @@ import type { LedgerAppScreen } from "../types/app";
 export type SignedInStackParamList = {
   account: undefined;
   "all-entries": undefined;
+  "app-settings": undefined;
   calendar: undefined;
   charts: undefined;
   "contact-support": undefined;
@@ -22,6 +23,7 @@ export function isSignedInStackScreen(value: string | undefined): value is Ledge
   return (
     value === "account" ||
     value === "all-entries" ||
+    value === "app-settings" ||
     value === "calendar" ||
     value === "charts" ||
     value === "contact-support" ||

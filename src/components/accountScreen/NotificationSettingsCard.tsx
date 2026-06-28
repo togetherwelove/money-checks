@@ -10,12 +10,17 @@ import {
   NotificationSettingsUi,
   NotificationUiCopy,
 } from "../../notifications/config/notificationCopy";
-import type { NotificationThresholdKey } from "../../notifications/domain/notificationEvents";
+import type {
+  NotificationThresholdKey,
+  NotificationThresholdPeriod,
+} from "../../notifications/domain/notificationEvents";
 import type { NotificationPreferenceGroup as NotificationPreferenceGroupState } from "../../notifications/preferences/notificationPreferences";
 import { NotificationPreferenceGroup } from "./NotificationPreferenceGroup";
 
 type NotificationSettingsCardProps = {
-  onChangeThresholdEnabled: (key: NotificationThresholdKey, enabled: boolean) => void;
+  onChangeThresholdCopy: (field: "body" | "title", value: string) => void;
+  onChangeThresholdEnabled: (enabled: boolean) => void;
+  onChangeThresholdPeriod: (period: NotificationThresholdPeriod) => void;
   onChangeThresholdValue: (key: NotificationThresholdKey, value: string) => void;
   onOpenDeviceNotificationSettings: () => void;
   permissionLabel: string;
@@ -31,7 +36,9 @@ type NotificationSettingsCardProps = {
 };
 
 export function NotificationSettingsCard({
+  onChangeThresholdCopy,
   onChangeThresholdEnabled,
+  onChangeThresholdPeriod,
   onChangeThresholdValue,
   onOpenDeviceNotificationSettings,
   permissionLabel,
@@ -72,7 +79,9 @@ export function NotificationSettingsCard({
           <NotificationPreferenceGroup
             group={group}
             key={group.id}
+            onChangeThresholdCopy={onChangeThresholdCopy}
             onChangeThresholdEnabled={onChangeThresholdEnabled}
+            onChangeThresholdPeriod={onChangeThresholdPeriod}
             onChangeThresholdValue={onChangeThresholdValue}
             onToggle={onTogglePreference}
           />

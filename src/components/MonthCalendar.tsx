@@ -20,18 +20,26 @@ import { getVisibleCalendarWeeks } from "./monthCalendarPager/calendarWeekCount"
 
 type MonthCalendarProps = {
   days: CalendarDay[];
+  isHeatmapEnabled: boolean;
   isReadOnlyDueToPlanLimit?: boolean;
   onSelectDate: (isoDate: string) => void;
   selectedDate: string;
 };
 
+type CalendarDayHeatmapTone = "expense" | "income" | "mixed";
+
 function MonthCalendarComponent({
   days,
+  isHeatmapEnabled,
   isReadOnlyDueToPlanLimit = false,
   onSelectDate,
   selectedDate,
 }: MonthCalendarProps) {
   const visibleWeeks = useMemo(() => getVisibleCalendarWeeks(days), [days]);
+  const heatmapLevels = useMemo(
+    () => (isHeatmapEnabled ? buildCurrentMonthHeatmapLevels(days) : new Map<string, number>()),
+    [days, isHeatmapEnabled],
+  );
   const handleSelectDate = useCallback(
     (isoDate: string) => {
       onSelectDate(isoDate);
@@ -49,6 +57,7 @@ function MonthCalendarComponent({
                 {day.isCurrentMonth ? (
                   <DayCell
                     day={day}
+                    heatmapLevel={heatmapLevels.get(day.isoDate) ?? 0}
                     isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
                     isSelected={day.isoDate === selectedDate}
                     onSelectDate={handleSelectDate}
@@ -71,13 +80,39 @@ function formatCalendarDayAmount(amount: number): string {
   return formatAmountNumber(amount);
 }
 
+function buildCurrentMonthHeatmapLevels(days: CalendarDay[]): Map<string, number> {
+  const currentMonthAmounts = days
+    .filter((day) => day.isCurrentMonth)
+    .map((day) => ({
+      amount: getCalendarDayTradeAmount(day),
+      isoDate: day.isoDate,
+    }))
+    .filter((item) => item.amount > 0);
+
+  if (!currentMonthAmounts.length) {
+    return new Map();
+  }
+
+  const levelByAmount = buildHeatmapLevelByAmount(
+    [...new Set(currentMonthAmounts.map((item) => item.amount))].sort((left, right) => left - right),
+  );
+
+  return new Map(currentMonthAmounts.map((item) => [item.isoDate, levelByAmount.get(item.amount) ?? 0]));
+}
+
+function getCalendarDayTradeAmount(day: CalendarDay): number {
+  return day.income + day.expense;
+}
+
 const DayCell = memo(function DayCell({
   day,
+  heatmapLevel,
   isReadOnlyDueToPlanLimit,
   isSelected,
   onSelectDate,
 }: {
   day: CalendarDay;
+  heatmapLevel: number;
   isReadOnlyDueToPlanLimit: boolean;
   isSelected: boolean;
   onSelectDate: (isoDate: string) => void;
@@ -89,12 +124,14 @@ const DayCell = memo(function DayCell({
   const handlePress = useCallback(() => {
     onSelectDate(day.isoDate);
   }, [day.isoDate, onSelectDate]);
+  const heatmapTone = getCalendarDayHeatmapTone(day);
 
   return (
     <Pressable
       onPress={handlePress}
       style={[
         styles.dayCell,
+        getHeatmapStyle(heatmapLevel, heatmapTone),
         day.isToday && !isSelected ? styles.todayDayCell : null,
         isSelected ? styles.selectedDayCell : null,
         day.isToday && isSelected ? styles.selectedTodayDayCell : null,
@@ -122,24 +159,162 @@ const DayCell = memo(function DayCell({
             {day.dayNumber}
           </Text>
         </View>
-        <View style={styles.amounts}>
-          <AmountLine
-            amount={day.income}
-            isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
-            prefix="+"
-            textStyle={styles.incomeText}
-          />
-          <AmountLine
-            amount={day.expense}
-            isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
-            prefix="-"
-            textStyle={styles.expenseText}
-          />
-        </View>
+        <DayAmountLines day={day} isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit} />
       </View>
     </Pressable>
   );
 });
+
+function buildHeatmapLevelByAmount(sortedAmounts: number[]): Map<number, number> {
+  if (sortedAmounts.length === 1) {
+    return new Map([[sortedAmounts[0], CalendarDayUi.heatmapBackgroundColors.mixed.length]]);
+  }
+
+  return new Map(
+    sortedAmounts.map((amount, index) => {
+      const ratio = index / (sortedAmounts.length - 1);
+      const matchedThresholdIndex = CalendarDayUi.heatmapLevelThresholds.findIndex(
+        (threshold) => ratio <= threshold,
+      );
+      const level =
+        matchedThresholdIndex >= 0
+          ? matchedThresholdIndex + 1
+          : CalendarDayUi.heatmapBackgroundColors.mixed.length;
+
+      return [amount, level];
+    }),
+  );
+}
+
+function getCalendarDayHeatmapTone(day: CalendarDay): CalendarDayHeatmapTone {
+  if (day.income > 0 && day.expense > 0) {
+    return "mixed";
+  }
+
+  return day.income > 0 ? "income" : "expense";
+}
+
+function getHeatmapStyle(level: number, tone: CalendarDayHeatmapTone) {
+  if (tone === "income") {
+    return getIncomeHeatmapStyle(level);
+  }
+
+  if (tone === "expense") {
+    return getExpenseHeatmapStyle(level);
+  }
+
+  return getMixedHeatmapStyle(level);
+}
+
+function getIncomeHeatmapStyle(level: number) {
+  if (level === 1) {
+    return styles.incomeHeatmapLevel1;
+  }
+
+  if (level === 2) {
+    return styles.incomeHeatmapLevel2;
+  }
+
+  if (level === 3) {
+    return styles.incomeHeatmapLevel3;
+  }
+
+  if (level === 4) {
+    return styles.incomeHeatmapLevel4;
+  }
+
+  if (level === 5) {
+    return styles.incomeHeatmapLevel5;
+  }
+
+  return null;
+}
+
+function getExpenseHeatmapStyle(level: number) {
+  if (level === 1) {
+    return styles.expenseHeatmapLevel1;
+  }
+
+  if (level === 2) {
+    return styles.expenseHeatmapLevel2;
+  }
+
+  if (level === 3) {
+    return styles.expenseHeatmapLevel3;
+  }
+
+  if (level === 4) {
+    return styles.expenseHeatmapLevel4;
+  }
+
+  if (level === 5) {
+    return styles.expenseHeatmapLevel5;
+  }
+
+  return null;
+}
+
+function getMixedHeatmapStyle(level: number) {
+  if (level === 1) {
+    return styles.mixedHeatmapLevel1;
+  }
+
+  if (level === 2) {
+    return styles.mixedHeatmapLevel2;
+  }
+
+  if (level === 3) {
+    return styles.mixedHeatmapLevel3;
+  }
+
+  if (level === 4) {
+    return styles.mixedHeatmapLevel4;
+  }
+
+  if (level === 5) {
+    return styles.mixedHeatmapLevel5;
+  }
+
+  return null;
+}
+
+function DayAmountLines({
+  day,
+  isReadOnlyDueToPlanLimit,
+}: {
+  day: CalendarDay;
+  isReadOnlyDueToPlanLimit: boolean;
+}) {
+  if (day.income > 0 && day.expense > 0) {
+    return (
+      <View style={styles.amounts}>
+        <AmountLine
+          amount={getCalendarDayTradeAmount(day)}
+          isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
+          prefix="+"
+          textStyle={styles.mixedText}
+        />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.amounts}>
+      <AmountLine
+        amount={day.income}
+        isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
+        prefix="+"
+        textStyle={styles.incomeText}
+      />
+      <AmountLine
+        amount={day.expense}
+        isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
+        prefix="-"
+        textStyle={styles.expenseText}
+      />
+    </View>
+  );
+}
 
 function AmountLine({
   amount,
@@ -167,8 +342,7 @@ function AmountLine({
         isReadOnlyDueToPlanLimit ? styles.readOnlyAmountText : null,
       ]}
     >
-      {prefix}
-      {formatCalendarDayAmount(amount)}
+      {`${prefix}${formatCalendarDayAmount(amount)}`}
     </Text>
   );
 }
@@ -200,6 +374,51 @@ const styles = StyleSheet.create({
     position: "relative",
     borderWidth: CALENDAR_DAY_CELL_BORDER_WIDTH,
     borderColor: AppColors.transparent,
+  },
+  expenseHeatmapLevel1: {
+    backgroundColor: CalendarDayUi.heatmapBackgroundColors.expense[0],
+  },
+  expenseHeatmapLevel2: {
+    backgroundColor: CalendarDayUi.heatmapBackgroundColors.expense[1],
+  },
+  expenseHeatmapLevel3: {
+    backgroundColor: CalendarDayUi.heatmapBackgroundColors.expense[2],
+  },
+  expenseHeatmapLevel4: {
+    backgroundColor: CalendarDayUi.heatmapBackgroundColors.expense[3],
+  },
+  expenseHeatmapLevel5: {
+    backgroundColor: CalendarDayUi.heatmapBackgroundColors.expense[4],
+  },
+  incomeHeatmapLevel1: {
+    backgroundColor: CalendarDayUi.heatmapBackgroundColors.income[0],
+  },
+  incomeHeatmapLevel2: {
+    backgroundColor: CalendarDayUi.heatmapBackgroundColors.income[1],
+  },
+  incomeHeatmapLevel3: {
+    backgroundColor: CalendarDayUi.heatmapBackgroundColors.income[2],
+  },
+  incomeHeatmapLevel4: {
+    backgroundColor: CalendarDayUi.heatmapBackgroundColors.income[3],
+  },
+  incomeHeatmapLevel5: {
+    backgroundColor: CalendarDayUi.heatmapBackgroundColors.income[4],
+  },
+  mixedHeatmapLevel1: {
+    backgroundColor: CalendarDayUi.heatmapBackgroundColors.mixed[0],
+  },
+  mixedHeatmapLevel2: {
+    backgroundColor: CalendarDayUi.heatmapBackgroundColors.mixed[1],
+  },
+  mixedHeatmapLevel3: {
+    backgroundColor: CalendarDayUi.heatmapBackgroundColors.mixed[2],
+  },
+  mixedHeatmapLevel4: {
+    backgroundColor: CalendarDayUi.heatmapBackgroundColors.mixed[3],
+  },
+  mixedHeatmapLevel5: {
+    backgroundColor: CalendarDayUi.heatmapBackgroundColors.mixed[4],
   },
   selectedDayCell: {
     borderColor: AppColors.primary,
@@ -293,6 +512,9 @@ const styles = StyleSheet.create({
   },
   expenseText: {
     color: AppColors.expense,
+  },
+  mixedText: {
+    color: AppColors.primary,
   },
   readOnlyAmountText: {
     color: AppColors.mutedText,

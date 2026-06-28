@@ -47,9 +47,9 @@ export type AdInterstitialPlacementKey =
   (typeof AdInterstitialPlacement)[keyof typeof AdInterstitialPlacement];
 
 export const NativeAdListConfig = {
-  insertionStartAfterEntryCount: 6,
+  insertionStartAfterEntryCount: 10,
   insertionIntervalMax: 10,
-  insertionIntervalMin: 6,
+  insertionIntervalMin: 10,
   insertionIntervalRandomMultiplier: 37,
   insertionIntervalRandomSeed: 11,
   sponsoredLabel: "광고 ",

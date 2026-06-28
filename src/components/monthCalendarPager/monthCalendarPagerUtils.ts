@@ -1,7 +1,10 @@
 import { Animated } from "react-native";
 
 import type { MonthlyLedgerSummary } from "../../types/ledger";
-import { resolveCalendarWeekHeight } from "./calendarLayout";
+import {
+  CALENDAR_BOTTOM_BORDER_CLIP_PADDING,
+  resolveCalendarWeekHeight,
+} from "./calendarLayout";
 import { getVisibleCalendarWeeks } from "./calendarWeekCount";
 
 export type MonthPage = {
@@ -29,9 +32,11 @@ export function buildMonthPageFromSummary(
 }
 
 function resolveCalendarHeight(days: MonthlyLedgerSummary["days"]): number {
-  return getVisibleCalendarWeeks(days).reduce(
-    (totalHeight, week) => totalHeight + resolveCalendarWeekHeight(week),
-    0,
+  return (
+    getVisibleCalendarWeeks(days).reduce(
+      (totalHeight, week) => totalHeight + resolveCalendarWeekHeight(week),
+      0,
+    ) + CALENDAR_BOTTOM_BORDER_CLIP_PADDING
   );
 }
 

@@ -25,6 +25,7 @@ import type {
   NotificationEvent,
   NotificationEventType,
   NotificationThresholdKey,
+  NotificationThresholdPeriod,
 } from "../notifications/domain/notificationEvents";
 import type { NotificationPreferenceGroup } from "../notifications/preferences/notificationPreferences";
 import type { LedgerEntry } from "../types/ledger";
@@ -54,11 +55,13 @@ type LedgerNotificationsState = {
   ) => Promise<void>;
   showNotificationSettings: boolean;
   statusMessage: string | null;
+  updateThresholdCopy: (field: "body" | "title", value: string) => void;
+  updateThresholdEnabled: (enabled: boolean) => void;
   updatePreference: (
     eventTypes: NotificationEventType | readonly NotificationEventType[],
     enabled: boolean,
   ) => void;
-  updateThresholdEnabled: (key: NotificationThresholdKey, enabled: boolean) => void;
+  updateThresholdPeriod: (period: NotificationThresholdPeriod) => void;
   updateThresholdValue: (key: NotificationThresholdKey, value: string) => void;
 };
 
@@ -68,7 +71,9 @@ export function useLedgerNotifications(userId: string): LedgerNotificationsState
     preferenceGroups,
     preferences,
     updateEventPreference,
+    updateThresholdCopy,
     updateThresholdEnabled,
+    updateThresholdPeriod,
     updateThresholdValue,
   } = useNotificationPreferences(userId);
 
@@ -129,31 +134,29 @@ export function useLedgerNotifications(userId: string): LedgerNotificationsState
       return;
     }
 
-    for (const thresholdKey of Object.keys(preferences.thresholds) as NotificationThresholdKey[]) {
-      const thresholdAmount = preferences.thresholds[thresholdKey];
-      const thresholdPeriod = NotificationDefaultThresholdPeriods[thresholdKey];
+    const thresholdKey = resolveSelectedThresholdKey(preferences.enabledThresholds);
+    if (!thresholdKey) {
+      return;
+    }
 
-      if (!preferences.enabledThresholds[thresholdKey]) {
-        continue;
-      }
+    const thresholdAmount = preferences.thresholds[thresholdKey];
+    const thresholdPeriod = NotificationDefaultThresholdPeriods[thresholdKey];
 
-      if (
-        !shouldNotifyExpenseLimit({
-          currentEntries,
-          entryDate: savedEntry.date,
-          nextEntries,
-          period: thresholdPeriod,
-          thresholdAmount,
-        })
-      ) {
-        continue;
-      }
-
+    if (
+      shouldNotifyExpenseLimit({
+        currentEntries,
+        entryDate: savedEntry.date,
+        nextEntries,
+        period: thresholdPeriod,
+        thresholdAmount,
+      })
+    ) {
       await sendPushNotificationToUsersInternal(
         createExpenseLimitExceededEvent(
           thresholdPeriod,
           getExpenseTotalForPeriod(nextEntries, savedEntry.date, thresholdPeriod),
           thresholdAmount,
+          preferences.thresholdCopy,
         ),
         [userId],
       );
@@ -229,10 +232,22 @@ export function useLedgerNotifications(userId: string): LedgerNotificationsState
     sendPushNotificationToUsers: sendPushNotificationToUsersInternal,
     showNotificationSettings: permission !== "unsupported",
     statusMessage: getStatusMessage(permission),
-    updatePreference: updateEventPreference,
+    updateThresholdCopy,
     updateThresholdEnabled,
+    updatePreference: updateEventPreference,
+    updateThresholdPeriod,
     updateThresholdValue,
   };
+}
+
+function resolveSelectedThresholdKey(
+  enabledThresholds: Record<NotificationThresholdKey, boolean>,
+): NotificationThresholdKey | null {
+  const enabledKey = Object.keys(NotificationDefaultThresholdPeriods).find(
+    (key) => enabledThresholds[key as NotificationThresholdKey],
+  );
+
+  return (enabledKey as NotificationThresholdKey | undefined) ?? null;
 }
 
 function getPermissionLabel(permission: NotificationPermissionState): string {

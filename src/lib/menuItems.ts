@@ -6,7 +6,7 @@ import { getAppScreenLabel } from "./appScreenLabels";
 export type AppMenuAction = "annual-report-download";
 
 export type AppMenuNavigationItem = {
-  icon: "bell" | "credit-card" | "gift" | "help-circle" | "mail" | "user";
+  icon: "credit-card" | "gift" | "help-circle" | "mail" | "settings" | "user";
   label: string;
   targetScreen: Exclude<LedgerAppScreen, "all-entries" | "calendar" | "charts" | "entry" | "share">;
 };
@@ -25,7 +25,6 @@ export type AppMenuSection = {
 };
 
 export function buildAppMenuSections(
-  showNotificationSettings: boolean,
   options: {
     showAnnualReportDownload?: boolean;
   } = {},
@@ -36,15 +35,12 @@ export function buildAppMenuSections(
       label: getAppScreenLabel("account"),
       targetScreen: "account",
     },
+    {
+      icon: "settings",
+      label: getAppScreenLabel("app-settings"),
+      targetScreen: "app-settings",
+    },
   ];
-
-  if (showNotificationSettings) {
-    accountItems.push({
-      icon: "bell",
-      label: getAppScreenLabel("notification-settings"),
-      targetScreen: "notification-settings",
-    });
-  }
 
   const ledgerItems: AppMenuItem[] = options.showAnnualReportDownload
     ? [

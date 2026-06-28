@@ -11,10 +11,12 @@ import type {
   NotificationEvent,
   NotificationEventType,
   NotificationThresholdKey,
+  NotificationThresholdPeriod,
 } from "../notifications/domain/notificationEvents";
 import type { NotificationPreferenceGroup } from "../notifications/preferences/notificationPreferences";
 import { AccountScreen } from "../screens/AccountScreen";
 import { AllEntriesScreen } from "../screens/AllEntriesScreen";
+import { AppSettingsScreen } from "../screens/AppSettingsScreen";
 import { ChartScreen } from "../screens/ChartScreen";
 import { EntryScreen } from "../screens/EntryScreen";
 import { HelpScreen } from "../screens/HelpScreen";
@@ -36,13 +38,16 @@ type SignedInStackNavigatorProps = {
   email: string;
   fallbackDisplayName: string;
   hasAvailablePlusPackage: boolean;
+  isCalendarHeatmapEnabled: boolean;
   isPlusActive: boolean;
   ledgerState: LedgerScreenState;
   notificationPreferenceGroups: NotificationPreferenceGroup[];
   notificationPermissionLabel: string;
   notificationPermissionState: NotificationPermissionState;
   notificationStatusMessage: string | null;
-  onChangeNotificationThresholdEnabled: (key: NotificationThresholdKey, enabled: boolean) => void;
+  onChangeNotificationThresholdCopy: (field: "body" | "title", value: string) => void;
+  onChangeNotificationThresholdEnabled: (enabled: boolean) => void;
+  onChangeNotificationThresholdPeriod: (period: NotificationThresholdPeriod) => void;
   onChangeNotificationThreshold: (key: NotificationThresholdKey, value: string) => void;
   onBeforeCopyShareCode: () => Promise<void> | void;
   onBeforeSendJoinRequest: () => Promise<void> | void;
@@ -60,6 +65,7 @@ type SignedInStackNavigatorProps = {
   onRestorePurchases: () => Promise<void>;
   onSaveEntry: () => Promise<void>;
   onSelectCalendarDate: (isoDate: string) => void;
+  onToggleCalendarHeatmap: (isEnabled: boolean) => void;
   onSendPendingJoinRequestNotification: () => Promise<void>;
   onSendPushNotificationToBookMembers: (
     bookId: string,
@@ -94,13 +100,16 @@ export function SignedInStackNavigator({
   email,
   fallbackDisplayName,
   hasAvailablePlusPackage,
+  isCalendarHeatmapEnabled,
   isPlusActive,
   ledgerState,
   notificationPreferenceGroups,
   notificationPermissionLabel,
   notificationPermissionState,
   notificationStatusMessage,
+  onChangeNotificationThresholdCopy,
   onChangeNotificationThresholdEnabled,
+  onChangeNotificationThresholdPeriod,
   onChangeNotificationThreshold,
   onBeforeCopyShareCode,
   onBeforeSendJoinRequest,
@@ -118,6 +127,7 @@ export function SignedInStackNavigator({
   onRestorePurchases,
   onSaveEntry,
   onSelectCalendarDate,
+  onToggleCalendarHeatmap,
   onSendPendingJoinRequestNotification,
   onSendPushNotificationToBookMembers,
   onSendPushNotificationToUsers,
@@ -147,6 +157,7 @@ export function SignedInStackNavigator({
       <Stack.Screen name="calendar">
         {() => (
           <HomeScreen
+            isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
             onDeleteSelectedEntry={onDeleteSelectedEntry}
             onEditSelectedEntry={onEditSelectedEntryFromCalendar}
             onSelectCalendarDate={onSelectCalendarDate}
@@ -228,6 +239,25 @@ export function SignedInStackNavigator({
           />
         )}
       </Stack.Screen>
+      <Stack.Screen name="app-settings">
+        {() => (
+          <AppSettingsScreen
+            notificationPermissionLabel={notificationPermissionLabel}
+            notificationPermissionState={notificationPermissionState}
+            notificationPreferenceGroups={notificationPreferenceGroups}
+            notificationStatusMessage={notificationStatusMessage}
+            isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
+            onChangeNotificationThresholdCopy={onChangeNotificationThresholdCopy}
+            onChangeNotificationThresholdEnabled={onChangeNotificationThresholdEnabled}
+            onChangeNotificationThresholdPeriod={onChangeNotificationThresholdPeriod}
+            onChangeNotificationThreshold={onChangeNotificationThreshold}
+            onRequestNotificationPermission={onRequestNotificationPermission}
+            onToggleCalendarHeatmap={onToggleCalendarHeatmap}
+            onToggleNotificationPreference={onToggleNotificationPreference}
+            showNotificationSettings={showNotificationSettings}
+          />
+        )}
+      </Stack.Screen>
       <Stack.Screen name="notification-settings">
         {() =>
           showNotificationSettings ? (
@@ -236,7 +266,9 @@ export function SignedInStackNavigator({
               notificationPermissionState={notificationPermissionState}
               notificationPreferenceGroups={notificationPreferenceGroups}
               notificationStatusMessage={notificationStatusMessage}
+              onChangeNotificationThresholdCopy={onChangeNotificationThresholdCopy}
               onChangeNotificationThresholdEnabled={onChangeNotificationThresholdEnabled}
+              onChangeNotificationThresholdPeriod={onChangeNotificationThresholdPeriod}
               onChangeNotificationThreshold={onChangeNotificationThreshold}
               onRequestNotificationPermission={onRequestNotificationPermission}
               onToggleNotificationPreference={onToggleNotificationPreference}

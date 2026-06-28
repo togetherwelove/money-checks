@@ -2,6 +2,7 @@ import type { MonthPage } from "./monthCalendarPagerUtils";
 
 export type MonthCalendarPagerProps = {
   currentPage: MonthPage;
+  isCalendarHeatmapEnabled: boolean;
   isReadOnlyDueToPlanLimit?: boolean;
   nextPage: MonthPage;
   onMoveMonth: (monthOffset: number) => void;

@@ -5,6 +5,7 @@ export const CALENDAR_WEEK_ROWS = 6;
 export const CALENDAR_DAYS_PER_WEEK = 7;
 
 export const CALENDAR_DAY_CELL_BORDER_WIDTH = 1;
+export const CALENDAR_BOTTOM_BORDER_CLIP_PADDING = CALENDAR_DAY_CELL_BORDER_WIDTH;
 export const CALENDAR_DAY_CONTENT_GAP = 1;
 export const CALENDAR_DAY_NUMBER_BORDER_WIDTH = 1;
 export const CALENDAR_DAY_NUMBER_LINE_HEIGHT = 14;
@@ -20,7 +21,8 @@ export const CALENDAR_AMOUNT_SPACE_HEIGHT =
   CALENDAR_MAX_AMOUNT_LINE_COUNT * CalendarDayUi.amountLineHeight;
 
 export const CALENDAR_MAX_HEIGHT =
-  CALENDAR_WEEK_ROWS * resolveCalendarWeekHeightForAmountLineCount(CALENDAR_MAX_AMOUNT_LINE_COUNT);
+  CALENDAR_WEEK_ROWS * resolveCalendarWeekHeightForAmountLineCount(CALENDAR_MAX_AMOUNT_LINE_COUNT) +
+  CALENDAR_BOTTOM_BORDER_CLIP_PADDING;
 
 export function resolveCalendarWeekHeight(_week: readonly CalendarDay[]): number {
   return resolveCalendarWeekHeightForAmountLineCount(CALENDAR_MAX_AMOUNT_LINE_COUNT);

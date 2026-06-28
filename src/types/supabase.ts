@@ -133,6 +133,7 @@ export type LedgerBookJoinPreviewRow = {
 };
 
 export type NotificationPreferencesRow = {
+  custom_notification_copy: Record<string, { body?: string; title?: string }> | null;
   enabled_by_event: Record<string, boolean> | null;
   enabled_thresholds: Record<string, boolean> | null;
   last_monthly_summary_sent_month: string | null;

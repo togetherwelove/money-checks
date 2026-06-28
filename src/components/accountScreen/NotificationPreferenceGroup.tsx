@@ -3,14 +3,16 @@ import { StyleSheet, Text, View } from "react-native";
 import { AppColors } from "../../constants/colors";
 import { OneLineTextFitProps } from "../../constants/textLayout";
 import { InsetPanelStyle } from "../../constants/uiStyles";
-import type { NotificationThresholdKey } from "../../notifications/domain/notificationEvents";
+import type { NotificationThresholdKey, NotificationThresholdPeriod } from "../../notifications/domain/notificationEvents";
 import type { NotificationPreferenceGroup as NotificationPreferenceGroupState } from "../../notifications/preferences/notificationPreferences";
 import { NotificationPreferenceRow } from "./NotificationPreferenceRow";
 import { NotificationThresholdField } from "./NotificationThresholdField";
 
 type NotificationPreferenceGroupProps = {
   group: NotificationPreferenceGroupState;
-  onChangeThresholdEnabled: (key: NotificationThresholdKey, enabled: boolean) => void;
+  onChangeThresholdCopy: (field: "body" | "title", value: string) => void;
+  onChangeThresholdEnabled: (enabled: boolean) => void;
+  onChangeThresholdPeriod: (period: NotificationThresholdPeriod) => void;
   onChangeThresholdValue: (key: NotificationThresholdKey, value: string) => void;
   onToggle: (
     eventTypes:
@@ -22,10 +24,14 @@ type NotificationPreferenceGroupProps = {
 
 export function NotificationPreferenceGroup({
   group,
+  onChangeThresholdCopy,
   onChangeThresholdEnabled,
+  onChangeThresholdPeriod,
   onChangeThresholdValue,
   onToggle,
 }: NotificationPreferenceGroupProps) {
+  const thresholdSettings = group.thresholdSettings;
+
   return (
     <View style={styles.group}>
       <View style={styles.headingBlock}>
@@ -33,17 +39,15 @@ export function NotificationPreferenceGroup({
           {group.title}
         </Text>
       </View>
-      {group.thresholdFields?.length ? (
+      {thresholdSettings ? (
         <View style={styles.thresholdBlock}>
-          {group.thresholdFields.map((field, index) => (
-            <NotificationThresholdField
-              field={field}
-              isFirst={index === 0}
-              key={field.key}
-              onChangeEnabled={(enabled) => onChangeThresholdEnabled(field.key, enabled)}
-              onChangeValue={(value) => onChangeThresholdValue(field.key, value)}
-            />
-          ))}
+          <NotificationThresholdField
+            settings={thresholdSettings}
+            onChangeCopy={onChangeThresholdCopy}
+            onChangePeriod={onChangeThresholdPeriod}
+            onChangeValue={(value) => onChangeThresholdValue(thresholdSettings.selectedKey, value)}
+            onToggleEnabled={onChangeThresholdEnabled}
+          />
         </View>
       ) : null}
       {group.items.length ? (

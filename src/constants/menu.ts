@@ -1,7 +1,7 @@
 
 export const MenuCopy = {
     sections: {
-      account: "계정 및 알림",
+      account: "계정",
       ledger: "내보내기",
       support: "이용 및 지원",
     },

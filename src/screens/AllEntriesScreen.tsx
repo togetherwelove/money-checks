@@ -1,4 +1,5 @@
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useIsFocused } from "@react-navigation/native";
 import {
   Alert,
   FlatList,
@@ -69,10 +70,15 @@ export function AllEntriesScreen({
     searchQuery: deferredSearchQuery,
     trackBlockingTask,
   });
+  const isFocused = useIsFocused();
   const isSearching = deferredSearchQuery.length > 0;
   useEffect(() => {
+    if (!isFocused) {
+      return;
+    }
+
     onVisibleEntriesChange?.(entries);
-  }, [entries, onVisibleEntriesChange]);
+  }, [entries, isFocused, onVisibleEntriesChange]);
   const feedItems = useMemo(() => {
     if (showsNativeAds) {
       return buildAllEntriesFeedItems(entries);

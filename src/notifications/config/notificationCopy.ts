@@ -37,6 +37,11 @@ const NotificationUiLocalizedCopy = {
     permissionSectionTitle: "기기 알림",
     permissionUnsupported: "이 환경에서는 알림을 지원하지 않습니다.",
     periodFieldLabel: "기간",
+    thresholdPeriodPickerTitle: "기준 선택",
+    thresholdBodyInputLabel: "내용",
+    thresholdBodyPlaceholder: "지출 기준을 넘었어요. 가계부를 확인해 주세요.",
+    thresholdTitleInputLabel: "제목",
+    thresholdTitlePlaceholder: "지출 기준 초과",
     screenSubtitle: "알림 종류를 기능별로 나누어 켜고 끌 수 있습니다.",
     screenTitle: "푸시 알림 설정",
     unsupportedStatus: "현재는 추가 설정 없이 지원 브라우저에서만 기기 알림을 사용할 수 있습니다.",
@@ -59,7 +64,7 @@ export const NotificationGroupCopy: Record<NotificationPreferenceGroupId, { titl
         title: "공유 가계부 활동",
       },
       threshold: {
-        title: "금액 기준 알림",
+        title: "금액 초과 알림",
       },
     };
 
@@ -194,3 +199,8 @@ export const NotificationThresholdAmountCopy = {
     exceededLabel: "초과 시",
     placeholder: "금액",
   } as const;
+
+export const NotificationThresholdMessageDefaults = {
+  body: NotificationUiCopy.thresholdBodyPlaceholder,
+  title: NotificationUiCopy.thresholdTitlePlaceholder,
+} as const;

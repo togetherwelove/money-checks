@@ -8,6 +8,7 @@ import type { NotificationPermissionState } from "../lib/notifications/pushNotif
 import type {
   NotificationEventType,
   NotificationThresholdKey,
+  NotificationThresholdPeriod,
 } from "../notifications/domain/notificationEvents";
 import type { NotificationPreferenceGroup } from "../notifications/preferences/notificationPreferences";
 
@@ -16,7 +17,9 @@ type NotificationSettingsScreenProps = {
   notificationPermissionState: NotificationPermissionState;
   notificationPreferenceGroups: NotificationPreferenceGroup[];
   notificationStatusMessage: string | null;
-  onChangeNotificationThresholdEnabled: (key: NotificationThresholdKey, enabled: boolean) => void;
+  onChangeNotificationThresholdCopy: (field: "body" | "title", value: string) => void;
+  onChangeNotificationThresholdEnabled: (enabled: boolean) => void;
+  onChangeNotificationThresholdPeriod: (period: NotificationThresholdPeriod) => void;
   onChangeNotificationThreshold: (key: NotificationThresholdKey, value: string) => void;
   onRequestNotificationPermission: () => Promise<boolean>;
   onToggleNotificationPreference: (
@@ -30,7 +33,9 @@ export function NotificationSettingsScreen({
   notificationPermissionState,
   notificationPreferenceGroups,
   notificationStatusMessage,
+  onChangeNotificationThresholdCopy,
   onChangeNotificationThresholdEnabled,
+  onChangeNotificationThresholdPeriod,
   onChangeNotificationThreshold,
   onRequestNotificationPermission,
   onToggleNotificationPreference,
@@ -47,7 +52,9 @@ export function NotificationSettingsScreen({
   return (
     <KeyboardAwareScrollView contentContainerStyle={styles.content} style={styles.screen}>
       <NotificationSettingsCard
+        onChangeThresholdCopy={onChangeNotificationThresholdCopy}
         onChangeThresholdEnabled={onChangeNotificationThresholdEnabled}
+        onChangeThresholdPeriod={onChangeNotificationThresholdPeriod}
         onChangeThresholdValue={onChangeNotificationThreshold}
         onOpenDeviceNotificationSettings={handleOpenNotificationPermission}
         onTogglePreference={onToggleNotificationPreference}
