@@ -1,5 +1,6 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
+import type { CalendarSummaryMode } from "../constants/calendarSummary";
 import type { SubscriptionTier } from "../constants/subscription";
 import type { SupportPackageIdentifier } from "../constants/support";
 import type { BusyTaskTracker } from "../hooks/ledgerScreenState/types";
@@ -37,6 +38,8 @@ type SignedInStackNavigatorProps = {
   adTrackingPermissionState: AdTrackingPermissionState;
   email: string;
   fallbackDisplayName: string;
+  calendarSummaryBaseDay: number | null;
+  calendarSummaryMode: CalendarSummaryMode;
   hasAvailablePlusPackage: boolean;
   isCalendarHeatmapEnabled: boolean;
   isPlusActive: boolean;
@@ -45,7 +48,8 @@ type SignedInStackNavigatorProps = {
   notificationPermissionLabel: string;
   notificationPermissionState: NotificationPermissionState;
   notificationStatusMessage: string | null;
-  onChangeNotificationThresholdCopy: (field: "body" | "title", value: string) => void;
+  onChangeCalendarSummaryBaseDay: (day: number) => void;
+  onChangeCalendarSummaryMode: (mode: CalendarSummaryMode) => void;
   onChangeNotificationThresholdEnabled: (enabled: boolean) => void;
   onChangeNotificationThresholdPeriod: (period: NotificationThresholdPeriod) => void;
   onChangeNotificationThreshold: (key: NotificationThresholdKey, value: string) => void;
@@ -99,6 +103,8 @@ export function SignedInStackNavigator({
   adTrackingPermissionState,
   email,
   fallbackDisplayName,
+  calendarSummaryBaseDay,
+  calendarSummaryMode,
   hasAvailablePlusPackage,
   isCalendarHeatmapEnabled,
   isPlusActive,
@@ -107,7 +113,8 @@ export function SignedInStackNavigator({
   notificationPermissionLabel,
   notificationPermissionState,
   notificationStatusMessage,
-  onChangeNotificationThresholdCopy,
+  onChangeCalendarSummaryBaseDay,
+  onChangeCalendarSummaryMode,
   onChangeNotificationThresholdEnabled,
   onChangeNotificationThresholdPeriod,
   onChangeNotificationThreshold,
@@ -157,6 +164,7 @@ export function SignedInStackNavigator({
       <Stack.Screen name="calendar">
         {() => (
           <HomeScreen
+            calendarSummaryMode={calendarSummaryMode}
             isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
             onDeleteSelectedEntry={onDeleteSelectedEntry}
             onEditSelectedEntry={onEditSelectedEntryFromCalendar}
@@ -246,8 +254,12 @@ export function SignedInStackNavigator({
             notificationPermissionState={notificationPermissionState}
             notificationPreferenceGroups={notificationPreferenceGroups}
             notificationStatusMessage={notificationStatusMessage}
+            calendarSummaryBaseDay={calendarSummaryBaseDay}
+            calendarSummaryMode={calendarSummaryMode}
             isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
-            onChangeNotificationThresholdCopy={onChangeNotificationThresholdCopy}
+            onChangeCalendarSummaryMode={onChangeCalendarSummaryMode}
+            onChangeCalendarSummaryBaseDay={onChangeCalendarSummaryBaseDay}
+            isPlusActive={isPlusActive}
             onChangeNotificationThresholdEnabled={onChangeNotificationThresholdEnabled}
             onChangeNotificationThresholdPeriod={onChangeNotificationThresholdPeriod}
             onChangeNotificationThreshold={onChangeNotificationThreshold}
@@ -266,7 +278,6 @@ export function SignedInStackNavigator({
               notificationPermissionState={notificationPermissionState}
               notificationPreferenceGroups={notificationPreferenceGroups}
               notificationStatusMessage={notificationStatusMessage}
-              onChangeNotificationThresholdCopy={onChangeNotificationThresholdCopy}
               onChangeNotificationThresholdEnabled={onChangeNotificationThresholdEnabled}
               onChangeNotificationThresholdPeriod={onChangeNotificationThresholdPeriod}
               onChangeNotificationThreshold={onChangeNotificationThreshold}

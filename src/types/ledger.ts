@@ -67,6 +67,12 @@ export type MonthlyLedgerSummary = {
   days: CalendarDay[];
 };
 
+export type LedgerTotalSummary = {
+  totalIncome: number;
+  totalExpense: number;
+  balance: number;
+};
+
 export type MonthlyChangeDirection = "increase" | "decrease" | "same";
 
 export type MonthlyComparisonMetric = {
@@ -108,7 +114,10 @@ export type MonthlyTrendPoint = {
   monthLabel: string;
 };
 
+export type MonthlyInsightComparisonBasis = "month" | "period";
+
 export type MonthlyInsights = {
+  comparisonBasis: MonthlyInsightComparisonBasis;
   currentMonthLabel: string;
   previousMonthLabel: string;
   expenseComparison: MonthlyComparisonMetric;

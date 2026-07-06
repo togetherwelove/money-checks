@@ -23,7 +23,11 @@ export function ChartMonthPageContent({ month, showsBannerAd }: ChartMonthPageCo
         showsVerticalScrollIndicator={false}
         style={styles.scroll}
       >
-        <MonthlyInsightsSection insights={month.monthlyInsights} showsBannerAd={showsBannerAd} />
+        <MonthlyInsightsSection
+          insights={month.monthlyInsights}
+          scope={month.scope}
+          showsBannerAd={showsBannerAd}
+        />
       </ScrollView>
     </View>
   );

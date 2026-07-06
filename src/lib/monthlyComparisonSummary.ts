@@ -1,4 +1,8 @@
-import type { MonthlyComparisonMetric, MonthlyInsights } from "../types/ledger";
+import type {
+  MonthlyComparisonMetric,
+  MonthlyInsightComparisonBasis,
+  MonthlyInsights,
+} from "../types/ledger";
 import { formatCurrency } from "../utils/calendar";
 
 export type MonthlyComparisonTone = "expense" | "income" | "muted";
@@ -45,6 +49,13 @@ const MonthlyComparisonCopy = {
     expenseIncrease: "지난달보다 {amount} 더 썼어요.",
     incomeDecrease: "지난달보다 {amount} 덜 들어왔어요.",
     incomeIncrease: "지난달보다 {amount} 더 들어왔어요.",
+    periodExpenseDecrease: "이전 기간보다 {amount} 덜 썼어요.",
+    periodExpenseIncrease: "이전 기간보다 {amount} 더 썼어요.",
+    periodIncomeDecrease: "이전 기간보다 {amount} 덜 들어왔어요.",
+    periodIncomeIncrease: "이전 기간보다 {amount} 더 들어왔어요.",
+    periodPreviousAmountPrefix: "이전 기간",
+    periodPreviousDataUnavailable: "이전 기간 기록이 없어 아직 비교할 수 없어요.",
+    periodSame: "이전 기간과 같아요.",
     previousAmountPrefix: "전월",
     previousDataUnavailable: "지난달 기록이 아직 없어 다음 달부터 비교할 수 있어요.",
     same: "지난달과 같아요.",
@@ -72,32 +83,43 @@ export function buildMonthlyComparisonSummary(
   metric: MonthlyComparisonMetric,
   previousMonthLabel: string,
   variant: MonthlyComparisonVariant,
+  basis: MonthlyInsightComparisonBasis = "month",
 ): MonthlyComparisonSummary {
   const currentAmountLabel = formatCurrency(metric.currentAmount);
-  const previousAmountLabel = `${MonthlyComparisonCopy.previousAmountPrefix} ${previousMonthLabel} ${formatCurrency(metric.previousAmount)}`;
+  const previousAmountPrefix =
+    basis === "period"
+      ? MonthlyComparisonCopy.periodPreviousAmountPrefix
+      : MonthlyComparisonCopy.previousAmountPrefix;
+  const previousAmountLabel = `${previousAmountPrefix} ${previousMonthLabel} | ${formatCurrency(metric.previousAmount)}`;
   const currentSentenceParts = buildCurrentSentenceParts(metric.currentAmount, variant);
   const currentSentence = formatCurrentSentence(currentSentenceParts);
 
   if (metric.previousAmount <= 0) {
+    const unavailableMessage =
+      basis === "period"
+        ? MonthlyComparisonCopy.periodPreviousDataUnavailable
+        : MonthlyComparisonCopy.previousDataUnavailable;
     return {
-      comparisonSentence: MonthlyComparisonCopy.previousDataUnavailable,
+      comparisonSentence: unavailableMessage,
       currentAmountLabel,
       currentSentence,
       currentSentenceParts,
       previousAmountLabel,
-      summaryMessage: MonthlyComparisonCopy.previousDataUnavailable,
+      summaryMessage: unavailableMessage,
       tone: "muted",
     };
   }
 
   if (isMeaningfullyFlat(metric)) {
+    const sameMessage =
+      basis === "period" ? MonthlyComparisonCopy.periodSame : MonthlyComparisonCopy.same;
     return {
-      comparisonSentence: MonthlyComparisonCopy.same,
+      comparisonSentence: sameMessage,
       currentAmountLabel,
       currentSentence,
       currentSentenceParts,
       previousAmountLabel,
-      summaryMessage: MonthlyComparisonCopy.same,
+      summaryMessage: sameMessage,
       tone: "muted",
     };
   }
@@ -106,6 +128,7 @@ export function buildMonthlyComparisonSummary(
     formatCurrency(metric.deltaAmount),
     metric.direction,
     variant,
+    basis,
   );
 
   return {
@@ -127,11 +150,13 @@ function buildPreviousMonthSummaryLines(
       insights.expenseComparison,
       insights.previousMonthLabel,
       "expense",
+      insights.comparisonBasis,
     ).summaryMessage,
     incomeSummary: buildMonthlyComparisonSummary(
       insights.incomeComparison,
       insights.previousMonthLabel,
       "income",
+      insights.comparisonBasis,
     ).summaryMessage,
   };
 }
@@ -176,19 +201,28 @@ function formatSummaryMessage(
   deltaAmountLabel: string,
   direction: MonthlyComparisonMetric["direction"],
   variant: MonthlyComparisonVariant,
+  basis: MonthlyInsightComparisonBasis,
 ): string {
   if (variant === "expense") {
     const template =
-      direction === "increase"
-        ? MonthlyComparisonCopy.expenseIncrease
-        : MonthlyComparisonCopy.expenseDecrease;
+      basis === "period"
+        ? direction === "increase"
+          ? MonthlyComparisonCopy.periodExpenseIncrease
+          : MonthlyComparisonCopy.periodExpenseDecrease
+        : direction === "increase"
+          ? MonthlyComparisonCopy.expenseIncrease
+          : MonthlyComparisonCopy.expenseDecrease;
     return template.replace("{amount}", deltaAmountLabel);
   }
 
   const template =
-    direction === "increase"
-      ? MonthlyComparisonCopy.incomeIncrease
-      : MonthlyComparisonCopy.incomeDecrease;
+    basis === "period"
+      ? direction === "increase"
+        ? MonthlyComparisonCopy.periodIncomeIncrease
+        : MonthlyComparisonCopy.periodIncomeDecrease
+      : direction === "increase"
+        ? MonthlyComparisonCopy.incomeIncrease
+        : MonthlyComparisonCopy.incomeDecrease;
   return template.replace("{amount}", deltaAmountLabel);
 }
 

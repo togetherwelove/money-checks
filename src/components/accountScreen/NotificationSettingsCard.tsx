@@ -18,7 +18,6 @@ import type { NotificationPreferenceGroup as NotificationPreferenceGroupState } 
 import { NotificationPreferenceGroup } from "./NotificationPreferenceGroup";
 
 type NotificationSettingsCardProps = {
-  onChangeThresholdCopy: (field: "body" | "title", value: string) => void;
   onChangeThresholdEnabled: (enabled: boolean) => void;
   onChangeThresholdPeriod: (period: NotificationThresholdPeriod) => void;
   onChangeThresholdValue: (key: NotificationThresholdKey, value: string) => void;
@@ -36,7 +35,6 @@ type NotificationSettingsCardProps = {
 };
 
 export function NotificationSettingsCard({
-  onChangeThresholdCopy,
   onChangeThresholdEnabled,
   onChangeThresholdPeriod,
   onChangeThresholdValue,
@@ -79,7 +77,6 @@ export function NotificationSettingsCard({
           <NotificationPreferenceGroup
             group={group}
             key={group.id}
-            onChangeThresholdCopy={onChangeThresholdCopy}
             onChangeThresholdEnabled={onChangeThresholdEnabled}
             onChangeThresholdPeriod={onChangeThresholdPeriod}
             onChangeThresholdValue={onChangeThresholdValue}

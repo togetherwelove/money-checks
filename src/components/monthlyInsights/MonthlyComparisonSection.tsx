@@ -17,6 +17,7 @@ type MonthlyComparisonSectionProps = {
 
 type ComparisonCardProps = {
   comparison: MonthlyComparisonMetric;
+  comparisonBasis: MonthlyInsights["comparisonBasis"];
   previousMonthLabel: string;
   variant: "expense" | "income";
 };
@@ -27,12 +28,14 @@ export function MonthlyComparisonSection({ insights }: MonthlyComparisonSectionP
       <View style={styles.comparisonList}>
         <ComparisonRow
           comparison={insights.incomeComparison}
+          comparisonBasis={insights.comparisonBasis}
           previousMonthLabel={insights.previousMonthLabel}
           variant="income"
         />
         <View style={styles.divider} />
         <ComparisonRow
           comparison={insights.expenseComparison}
+          comparisonBasis={insights.comparisonBasis}
           previousMonthLabel={insights.previousMonthLabel}
           variant="expense"
         />
@@ -41,8 +44,18 @@ export function MonthlyComparisonSection({ insights }: MonthlyComparisonSectionP
   );
 }
 
-function ComparisonRow({ comparison, previousMonthLabel, variant }: ComparisonCardProps) {
-  const summary = buildMonthlyComparisonSummary(comparison, previousMonthLabel, variant);
+function ComparisonRow({
+  comparison,
+  comparisonBasis,
+  previousMonthLabel,
+  variant,
+}: ComparisonCardProps) {
+  const summary = buildMonthlyComparisonSummary(
+    comparison,
+    previousMonthLabel,
+    variant,
+    comparisonBasis,
+  );
   const variantLabel =
     variant === "income"
       ? MonthlyInsightChartCopy.incomeLabel
@@ -67,21 +80,16 @@ function ComparisonRow({ comparison, previousMonthLabel, variant }: ComparisonCa
             {summary.previousAmountLabel}
           </Text>
         </View>
-        <Text style={styles.currentAmount}>{summary.currentAmountLabel}</Text>
-        <Text style={[styles.comparisonSentence, resolveToneStyle(summary.tone)]}>
+        <Text style={[
+          styles.currentAmount,
+          variant === "income" ? styles.incomeText : styles.expenseText,
+        ]}>{summary.currentAmountLabel}</Text>
+        {/* <Text style={styles.comparisonSentence}>
           {summary.comparisonSentence}
-        </Text>
+        </Text> */}
       </View>
     </View>
   );
-}
-
-function resolveToneStyle(tone: MonthlyComparisonTone) {
-  if (tone === "muted") {
-    return styles.mutedText;
-  }
-
-  return tone === "income" ? styles.incomeText : styles.expenseText;
 }
 
 const styles = StyleSheet.create({
@@ -137,12 +145,12 @@ const styles = StyleSheet.create({
     lineHeight: MonthlyComparisonLayout.previousLineHeight,
   },
   currentAmount: {
-    color: AppColors.text,
     fontSize: MonthlyComparisonLayout.amountFontSize,
     fontWeight: "900",
     lineHeight: MonthlyComparisonLayout.amountLineHeight,
   },
   comparisonSentence: {
+    color: AppColors.text,
     fontSize: MonthlyComparisonLayout.sentenceFontSize,
     fontWeight: "700",
     lineHeight: MonthlyComparisonLayout.sentenceLineHeight,

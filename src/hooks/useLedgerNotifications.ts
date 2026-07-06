@@ -55,7 +55,6 @@ type LedgerNotificationsState = {
   ) => Promise<void>;
   showNotificationSettings: boolean;
   statusMessage: string | null;
-  updateThresholdCopy: (field: "body" | "title", value: string) => void;
   updateThresholdEnabled: (enabled: boolean) => void;
   updatePreference: (
     eventTypes: NotificationEventType | readonly NotificationEventType[],
@@ -71,7 +70,6 @@ export function useLedgerNotifications(userId: string): LedgerNotificationsState
     preferenceGroups,
     preferences,
     updateEventPreference,
-    updateThresholdCopy,
     updateThresholdEnabled,
     updateThresholdPeriod,
     updateThresholdValue,
@@ -156,7 +154,6 @@ export function useLedgerNotifications(userId: string): LedgerNotificationsState
           thresholdPeriod,
           getExpenseTotalForPeriod(nextEntries, savedEntry.date, thresholdPeriod),
           thresholdAmount,
-          preferences.thresholdCopy,
         ),
         [userId],
       );
@@ -232,7 +229,6 @@ export function useLedgerNotifications(userId: string): LedgerNotificationsState
     sendPushNotificationToUsers: sendPushNotificationToUsersInternal,
     showNotificationSettings: permission !== "unsupported",
     statusMessage: getStatusMessage(permission),
-    updateThresholdCopy,
     updateThresholdEnabled,
     updatePreference: updateEventPreference,
     updateThresholdPeriod,

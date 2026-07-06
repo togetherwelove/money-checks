@@ -12,6 +12,7 @@ import { MonthlyTrendBarChart } from "./monthlyInsights/MonthlyTrendBarChart";
 
 type MonthlyInsightsSectionProps = {
   insights: MonthlyInsights;
+  scope?: "all" | "periodic";
   showsBannerAd?: boolean;
 };
 
@@ -39,6 +40,7 @@ const InitialDisabledBreakdownItemKeys = {
 
 export function MonthlyInsightsSection({
   insights,
+  scope = "periodic",
   showsBannerAd = false,
 }: MonthlyInsightsSectionProps) {
   const [breakdownMode, setBreakdownMode] = useState<BreakdownMode>("category");
@@ -92,8 +94,17 @@ export function MonthlyInsightsSection({
 
   return (
     <View style={styles.section}>
-      <MonthlyComparisonSection insights={insights} />
-      <MonthlyTrendBarChart trendMonths={insights.trendMonths} />
+      {scope === "periodic" ? (
+        <MonthlyTrendBarChart
+        title={
+          insights.comparisonBasis === "period"
+          ? MonthlyInsightChartCopy.periodTrendTitle
+          : MonthlyInsightChartCopy.trendTitle
+        }
+        trendMonths={insights.trendMonths}
+        />
+      ) : null}
+      {/* {scope === "periodic" ? <MonthlyComparisonSection insights={insights} /> : null} */}
       {showsBannerAd ? (
         <View style={styles.adPanel}>
           <AppBannerAd variant="embedded" />

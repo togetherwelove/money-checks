@@ -13,7 +13,6 @@ type AppHeaderProps = {
   isReadOnlyTitle?: boolean;
   onOpenMenu: () => void;
   onPressTitle?: () => void;
-  showsPlusBadge?: boolean;
   titleLabel?: string | null;
   yearLabel?: string | null;
 };
@@ -24,7 +23,6 @@ export function AppHeader({
   isReadOnlyTitle = false,
   onOpenMenu,
   onPressTitle,
-  showsPlusBadge = false,
   titleLabel = null,
   yearLabel = null,
 }: AppHeaderProps) {
@@ -41,7 +39,6 @@ export function AppHeader({
           <Text numberOfLines={1} style={styles.titleText}>
             {centerLabel}
           </Text>
-          {showsPlusBadge ? <Text style={BrandPlusTextStyle}>plus</Text> : null}
           {isReadOnlyTitle ? (
             <View style={styles.readOnlyChip}>
               <Text style={styles.readOnlyChipText}>조회 전용</Text>

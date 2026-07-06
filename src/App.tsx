@@ -45,6 +45,7 @@ import { SupportMessages, type SupportPackageIdentifier } from "./constants/supp
 import { useAnnualLedgerReportAction } from "./hooks/useAnnualLedgerReportAction";
 import { useAuthOnboarding } from "./hooks/useAuthOnboarding";
 import { useCalendarHeatmapSetting } from "./hooks/useCalendarHeatmapSetting";
+import { useCalendarSummaryModeSetting } from "./hooks/useCalendarSummaryModeSetting";
 import { useGoogleAuthRedirectCompletion } from "./hooks/useGoogleAuthRedirectCompletion";
 import { useLedgerCategories } from "./hooks/useLedgerCategories";
 import { useLedgerNotifications } from "./hooks/useLedgerNotifications";
@@ -119,7 +120,7 @@ import { PasswordResetScreen } from "./screens/PasswordResetScreen";
 import type { LedgerAppScreen } from "./types/app";
 import type { CategoryDefinition } from "./types/category";
 import type { LedgerEntry, LedgerEntryDraft } from "./types/ledger";
-import { formatMonthYear, getMonthKey, toIsoDate } from "./utils/calendar";
+import { getMonthKey, toIsoDate } from "./utils/calendar";
 import { createDraft } from "./utils/ledgerEntries";
 import { resolveFallbackDisplayName } from "./utils/sessionDisplayName";
 
@@ -207,7 +208,10 @@ function SignedInApp({ session }: { session: Session }) {
   const accountProviderLabel = resolveSessionAuthProviderLabel(session);
   const notifications = useLedgerNotifications(session.user.id);
   const calendarHeatmapSetting = useCalendarHeatmapSetting();
+  const calendarSummaryModeSetting = useCalendarSummaryModeSetting();
   const subscription = useSubscriptionPlan(session.user.id);
+  const isCalendarHeatmapEnabled =
+    subscription.isPlusActive && calendarHeatmapSetting.isCalendarHeatmapEnabled;
   const shouldServeAdMobAds =
     !subscription.isLoading && subscription.currentTier === SubscriptionTiers.free;
   const showsAdMobAds = shouldServeAdMobAds && isMobileAdsReady;
@@ -222,6 +226,8 @@ function SignedInApp({ session }: { session: Session }) {
     );
   }, []);
   const ledgerState = useLedgerScreenState(session, {
+    calendarSummaryBaseDay: calendarSummaryModeSetting.calendarSummaryBaseDay,
+    calendarSummaryMode: calendarSummaryModeSetting.calendarSummaryMode,
     onReadOnlyEditBlocked: handleReadOnlyEditBlocked,
     subscriptionTier: subscription.currentTier,
   });
@@ -1301,12 +1307,11 @@ function SignedInApp({ session }: { session: Session }) {
             isMenuOpen={isMenuOpen}
             isReadOnlyTitle={currentScreen === "calendar" && ledgerState.isReadOnlyDueToPlanLimit}
             onPressTitle={currentScreen === "calendar" ? handleOpenYearPicker : undefined}
-            showsPlusBadge={false}
             titleLabel={
               currentScreen === "calendar"
                 ? null
                 : currentScreen === "charts"
-                ? `${formatMonthYear(ledgerState.visibleMonth)} 차트`
+                ? ledgerState.currentChartMonth.title
                 : getAppScreenLabel(currentScreen)
             }
             yearLabel={
@@ -1327,10 +1332,12 @@ function SignedInApp({ session }: { session: Session }) {
               <SignedInStackNavigator
                 accountProviderLabel={accountProviderLabel}
                 adTrackingPermissionState={adTrackingPermissionState}
+                calendarSummaryBaseDay={calendarSummaryModeSetting.calendarSummaryBaseDay}
+                calendarSummaryMode={calendarSummaryModeSetting.calendarSummaryMode}
                 email={session.user.email ?? ""}
                 fallbackDisplayName={fallbackDisplayName}
                 hasAvailablePlusPackage={subscription.hasAvailablePlusPackage}
-                isCalendarHeatmapEnabled={calendarHeatmapSetting.isCalendarHeatmapEnabled}
+                isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
                 isPlusActive={subscription.isPlusActive}
                 ledgerState={ledgerState}
                 notificationPreferenceGroups={notifications.preferenceGroups}
@@ -1339,8 +1346,13 @@ function SignedInApp({ session }: { session: Session }) {
                 notificationStatusMessage={notifications.statusMessage}
                 onBeforeCopyShareCode={handleBeforeCopyShareCode}
                 onBeforeSendJoinRequest={handleBeforeSendJoinRequest}
+                onChangeCalendarSummaryMode={
+                  calendarSummaryModeSetting.updateCalendarSummaryMode
+                }
+                onChangeCalendarSummaryBaseDay={
+                  calendarSummaryModeSetting.updateCalendarSummaryBaseDay
+                }
                 onChangeNotificationThreshold={notifications.updateThresholdValue}
-                onChangeNotificationThresholdCopy={notifications.updateThresholdCopy}
                 onChangeNotificationThresholdEnabled={notifications.updateThresholdEnabled}
                 onChangeNotificationThresholdPeriod={notifications.updateThresholdPeriod}
                 onDeleteSelectedEntry={handleDeleteEntryFromCalendar}

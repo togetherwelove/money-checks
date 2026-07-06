@@ -7,11 +7,10 @@ import { ActionButton } from "../ActionButton";
 import { AppColors } from "../../constants/colors";
 import { CurrencyUnitLabels } from "../../constants/currency";
 import { AppTextBreakProps } from "../../constants/textLayout";
-import { FormLabelTextStyle, ModalActionRowStyle } from "../../constants/uiStyles";
+import { ModalActionRowStyle } from "../../constants/uiStyles";
 import { resolveDisplayCurrency } from "../../lib/currencyPreference";
 import {
   NotificationThresholdAmountCopy,
-  NotificationThresholdMessageDefaults,
   NotificationUiCopy,
 } from "../../notifications/config/notificationCopy";
 import { NotificationThresholdAmountInput } from "../../notifications/config/notificationThresholdLimits";
@@ -23,7 +22,6 @@ import type { NotificationThresholdSettings } from "../../notifications/preferen
 import { formatAmountInput } from "../../utils/amount";
 
 type NotificationThresholdFieldProps = {
-  onChangeCopy: (field: "body" | "title", value: string) => void;
   onChangePeriod: (period: NotificationThresholdPeriod) => void;
   onChangeValue: (value: string) => void;
   onToggleEnabled: (enabled: boolean) => void;
@@ -37,29 +35,18 @@ const ThresholdPeriodByKey = {
 } as const satisfies Record<NotificationThresholdKey, NotificationThresholdPeriod>;
 
 export function NotificationThresholdField({
-  onChangeCopy,
   onChangePeriod,
   onChangeValue,
   onToggleEnabled,
   settings,
 }: NotificationThresholdFieldProps) {
   const currencyUnitLabel = CurrencyUnitLabels[resolveDisplayCurrency()];
-  const [titleDraft, setTitleDraft] = useState(settings.title);
-  const [bodyDraft, setBodyDraft] = useState(settings.body);
   const [isPeriodPickerOpen, setIsPeriodPickerOpen] = useState(false);
   const selectedPeriodOption =
     settings.periodOptions.find((option) => option.key === settings.selectedKey) ??
     settings.periodOptions[0];
   const formattedAmountValue = formatAmountInput(settings.amountValue);
   const amountInputWidth = resolveAmountInputWidth(formattedAmountValue);
-
-  useEffect(() => {
-    setTitleDraft(settings.title);
-  }, [settings.title]);
-
-  useEffect(() => {
-    setBodyDraft(settings.body);
-  }, [settings.body]);
 
   return (
     <View style={styles.field}>
@@ -100,23 +87,6 @@ export function NotificationThresholdField({
           thumbColor={settings.enabled ? AppColors.inverseText : AppColors.surface}
           trackColor={{ false: AppColors.border, true: AppColors.primary }}
           value={settings.enabled}
-        />
-      </View>
-      <View style={styles.copyGroup}>
-        <NotificationCopyInput
-          label={NotificationUiCopy.thresholdTitleInputLabel}
-          onSubmit={(value) => onChangeCopy("title", value)}
-          placeholder={NotificationThresholdMessageDefaults.title}
-          value={titleDraft}
-          onChangeValue={setTitleDraft}
-        />
-        <View style={styles.copyDivider} />
-        <NotificationCopyInput
-          label={NotificationUiCopy.thresholdBodyInputLabel}
-          onSubmit={(value) => onChangeCopy("body", value)}
-          placeholder={NotificationThresholdMessageDefaults.body}
-          value={bodyDraft}
-          onChangeValue={setBodyDraft}
         />
       </View>
       <ThresholdPeriodPickerModal
@@ -206,41 +176,6 @@ function ThresholdPeriodPickerModal({
   );
 }
 
-function NotificationCopyInput({
-  label,
-  onChangeValue,
-  onSubmit,
-  placeholder,
-  value,
-}: {
-  label: string;
-  onChangeValue: (value: string) => void;
-  onSubmit: (value: string) => void;
-  placeholder: string;
-  value: string;
-}) {
-  const commitValue = () => {
-    onSubmit(value);
-  };
-
-  return (
-    <View style={styles.copyField}>
-      <Text style={styles.copyLabel}>{label}</Text>
-      <TextInput
-        blurOnSubmit
-        multiline={false}
-        onBlur={commitValue}
-        onChangeText={onChangeValue}
-        onSubmitEditing={commitValue}
-        placeholder={placeholder}
-        returnKeyType="done"
-        style={styles.copyInput}
-        value={value}
-      />
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   amountInput: {
     backgroundColor: "transparent",
@@ -275,36 +210,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   actionRow: ModalActionRowStyle,
-  copyDivider: {
-    backgroundColor: AppColors.border,
-    height: 1,
-  },
-  copyField: {
-    gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  copyGroup: {
-    backgroundColor: AppColors.background,
-    borderColor: AppColors.border,
-    borderCurve: "continuous",
-    borderRadius: 10,
-    borderWidth: 1,
-    overflow: "hidden",
-  },
-  copyInput: {
-    backgroundColor: "transparent",
-    color: AppColors.text,
-    fontSize: 14,
-    fontWeight: "600",
-    minHeight: 24,
-    paddingHorizontal: 0,
-    paddingVertical: 0,
-  },
-  copyLabel: {
-    ...FormLabelTextStyle,
-    color: AppColors.mutedStrongText,
-  },
   currency: {
     color: AppColors.mutedText,
     fontSize: 12,

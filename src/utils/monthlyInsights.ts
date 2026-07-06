@@ -21,6 +21,7 @@ export const MONTHLY_TREND_MONTH_COUNT = 6;
 
 type MonthlyTrendInput = {
   entries: LedgerEntry[];
+  label?: string;
   month: Date;
 };
 
@@ -52,6 +53,7 @@ export function buildMonthlyInsightsFromMonths(
   const previousMonthDate = addMonths(currentMonthDate, -1);
 
   return {
+    comparisonBasis: "month",
     categoryExpenses: buildCategoryExpenses(currentMonthEntries),
     categoryIncomes: buildCategoryIncomes(currentMonthEntries),
     currentMonthLabel: formatMonthLabel(currentMonthDate),
@@ -61,6 +63,52 @@ export function buildMonthlyInsightsFromMonths(
     memberExpenses: buildMemberExpenses(currentMonthEntries),
     memberIncomes: buildMemberIncomes(currentMonthEntries),
     trendMonths: buildTrendMonths(currentMonthDate, trendMonths),
+  };
+}
+
+export function buildPeriodInsights({
+  currentLabel,
+  currentPeriodEntries,
+  previousLabel,
+  previousPeriodEntries,
+  trendPeriods,
+}: {
+  currentLabel: string;
+  currentPeriodEntries: LedgerEntry[];
+  previousLabel: string;
+  previousPeriodEntries: LedgerEntry[];
+  trendPeriods: MonthlyTrendInput[];
+}): MonthlyInsights {
+  return {
+    comparisonBasis: "period",
+    categoryExpenses: buildCategoryExpenses(currentPeriodEntries),
+    categoryIncomes: buildCategoryIncomes(currentPeriodEntries),
+    currentMonthLabel: currentLabel,
+    expenseComparison: buildComparisonMetric(
+      currentPeriodEntries,
+      previousPeriodEntries,
+      "expense",
+    ),
+    incomeComparison: buildComparisonMetric(currentPeriodEntries, previousPeriodEntries, "income"),
+    previousMonthLabel: previousLabel,
+    memberExpenses: buildMemberExpenses(currentPeriodEntries),
+    memberIncomes: buildMemberIncomes(currentPeriodEntries),
+    trendMonths: buildTrendMonthsFromInputs(trendPeriods),
+  };
+}
+
+export function buildOverallInsights(entries: LedgerEntry[]): MonthlyInsights {
+  return {
+    comparisonBasis: "period",
+    categoryExpenses: buildCategoryExpenses(entries),
+    categoryIncomes: buildCategoryIncomes(entries),
+    currentMonthLabel: "",
+    expenseComparison: buildComparisonMetric(entries, [], "expense"),
+    incomeComparison: buildComparisonMetric(entries, [], "income"),
+    previousMonthLabel: "",
+    memberExpenses: buildMemberExpenses(entries),
+    memberIncomes: buildMemberIncomes(entries),
+    trendMonths: [],
   };
 }
 
@@ -158,6 +206,19 @@ function buildTrendMonths(
     isCurrentMonth: toMonthKey(month) === toMonthKey(currentMonthDate),
     key: toMonthKey(month),
     monthLabel: formatCompactMonthLabel(month),
+  }));
+}
+
+function buildTrendMonthsFromInputs(trendInputs: MonthlyTrendInput[]): MonthlyTrendPoint[] {
+  const currentTrendKey = trendInputs[trendInputs.length - 1]?.month;
+  const currentKey = currentTrendKey ? toMonthKey(currentTrendKey) : null;
+
+  return trendInputs.map(({ entries, label, month }) => ({
+    expenseAmount: sumEntriesByType(entries, "expense"),
+    incomeAmount: sumEntriesByType(entries, "income"),
+    isCurrentMonth: toMonthKey(month) === currentKey,
+    key: toMonthKey(month),
+    monthLabel: label ?? formatCompactMonthLabel(month),
   }));
 }
 

@@ -22,8 +22,6 @@ export type NotificationEvent = {
   bookName?: string;
   category?: string;
   content?: string;
-  customBody?: string;
-  customTitle?: string;
   date?: string;
   entryId?: string;
   entryType?: LedgerEntryType;

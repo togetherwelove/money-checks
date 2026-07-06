@@ -4,6 +4,7 @@ import type {
   LedgerEntryDraft,
   LedgerEntryPhotoAttachment,
   LedgerEntryType,
+  LedgerTotalSummary,
   MonthlyInsights,
   MonthlyLedgerSummary,
 } from "../../types/ledger";
@@ -23,6 +24,7 @@ export type ChartMonthData = {
   key: string;
   monthlyInsights: MonthlyInsights;
   monthlyLedger: MonthlyLedgerSummary;
+  scope: "all" | "periodic";
   title: string;
 };
 
@@ -38,6 +40,7 @@ export type LedgerScreenState = {
   isBusy: boolean;
   isLoading: boolean;
   isLoadingSelectedDateEntries: boolean;
+  isLoadingTotalSummary: boolean;
   isReadOnlyDueToPlanLimit: boolean;
   isRefreshing: boolean;
   createLedgerBook: (nextName: string) => Promise<boolean>;
@@ -64,8 +67,11 @@ export type LedgerScreenState = {
   refreshLedger: () => Promise<void>;
   refreshSharedLedgerBook: () => Promise<void>;
   transferSharedLedgerOwnership: (targetUserId: string) => Promise<boolean>;
+  totalLedgerSummary: LedgerTotalSummary | null;
   selectedDate: string;
   selectedEntries: LedgerEntry[];
+  selectedMonthSummaryDate: string | null;
+  selectedMonthSummaryLabel: string | null;
   setVisibleMonth: (nextMonth: Date) => void;
   switchLedgerBook: (bookId: string) => Promise<boolean>;
   visibleMonth: Date;

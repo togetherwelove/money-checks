@@ -10,6 +10,7 @@ import type { MonthlyTrendPoint } from "../../types/ledger";
 import { formatChartAxisCurrency } from "../../utils/currency";
 
 type MonthlyTrendBarChartProps = {
+  title?: string;
   trendMonths: MonthlyTrendPoint[];
 };
 
@@ -18,7 +19,10 @@ type YAxisTick = {
   key: string;
 };
 
-export function MonthlyTrendBarChart({ trendMonths }: MonthlyTrendBarChartProps) {
+export function MonthlyTrendBarChart({
+  title = MonthlyInsightChartCopy.trendTitle,
+  trendMonths,
+}: MonthlyTrendBarChartProps) {
   const maxAmount = Math.max(
     ...trendMonths.flatMap((point) => [point.incomeAmount, point.expenseAmount]),
     0,
@@ -28,7 +32,7 @@ export function MonthlyTrendBarChart({ trendMonths }: MonthlyTrendBarChartProps)
   return (
     <View style={styles.section}>
       <View style={styles.headerRow}>
-        <Text style={styles.sectionTitle}>{MonthlyInsightChartCopy.trendTitle}</Text>
+        <Text style={styles.sectionTitle}>{title}</Text>
         <View style={styles.legend}>
           <LegendItem color={AppColors.income} label={MonthlyInsightChartCopy.incomeLabel} />
           <LegendItem color={AppColors.expense} label={MonthlyInsightChartCopy.expenseLabel} />

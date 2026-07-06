@@ -1,16 +1,12 @@
 {
   "name": "money-checks",
   "private": true,
-  "version": "1.0.7",
+  "version": "1.0.8",
   "packageManager": "pnpm@10.16.1",
   "scripts": {
-    "dev": "pnpm npx -y expo-doctor && pnpm typecheck && npx eas-cli build -p ios --profile development",
-    "prod": "pnpm npx -y expo-doctor && pnpm typecheck && npx eas-cli build -p ios --profile production --auto-submit",
-    "start": "expo start",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
-    "fix": "npx expo install --fix",
-    "check": "npx expo install --check",
-    "push": "supabase db push"
+    "dev": "npx -y expo-doctor && pnpm type-check && npx eas-cli build -p ios --profile development",
+    "prod": "npx -y expo-doctor && pnpm type-check && npx eas-cli build -p ios --profile production --auto-submit",
+    "type-check": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
     "@expo/metro-runtime": "~55.0.11",

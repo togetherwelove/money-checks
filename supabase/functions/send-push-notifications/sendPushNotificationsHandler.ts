@@ -66,8 +66,6 @@ type NotificationEvent = {
   bookName?: string;
   category?: string;
   content?: string;
-  customBody?: string;
-  customTitle?: string;
   date?: string;
   entryId?: string;
   entryType?: LedgerEntryType;
@@ -743,14 +741,11 @@ function buildNotificationContent(
 
   if (event.type === "expense_limit_exceeded") {
     return {
-      body: readText(
-        event.customBody,
-        translate(locale, "push.expenseLimitExceeded.body", {
-          period: periodLabel,
-          totalAmount: totalAmountLabel,
-        }),
-      ),
-      title: readText(event.customTitle, translate(locale, "push.expenseLimitExceeded.title")),
+      body: translate(locale, "push.expenseLimitExceeded.body", {
+        period: periodLabel,
+        totalAmount: totalAmountLabel,
+      }),
+      title: translate(locale, "push.expenseLimitExceeded.title"),
     };
   }
 

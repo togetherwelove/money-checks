@@ -1,6 +1,15 @@
 export const AppSettingsCopy = {
-  displayEffectsSectionTitle: "화면 효과",
-  heatmapDescription: "입출금이 많은 날을 달력 배경 색상으로 표시합니다.",
+  featureSectionTitle: "기능",
+  heatmapDescription: "입출금 현황을 시각적으로 확인할 수 있어요.",
   heatmapTitle: "달력 히트맵",
+  plusBadge: "plus",
   pushNotificationSectionTitle: "푸시 알림",
+  summaryModeDescription: "기준 별로 다르게 요약할 수 있어요.",
+  summaryBaseDayPickerTitle: "요약 기준일",
+  summaryBaseDayPlaceholder: "일자 지정",
+  summaryBaseDayTitle: "기준일",
+  summaryModePickerCloseLabel: "닫기",
+  summaryModePickerConfirmLabel: "확인",
+  summaryModePickerTitle: "요약 기준",
+  summaryModeTitle: "요약 기준",
 } as const;

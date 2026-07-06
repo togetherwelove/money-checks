@@ -292,7 +292,7 @@ function DayAmountLines({
           amount={getCalendarDayTradeAmount(day)}
           isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
           prefix="+"
-          textStyle={styles.mixedText}
+          textStyle={styles.incomeText}
         />
       </View>
     );
@@ -512,9 +512,6 @@ const styles = StyleSheet.create({
   },
   expenseText: {
     color: AppColors.expense,
-  },
-  mixedText: {
-    color: AppColors.primary,
   },
   readOnlyAmountText: {
     color: AppColors.mutedText,

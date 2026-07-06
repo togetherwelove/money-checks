@@ -17,6 +17,12 @@ import { LedgerEntryList } from "../components/LedgerEntryList";
 import { MonthCalendarPager } from "../components/MonthCalendarPager";
 import { MonthlySummary } from "../components/MonthlySummary";
 import { WeekdayHeader } from "../components/WeekdayHeader";
+import {
+  type CalendarSummaryMode,
+  CalendarSummaryLabels,
+  CalendarSummaryLoadingLabel,
+  CalendarSummaryModes,
+} from "../constants/calendarSummary";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import { AppMessages } from "../constants/messages";
@@ -33,6 +39,7 @@ import {
 } from "../utils/calendar";
 
 type HomeScreenProps = {
+  calendarSummaryMode: CalendarSummaryMode;
   onDeleteSelectedEntry: (entry: LedgerEntry) => Promise<boolean>;
   onEditSelectedEntry: (entry: LedgerEntry) => void;
   onOpenMonthPicker?: () => void;
@@ -42,7 +49,16 @@ type HomeScreenProps = {
   state: LedgerScreenState;
 };
 
+type DisplayedSummary = {
+  balanceAmount: number;
+  balanceLabel?: string;
+  summaryLabel: string;
+  totalExpense: string;
+  totalIncome: string;
+};
+
 export function HomeScreen({
+  calendarSummaryMode,
   onDeleteSelectedEntry,
   onEditSelectedEntry,
   onOpenMonthPicker,
@@ -59,7 +75,6 @@ export function HomeScreen({
     errorMessage,
     isLoadingSelectedDateEntries,
     isRefreshing,
-    monthlyLedger,
     refreshLedger,
     selectedDate,
     selectedEntries,
@@ -79,11 +94,11 @@ export function HomeScreen({
       <KeyboardAwareContent
         errorMessage={errorMessage}
         calendarFocusRevision={calendarFocusRevision}
+        calendarSummaryMode={calendarSummaryMode}
         isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
         isLoadingSelectedDateEntries={isLoadingSelectedDateEntries}
         isRefreshing={isRefreshing}
         isReadOnlyDueToPlanLimit={state.isReadOnlyDueToPlanLimit}
-        monthlyLedger={monthlyLedger}
         onDeleteSelectedEntry={onDeleteSelectedEntry}
         onEditSelectedEntry={onEditSelectedEntry}
         onOpenMonthPicker={onOpenMonthPicker}
@@ -104,11 +119,11 @@ export function HomeScreen({
 function KeyboardAwareContent({
   errorMessage,
   calendarFocusRevision,
+  calendarSummaryMode,
   isCalendarHeatmapEnabled,
   isLoadingSelectedDateEntries,
   isRefreshing,
   isReadOnlyDueToPlanLimit,
-  monthlyLedger,
   onDeleteSelectedEntry,
   onEditSelectedEntry,
   onOpenMonthPicker,
@@ -124,11 +139,11 @@ function KeyboardAwareContent({
 }: {
   errorMessage: string | null;
   calendarFocusRevision: number;
+  calendarSummaryMode: CalendarSummaryMode;
   isCalendarHeatmapEnabled: boolean;
   isLoadingSelectedDateEntries: boolean;
   isRefreshing: boolean;
   isReadOnlyDueToPlanLimit: boolean;
-  monthlyLedger: LedgerScreenState["monthlyLedger"];
   onDeleteSelectedEntry: (entry: LedgerEntry) => Promise<boolean>;
   onEditSelectedEntry: (entry: LedgerEntry) => void;
   onOpenMonthPicker?: () => void;
@@ -142,6 +157,8 @@ function KeyboardAwareContent({
   todayIsoDate: string;
   visibleMonth: Date;
 }) {
+  const displayedSummary = resolveDisplayedSummary(state, calendarSummaryMode);
+
   return (
     <View style={styles.screenContent}>
       {errorMessage ? (
@@ -165,6 +182,11 @@ function KeyboardAwareContent({
           <Text style={styles.errorRetryLabel}>재시도</Text>
         </Pressable>
       ) : null}
+      {showsBannerAd ? (
+        <View style={styles.adPanel}>
+          <AppBannerAd variant="embedded" />
+        </View>
+      ) : null}
       <View style={styles.monthHeaderSection}>
         <CalendarToolbar
           monthLabel={formatMonthLabel(visibleMonth)}
@@ -180,18 +202,19 @@ function KeyboardAwareContent({
           isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
           nextPage={state.nextMonthPage}
           onMoveMonth={(monthOffset) =>
-            moveMonth(visibleMonth, monthOffset, onSelectCalendarDate, todayIsoDate)
+            moveMonth(visibleMonth, monthOffset, state.handleSelectDate, todayIsoDate)
           }
           onSelectDate={onSelectCalendarDate}
           previousPage={state.previousMonthPage}
           selectedDate={selectedDate}
         />
         <View style={styles.summaryPanel}>
-          {showsBannerAd ? <AppBannerAd variant="embedded" /> : null}
           <MonthlySummary
-            balanceAmount={monthlyLedger.balance}
-            totalExpense={formatCurrency(monthlyLedger.totalExpense)}
-            totalIncome={formatCurrency(monthlyLedger.totalIncome)}
+            balanceAmount={displayedSummary.balanceAmount}
+            balanceLabel={displayedSummary.balanceLabel}
+            summaryLabel={displayedSummary.summaryLabel}
+            totalExpense={displayedSummary.totalExpense}
+            totalIncome={displayedSummary.totalIncome}
             variant="embedded"
           />
         </View>
@@ -254,6 +277,55 @@ function KeyboardAwareContent({
   );
 }
 
+function resolveDisplayedSummary(
+  state: LedgerScreenState,
+  calendarSummaryMode: CalendarSummaryMode,
+): DisplayedSummary {
+  if (calendarSummaryMode === CalendarSummaryModes.monthly) {
+    return {
+      balanceAmount: state.monthlyLedger.balance,
+      summaryLabel: CalendarSummaryLabels.monthly,
+      totalExpense: formatCurrency(state.monthlyLedger.totalExpense),
+      totalIncome: formatCurrency(state.monthlyLedger.totalIncome),
+    };
+  }
+
+  if (
+    calendarSummaryMode === CalendarSummaryModes.selectedMonth &&
+    !state.selectedMonthSummaryDate
+  ) {
+    return {
+      balanceAmount: 0,
+      balanceLabel: CalendarSummaryLoadingLabel,
+      summaryLabel: CalendarSummaryLabels.selectedMonthPrompt,
+      totalExpense: CalendarSummaryLoadingLabel,
+      totalIncome: CalendarSummaryLoadingLabel,
+    };
+  }
+
+  const summaryLabel =
+    calendarSummaryMode === CalendarSummaryModes.selectedMonth
+      ? state.selectedMonthSummaryLabel ?? CalendarSummaryLabels.selectedMonthPrompt
+      : CalendarSummaryLabels.all;
+
+  if (!state.totalLedgerSummary) {
+    return {
+      balanceAmount: 0,
+      balanceLabel: CalendarSummaryLoadingLabel,
+      summaryLabel,
+      totalExpense: CalendarSummaryLoadingLabel,
+      totalIncome: CalendarSummaryLoadingLabel,
+    };
+  }
+
+  return {
+    balanceAmount: state.totalLedgerSummary.balance,
+    summaryLabel,
+    totalExpense: formatCurrency(state.totalLedgerSummary.totalExpense),
+    totalIncome: formatCurrency(state.totalLedgerSummary.totalIncome),
+  };
+}
+
 function ActivityIndicatorContainer() {
   return (
     <ActivityIndicator color={AppColors.primary} size="small" style={styles.selectedDateLoading} />
@@ -311,6 +383,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderColor: AppColors.border,
     backgroundColor: AppColors.surfaceMuted,
+    marginBottom: AppLayout.compactGap,
   },
   summaryPanel: {
     borderTopWidth: StyleSheet.hairlineWidth,

@@ -10,8 +10,8 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { ChartMonthPager } from "../components/chartScreen/ChartMonthPager";
+import { ChartMonthPageContent } from "../components/chartScreen/ChartMonthPageContent";
 import { AppColors } from "../constants/colors";
-import { AppLayout } from "../constants/layout";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
 import { hasSeenChartSwipeTutorial, markChartSwipeTutorialSeen } from "../lib/chartTutorialStorage";
 
@@ -25,10 +25,18 @@ export function ChartScreen({ showsBannerAd, state, userId }: ChartScreenProps) 
   const translateX = useSharedValue(0);
 
   useEffect(() => {
+    if (state.currentChartMonth.scope === "all") {
+      return;
+    }
+
     void state.preloadChartEntries();
-  }, [state.preloadChartEntries]);
+  }, [state.currentChartMonth.scope, state.preloadChartEntries]);
 
   useEffect(() => {
+    if (state.currentChartMonth.scope === "all") {
+      return;
+    }
+
     if (hasSeenChartSwipeTutorial(userId)) {
       return;
     }
@@ -51,7 +59,7 @@ export function ChartScreen({ showsBannerAd, state, userId }: ChartScreenProps) 
         }),
       ),
     );
-  }, [translateX, userId]);
+  }, [state.currentChartMonth.scope, translateX, userId]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
@@ -59,23 +67,27 @@ export function ChartScreen({ showsBannerAd, state, userId }: ChartScreenProps) 
 
   return (
     <View style={styles.screen}>
-      <Animated.View style={[styles.pagerLayer, animatedStyle]}>
-        <ChartMonthPager
-          currentMonth={state.currentChartMonth}
-          nextMonth={state.nextChartMonth}
-          onMoveMonth={(monthOffset) =>
-            state.setVisibleMonth(
-              new Date(
-                state.visibleMonth.getFullYear(),
-                state.visibleMonth.getMonth() + monthOffset,
-                1,
-              ),
-            )
-          }
-          previousMonth={state.previousChartMonth}
-          showsBannerAd={showsBannerAd}
-        />
-      </Animated.View>
+      {state.currentChartMonth.scope === "all" ? (
+        <ChartMonthPageContent month={state.currentChartMonth} showsBannerAd={showsBannerAd} />
+      ) : (
+        <Animated.View style={[styles.pagerLayer, animatedStyle]}>
+          <ChartMonthPager
+            currentMonth={state.currentChartMonth}
+            nextMonth={state.nextChartMonth}
+            onMoveMonth={(monthOffset) =>
+              state.setVisibleMonth(
+                new Date(
+                  state.visibleMonth.getFullYear(),
+                  state.visibleMonth.getMonth() + monthOffset,
+                  1,
+                ),
+              )
+            }
+            previousMonth={state.previousChartMonth}
+            showsBannerAd={showsBannerAd}
+          />
+        </Animated.View>
+      )}
     </View>
   );
 }

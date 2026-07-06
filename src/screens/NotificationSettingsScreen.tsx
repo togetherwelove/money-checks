@@ -17,7 +17,6 @@ type NotificationSettingsScreenProps = {
   notificationPermissionState: NotificationPermissionState;
   notificationPreferenceGroups: NotificationPreferenceGroup[];
   notificationStatusMessage: string | null;
-  onChangeNotificationThresholdCopy: (field: "body" | "title", value: string) => void;
   onChangeNotificationThresholdEnabled: (enabled: boolean) => void;
   onChangeNotificationThresholdPeriod: (period: NotificationThresholdPeriod) => void;
   onChangeNotificationThreshold: (key: NotificationThresholdKey, value: string) => void;
@@ -33,7 +32,6 @@ export function NotificationSettingsScreen({
   notificationPermissionState,
   notificationPreferenceGroups,
   notificationStatusMessage,
-  onChangeNotificationThresholdCopy,
   onChangeNotificationThresholdEnabled,
   onChangeNotificationThresholdPeriod,
   onChangeNotificationThreshold,
@@ -52,7 +50,6 @@ export function NotificationSettingsScreen({
   return (
     <KeyboardAwareScrollView contentContainerStyle={styles.content} style={styles.screen}>
       <NotificationSettingsCard
-        onChangeThresholdCopy={onChangeNotificationThresholdCopy}
         onChangeThresholdEnabled={onChangeNotificationThresholdEnabled}
         onChangeThresholdPeriod={onChangeNotificationThresholdPeriod}
         onChangeThresholdValue={onChangeNotificationThreshold}

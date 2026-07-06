@@ -10,7 +10,6 @@ import { NotificationThresholdField } from "./NotificationThresholdField";
 
 type NotificationPreferenceGroupProps = {
   group: NotificationPreferenceGroupState;
-  onChangeThresholdCopy: (field: "body" | "title", value: string) => void;
   onChangeThresholdEnabled: (enabled: boolean) => void;
   onChangeThresholdPeriod: (period: NotificationThresholdPeriod) => void;
   onChangeThresholdValue: (key: NotificationThresholdKey, value: string) => void;
@@ -24,7 +23,6 @@ type NotificationPreferenceGroupProps = {
 
 export function NotificationPreferenceGroup({
   group,
-  onChangeThresholdCopy,
   onChangeThresholdEnabled,
   onChangeThresholdPeriod,
   onChangeThresholdValue,
@@ -43,7 +41,6 @@ export function NotificationPreferenceGroup({
         <View style={styles.thresholdBlock}>
           <NotificationThresholdField
             settings={thresholdSettings}
-            onChangeCopy={onChangeThresholdCopy}
             onChangePeriod={onChangeThresholdPeriod}
             onChangeValue={(value) => onChangeThresholdValue(thresholdSettings.selectedKey, value)}
             onToggleEnabled={onChangeThresholdEnabled}

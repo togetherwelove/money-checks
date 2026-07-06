@@ -9,7 +9,7 @@ const CALENDAR_PAGE_PRELOAD_MONTH_OFFSETS = [0] as const;
 const CALENDAR_BACKGROUND_PRELOAD_MONTH_OFFSETS = [-1, 1] as const;
 const CALENDAR_VISIBLE_WINDOW_OFFSETS = [-1, 0, 1] as const;
 const CHART_TREND_PRELOAD_MONTH_OFFSETS = Array.from(
-  { length: MONTHLY_TREND_MONTH_COUNT },
+  { length: MONTHLY_TREND_MONTH_COUNT + 1 },
   (_, index) => index - MONTHLY_TREND_MONTH_COUNT + 1,
 );
 

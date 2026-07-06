@@ -5,16 +5,10 @@ import type {
   NotificationThresholdPeriod,
 } from "../domain/notificationEvents";
 
-export type NotificationThresholdCopyValue = {
-  body: string;
-  title: string;
-};
-
 export type NotificationPreferences = {
   enabledByEvent: Record<NotificationEventType, boolean>;
   enabledThresholds: Record<NotificationThresholdKey, boolean>;
   selectedThresholdPeriod: NotificationThresholdPeriod;
-  thresholdCopy: NotificationThresholdCopyValue;
   thresholds: Record<NotificationThresholdKey, number>;
 };
 
@@ -40,9 +34,7 @@ export type NotificationThresholdPeriodOption = {
 
 export type NotificationThresholdSettings = {
   amountValue: string;
-  body: string;
   enabled: boolean;
   periodOptions: NotificationThresholdPeriodOption[];
   selectedKey: NotificationThresholdKey;
-  title: string;
 };

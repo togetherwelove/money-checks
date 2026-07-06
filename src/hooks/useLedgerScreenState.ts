@@ -3,9 +3,15 @@ import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { MonthPage } from "../components/monthCalendarPager/monthCalendarPagerUtils";
+import {
+  type CalendarSummaryMode,
+  CalendarSummaryModes,
+} from "../constants/calendarSummary";
 import type { SubscriptionTier } from "../constants/subscription";
 import { buildInstallmentSettlementEntry, buildLedgerEntriesFromDraft } from "../lib/installments";
 import { isLedgerBookEditableWithinPlanLimit } from "../lib/ledgerEditability";
+import { fetchLedgerEntriesSummary } from "../lib/ledgerEntries";
+import { logAppError } from "../lib/logAppError";
 import type { LedgerEntry, LedgerEntryDraft, LedgerEntryPhotoAttachment } from "../types/ledger";
 import { addMonths, getMonthKey, parseIsoDate, startOfMonth, toIsoDate } from "../utils/calendar";
 import {
@@ -15,6 +21,7 @@ import {
   sanitizeAmountInput,
 } from "../utils/ledgerEntries";
 import { buildLedgerEntryListSignature } from "../utils/ledgerEntrySignature";
+import { buildSelectedMonthSummaryRangeForMonth } from "../utils/calendarSummaryRange";
 import {
   getChartMonthDataFromCache,
   getMonthPageFromCache,
@@ -33,21 +40,30 @@ import { useActiveLedgerBook } from "./ledgerScreenState/useActiveLedgerBook";
 import { useLedgerEntries } from "./ledgerScreenState/useLedgerEntries";
 import { useLedgerJoinRequests } from "./ledgerScreenState/useLedgerJoinRequests";
 import { useSelectedDateEntries } from "./ledgerScreenState/useSelectedDateEntries";
+import { useLedgerBookTotalSummary } from "./useLedgerBookTotalSummary";
 
 export type { LedgerScreenState } from "./ledgerScreenState/types";
 
 type LedgerScreenStateOptions = {
+  calendarSummaryBaseDay?: number | null;
+  calendarSummaryMode?: CalendarSummaryMode;
   onReadOnlyEditBlocked?: () => void;
   subscriptionTier: SubscriptionTier;
 };
 
 export function useLedgerScreenState(
   session: Session,
-  { onReadOnlyEditBlocked, subscriptionTier }: LedgerScreenStateOptions,
+  {
+    calendarSummaryBaseDay = null,
+    calendarSummaryMode = CalendarSummaryModes.monthly,
+    onReadOnlyEditBlocked,
+    subscriptionTier,
+  }: LedgerScreenStateOptions,
 ): LedgerScreenState {
   const actualToday = startOfMonth(new Date());
   const [visibleMonth, setVisibleMonth] = useState(actualToday);
   const [selectedDate, setSelectedDate] = useState(() => toIsoDate(new Date()));
+  const [allChartEntries, setAllChartEntries] = useState<LedgerEntry[] | null>(null);
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
   const previousActiveBookId = useRef<string | null>(null);
   const [draft, setDraft] = useState<LedgerEntryDraft>(() =>
@@ -113,6 +129,36 @@ export function useLedgerScreenState(
     selectedEntries,
     selectedEntriesError,
   } = useSelectedDateEntries(activeBook?.id ?? null, selectedDate, selectedDateEntrySignature);
+  const totalSummaryRefreshKey = useMemo(
+    () => buildLedgerEntryListSignature(Object.values(entryCache).flat()),
+    [entryCache],
+  );
+  const selectedMonthSummaryRange = useMemo(
+    () =>
+      calendarSummaryBaseDay
+        ? buildSelectedMonthSummaryRangeForMonth(visibleMonth, calendarSummaryBaseDay)
+        : null,
+    [calendarSummaryBaseDay, visibleMonth],
+  );
+  const totalSummaryDateFrom =
+    calendarSummaryMode === CalendarSummaryModes.selectedMonth
+      ? selectedMonthSummaryRange?.startDate ?? null
+      : null;
+  const totalSummaryDateTo =
+    calendarSummaryMode === CalendarSummaryModes.selectedMonth
+      ? selectedMonthSummaryRange?.endDate ?? null
+      : null;
+  const isTotalSummaryEnabled =
+    calendarSummaryMode === CalendarSummaryModes.all ||
+    (calendarSummaryMode === CalendarSummaryModes.selectedMonth &&
+      selectedMonthSummaryRange !== null);
+  const { isLoadingTotalSummary, totalLedgerSummary } = useLedgerBookTotalSummary(
+    activeBook?.id ?? null,
+    isTotalSummaryEnabled,
+    totalSummaryRefreshKey,
+    totalSummaryDateFrom,
+    totalSummaryDateTo,
+  );
 
   const monthlyLedger = useMemo(
     () => getMonthlyLedgerFromCache(entryCache, visibleMonth),
@@ -121,6 +167,14 @@ export function useLedgerScreenState(
   const monthlyInsights = useMemo(
     () => getMonthlyInsightsFromCache(entryCache, visibleMonth),
     [entryCache, visibleMonth],
+  );
+  const chartDataOptions = useMemo(
+    () => ({
+      allEntries: allChartEntries ?? undefined,
+      calendarSummaryBaseDay,
+      calendarSummaryMode,
+    }),
+    [allChartEntries, calendarSummaryBaseDay, calendarSummaryMode],
   );
   const previousMonthPage = useMemo<MonthPage>(
     () => getMonthPageFromCache(entryCache, addMonths(visibleMonth, -1)),
@@ -135,17 +189,46 @@ export function useLedgerScreenState(
     [entryCache, visibleMonth],
   );
   const previousChartMonth = useMemo(
-    () => getChartMonthDataFromCache(entryCache, addMonths(visibleMonth, -1)),
-    [entryCache, visibleMonth],
+    () => getChartMonthDataFromCache(entryCache, addMonths(visibleMonth, -1), chartDataOptions),
+    [chartDataOptions, entryCache, visibleMonth],
   );
   const currentChartMonth = useMemo(
-    () => getChartMonthDataFromCache(entryCache, visibleMonth),
-    [entryCache, visibleMonth],
+    () => getChartMonthDataFromCache(entryCache, visibleMonth, chartDataOptions),
+    [chartDataOptions, entryCache, visibleMonth],
   );
   const nextChartMonth = useMemo(
-    () => getChartMonthDataFromCache(entryCache, addMonths(visibleMonth, 1)),
-    [entryCache, visibleMonth],
+    () => getChartMonthDataFromCache(entryCache, addMonths(visibleMonth, 1), chartDataOptions),
+    [chartDataOptions, entryCache, visibleMonth],
   );
+
+  useEffect(() => {
+    const activeBookId = activeBook?.id ?? null;
+    if (calendarSummaryMode !== CalendarSummaryModes.all || !activeBookId) {
+      setAllChartEntries(null);
+      return;
+    }
+
+    let isMounted = true;
+    void fetchLedgerEntriesSummary(activeBookId)
+      .then((nextEntries) => {
+        if (isMounted) {
+          setAllChartEntries(nextEntries);
+        }
+      })
+      .catch((error) => {
+        logAppError("LedgerScreenState", error, {
+          activeBookId,
+          step: "fetch_all_chart_entries",
+        });
+        if (isMounted) {
+          setAllChartEntries([]);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeBook?.id, calendarSummaryMode, totalSummaryRefreshKey]);
 
   useEffect(() => {
     const nextActiveBookId = activeBook?.id ?? null;
@@ -361,6 +444,7 @@ export function useLedgerScreenState(
     isBusy: busyTaskCount > 0,
     isLoading: isLoadingBook || isLoadingEntries,
     isLoadingSelectedDateEntries,
+    isLoadingTotalSummary,
     isReadOnlyDueToPlanLimit,
     isRefreshing,
     joinSharedLedgerBookByCode,
@@ -386,9 +470,12 @@ export function useLedgerScreenState(
     refreshSharedLedgerBook,
     selectedDate,
     selectedEntries,
+    selectedMonthSummaryDate: selectedMonthSummaryRange?.startDate ?? null,
+    selectedMonthSummaryLabel: selectedMonthSummaryRange?.label ?? null,
     setVisibleMonth,
     switchLedgerBook,
     transferSharedLedgerOwnership,
+    totalLedgerSummary,
     visibleMonth,
     handleDeleteEntry,
     handleEditEntry,
