@@ -1,7 +1,7 @@
 import type { TextProps } from "react-native";
 
 export const AppTextBreakProps = {
-  lineBreakStrategyIOS: "standard",
+  lineBreakStrategyIOS: "hangul-word",
 } as const satisfies Pick<TextProps, "lineBreakStrategyIOS">;
 
 export const OneLineTextFitProps = {

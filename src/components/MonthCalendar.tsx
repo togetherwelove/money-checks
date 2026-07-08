@@ -285,19 +285,6 @@ function DayAmountLines({
   day: CalendarDay;
   isReadOnlyDueToPlanLimit: boolean;
 }) {
-  if (day.income > 0 && day.expense > 0) {
-    return (
-      <View style={styles.amounts}>
-        <AmountLine
-          amount={getCalendarDayTradeAmount(day)}
-          isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
-          prefix="+"
-          textStyle={styles.incomeText}
-        />
-      </View>
-    );
-  }
-
   return (
     <View style={styles.amounts}>
       <AmountLine

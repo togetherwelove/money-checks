@@ -8,6 +8,7 @@ import { ChartMonthPageContent } from "./ChartMonthPageContent";
 const CURRENT_PAGE_INDEX = 1;
 
 type ChartMonthPagerProps = {
+  activeBookId?: string | null;
   currentMonth: ChartMonthData;
   nextMonth: ChartMonthData;
   onMoveMonth: (monthOffset: -1 | 1) => void;
@@ -16,6 +17,7 @@ type ChartMonthPagerProps = {
 };
 
 export function ChartMonthPager({
+  activeBookId = null,
   currentMonth,
   nextMonth,
   onMoveMonth,
@@ -60,9 +62,21 @@ export function ChartMonthPager({
         handlePageSelected(event.nativeEvent.position);
       }}
     >
-      <ChartMonthPageContent month={previousMonth} showsBannerAd={showsBannerAd} />
-      <ChartMonthPageContent month={currentMonth} showsBannerAd={showsBannerAd} />
-      <ChartMonthPageContent month={nextMonth} showsBannerAd={showsBannerAd} />
+      <ChartMonthPageContent
+        activeBookId={activeBookId}
+        month={previousMonth}
+        showsBannerAd={showsBannerAd}
+      />
+      <ChartMonthPageContent
+        activeBookId={activeBookId}
+        month={currentMonth}
+        showsBannerAd={showsBannerAd}
+      />
+      <ChartMonthPageContent
+        activeBookId={activeBookId}
+        month={nextMonth}
+        showsBannerAd={showsBannerAd}
+      />
     </PagerView>
   );
 }

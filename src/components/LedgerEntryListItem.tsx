@@ -1,5 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { type MenuAction, MenuView, type NativeActionEvent } from "@react-native-menu/menu";
+import { useRef } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
@@ -28,6 +29,7 @@ const CATEGORY_ICON_SIZE = 16;
 const ENTRY_ATTACHMENT_ICON_SIZE = 12;
 const ENTRY_ROW_GAP = 8;
 const LEDGER_ENTRY_DELETE_MENU_ICON_NAME = "trash";
+const LEDGER_ENTRY_MENU_PRESS_SUPPRESSION_MS = 800;
 const ledgerEntryMenuActions: MenuAction[] = [
   {
     attributes: { destructive: true },
@@ -55,8 +57,13 @@ export function LedgerEntryListItem({
   const installmentProgressLabel = formatInstallmentProgressLabel(entry);
   const noteLabel = stripInstallmentNoteSuffix(entry.note);
   const categoryLabel = categoryLabelById.get(entry.categoryId) ?? entry.category;
+  const lastMenuInteractionAtRef = useRef(0);
 
   const handlePressEntry = () => {
+    if (Date.now() - lastMenuInteractionAtRef.current < LEDGER_ENTRY_MENU_PRESS_SUPPRESSION_MS) {
+      return;
+    }
+
     onEditEntry(entry);
   };
 
@@ -66,6 +73,8 @@ export function LedgerEntryListItem({
         <MenuView
           actions={ledgerEntryMenuActions}
           isAnchoredToRight
+          onCloseMenu={markMenuInteraction}
+          onOpenMenu={markMenuInteraction}
           onPressAction={(event) => handlePressMenuAction(event)}
           shouldOpenOnLongPress
           style={styles.entryMenuAnchor}
@@ -138,7 +147,13 @@ export function LedgerEntryListItem({
     </View>
   );
 
+  function markMenuInteraction() {
+    lastMenuInteractionAtRef.current = Date.now();
+  }
+
   function handlePressMenuAction(event: NativeActionEvent) {
+    markMenuInteraction();
+
     if (event.nativeEvent.event === LedgerEntryMenuAction.delete) {
       onDeleteEntry(entry);
     }

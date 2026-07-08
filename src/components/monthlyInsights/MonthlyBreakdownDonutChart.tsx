@@ -1,15 +1,28 @@
+import { Feather } from "@expo/vector-icons";
+import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, G } from "react-native-svg";
 
+import {
+  CATEGORY_GRID_GAP,
+  CATEGORY_GRID_MIN_CELL_SIZE,
+  CATEGORY_ICON_LABEL_GAP,
+  CATEGORY_ICON_SIZE,
+  CATEGORY_ITEM_PADDING_HORIZONTAL,
+  CATEGORY_ITEM_PADDING_VERTICAL,
+} from "../../constants/categorySelector";
 import { AppChartColors, AppColors } from "../../constants/colors";
 import {
   MonthlyInsightChartCopy,
   MonthlyInsightChartLayout,
 } from "../../constants/monthlyInsightCharts";
+import { AppTextBreakProps } from "../../constants/textLayout";
+import type { CategoryIconName } from "../../types/category";
 import { formatCurrency } from "../../utils/calendar";
 
 type MonthlyBreakdownItem = {
   amount: number;
+  iconName?: CategoryIconName;
   key: string;
   label: string;
   share: number;
@@ -23,6 +36,7 @@ type MonthlyBreakdownDonutChartProps = {
   centerLabel: string;
   emptyMessage: string;
   items: MonthlyBreakdownItem[];
+  legendLayout?: "grid" | "row";
   legendItems?: MonthlyBreakdownLegendItem[];
   onToggleItem?: (itemKey: string) => void;
   title: string;
@@ -31,18 +45,22 @@ type MonthlyBreakdownDonutChartProps = {
 const CHART_RADIUS =
   (MonthlyInsightChartLayout.donutSize - MonthlyInsightChartLayout.donutStrokeWidth) / 2;
 const CHART_CIRCUMFERENCE = 2 * Math.PI * CHART_RADIUS;
+const FALLBACK_CATEGORY_ICON_NAME: CategoryIconName = "grid";
 
 export function MonthlyBreakdownDonutChart({
   centerLabel,
   emptyMessage,
   items,
+  legendLayout = "row",
   legendItems,
   onToggleItem,
   title,
 }: MonthlyBreakdownDonutChartProps) {
+  const [legendGridWidth, setLegendGridWidth] = useState(0);
   const totalAmount = items.reduce((sum, item) => sum + item.amount, 0);
   const visibleLegendItems =
     legendItems ?? items.map((item) => ({ ...item, isActive: true }));
+  const legendGridItemSize = resolveLegendGridItemSize(legendGridWidth);
   const itemColorByKey = new Map(
     visibleLegendItems.map((item, index) => [
       item.key,
@@ -55,7 +73,7 @@ export function MonthlyBreakdownDonutChart({
       <Text style={styles.sectionTitle}>{title}</Text>
       <View style={styles.card}>
         {items.length ? (
-          <>
+          <View style={styles.chartOverview}>
             <View style={styles.chartShell}>
               <Svg
                 height={MonthlyInsightChartLayout.donutSize}
@@ -98,12 +116,36 @@ export function MonthlyBreakdownDonutChart({
                 <Text style={styles.centerValue}>{formatCurrency(totalAmount)}</Text>
               </View>
             </View>
-          </>
+            <View style={styles.selectedSummary}>
+              {items.map((item) => (
+                <View key={`${item.key}-${item.amount}-summary`} style={styles.selectedSummaryRow}>
+                  <Text numberOfLines={1} style={styles.selectedSummaryLabel}>
+                    {item.label}
+                  </Text>
+                  <View style={styles.selectedSummaryValueBlock}>
+                    <Text numberOfLines={1} style={styles.selectedSummaryAmount}>
+                      {formatCurrency(item.amount)}
+                    </Text>
+                    <Text style={styles.selectedSummaryShare}>
+                      {Math.round(item.share * 100)}%
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
         ) : (
           <Text style={styles.emptyText}>{emptyMessage}</Text>
         )}
         {visibleLegendItems.length ? (
-          <View style={styles.legend}>
+          <View
+            onLayout={
+              legendLayout === "grid"
+                ? (event) => setLegendGridWidth(event.nativeEvent.layout.width)
+                : undefined
+            }
+            style={legendLayout === "grid" ? styles.legendGrid : styles.legend}
+          >
             {visibleLegendItems.map((item, index) => (
               <Pressable
                 accessibilityLabel={`${item.label} ${
@@ -116,44 +158,114 @@ export function MonthlyBreakdownDonutChart({
                 key={`${item.key}-${item.amount}-legend`}
                 onPress={() => onToggleItem?.(item.key)}
                 style={({ pressed }) => [
-                  styles.legendRow,
-                  !item.isActive ? styles.legendRowInactive : null,
-                  pressed ? styles.legendRowPressed : null,
+                  legendLayout === "grid" ? styles.legendGridItem : styles.legendRow,
+                  legendLayout === "grid"
+                    ? {
+                        height: legendGridItemSize,
+                        width: legendGridItemSize,
+                      }
+                    : null,
+                  legendLayout === "grid" && !item.isActive
+                    ? styles.legendGridItemInactive
+                    : null,
+                  legendLayout === "row" && !item.isActive ? styles.legendRowInactive : null,
+                  pressed
+                    ? legendLayout === "grid"
+                      ? styles.legendGridItemPressed
+                      : styles.legendRowPressed
+                    : null,
                 ]}
               >
-                <View
-                  style={[
-                    styles.legendDot,
-                    {
-                      backgroundColor: AppChartColors[index % AppChartColors.length],
-                    },
-                    !item.isActive ? styles.legendDotInactive : null,
-                  ]}
-                />
-                <Text
-                  numberOfLines={1}
-                  style={[styles.legendLabel, !item.isActive ? styles.legendLabelInactive : null]}
-                >
-                  {item.label}
-                </Text>
-                <Text
-                  style={[styles.legendAmount, !item.isActive ? styles.legendAmountInactive : null]}
-                >
-                  {formatCurrency(item.amount)}
-                  {item.isActive ? ` (${Math.round(item.share * 100)}%)` : ""}
-                </Text>
-                <View
-                  style={[
-                    styles.legendToggle,
-                    item.isActive ? styles.legendToggleActive : styles.legendToggleInactive,
-                  ]}
-                />
+                {legendLayout === "grid" ? (
+                  <GridLegendContent item={item} />
+                ) : (
+                  <RowLegendContent item={item} itemIndex={index} />
+                )}
               </Pressable>
             ))}
           </View>
         ) : null}
       </View>
     </View>
+  );
+}
+
+function resolveLegendGridItemSize(legendGridWidth: number): number {
+  if (legendGridWidth <= 0) {
+    return CATEGORY_GRID_MIN_CELL_SIZE;
+  }
+
+  const totalGap =
+    CATEGORY_GRID_GAP * (MonthlyInsightChartLayout.categoryLegendGridColumns - 1);
+  return Math.max(
+    0,
+    (legendGridWidth - totalGap) / MonthlyInsightChartLayout.categoryLegendGridColumns,
+  );
+}
+
+function GridLegendContent({ item }: { item: MonthlyBreakdownLegendItem }) {
+  return (
+    <>
+      <View
+        style={[
+          styles.legendGridIconFrame,
+          item.isActive ? styles.legendGridIconFrameActive : null,
+        ]}
+      >
+        <Feather
+          color={item.isActive ? AppColors.primary : AppColors.mutedText}
+          name={item.iconName ?? FALLBACK_CATEGORY_ICON_NAME}
+          size={CATEGORY_ICON_SIZE}
+        />
+      </View>
+      <Text
+        {...AppTextBreakProps}
+        adjustsFontSizeToFit
+        minimumFontScale={0.86}
+        numberOfLines={1}
+        style={[styles.legendGridLabel, item.isActive ? styles.legendGridLabelActive : null]}
+      >
+        {item.label}
+      </Text>
+    </>
+  );
+}
+
+function RowLegendContent({
+  item,
+  itemIndex,
+}: {
+  item: MonthlyBreakdownLegendItem;
+  itemIndex: number;
+}) {
+  return (
+    <>
+      <View
+        style={[
+          styles.legendDot,
+          {
+            backgroundColor: AppChartColors[itemIndex % AppChartColors.length],
+          },
+          !item.isActive ? styles.legendDotInactive : null,
+        ]}
+      />
+      <Text
+        numberOfLines={1}
+        style={[styles.legendLabel, !item.isActive ? styles.legendLabelInactive : null]}
+      >
+        {item.label}
+      </Text>
+      <Text style={[styles.legendAmount, !item.isActive ? styles.legendAmountInactive : null]}>
+        {formatCurrency(item.amount)}
+        {item.isActive ? ` (${Math.round(item.share * 100)}%)` : ""}
+      </Text>
+      <View
+        style={[
+          styles.legendToggle,
+          item.isActive ? styles.legendToggleActive : styles.legendToggleInactive,
+        ]}
+      />
+    </>
   );
 }
 
@@ -188,9 +300,13 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   chartShell: {
-    alignSelf: "center",
     justifyContent: "center",
     alignItems: "center",
+  },
+  chartOverview: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
   },
   emptyText: {
     color: AppColors.mutedText,
@@ -199,6 +315,52 @@ const styles = StyleSheet.create({
   },
   legend: {
     gap: 6,
+  },
+  legendGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: CATEGORY_GRID_GAP,
+  },
+  legendGridItem: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: CATEGORY_ICON_LABEL_GAP,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: AppColors.transparent,
+    borderRadius: 14,
+    backgroundColor: AppColors.transparent,
+    paddingHorizontal: CATEGORY_ITEM_PADDING_HORIZONTAL,
+    paddingVertical: CATEGORY_ITEM_PADDING_VERTICAL,
+  },
+  legendGridItemInactive: {
+    opacity: 0.68,
+  },
+  legendGridItemPressed: {
+    backgroundColor: AppColors.surfaceMuted,
+  },
+  legendGridIconFrame: {
+    width: 30,
+    height: 30,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: AppColors.transparent,
+    backgroundColor: AppColors.surfaceMuted,
+  },
+  legendGridIconFrameActive: {
+    borderColor: AppColors.primary,
+    backgroundColor: AppColors.primarySoft,
+  },
+  legendGridLabel: {
+    color: AppColors.mutedText,
+    fontSize: 11,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  legendGridLabelActive: {
+    color: AppColors.primary,
+    fontWeight: "700",
   },
   legendAmount: {
     color: AppColors.mutedText,
@@ -264,5 +426,40 @@ const styles = StyleSheet.create({
     color: AppColors.text,
     fontSize: 13,
     fontWeight: "700",
+  },
+  selectedSummary: {
+    flex: 1,
+    minWidth: 0,
+    gap: 5,
+  },
+  selectedSummaryAmount: {
+    color: AppColors.text,
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  selectedSummaryLabel: {
+    flex: 1,
+    minWidth: 0,
+    color: AppColors.text,
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  selectedSummaryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 6,
+  },
+  selectedSummaryShare: {
+    color: AppColors.mutedText,
+    fontSize: 10,
+    fontWeight: "700",
+    textAlign: "right",
+    minWidth: 32,
+  },
+  selectedSummaryValueBlock: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    minWidth: 54,
   },
 });

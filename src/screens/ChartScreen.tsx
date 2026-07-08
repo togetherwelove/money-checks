@@ -68,10 +68,15 @@ export function ChartScreen({ showsBannerAd, state, userId }: ChartScreenProps) 
   return (
     <View style={styles.screen}>
       {state.currentChartMonth.scope === "all" ? (
-        <ChartMonthPageContent month={state.currentChartMonth} showsBannerAd={showsBannerAd} />
+        <ChartMonthPageContent
+          activeBookId={state.activeBook?.id ?? null}
+          month={state.currentChartMonth}
+          showsBannerAd={showsBannerAd}
+        />
       ) : (
         <Animated.View style={[styles.pagerLayer, animatedStyle]}>
           <ChartMonthPager
+            activeBookId={state.activeBook?.id ?? null}
             currentMonth={state.currentChartMonth}
             nextMonth={state.nextChartMonth}
             onMoveMonth={(monthOffset) =>

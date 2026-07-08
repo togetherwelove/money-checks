@@ -56,6 +56,7 @@ const config: ExpoConfig = {
     },
   },
   splash: {
+    image: appIconPath,
     resizeMode: "contain",
     backgroundColor: "#f5f1e8",
   },

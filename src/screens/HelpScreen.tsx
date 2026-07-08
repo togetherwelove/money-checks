@@ -1,6 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
+import { AppLinks } from "../constants/appLinks";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import { LegalLinks } from "../constants/legal";
@@ -14,6 +15,11 @@ type HelpLinkItem = {
 };
 
 const HELP_LINK_ITEMS: HelpLinkItem[] = [
+  {
+    description: "공지, 사용 안내, 업데이트 소식을 확인할 수 있어요",
+    label: "알뜰 홈페이지",
+    url: AppLinks.homepageUrl,
+  },
   {
     description: "앱에서 사용하는 오픈소스 소프트웨어 고지",
     label: "오픈소스 라이선스",

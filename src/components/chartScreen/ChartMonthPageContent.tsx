@@ -7,11 +7,16 @@ import type { ChartMonthData } from "../../hooks/ledgerScreenState/types";
 import { MonthlyInsightsSection } from "../MonthlyInsightsSection";
 
 type ChartMonthPageContentProps = {
+  activeBookId?: string | null;
   month: ChartMonthData;
   showsBannerAd: boolean;
 };
 
-export function ChartMonthPageContent({ month, showsBannerAd }: ChartMonthPageContentProps) {
+export function ChartMonthPageContent({
+  activeBookId = null,
+  month,
+  showsBannerAd,
+}: ChartMonthPageContentProps) {
   const safeAreaInsets = useSafeAreaInsets();
   const contentPaddingBottom = AppLayout.chartPageBottomPadding + safeAreaInsets.bottom;
 
@@ -24,6 +29,7 @@ export function ChartMonthPageContent({ month, showsBannerAd }: ChartMonthPageCo
         style={styles.scroll}
       >
         <MonthlyInsightsSection
+          activeBookId={activeBookId}
           insights={month.monthlyInsights}
           scope={month.scope}
           showsBannerAd={showsBannerAd}

@@ -23,6 +23,7 @@ export const MonthlyInsightChartCopy = {
   } as const;
 
 export const MonthlyInsightChartLayout = {
+  categoryLegendGridColumns: 7,
   donutSize: 152,
   donutStrokeWidth: 24,
   minVisibleBarHeight: 3,

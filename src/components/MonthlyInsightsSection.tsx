@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { type MutableRefObject, useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import { MonthlyInsightChartCopy } from "../constants/monthlyInsightCharts";
+import { useLedgerCategoryIconMap } from "../hooks/useLedgerCategoryIconMap";
+import type { CategoryIconName } from "../types/category";
 import type { MonthlyInsights } from "../types/ledger";
 import { AppBannerAd } from "./AppBannerAd";
 import { MonthlyBreakdownDonutChart } from "./monthlyInsights/MonthlyBreakdownDonutChart";
@@ -11,6 +13,7 @@ import { MonthlyComparisonSection } from "./monthlyInsights/MonthlyComparisonSec
 import { MonthlyTrendBarChart } from "./monthlyInsights/MonthlyTrendBarChart";
 
 type MonthlyInsightsSectionProps = {
+  activeBookId?: string | null;
   insights: MonthlyInsights;
   scope?: "all" | "periodic";
   showsBannerAd?: boolean;
@@ -19,6 +22,7 @@ type MonthlyInsightsSectionProps = {
 type BreakdownMode = "category" | "member";
 type BreakdownItem = {
   amount: number;
+  iconName?: CategoryIconName;
   key: string;
   label: string;
 };
@@ -37,17 +41,31 @@ const InitialDisabledBreakdownItemKeys = {
   incomeCategory: [],
   incomeMember: [],
 } as const satisfies Record<BreakdownFilterKey, readonly string[]>;
+const InitialBreakdownItemSignatures: Record<BreakdownFilterKey, string> = {
+  expenseCategory: "",
+  expenseMember: "",
+  incomeCategory: "",
+  incomeMember: "",
+};
+const DEFAULT_ACTIVE_BREAKDOWN_ITEM_LIMIT = 10;
+const BREAKDOWN_ITEM_SIGNATURE_SEPARATOR = "|";
+const BREAKDOWN_ITEM_SIGNATURE_VALUE_SEPARATOR = ":";
 
 export function MonthlyInsightsSection({
+  activeBookId = null,
   insights,
   scope = "periodic",
   showsBannerAd = false,
 }: MonthlyInsightsSectionProps) {
+  const categoryIconByKey = useLedgerCategoryIconMap(activeBookId);
   const [breakdownMode, setBreakdownMode] = useState<BreakdownMode>("category");
   const [incomeBreakdownMode, setIncomeBreakdownMode] = useState<BreakdownMode>("category");
   const [disabledItemKeysByChart, setDisabledItemKeysByChart] = useState<
     Record<BreakdownFilterKey, readonly string[]>
   >(InitialDisabledBreakdownItemKeys);
+  const itemSignaturesByChartRef = useRef<Record<BreakdownFilterKey, string>>(
+    InitialBreakdownItemSignatures,
+  );
   const isCategoryMode = breakdownMode === "category";
   const isIncomeCategoryMode = incomeBreakdownMode === "category";
   const breakdownFilterKey = isCategoryMode
@@ -59,6 +77,7 @@ export function MonthlyInsightsSection({
   const breakdownItems = isCategoryMode
     ? insights.categoryExpenses.map((item) => ({
         amount: item.amount,
+        iconName: categoryIconByKey.get(item.category),
         key: item.category,
         label: item.category,
       }))
@@ -70,6 +89,7 @@ export function MonthlyInsightsSection({
   const incomeBreakdownItems = isIncomeCategoryMode
     ? insights.categoryIncomes.map((item) => ({
         amount: item.amount,
+        iconName: categoryIconByKey.get(item.category),
         key: item.category,
         label: item.category,
       }))
@@ -78,13 +98,53 @@ export function MonthlyInsightsSection({
         key: item.memberName,
         label: item.memberName,
       }));
+  const breakdownItemsSignature = buildBreakdownItemsSignature(breakdownItems);
+  const incomeBreakdownItemsSignature = buildBreakdownItemsSignature(incomeBreakdownItems);
+  const disabledBreakdownItemKeys = resolveCurrentDisabledBreakdownItemKeys({
+    disabledItemKeys: disabledItemKeysByChart[breakdownFilterKey],
+    filterKey: breakdownFilterKey,
+    items: breakdownItems,
+    itemSignaturesByChartRef,
+    signature: breakdownItemsSignature,
+  });
+  const disabledIncomeBreakdownItemKeys = resolveCurrentDisabledBreakdownItemKeys({
+    disabledItemKeys: disabledItemKeysByChart[incomeBreakdownFilterKey],
+    filterKey: incomeBreakdownFilterKey,
+    items: incomeBreakdownItems,
+    itemSignaturesByChartRef,
+    signature: incomeBreakdownItemsSignature,
+  });
+
+  useEffect(() => {
+    setDisabledItemKeysByChart((currentValue) =>
+      syncDefaultDisabledBreakdownItemKeys({
+        currentValue,
+        filterKey: breakdownFilterKey,
+        items: breakdownItems,
+        itemSignaturesByChartRef,
+        signature: breakdownItemsSignature,
+      }),
+    );
+  }, [breakdownFilterKey, breakdownItemsSignature]);
+
+  useEffect(() => {
+    setDisabledItemKeysByChart((currentValue) =>
+      syncDefaultDisabledBreakdownItemKeys({
+        currentValue,
+        filterKey: incomeBreakdownFilterKey,
+        items: incomeBreakdownItems,
+        itemSignaturesByChartRef,
+        signature: incomeBreakdownItemsSignature,
+      }),
+    );
+  }, [incomeBreakdownFilterKey, incomeBreakdownItemsSignature]);
   const activeBreakdownItems = buildActiveBreakdownItems(
     breakdownItems,
-    disabledItemKeysByChart[breakdownFilterKey],
+    disabledBreakdownItemKeys,
   );
   const activeIncomeBreakdownItems = buildActiveBreakdownItems(
     incomeBreakdownItems,
-    disabledItemKeysByChart[incomeBreakdownFilterKey],
+    disabledIncomeBreakdownItemKeys,
   );
   const breakdownLegendItems = buildLegendItems(breakdownItems, activeBreakdownItems);
   const incomeBreakdownLegendItems = buildLegendItems(
@@ -96,12 +156,12 @@ export function MonthlyInsightsSection({
     <View style={styles.section}>
       {scope === "periodic" ? (
         <MonthlyTrendBarChart
-        title={
-          insights.comparisonBasis === "period"
-          ? MonthlyInsightChartCopy.periodTrendTitle
-          : MonthlyInsightChartCopy.trendTitle
-        }
-        trendMonths={insights.trendMonths}
+          title={
+            insights.comparisonBasis === "period"
+              ? MonthlyInsightChartCopy.periodTrendTitle
+              : MonthlyInsightChartCopy.trendTitle
+          }
+          trendMonths={insights.trendMonths}
         />
       ) : null}
       {/* {scope === "periodic" ? <MonthlyComparisonSection insights={insights} /> : null} */}
@@ -122,6 +182,7 @@ export function MonthlyInsightsSection({
           }
           items={activeBreakdownItems}
           legendItems={breakdownLegendItems}
+          legendLayout={isCategoryMode ? "grid" : "row"}
           onToggleItem={(itemKey) => toggleBreakdownItem(breakdownFilterKey, itemKey)}
           title={
             isCategoryMode
@@ -154,6 +215,7 @@ export function MonthlyInsightsSection({
           }
           items={activeIncomeBreakdownItems}
           legendItems={incomeBreakdownLegendItems}
+          legendLayout={isIncomeCategoryMode ? "grid" : "row"}
           onToggleItem={(itemKey) => toggleBreakdownItem(incomeBreakdownFilterKey, itemKey)}
           title={
             isIncomeCategoryMode
@@ -207,6 +269,64 @@ function buildActiveBreakdownItems(
     ...item,
     share: item.amount / totalAmount,
   }));
+}
+
+function resolveCurrentDisabledBreakdownItemKeys({
+  disabledItemKeys,
+  filterKey,
+  items,
+  itemSignaturesByChartRef,
+  signature,
+}: {
+  disabledItemKeys: readonly string[];
+  filterKey: BreakdownFilterKey;
+  items: BreakdownItem[];
+  itemSignaturesByChartRef: MutableRefObject<Record<BreakdownFilterKey, string>>;
+  signature: string;
+}): readonly string[] {
+  return itemSignaturesByChartRef.current[filterKey] === signature
+    ? disabledItemKeys
+    : buildDefaultDisabledBreakdownItemKeys(items);
+}
+
+function syncDefaultDisabledBreakdownItemKeys({
+  currentValue,
+  filterKey,
+  items,
+  itemSignaturesByChartRef,
+  signature,
+}: {
+  currentValue: Record<BreakdownFilterKey, readonly string[]>;
+  filterKey: BreakdownFilterKey;
+  items: BreakdownItem[];
+  itemSignaturesByChartRef: MutableRefObject<Record<BreakdownFilterKey, string>>;
+  signature: string;
+}): Record<BreakdownFilterKey, readonly string[]> {
+  if (itemSignaturesByChartRef.current[filterKey] === signature) {
+    return currentValue;
+  }
+
+  itemSignaturesByChartRef.current = {
+    ...itemSignaturesByChartRef.current,
+    [filterKey]: signature,
+  };
+
+  return {
+    ...currentValue,
+    [filterKey]: buildDefaultDisabledBreakdownItemKeys(items),
+  };
+}
+
+function buildDefaultDisabledBreakdownItemKeys(items: BreakdownItem[]): string[] {
+  return items.slice(DEFAULT_ACTIVE_BREAKDOWN_ITEM_LIMIT).map((item) => item.key);
+}
+
+function buildBreakdownItemsSignature(items: BreakdownItem[]): string {
+  return items
+    .map((item) =>
+      [item.key, item.amount].join(BREAKDOWN_ITEM_SIGNATURE_VALUE_SEPARATOR),
+    )
+    .join(BREAKDOWN_ITEM_SIGNATURE_SEPARATOR);
 }
 
 function buildLegendItems(
