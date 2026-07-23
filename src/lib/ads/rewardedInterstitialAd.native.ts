@@ -1,11 +1,14 @@
+import { Platform } from "react-native";
 import {
   AdEventType,
   RewardedAdEventType,
   RewardedInterstitialAd,
+  TestIds,
 } from "react-native-google-mobile-ads";
 
-import { AdMobRewardedInterstitialConfig, AdMobTestUnitIds } from "../../constants/ads";
+import { AdMobRewardedInterstitialConfig } from "../../constants/ads";
 import { logAppError, logAppWarning } from "../logAppError";
+import { resolveAdMobAdUnitId } from "./adUnitId";
 import { logAdMobLoadError } from "./adMobLoadError";
 import { getAdRequestOptions } from "./adRequestOptions";
 
@@ -306,11 +309,10 @@ function logRewardedInterstitialTrace(step: string, context?: Record<string, unk
 }
 
 function resolveRewardedInterstitialAdUnitId() {
-  if (__DEV__) {
-    return AdMobTestUnitIds.iosRewardedInterstitial;
-  }
-
-  return AdMobRewardedInterstitialConfig.iosAdUnitId;
+  return resolveAdMobAdUnitId(
+    AdMobRewardedInterstitialConfig,
+    TestIds.REWARDED_INTERSTITIAL,
+  );
 }
 
 function logMissingRewardedInterstitialAdUnitId() {
@@ -320,7 +322,7 @@ function logMissingRewardedInterstitialAdUnitId() {
 
   hasLoggedMissingRewardedInterstitialAdUnitId = true;
   logAppWarning("AdMob", "Rewarded interstitial ad unit id is missing", {
-    platform: "ios",
+    platform: Platform.OS,
     step: "resolve_rewarded_interstitial_ad_unit_id",
   });
 }

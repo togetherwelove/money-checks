@@ -1,8 +1,13 @@
+import { useMemo } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import { LedgerBookManagementCopy } from "../constants/ledgerBookManagement";
+import {
+  NotificationBadgeCopy,
+  NotificationBadgeUi,
+} from "../constants/notificationBadges";
 import type { SubscriptionTier } from "../constants/subscription";
 import { isLedgerBookEditableWithinPlanLimit } from "../lib/ledgerEditability";
 import type { AccessibleLedgerBook } from "../types/ledgerBook";
@@ -10,6 +15,7 @@ import { IconActionButton } from "./IconActionButton";
 
 type LedgerBookSwitcherModalProps = {
   activeBookId: string | null;
+  badgedBookIds: readonly string[];
   books: AccessibleLedgerBook[];
   isOpen: boolean;
   onClose: () => void;
@@ -19,12 +25,15 @@ type LedgerBookSwitcherModalProps = {
 
 export function LedgerBookSwitcherModal({
   activeBookId,
+  badgedBookIds,
   books,
   isOpen,
   onClose,
   onSelectBook,
   subscriptionTier,
 }: LedgerBookSwitcherModalProps) {
+  const badgedBookIdSet = useMemo(() => new Set(badgedBookIds), [badgedBookIds]);
+
   return (
     <Modal animationType="fade" onRequestClose={onClose} transparent visible={isOpen}>
       <View style={styles.root}>
@@ -39,6 +48,7 @@ export function LedgerBookSwitcherModal({
           <View style={styles.list}>
             {books.map((book) => {
               const isActiveBook = book.id === activeBookId;
+              const hasUnreadNotification = badgedBookIdSet.has(book.id);
               const isReadOnlyBook = !isLedgerBookEditableWithinPlanLimit(
                 subscriptionTier,
                 books,
@@ -65,12 +75,21 @@ export function LedgerBookSwitcherModal({
                   ]}
                 >
                   <View style={styles.bookTextBlock}>
-                    <Text
-                      numberOfLines={1}
-                      style={[styles.bookName, isReadOnlyBook ? styles.readOnlyBookName : null]}
-                    >
-                      {book.name}
-                    </Text>
+                    <View style={styles.bookNameRow}>
+                      <Text
+                        numberOfLines={1}
+                        style={[styles.bookName, isReadOnlyBook ? styles.readOnlyBookName : null]}
+                      >
+                        {book.name}
+                      </Text>
+                      {hasUnreadNotification ? (
+                        <View
+                          accessibilityLabel={NotificationBadgeCopy.unreadBookAccessibilityLabel}
+                          accessible
+                          style={styles.unreadDot}
+                        />
+                      ) : null}
+                    </View>
                     <Text
                       style={[styles.bookMeta, isReadOnlyBook ? styles.readOnlyBookMeta : null]}
                     >
@@ -160,7 +179,13 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 5,
   },
+  bookNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: AppLayout.compactGap,
+  },
   bookName: {
+    flexShrink: 1,
     color: AppColors.text,
     fontSize: 14,
     fontWeight: "800",
@@ -175,6 +200,12 @@ const styles = StyleSheet.create({
   },
   readOnlyBookMeta: {
     color: AppColors.mutedStrongText,
+  },
+  unreadDot: {
+    width: NotificationBadgeUi.bookSwitcherDotSize,
+    height: NotificationBadgeUi.bookSwitcherDotSize,
+    borderRadius: NotificationBadgeUi.bookSwitcherDotSize / 2,
+    backgroundColor: AppColors.expense,
   },
   readOnlyChip: {
     borderRadius: 999,

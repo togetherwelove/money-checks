@@ -223,7 +223,6 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderBottomWidth: 1,
     borderBottomColor: AppColors.border,
-    backgroundColor: AppColors.background,
   },
   entryPressable: {
     flex: 1,

@@ -5,6 +5,7 @@ import { AppColors } from "./colors";
 import { AppLayout } from "./layout";
 
 const CARD_PADDING = 16;
+const FORM_INPUT_BORDER_WIDTH = 1;
 const FORM_INPUT_FONT_SIZE = 16;
 const FORM_INPUT_LINE_HEIGHT = 20;
 const FORM_INPUT_HEIGHT = FORM_INPUT_LINE_HEIGHT + AuthControls.verticalPadding * 2 + 2;
@@ -12,7 +13,7 @@ const FORM_INPUT_HEIGHT = FORM_INPUT_LINE_HEIGHT + AuthControls.verticalPadding 
 const FormInputBaseStyle: TextStyle = {
   paddingHorizontal: AuthControls.horizontalPadding,
   paddingVertical: AuthControls.verticalPadding,
-  borderWidth: 1,
+  borderWidth: FORM_INPUT_BORDER_WIDTH,
   borderColor: AppColors.border,
   borderRadius: AuthControls.borderRadius,
   backgroundColor: AppColors.background,
@@ -80,6 +81,29 @@ export const FormInputTextStyle: TextStyle = {
 export const FormMultilineInputTextStyle: TextStyle = {
   ...FormInputBaseStyle,
   minHeight: AuthControls.multilineControlMinHeight,
+};
+
+const UnderlineFormInputBaseStyle: TextStyle = {
+  borderWidth: 0,
+  borderBottomWidth: FORM_INPUT_BORDER_WIDTH,
+  borderBottomColor: AppColors.border,
+  borderRadius: 0,
+  backgroundColor: AppColors.transparent,
+  paddingHorizontal: 0,
+};
+
+export const UnderlineFormInputTextStyle: TextStyle = {
+  ...FormInputTextStyle,
+  ...UnderlineFormInputBaseStyle,
+};
+
+export const UnderlineFormMultilineInputTextStyle: TextStyle = {
+  ...FormMultilineInputTextStyle,
+  ...UnderlineFormInputBaseStyle,
+};
+
+export const FullBleedHorizontalStyle: ViewStyle = {
+  marginHorizontal: -AppLayout.screenPadding,
 };
 
 export const StatusMessageTextStyle: TextStyle = {

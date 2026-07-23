@@ -99,6 +99,12 @@ export type LedgerBookJoinRequestRow = {
   status: "approved" | "pending" | "rejected";
 };
 
+export type NotificationBadgeStateRow = {
+  book_id: string;
+  join_request_unread_count: number | string;
+  ledger_entry_unread_count: number | string;
+};
+
 export type LedgerBookJoinRequestProfileRow = {
   approval_status:
     | "blocked_accessible_limit"

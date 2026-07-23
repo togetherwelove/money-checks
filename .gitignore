@@ -4,6 +4,7 @@
 .supabase/
 node_modules/
 coverage/
+.secrets/
 .env
 .env.*
 *.log

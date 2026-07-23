@@ -1,9 +1,9 @@
-import { StyleSheet, View } from "react-native";
-import { BannerAd, BannerAdSize } from "react-native-google-mobile-ads";
+import { Platform, StyleSheet, View } from "react-native";
+import { BannerAd, BannerAdSize, TestIds } from "react-native-google-mobile-ads";
 
-import { AdMobTestUnitIds } from "../constants/ads";
+import { AdMobBannerConfig } from "../constants/ads";
 import { AppColors } from "../constants/colors";
-import { AdMobConfig } from "../constants/subscription";
+import { resolveAdMobAdUnitId } from "../lib/ads/adUnitId";
 import { logAdMobLoadError } from "../lib/ads/adMobLoadError";
 import { getAdRequestOptions } from "../lib/ads/adRequestOptions";
 
@@ -12,9 +12,7 @@ type AppBannerAdProps = {
 };
 
 export function AppBannerAd({ variant = "default" }: AppBannerAdProps) {
-  const configuredAdUnitId = AdMobConfig.iosBannerAdUnitId;
-  const testAdUnitId = AdMobTestUnitIds.iosBanner;
-  const adUnitId = __DEV__ ? testAdUnitId : configuredAdUnitId;
+  const adUnitId = resolveAdMobAdUnitId(AdMobBannerConfig, TestIds.BANNER);
 
   if (!adUnitId) {
     return null;
@@ -25,13 +23,13 @@ export function AppBannerAd({ variant = "default" }: AppBannerAdProps) {
       <BannerAd
         onAdLoaded={() => {
           console.log("[AdMob] Banner ad loaded", {
-            platform: "ios",
+            platform: Platform.OS,
             unitId: adUnitId,
           });
         }}
         onAdFailedToLoad={(error) => {
           logAdMobLoadError("AdMob", error, {
-            platform: "ios",
+            platform: Platform.OS,
             unitId: adUnitId,
             step: "load_banner_ad",
           });
@@ -47,7 +45,7 @@ export function AppBannerAd({ variant = "default" }: AppBannerAdProps) {
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
-    backgroundColor: AppColors.surfaceMuted,
+    backgroundColor: AppColors.adBackground,
     borderBottomColor: AppColors.border,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderTopColor: AppColors.border,
@@ -56,7 +54,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   embeddedContainer: {
-    backgroundColor: "transparent",
+    backgroundColor: AppColors.adBackground,
     borderBottomWidth: 0,
     borderTopWidth: 0,
   },

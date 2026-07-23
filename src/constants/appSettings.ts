@@ -1,4 +1,6 @@
 export const AppSettingsCopy = {
+  calendarExpenseColorDescription: "날짜 셀의 지출 금액 색상을 선택할 수 있어요.",
+  calendarExpenseColorTitle: "달력 지출 색상",
   featureSectionTitle: "기능",
   heatmapDescription: "입출금 현황을 시각적으로 확인할 수 있어요.",
   heatmapTitle: "달력 히트맵",

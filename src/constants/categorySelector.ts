@@ -1,6 +1,6 @@
 export const CATEGORY_GRID_GAP = 6;
 export const CATEGORY_GRID_MIN_CELL_SIZE = 58;
-export const CATEGORY_GRID_MIN_COLUMNS = 4;
+export const CATEGORY_GRID_MIN_COLUMNS = 6;
 export const CATEGORY_ICON_SIZE = 16;
 export const CATEGORY_ICON_LABEL_GAP = 4;
 export const CATEGORY_ITEM_PADDING_HORIZONTAL = 4;

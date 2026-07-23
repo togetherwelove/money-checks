@@ -10,12 +10,20 @@ export const SHARE_CODE_LENGTH = 16;
 const monthLabelFormatter = new Intl.DateTimeFormat(LEDGER_DISPLAY_LOCALE, {
   month: "long",
 });
+const yearMonthLabelFormatter = new Intl.DateTimeFormat(LEDGER_DISPLAY_LOCALE, {
+  month: "long",
+  year: "numeric",
+});
 const compactMonthLabelFormatter = new Intl.DateTimeFormat(LEDGER_DISPLAY_LOCALE, {
   month: "short",
 });
 
 export function formatMonthLabel(date: Date): string {
   return monthLabelFormatter.format(date);
+}
+
+export function formatYearMonthLabel(date: Date): string {
+  return yearMonthLabelFormatter.format(date);
 }
 
 export function formatCompactMonthLabel(date: Date): string {

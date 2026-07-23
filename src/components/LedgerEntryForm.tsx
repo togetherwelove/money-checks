@@ -16,15 +16,14 @@ import { EntryRegistrationCopy } from "../constants/entryRegistration";
 import { AppLayout } from "../constants/layout";
 import { AppMessages } from "../constants/messages";
 import {
-  FormInputTextStyle,
   FormLabelTextStyle,
-  FormMultilineInputTextStyle,
-  SurfaceCardStyle,
+  UnderlineFormInputTextStyle,
+  UnderlineFormMultilineInputTextStyle,
 } from "../constants/uiStyles";
 import { scheduleIdleTask } from "../lib/idleScheduler";
 import { formatInstallmentLabel } from "../lib/installments";
 import { showNativeToast } from "../lib/nativeToast";
-import type { LedgerEntryDraft } from "../types/ledger";
+import type { LedgerEntryDraft, LedgerEntryType } from "../types/ledger";
 import type { LedgerBookMember } from "../types/ledgerBookMember";
 import {
   type AmountInputSelection,
@@ -33,6 +32,7 @@ import {
 } from "../utils/amount";
 import { ActionButton } from "./ActionButton";
 import { EntryPhotoAttachmentField } from "./EntryPhotoAttachmentField";
+import { EntryTypeToggleButton } from "./EntryTypeToggleButton";
 import { InstallmentPickerModal } from "./InstallmentPickerModal";
 
 const AMOUNT_INPUT_FOCUS_DELAY_MS = 120;
@@ -53,6 +53,7 @@ type LedgerEntryFormProps = {
   onInputFocus?: ((input: TextInput | null, inputHeight: number) => void) | null;
   onRemovePhotoAttachment: (attachmentId: string) => void;
   onSaveEntry: () => void | Promise<void>;
+  onSelectType: (type: LedgerEntryType) => void;
   onSettleInstallmentEntry?: (() => void | Promise<void>) | null;
   showInstallmentSettleAction?: boolean;
 };
@@ -69,6 +70,7 @@ export function LedgerEntryForm({
   onInputFocus = null,
   onRemovePhotoAttachment,
   onSaveEntry,
+  onSelectType,
   onSettleInstallmentEntry = null,
   showInstallmentSettleAction = false,
 }: LedgerEntryFormProps) {
@@ -177,7 +179,7 @@ export function LedgerEntryForm({
   return (
     <View style={styles.form}>
       <View style={styles.fieldGroup}>
-        <Text style={styles.label}>{AppMessages.editorAmount}</Text>
+        <EntryTypeToggleButton onSelectType={onSelectType} selectedType={draft.type} />
         <TextInput
           ref={amountInputRef}
           submitBehavior="blurAndSubmit"
@@ -332,7 +334,6 @@ export function LedgerEntryForm({
 
 const styles = StyleSheet.create({
   form: {
-    ...SurfaceCardStyle,
     gap: AppLayout.cardGap,
   },
   fieldGroup: {
@@ -345,8 +346,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   label: FormLabelTextStyle,
-  input: FormInputTextStyle,
-  multilineInput: FormMultilineInputTextStyle,
+  input: UnderlineFormInputTextStyle,
+  multilineInput: UnderlineFormMultilineInputTextStyle,
   formActions: {
     paddingTop: 4,
     gap: 8,

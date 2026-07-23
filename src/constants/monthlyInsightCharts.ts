@@ -23,10 +23,15 @@ export const MonthlyInsightChartCopy = {
   } as const;
 
 export const MonthlyInsightChartLayout = {
-  categoryLegendGridColumns: 7,
+  donutLegendDotSize: 8,
+  donutLegendGap: 2,
+  donutLegendInactiveOpacity: 0.6,
+  donutLegendRowPaddingHorizontal: 2,
+  donutLegendRowMinHeight: 26,
   donutSize: 152,
   donutStrokeWidth: 24,
   minVisibleBarHeight: 3,
+  segmentIndicatorHeight: 2,
   trendBarHeight: 104,
   trendYAxisGap: 6,
   trendYAxisLabelCount: 3,

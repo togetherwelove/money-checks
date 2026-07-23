@@ -38,12 +38,15 @@ import { AppColors } from "./constants/colors";
 import { EntryRegistrationCopy } from "./constants/entryRegistration";
 import { EXPENSE_CATEGORY_LABELS } from "./constants/expenseCategories";
 import { INCOME_CATEGORY_LABELS } from "./constants/incomeCategories";
+import { formatYearMonthLabel } from "./constants/ledgerDisplay";
 import { LedgerBookManagementCopy } from "./constants/ledgerBookManagement";
 import { AppMessages } from "./constants/messages";
+import { NotificationBadgeScopes } from "./constants/notificationBadges";
 import { SubscriptionMessages, SubscriptionTiers } from "./constants/subscription";
 import { SupportMessages, type SupportPackageIdentifier } from "./constants/support";
 import { useAnnualLedgerReportAction } from "./hooks/useAnnualLedgerReportAction";
 import { useAuthOnboarding } from "./hooks/useAuthOnboarding";
+import { useCalendarExpenseColorSetting } from "./hooks/useCalendarExpenseColorSetting";
 import { useCalendarHeatmapSetting } from "./hooks/useCalendarHeatmapSetting";
 import { useCalendarSummaryModeSetting } from "./hooks/useCalendarSummaryModeSetting";
 import { useGoogleAuthRedirectCompletion } from "./hooks/useGoogleAuthRedirectCompletion";
@@ -52,6 +55,7 @@ import { useLedgerNotifications } from "./hooks/useLedgerNotifications";
 import { useLedgerScreenState } from "./hooks/useLedgerScreenState";
 import { useLedgerWidgetDeepLinks } from "./hooks/useLedgerWidgetDeepLinks";
 import { useLedgerWidgetSync } from "./hooks/useLedgerWidgetSync";
+import { useNotificationBadges } from "./hooks/useNotificationBadges";
 import { usePasswordRecoveryRedirect } from "./hooks/usePasswordRecoveryRedirect";
 import { useSubscriptionPlan } from "./hooks/useSubscriptionPlan";
 import { useSupabaseSession } from "./hooks/useSupabaseSession";
@@ -95,14 +99,10 @@ import { buildAppMenuSections } from "./lib/menuItems";
 import { showNativeToast } from "./lib/nativeToast";
 import { resolveNotificationActionRoute } from "./lib/notifications/notificationActions";
 import {
-  type UnreadNotificationBadgeEvent,
-  appendUnreadNotificationBadgeEvent,
-  readUnreadNotificationBadgeEvents,
-  removeConfirmedUnreadEntryBadgeEvents,
-  resolveAppIconBadgeCount,
+  canMarkNotificationBadgeScopeRead,
+  resolveBadgedBookIds,
+  resolveBookNotificationBadgeCount,
   resolveFooterBadgeScreens,
-  resolveUnreadNotificationBadgeEventFromData,
-  writeUnreadNotificationBadgeEvents,
 } from "./lib/notifications/notificationBadges";
 import {
   fetchOwnProfileDisplayName,
@@ -182,6 +182,7 @@ function SignedInApp({ session }: { session: Session }) {
   const permissionRequestTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasCheckedInitialClipboardImportRef = useRef(false);
   const previousClipboardImportAppStateRef = useRef(AppState.currentState);
+  const lastReadNotificationBadgeScreenKeyRef = useRef<string | null>(null);
   const [currentScreen, setCurrentScreen] = useState<LedgerAppScreen>("calendar");
   const [isLedgerSwitcherOpen, setIsLedgerSwitcherOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -189,9 +190,6 @@ function SignedInApp({ session }: { session: Session }) {
   const [isYearPickerOpen, setIsYearPickerOpen] = useState(false);
   const [entryActionMenuDraft, setEntryActionMenuDraft] = useState<CardSmsClipboardDraft | null>(
     null,
-  );
-  const [unreadNotificationBadgeEvents, setUnreadNotificationBadgeEvents] = useState(() =>
-    readUnreadNotificationBadgeEvents(session.user.id),
   );
   const [blockingTaskCount, setBlockingTaskCount] = useState(0);
   const [isDailyFirstEntryAdNoticeVisible, setIsDailyFirstEntryAdNoticeVisible] = useState(false);
@@ -207,6 +205,7 @@ function SignedInApp({ session }: { session: Session }) {
     metadataDisplayName || (authProvider === "apple" ? "사용자" : "");
   const accountProviderLabel = resolveSessionAuthProviderLabel(session);
   const notifications = useLedgerNotifications(session.user.id);
+  const calendarExpenseColorSetting = useCalendarExpenseColorSetting();
   const calendarHeatmapSetting = useCalendarHeatmapSetting();
   const calendarSummaryModeSetting = useCalendarSummaryModeSetting();
   const subscription = useSubscriptionPlan(session.user.id);
@@ -231,6 +230,7 @@ function SignedInApp({ session }: { session: Session }) {
     onReadOnlyEditBlocked: handleReadOnlyEditBlocked,
     subscriptionTier: subscription.currentTier,
   });
+  const notificationBadges = useNotificationBadges(session.user.id);
   const canSwitchHeaderLedgerBook =
     currentScreen === "calendar" && ledgerState.accessibleBooks.length > 1;
   useLedgerWidgetSync(ledgerState.activeBook?.id ?? null, ledgerState.entries);
@@ -405,74 +405,6 @@ function SignedInApp({ session }: { session: Session }) {
 
     navigationRef.navigate("calendar");
   }, [navigationRef]);
-
-  const updateUnreadNotificationBadgeEvents = useCallback(
-    (
-      resolveNextEvents: (
-        currentEvents: UnreadNotificationBadgeEvent[],
-      ) => UnreadNotificationBadgeEvent[],
-    ) => {
-      setUnreadNotificationBadgeEvents((currentEvents) => {
-        const nextEvents = resolveNextEvents(currentEvents);
-        if (nextEvents === currentEvents) {
-          return currentEvents;
-        }
-
-        writeUnreadNotificationBadgeEvents(session.user.id, nextEvents);
-        return nextEvents;
-      });
-    },
-    [session.user.id],
-  );
-
-  const markUnreadNotificationBadgeEvent = useCallback(
-    (notification: Notifications.Notification) => {
-      const badgeEvent = resolveUnreadNotificationBadgeEventFromData(
-        notification.request.content.data,
-        notification.request.identifier,
-      );
-      if (!badgeEvent) {
-        return;
-      }
-
-      updateUnreadNotificationBadgeEvents((currentEvents) =>
-        appendUnreadNotificationBadgeEvent(currentEvents, badgeEvent),
-      );
-    },
-    [updateUnreadNotificationBadgeEvents],
-  );
-
-  const clearConfirmedUnreadEntryBadgeEvents = useCallback(
-    (entries: readonly LedgerEntry[], activeBookId?: string | null) => {
-      updateUnreadNotificationBadgeEvents((currentEvents) => {
-        const nextEvents = removeConfirmedUnreadEntryBadgeEvents(
-          currentEvents,
-          entries,
-          activeBookId,
-        );
-        if (nextEvents === currentEvents) {
-          return currentEvents;
-        }
-
-        const nextEventIds = new Set(nextEvents.map((event) => event.id));
-        for (const event of currentEvents) {
-          if (!event.notificationId || nextEventIds.has(event.id)) {
-            continue;
-          }
-
-          void Notifications.dismissNotificationAsync(event.notificationId).catch((error) => {
-            logAppError("App", error, {
-              notificationId: event.notificationId,
-              step: "dismiss_confirmed_notification",
-            });
-          });
-        }
-
-        return nextEvents;
-      });
-    },
-    [updateUnreadNotificationBadgeEvents],
-  );
 
   const navigateToStackScreen = useCallback(
     (screen: Exclude<LedgerAppScreen, "calendar">) => {
@@ -767,41 +699,77 @@ function SignedInApp({ session }: { session: Session }) {
   const showsFooterTabBar = true;
   const activeFooterScreen =
     showsFooterTabBar && isFooterTabScreen(currentScreen) ? currentScreen : null;
-  const hasPendingLedgerJoinRequest = Object.values(
-    ledgerState.pendingJoinRequestCountsByBookId,
-  ).some((requestCount) => requestCount > 0);
   const footerBadgedScreens = useMemo<FooterTabScreen[]>(() => {
-    return resolveFooterBadgeScreens(unreadNotificationBadgeEvents, hasPendingLedgerJoinRequest);
-  }, [hasPendingLedgerJoinRequest, unreadNotificationBadgeEvents]);
+    return resolveFooterBadgeScreens(notificationBadges.snapshot);
+  }, [notificationBadges.snapshot]);
+  const badgedLedgerBookIds = useMemo(
+    () => resolveBadgedBookIds(notificationBadges.snapshot),
+    [notificationBadges.snapshot],
+  );
 
   useEffect(() => {
-    void Notifications.setBadgeCountAsync(
-      resolveAppIconBadgeCount(unreadNotificationBadgeEvents, hasPendingLedgerJoinRequest),
-    ).catch((error) => {
-      logAppError("App", error, {
-        step: "set_notification_badge_count",
-      });
-    });
-  }, [hasPendingLedgerJoinRequest, unreadNotificationBadgeEvents]);
+    if (!notificationBadges.hasResolved) {
+      return;
+    }
 
-  useEffect(() => {
-    clearConfirmedUnreadEntryBadgeEvents(
-      [...ledgerState.selectedEntries, ...ledgerState.entries],
-      ledgerState.activeBook?.id,
+    void Notifications.setBadgeCountAsync(notificationBadges.snapshot.totalUnreadCount).catch(
+      (error) => {
+        logAppError("App", error, {
+          step: "set_notification_badge_count",
+        });
+      },
     );
   }, [
-    clearConfirmedUnreadEntryBadgeEvents,
-    ledgerState.activeBook?.id,
-    ledgerState.entries,
-    ledgerState.selectedEntries,
+    notificationBadges.hasResolved,
+    notificationBadges.snapshot.totalUnreadCount,
+    notificationBadges.syncRevision,
   ]);
 
-  const handleVisibleAllEntriesChange = useCallback(
-    (entries: readonly LedgerEntry[]) => {
-      clearConfirmedUnreadEntryBadgeEvents(entries, ledgerState.activeBook?.id);
-    },
-    [clearConfirmedUnreadEntryBadgeEvents, ledgerState.activeBook?.id],
-  );
+  useEffect(() => {
+    const activeBook = ledgerState.activeBook;
+    const targetScope =
+      currentScreen === "all-entries"
+        ? NotificationBadgeScopes.ledgerEntries
+        : currentScreen === "share"
+          ? NotificationBadgeScopes.joinRequests
+          : null;
+    const canMarkRead =
+      activeBook &&
+      targetScope &&
+      canMarkNotificationBadgeScopeRead(
+        targetScope,
+        activeBook.ownerId === session.user.id,
+      );
+    if (!activeBook || !targetScope || !canMarkRead) {
+      lastReadNotificationBadgeScreenKeyRef.current = null;
+      return;
+    }
+
+    const activeBookId = activeBook.id;
+    const unreadCount = resolveBookNotificationBadgeCount(
+      notificationBadges.snapshot,
+      activeBookId,
+      targetScope,
+    );
+    const screenKey = `${activeBookId}:${targetScope}`;
+    if (lastReadNotificationBadgeScreenKeyRef.current === screenKey && unreadCount === 0) {
+      return;
+    }
+
+    lastReadNotificationBadgeScreenKeyRef.current = screenKey;
+    void notificationBadges.markRead(activeBookId, targetScope).then((didMarkRead) => {
+      if (!didMarkRead && lastReadNotificationBadgeScreenKeyRef.current === screenKey) {
+        lastReadNotificationBadgeScreenKeyRef.current = null;
+      }
+    });
+  }, [
+    currentScreen,
+    ledgerState.activeBook?.id,
+    ledgerState.activeBook?.ownerId,
+    notificationBadges.markRead,
+    notificationBadges.snapshot,
+    session.user.id,
+  ]);
 
   const handleSelectFooterTab = useCallback(
     (targetScreen: FooterTabScreen) => {
@@ -1114,26 +1082,23 @@ function SignedInApp({ session }: { session: Session }) {
   }, [notifications.registerActionCategories]);
 
   useEffect(() => {
-    const syncPresentedNotificationBadges = () => {
-      void Notifications.getPresentedNotificationsAsync()
-        .then((notificationsInTray) => {
-          for (const notification of notificationsInTray) {
-            markUnreadNotificationBadgeEvent(notification);
-          }
-        })
-        .catch((error) => {
-          logAppError("App", error, {
-            step: "get_presented_notifications",
-          });
+    const clearLastNotificationResponse = () => {
+      try {
+        Notifications.clearLastNotificationResponse();
+      } catch (error) {
+        logAppError("App", error, {
+          step: "clear_last_notification_response",
         });
+      }
     };
 
-    const handleNotificationReceived = (notification: Notifications.Notification) => {
-      markUnreadNotificationBadgeEvent(notification);
+    const handleNotificationReceived = () => {
+      void notificationBadges.refresh();
     };
 
     const handleNotificationResponse = (response: Notifications.NotificationResponse) => {
-      markUnreadNotificationBadgeEvent(response.notification);
+      void notificationBadges.refresh();
+      clearLastNotificationResponse();
       const targetScreen = resolveNotificationActionRoute(
         response.actionIdentifier,
         response.notification.request.content.data,
@@ -1153,13 +1118,6 @@ function SignedInApp({ session }: { session: Session }) {
     const responseSubscription = Notifications.addNotificationResponseReceivedListener(
       handleNotificationResponse,
     );
-    const appStateSubscription = AppState.addEventListener("change", (nextState) => {
-      if (nextState === "active") {
-        syncPresentedNotificationBadges();
-      }
-    });
-
-    syncPresentedNotificationBadges();
 
     void Notifications.getLastNotificationResponseAsync()
       .then((response) => {
@@ -1174,11 +1132,10 @@ function SignedInApp({ session }: { session: Session }) {
       });
 
     return () => {
-      appStateSubscription.remove();
       receivedSubscription.remove();
       responseSubscription.remove();
     };
-  }, [markUnreadNotificationBadgeEvent, navigateToStackScreen, returnToCalendarRoot]);
+  }, [navigateToStackScreen, notificationBadges.refresh, returnToCalendarRoot]);
 
   useEffect(() => {
     if (authOnboarding.step !== "nickname") {
@@ -1309,13 +1266,10 @@ function SignedInApp({ session }: { session: Session }) {
             onPressTitle={currentScreen === "calendar" ? handleOpenYearPicker : undefined}
             titleLabel={
               currentScreen === "calendar"
-                ? null
+                ? formatYearMonthLabel(ledgerState.visibleMonth)
                 : currentScreen === "charts"
                 ? ledgerState.currentChartMonth.title
                 : getAppScreenLabel(currentScreen)
-            }
-            yearLabel={
-              currentScreen === "calendar" ? `${ledgerState.visibleMonth.getFullYear()}년` : null
             }
             onOpenMenu={() => setIsMenuOpen((currentValue) => !currentValue)}
           />
@@ -1332,6 +1286,7 @@ function SignedInApp({ session }: { session: Session }) {
               <SignedInStackNavigator
                 accountProviderLabel={accountProviderLabel}
                 adTrackingPermissionState={adTrackingPermissionState}
+                calendarExpenseColorMode={calendarExpenseColorSetting.calendarExpenseColorMode}
                 calendarSummaryBaseDay={calendarSummaryModeSetting.calendarSummaryBaseDay}
                 calendarSummaryMode={calendarSummaryModeSetting.calendarSummaryMode}
                 email={session.user.email ?? ""}
@@ -1344,6 +1299,9 @@ function SignedInApp({ session }: { session: Session }) {
                 notificationPermissionLabel={notifications.permissionLabel}
                 notificationPermissionState={notifications.permissionState}
                 notificationStatusMessage={notifications.statusMessage}
+                onChangeCalendarExpenseColorMode={
+                  calendarExpenseColorSetting.updateCalendarExpenseColorMode
+                }
                 onBeforeCopyShareCode={handleBeforeCopyShareCode}
                 onBeforeSendJoinRequest={handleBeforeSendJoinRequest}
                 onChangeCalendarSummaryMode={
@@ -1358,7 +1316,6 @@ function SignedInApp({ session }: { session: Session }) {
                 onDeleteSelectedEntry={handleDeleteEntryFromCalendar}
                 onEditSelectedEntryFromAllEntries={handleEditEntryFromAllEntries}
                 onEditSelectedEntryFromCalendar={handleEditEntryFromCalendar}
-                onVisibleAllEntriesChange={handleVisibleAllEntriesChange}
                 onOpenAdTrackingSettings={handleOpenAdTrackingSettings}
                 onOpenSubscription={handleOpenSubscription}
                 onOpenSubscriptionManagement={handleOpenSubscriptionManagement}
@@ -1429,6 +1386,7 @@ function SignedInApp({ session }: { session: Session }) {
         />
         <LedgerBookSwitcherModal
           activeBookId={ledgerState.activeBook?.id ?? null}
+          badgedBookIds={badgedLedgerBookIds}
           books={ledgerState.accessibleBooks}
           isOpen={canSwitchHeaderLedgerBook && isLedgerSwitcherOpen}
           onClose={() => setIsLedgerSwitcherOpen(false)}

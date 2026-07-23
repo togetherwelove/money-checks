@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
+import { EntryTypeToggleUi } from "../constants/entryRegistration";
 import type { LedgerEntryType } from "../types/ledger";
 
 type EntryTypeToggleButtonProps = {
@@ -24,7 +25,6 @@ export function EntryTypeToggleButton({ onSelectType, selectedType }: EntryTypeT
             key={type}
             style={[
               styles.option,
-              type === "income" ? styles.overlappedOption : null,
               isActive && type === "expense" ? styles.activeExpenseOption : null,
               isActive && type === "income" ? styles.activeIncomeOption : null,
             ]}
@@ -48,41 +48,34 @@ export function EntryTypeToggleButton({ onSelectType, selectedType }: EntryTypeT
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
-    backgroundColor: AppColors.surfaceMuted,
-    borderColor: AppColors.border,
-    borderRadius: 16,
-    borderWidth: 1,
+    alignSelf: "flex-start",
+    borderBottomColor: AppColors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
-    height: 32,
+    height: EntryTypeToggleUi.containerHeight,
     paddingHorizontal: 0,
   },
   option: {
     alignItems: "center",
     alignSelf: "stretch",
-    borderRadius: 15,
-    borderWidth: 1,
-    borderColor: "transparent",
+    borderBottomColor: AppColors.transparent,
+    borderBottomWidth: EntryTypeToggleUi.indicatorHeight,
     justifyContent: "center",
-    minWidth: 48,
-    paddingHorizontal: 10,
-  },
-  overlappedOption: {
-    marginLeft: -4,
+    minWidth: EntryTypeToggleUi.optionMinWidth,
+    paddingHorizontal: EntryTypeToggleUi.optionPaddingHorizontal,
   },
   activeExpenseOption: {
-    backgroundColor: AppColors.expenseSoft,
-    borderColor: AppColors.expense,
+    borderBottomColor: AppColors.expense,
   },
   activeIncomeOption: {
-    backgroundColor: AppColors.incomeSoft,
-    borderColor: AppColors.income,
+    borderBottomColor: AppColors.income,
   },
   optionLabel: {
     color: AppColors.mutedText,
-    marginHorizontal: 4,
-    fontSize: 12,
+    marginHorizontal: EntryTypeToggleUi.labelMarginHorizontal,
+    fontSize: EntryTypeToggleUi.labelFontSize,
     fontWeight: "700",
-    lineHeight: 16,
+    lineHeight: EntryTypeToggleUi.labelLineHeight,
   },
   activeExpenseLabel: {
     color: AppColors.expense,

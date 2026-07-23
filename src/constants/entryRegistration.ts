@@ -22,3 +22,13 @@ export const EntryRegistrationCopy = {
     saveUpdateSuccess: "내역을 수정했어요.",
     targetMemberLabel: "대상 구성원",
   } as const;
+
+export const EntryTypeToggleUi = {
+  containerHeight: 32,
+  indicatorHeight: 2,
+  labelFontSize: 14,
+  labelLineHeight: 20,
+  labelMarginHorizontal: 4,
+  optionMinWidth: 48,
+  optionPaddingHorizontal: 10,
+} as const;

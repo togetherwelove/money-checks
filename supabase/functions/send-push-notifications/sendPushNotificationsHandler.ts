@@ -15,6 +15,10 @@ const NOTIFICATION_CATEGORY_IDS = {
   joinRequest: "ledger_join_request",
   ledgerBookUpdate: "ledger_book_update",
 } as const;
+const NOTIFICATION_BADGE_KINDS = {
+  joinRequest: "join-request",
+  ledgerEntry: "ledger-entry",
+} as const;
 const PUSH_NOTIFICATION_FUNCTION_NAME = "send-push-notifications";
 const PUSH_NOTIFICATION_MINIMUM_INVOCATION_INTERVAL = "10 seconds";
 const PUSH_NOTIFICATION_MAX_TARGET_USER_COUNT = 20;
@@ -130,6 +134,7 @@ type LedgerBookRow = {
 type LedgerBookJoinRequestRow = {
   book_id: string;
   created_at: string;
+  id: string;
   requester_user_id: string;
   status: "approved" | "pending" | "rejected";
 };
@@ -170,7 +175,9 @@ type SendPushNotificationsHandlerOptions = {
 };
 
 type JoinRequestOwnerNotification = {
+  bookId: string;
   bookName: string;
+  requestId: string;
   requesterName: string;
   targetUserIds: string[];
 };
@@ -187,6 +194,7 @@ type ExpoPushMessage = {
 };
 
 type ExpoPushContent = {
+  badge?: number;
   body: string;
   categoryId?: string;
   data?: Record<string, unknown>;
@@ -349,6 +357,7 @@ async function buildPushMessages(
       adminClient,
       joinRequestNotification.targetUserIds,
       () => ({
+        badge: 1,
         body: translate(null, "push.joinRequest.body", {
           bookName: joinRequestNotification.bookName,
           requesterName: joinRequestNotification.requesterName,
@@ -356,6 +365,10 @@ async function buildPushMessages(
         categoryId: NOTIFICATION_CATEGORY_IDS.joinRequest,
         data: {
           actionRoute: NOTIFICATION_ACTION_ROUTES.share,
+          badgeBookId: joinRequestNotification.bookId,
+          badgeJoinRequestId: joinRequestNotification.requestId,
+          badgeKind: NOTIFICATION_BADGE_KINDS.joinRequest,
+          badgeScreen: NOTIFICATION_ACTION_ROUTES.share,
         },
         title: translate(null, "push.joinRequest.title"),
       }),
@@ -535,7 +548,7 @@ async function resolveLatestJoinRequestOwnerNotification(
     };
   };
   const { data: joinRequest, error: joinRequestError } = await joinRequestQuery
-    .select("book_id, created_at, requester_user_id, status")
+    .select("book_id, created_at, id, requester_user_id, status")
     .eq("requester_user_id", senderUserId)
     .eq("status", "pending")
     .order("created_at", { ascending: false })
@@ -567,7 +580,9 @@ async function resolveLatestJoinRequestOwnerNotification(
   const requesterName = await fetchProfileDisplayName(adminClient, senderUserId);
 
   return {
+    bookId: book.id,
     bookName: book.name,
+    requestId: joinRequest.id,
     requesterName,
     targetUserIds: [book.owner_id],
   };
@@ -656,12 +671,12 @@ async function resolveExpoPushMessages(
         typeof content === "function" ? content(DefaultProfilePushPreferences) : content;
 
       return {
+        ...(resolvedContent.badge !== undefined ? { badge: resolvedContent.badge } : {}),
         body: resolvedContent.body,
         ...(resolvedContent.categoryId ? { categoryId: resolvedContent.categoryId } : {}),
         ...(resolvedContent.data && Object.keys(resolvedContent.data).length > 0
           ? { data: resolvedContent.data }
           : {}),
-        badge: 1,
         sound: "default",
         title: resolvedContent.title,
         to: row.expo_push_token,
@@ -686,6 +701,7 @@ function buildExpoPushContent(
 
   return {
     ...notificationContent,
+    ...(event.type === "other_member_created_entry" && event.entryId ? { badge: 1 } : {}),
     ...(categoryId ? { categoryId } : {}),
     ...(Object.keys(data).length > 0 ? { data } : {}),
   };
@@ -701,7 +717,7 @@ function buildNotificationBadgeData(
 
   return {
     badgeEntryId: event.entryId,
-    badgeKind: "ledger-entry",
+    badgeKind: NOTIFICATION_BADGE_KINDS.ledgerEntry,
     badgeScreen: NOTIFICATION_ACTION_ROUTES.allEntries,
     ...(fallbackBookId ? { badgeBookId: fallbackBookId } : {}),
     ...(event.date ? { badgeEntryDate: event.date } : {}),

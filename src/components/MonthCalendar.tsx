@@ -2,6 +2,10 @@ import { memo, useCallback, useMemo } from "react";
 import { Pressable, type StyleProp, StyleSheet, Text, type TextStyle, View } from "react-native";
 
 import { CalendarDayUi } from "../constants/calendarDay";
+import {
+  type CalendarExpenseColorMode,
+  CalendarExpenseColorModes,
+} from "../constants/calendarExpenseColor";
 import { AppColors } from "../constants/colors";
 import type { CalendarDay } from "../types/ledger";
 import { formatAmountNumber } from "../utils/amount";
@@ -20,6 +24,7 @@ import { getVisibleCalendarWeeks } from "./monthCalendarPager/calendarWeekCount"
 
 type MonthCalendarProps = {
   days: CalendarDay[];
+  expenseColorMode: CalendarExpenseColorMode;
   isHeatmapEnabled: boolean;
   isReadOnlyDueToPlanLimit?: boolean;
   onSelectDate: (isoDate: string) => void;
@@ -30,6 +35,7 @@ type CalendarDayHeatmapTone = "expense" | "income" | "mixed";
 
 function MonthCalendarComponent({
   days,
+  expenseColorMode,
   isHeatmapEnabled,
   isReadOnlyDueToPlanLimit = false,
   onSelectDate,
@@ -57,6 +63,7 @@ function MonthCalendarComponent({
                 {day.isCurrentMonth ? (
                   <DayCell
                     day={day}
+                    expenseColorMode={expenseColorMode}
                     heatmapLevel={heatmapLevels.get(day.isoDate) ?? 0}
                     isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
                     isSelected={day.isoDate === selectedDate}
@@ -106,12 +113,14 @@ function getCalendarDayTradeAmount(day: CalendarDay): number {
 
 const DayCell = memo(function DayCell({
   day,
+  expenseColorMode,
   heatmapLevel,
   isReadOnlyDueToPlanLimit,
   isSelected,
   onSelectDate,
 }: {
   day: CalendarDay;
+  expenseColorMode: CalendarExpenseColorMode;
   heatmapLevel: number;
   isReadOnlyDueToPlanLimit: boolean;
   isSelected: boolean;
@@ -159,7 +168,11 @@ const DayCell = memo(function DayCell({
             {day.dayNumber}
           </Text>
         </View>
-        <DayAmountLines day={day} isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit} />
+        <DayAmountLines
+          day={day}
+          expenseColorMode={expenseColorMode}
+          isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
+        />
       </View>
     </Pressable>
   );
@@ -280,9 +293,11 @@ function getMixedHeatmapStyle(level: number) {
 
 function DayAmountLines({
   day,
+  expenseColorMode,
   isReadOnlyDueToPlanLimit,
 }: {
   day: CalendarDay;
+  expenseColorMode: CalendarExpenseColorMode;
   isReadOnlyDueToPlanLimit: boolean;
 }) {
   return (
@@ -297,7 +312,11 @@ function DayAmountLines({
         amount={day.expense}
         isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
         prefix="-"
-        textStyle={styles.expenseText}
+        textStyle={
+          expenseColorMode === CalendarExpenseColorModes.expense
+            ? styles.expenseText
+            : styles.defaultExpenseText
+        }
       />
     </View>
   );
@@ -496,6 +515,9 @@ const styles = StyleSheet.create({
   },
   incomeText: {
     color: AppColors.income,
+  },
+  defaultExpenseText: {
+    color: AppColors.text,
   },
   expenseText: {
     color: AppColors.expense,

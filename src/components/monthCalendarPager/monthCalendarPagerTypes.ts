@@ -1,6 +1,8 @@
+import type { CalendarExpenseColorMode } from "../../constants/calendarExpenseColor";
 import type { MonthPage } from "./monthCalendarPagerUtils";
 
 export type MonthCalendarPagerProps = {
+  calendarExpenseColorMode: CalendarExpenseColorMode;
   currentPage: MonthPage;
   isCalendarHeatmapEnabled: boolean;
   isReadOnlyDueToPlanLimit?: boolean;

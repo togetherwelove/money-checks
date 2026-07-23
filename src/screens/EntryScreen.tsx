@@ -11,6 +11,7 @@ import { AppColors } from "../constants/colors";
 import { ENTRY_PHOTO_LIMIT, EntryPhotoCopy } from "../constants/entryPhotos";
 import { KeyboardLayout } from "../constants/keyboard";
 import { AppLayout } from "../constants/layout";
+import { FullBleedHorizontalStyle } from "../constants/uiStyles";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
 import { pickImageAttachments } from "../lib/imageAttachments";
 import { fetchLedgerBookMembers } from "../lib/ledgerBooks";
@@ -198,7 +199,11 @@ export function EntryScreen({
         extraScrollHeight={entryKeyboardExtraScrollHeight}
         style={styles.screen}
       >
-        {showsBannerAd ? <AppBannerAd /> : null}
+        {showsBannerAd ? (
+          <View style={styles.fullBleedAd}>
+            <AppBannerAd />
+          </View>
+        ) : null}
         {errorMessage ? (
           <Pressable
             accessibilityRole="button"
@@ -223,8 +228,6 @@ export function EntryScreen({
         <EntryDateToolbar
           dateLabel={formatSelectedDate(entryFormDate)}
           onPressDateLabel={handleOpenDatePicker}
-          onSelectType={updateDraftType}
-          selectedType={draft.type}
         />
         <LedgerEditorPanel
           activeBookId={activeBookId}
@@ -238,6 +241,7 @@ export function EntryScreen({
           onPickPhotoAttachments={handlePickPhotoAttachments}
           onRemovePhotoAttachment={handleRemovePhotoAttachment}
           onSaveEntry={onSaveEntry}
+          onSelectType={updateDraftType}
           onSettleInstallmentEntry={
             editingEntry ? () => onSettleInstallmentEntry(editingEntry) : null
           }
@@ -273,11 +277,12 @@ function resolveFocusedInputKeyboardExtraScrollHeight(inputHeight: number) {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: AppColors.background,
+    backgroundColor: AppColors.financialScreenBackground,
   },
   content: {
     paddingHorizontal: AppLayout.screenPadding,
   },
+  fullBleedAd: FullBleedHorizontalStyle,
   error: {
     color: AppColors.expense,
     fontSize: 12,

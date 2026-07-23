@@ -1,16 +1,18 @@
 
-export const AdMobTestUnitIds = {
-  iosBanner: "ca-app-pub-3940256099942544/2934735716",
-  iosInterstitial: "ca-app-pub-3940256099942544/4411468910",
-  iosRewardedInterstitial: "ca-app-pub-3940256099942544/6978759866",
-  iosNative: "ca-app-pub-3940256099942544/3986624511",
+import { AppLayout } from "./layout";
+
+export const AdMobBannerConfig = {
+  androidAdUnitId: process.env.EXPO_PUBLIC_ADMOB_ANDROID_BANNER_AD_UNIT_ID ?? "",
+  iosAdUnitId: process.env.EXPO_PUBLIC_ADMOB_IOS_BANNER_AD_UNIT_ID ?? "",
 } as const;
 
 export const AdMobInterstitialConfig = {
+  androidAdUnitId: process.env.EXPO_PUBLIC_ADMOB_ANDROID_INTERSTITIAL_AD_UNIT_ID ?? "",
   iosAdUnitId: process.env.EXPO_PUBLIC_ADMOB_IOS_INTERSTITIAL_AD_UNIT_ID ?? "",
 } as const;
 
 export const AdMobRewardedInterstitialConfig = {
+  androidAdUnitId: process.env.EXPO_PUBLIC_ADMOB_ANDROID_REWARDED_INTERSTITIAL_AD_UNIT_ID ?? "",
   iosAdUnitId: process.env.EXPO_PUBLIC_ADMOB_IOS_REWARDED_INTERSTITIAL_AD_UNIT_ID ?? "",
 } as const;
 
@@ -34,6 +36,7 @@ export const RewardedInterstitialNoticeOverlayUi = {
 } as const;
 
 export const AdMobNativeConfig = {
+  androidAdUnitId: process.env.EXPO_PUBLIC_ADMOB_ANDROID_NATIVE_AD_UNIT_ID ?? "",
   iosAdUnitId: process.env.EXPO_PUBLIC_ADMOB_IOS_NATIVE_AD_UNIT_ID ?? "",
 } as const;
 
@@ -63,7 +66,7 @@ export const NativeAdCardUi = {
   callToActionPaddingHorizontal: 10,
   callToActionTextFontSize: 11,
   callToActionTextMaxWidth: 72,
-  contentPaddingHorizontal: 0,
+  contentPaddingHorizontal: AppLayout.screenPadding,
   contentPaddingVertical: 6,
   contentGap: 8,
   headerAdChoicesReservedWidth: 56,

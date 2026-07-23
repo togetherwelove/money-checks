@@ -1,22 +1,19 @@
 import { Feather } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image, Platform, StyleSheet, Text, View } from "react-native";
 import {
   NativeAd,
   NativeAdChoicesPlacement,
   NativeAdView,
   NativeAsset,
   NativeAssetType,
+  TestIds,
 } from "react-native-google-mobile-ads";
 
-import {
-  AdMobNativeConfig,
-  AdMobTestUnitIds,
-  NativeAdCardUi,
-  NativeAdListConfig,
-} from "../constants/ads";
+import { AdMobNativeConfig, NativeAdCardUi, NativeAdListConfig } from "../constants/ads";
 import { AppColors } from "../constants/colors";
 import { AppTextBreakProps, OneLineTextFitProps } from "../constants/textLayout";
+import { resolveAdMobAdUnitId } from "../lib/ads/adUnitId";
 import { getAdRequestOptions } from "../lib/ads/adRequestOptions";
 import { logAppError } from "../lib/logAppError";
 
@@ -50,7 +47,7 @@ export function AppNativeAdCard({ slotIndex }: AppNativeAdCardProps) {
         setNativeAd(activeNativeAd);
       } catch (error) {
         logAppError("AdMob", error, {
-          platform: "ios",
+          platform: Platform.OS,
           slotIndex,
           step: "load_native_ad",
           unitId: adUnitId,
@@ -125,16 +122,12 @@ export function AppNativeAdCard({ slotIndex }: AppNativeAdCardProps) {
 }
 
 function resolveNativeAdUnitId() {
-  if (__DEV__) {
-    return AdMobTestUnitIds.iosNative;
-  }
-
-  return AdMobNativeConfig.iosAdUnitId;
+  return resolveAdMobAdUnitId(AdMobNativeConfig, TestIds.NATIVE);
 }
 
 const styles = StyleSheet.create({
   nativeAdView: {
-    backgroundColor: AppColors.background,
+    backgroundColor: AppColors.adBackground,
     borderBottomWidth: 1,
     borderColor: AppColors.border,
     minHeight: NativeAdCardUi.minHeight,

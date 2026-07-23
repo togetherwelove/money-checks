@@ -1,5 +1,6 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
+import type { CalendarExpenseColorMode } from "../constants/calendarExpenseColor";
 import type { CalendarSummaryMode } from "../constants/calendarSummary";
 import type { SubscriptionTier } from "../constants/subscription";
 import type { SupportPackageIdentifier } from "../constants/support";
@@ -38,6 +39,7 @@ type SignedInStackNavigatorProps = {
   adTrackingPermissionState: AdTrackingPermissionState;
   email: string;
   fallbackDisplayName: string;
+  calendarExpenseColorMode: CalendarExpenseColorMode;
   calendarSummaryBaseDay: number | null;
   calendarSummaryMode: CalendarSummaryMode;
   hasAvailablePlusPackage: boolean;
@@ -48,6 +50,7 @@ type SignedInStackNavigatorProps = {
   notificationPermissionLabel: string;
   notificationPermissionState: NotificationPermissionState;
   notificationStatusMessage: string | null;
+  onChangeCalendarExpenseColorMode: (mode: CalendarExpenseColorMode) => void;
   onChangeCalendarSummaryBaseDay: (day: number) => void;
   onChangeCalendarSummaryMode: (mode: CalendarSummaryMode) => void;
   onChangeNotificationThresholdEnabled: (enabled: boolean) => void;
@@ -58,7 +61,6 @@ type SignedInStackNavigatorProps = {
   onDeleteSelectedEntry: (entry: LedgerEntry) => Promise<boolean>;
   onEditSelectedEntryFromAllEntries: (entry: LedgerEntry) => void;
   onEditSelectedEntryFromCalendar: (entry: LedgerEntry) => void;
-  onVisibleAllEntriesChange: (entries: readonly LedgerEntry[]) => void;
   onOpenSubscription: () => void;
   onOpenAdTrackingSettings: () => void;
   onOpenSubscriptionManagement: () => Promise<void>;
@@ -103,6 +105,7 @@ export function SignedInStackNavigator({
   adTrackingPermissionState,
   email,
   fallbackDisplayName,
+  calendarExpenseColorMode,
   calendarSummaryBaseDay,
   calendarSummaryMode,
   hasAvailablePlusPackage,
@@ -113,6 +116,7 @@ export function SignedInStackNavigator({
   notificationPermissionLabel,
   notificationPermissionState,
   notificationStatusMessage,
+  onChangeCalendarExpenseColorMode,
   onChangeCalendarSummaryBaseDay,
   onChangeCalendarSummaryMode,
   onChangeNotificationThresholdEnabled,
@@ -123,7 +127,6 @@ export function SignedInStackNavigator({
   onDeleteSelectedEntry,
   onEditSelectedEntryFromAllEntries,
   onEditSelectedEntryFromCalendar,
-  onVisibleAllEntriesChange,
   onOpenAdTrackingSettings,
   onOpenSubscription,
   onOpenSubscriptionManagement,
@@ -164,6 +167,7 @@ export function SignedInStackNavigator({
       <Stack.Screen name="calendar">
         {() => (
           <HomeScreen
+            calendarExpenseColorMode={calendarExpenseColorMode}
             calendarSummaryMode={calendarSummaryMode}
             isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
             onDeleteSelectedEntry={onDeleteSelectedEntry}
@@ -180,7 +184,6 @@ export function SignedInStackNavigator({
             activeBook={ledgerState.activeBook}
             onDeleteEntry={onDeleteSelectedEntry}
             onEditEntry={onEditSelectedEntryFromAllEntries}
-            onVisibleEntriesChange={onVisibleAllEntriesChange}
             showsNativeAds={showsBannerAd}
             trackBlockingTask={trackBlockingTask}
           />
@@ -250,6 +253,7 @@ export function SignedInStackNavigator({
       <Stack.Screen name="app-settings">
         {() => (
           <AppSettingsScreen
+            calendarExpenseColorMode={calendarExpenseColorMode}
             notificationPermissionLabel={notificationPermissionLabel}
             notificationPermissionState={notificationPermissionState}
             notificationPreferenceGroups={notificationPreferenceGroups}
@@ -257,6 +261,7 @@ export function SignedInStackNavigator({
             calendarSummaryBaseDay={calendarSummaryBaseDay}
             calendarSummaryMode={calendarSummaryMode}
             isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
+            onChangeCalendarExpenseColorMode={onChangeCalendarExpenseColorMode}
             onChangeCalendarSummaryMode={onChangeCalendarSummaryMode}
             onChangeCalendarSummaryBaseDay={onChangeCalendarSummaryBaseDay}
             isPlusActive={isPlusActive}

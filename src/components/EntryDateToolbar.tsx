@@ -1,26 +1,19 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
-import type { LedgerEntryType } from "../types/ledger";
-import { EntryTypeToggleButton } from "./EntryTypeToggleButton";
 import { ICON_ACTION_BUTTON_COMPACT_SIZE } from "./IconActionButton";
 
 type EntryDateToolbarProps = {
   dateLabel: string;
   onPressDateLabel: () => void;
-  onSelectType: (type: LedgerEntryType) => void;
-  selectedType: LedgerEntryType;
 };
 
 export function EntryDateToolbar({
   dateLabel,
   onPressDateLabel,
-  onSelectType,
-  selectedType,
 }: EntryDateToolbarProps) {
   return (
     <View style={styles.container}>
-      <EntryTypeToggleButton onSelectType={onSelectType} selectedType={selectedType} />
       <View style={styles.dateGroup}>
         <Pressable onPress={onPressDateLabel} style={styles.labelButton}>
           <View style={styles.labelContent}>
@@ -38,7 +31,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     gap: 6,
-    justifyContent: "space-between",
+    justifyContent: "flex-end",
     minHeight: ICON_ACTION_BUTTON_COMPACT_SIZE,
     paddingBottom: 8,
     paddingTop: 8,

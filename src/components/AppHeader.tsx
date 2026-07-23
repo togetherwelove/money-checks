@@ -14,7 +14,6 @@ type AppHeaderProps = {
   onOpenMenu: () => void;
   onPressTitle?: () => void;
   titleLabel?: string | null;
-  yearLabel?: string | null;
 };
 
 export function AppHeader({
@@ -24,9 +23,8 @@ export function AppHeader({
   onOpenMenu,
   onPressTitle,
   titleLabel = null,
-  yearLabel = null,
 }: AppHeaderProps) {
-  const centerLabel = yearLabel ?? titleLabel;
+  const centerLabel = titleLabel;
   const canPressTitle = Boolean(centerLabel && canSwitchTitle && onPressTitle);
   const titleContent = centerLabel ? (
     <View style={styles.titleRow}>

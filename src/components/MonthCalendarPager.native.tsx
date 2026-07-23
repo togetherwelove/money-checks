@@ -15,6 +15,7 @@ import {
 } from "./monthCalendarPager/monthCalendarScrollSnap";
 
 export function MonthCalendarPager({
+  calendarExpenseColorMode,
   currentPage,
   isCalendarHeatmapEnabled,
   isReadOnlyDueToPlanLimit = false,
@@ -111,18 +112,21 @@ export function MonthCalendarPager({
         }}
       >
         <MonthPageSlot
+          calendarExpenseColorMode={calendarExpenseColorMode}
           isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
           isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
           page={previousPage}
           {...{ onSelectDate, selectedDate }}
         />
         <MonthPageSlot
+          calendarExpenseColorMode={calendarExpenseColorMode}
           isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
           isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
           page={currentPage}
           {...{ onSelectDate, selectedDate }}
         />
         <MonthPageSlot
+          calendarExpenseColorMode={calendarExpenseColorMode}
           isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
           isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
           page={nextPage}
@@ -134,12 +138,14 @@ export function MonthCalendarPager({
 }
 
 function MonthPageSlot({
+  calendarExpenseColorMode,
   isCalendarHeatmapEnabled,
   isReadOnlyDueToPlanLimit,
   onSelectDate,
   page,
   selectedDate,
 }: {
+  calendarExpenseColorMode: MonthCalendarPagerProps["calendarExpenseColorMode"];
   isCalendarHeatmapEnabled: boolean;
   isReadOnlyDueToPlanLimit: boolean;
   onSelectDate: (isoDate: string) => void;
@@ -148,6 +154,7 @@ function MonthPageSlot({
 }) {
   return (
     <MonthCalendarPageView
+      calendarExpenseColorMode={calendarExpenseColorMode}
       days={page.summary.days}
       isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
       isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}

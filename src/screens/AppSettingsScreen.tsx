@@ -6,7 +6,9 @@ import { Linking, Modal, Pressable, StyleSheet, Switch, Text, View } from "react
 import { ActionButton } from "../components/ActionButton";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { NotificationSettingsCard } from "../components/accountScreen/NotificationSettingsCard";
+import { CalendarExpenseColorSelector } from "../components/appSettings/CalendarExpenseColorSelector";
 import { AppSettingsCopy } from "../constants/appSettings";
+import type { CalendarExpenseColorMode } from "../constants/calendarExpenseColor";
 import {
   CalendarSummaryBaseDay,
   CalendarSummaryBaseDayOptions,
@@ -38,9 +40,11 @@ type AppSettingsScreenProps = {
   notificationStatusMessage: string | null;
   calendarSummaryBaseDay: number | null;
   calendarSummaryMode: CalendarSummaryMode;
+  calendarExpenseColorMode: CalendarExpenseColorMode;
   isCalendarHeatmapEnabled: boolean;
   isPlusActive: boolean;
   onChangeCalendarSummaryBaseDay: (day: number) => void;
+  onChangeCalendarExpenseColorMode: (mode: CalendarExpenseColorMode) => void;
   onChangeNotificationThresholdEnabled: (enabled: boolean) => void;
   onChangeNotificationThresholdPeriod: (period: NotificationThresholdPeriod) => void;
   onChangeNotificationThreshold: (key: NotificationThresholdKey, value: string) => void;
@@ -61,9 +65,11 @@ export function AppSettingsScreen({
   notificationStatusMessage,
   calendarSummaryBaseDay,
   calendarSummaryMode,
+  calendarExpenseColorMode,
   isCalendarHeatmapEnabled,
   isPlusActive,
   onChangeCalendarSummaryBaseDay,
+  onChangeCalendarExpenseColorMode,
   onChangeNotificationThresholdEnabled,
   onChangeNotificationThresholdPeriod,
   onChangeNotificationThreshold,
@@ -129,6 +135,18 @@ export function AppSettingsScreen({
             </View>
           </Pressable>
         ) : null}
+        <View style={[styles.settingCard, styles.colorSettingCard]}>
+          <View style={styles.settingTextBlock}>
+            <Text style={styles.settingTitle}>{AppSettingsCopy.calendarExpenseColorTitle}</Text>
+            <Text style={styles.settingDescription}>
+              {AppSettingsCopy.calendarExpenseColorDescription}
+            </Text>
+          </View>
+          <CalendarExpenseColorSelector
+            mode={calendarExpenseColorMode}
+            onChange={onChangeCalendarExpenseColorMode}
+          />
+        </View>
         <View style={[styles.settingCard, !isPlusActive ? styles.disabledSettingCard : null]}>
           <View style={styles.settingTextBlock}>
             <View style={styles.settingTitleRow}>
@@ -309,6 +327,10 @@ const styles = StyleSheet.create({
     gap: AppLayout.cardGap,
     paddingHorizontal: AppLayout.screenPadding,
     paddingTop: AppLayout.screenTopPadding,
+  },
+  colorSettingCard: {
+    alignItems: "stretch",
+    flexDirection: "column",
   },
   screen: {
     flex: 1,

@@ -12,11 +12,11 @@ import {
 } from "react-native";
 
 import { AppBannerAd } from "../components/AppBannerAd";
-import { CalendarToolbar } from "../components/CalendarToolbar";
 import { LedgerEntryList } from "../components/LedgerEntryList";
 import { MonthCalendarPager } from "../components/MonthCalendarPager";
 import { MonthlySummary } from "../components/MonthlySummary";
 import { WeekdayHeader } from "../components/WeekdayHeader";
+import type { CalendarExpenseColorMode } from "../constants/calendarExpenseColor";
 import {
   type CalendarSummaryMode,
   CalendarSummaryLabels,
@@ -26,7 +26,7 @@ import {
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import { AppMessages } from "../constants/messages";
-import { formatMonthLabel } from "../constants/ledgerDisplay";
+import { FullBleedHorizontalStyle } from "../constants/uiStyles";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
 import type { LedgerEntry } from "../types/ledger";
 import {
@@ -39,10 +39,10 @@ import {
 } from "../utils/calendar";
 
 type HomeScreenProps = {
+  calendarExpenseColorMode: CalendarExpenseColorMode;
   calendarSummaryMode: CalendarSummaryMode;
   onDeleteSelectedEntry: (entry: LedgerEntry) => Promise<boolean>;
   onEditSelectedEntry: (entry: LedgerEntry) => void;
-  onOpenMonthPicker?: () => void;
   onSelectCalendarDate: (isoDate: string) => void;
   isCalendarHeatmapEnabled: boolean;
   showsBannerAd: boolean;
@@ -58,10 +58,10 @@ type DisplayedSummary = {
 };
 
 export function HomeScreen({
+  calendarExpenseColorMode,
   calendarSummaryMode,
   onDeleteSelectedEntry,
   onEditSelectedEntry,
-  onOpenMonthPicker,
   onSelectCalendarDate,
   isCalendarHeatmapEnabled,
   showsBannerAd,
@@ -92,6 +92,7 @@ export function HomeScreen({
   return (
     <View style={styles.screen}>
       <KeyboardAwareContent
+        calendarExpenseColorMode={calendarExpenseColorMode}
         errorMessage={errorMessage}
         calendarFocusRevision={calendarFocusRevision}
         calendarSummaryMode={calendarSummaryMode}
@@ -101,7 +102,6 @@ export function HomeScreen({
         isReadOnlyDueToPlanLimit={state.isReadOnlyDueToPlanLimit}
         onDeleteSelectedEntry={onDeleteSelectedEntry}
         onEditSelectedEntry={onEditSelectedEntry}
-        onOpenMonthPicker={onOpenMonthPicker}
         onRefreshLedger={refreshLedger}
         onSelectCalendarDate={onSelectCalendarDate}
         selectedDate={selectedDate}
@@ -117,6 +117,7 @@ export function HomeScreen({
 }
 
 function KeyboardAwareContent({
+  calendarExpenseColorMode,
   errorMessage,
   calendarFocusRevision,
   calendarSummaryMode,
@@ -126,7 +127,6 @@ function KeyboardAwareContent({
   isReadOnlyDueToPlanLimit,
   onDeleteSelectedEntry,
   onEditSelectedEntry,
-  onOpenMonthPicker,
   onRefreshLedger,
   onSelectCalendarDate,
   selectedDate,
@@ -137,6 +137,7 @@ function KeyboardAwareContent({
   todayIsoDate,
   visibleMonth,
 }: {
+  calendarExpenseColorMode: CalendarExpenseColorMode;
   errorMessage: string | null;
   calendarFocusRevision: number;
   calendarSummaryMode: CalendarSummaryMode;
@@ -146,7 +147,6 @@ function KeyboardAwareContent({
   isReadOnlyDueToPlanLimit: boolean;
   onDeleteSelectedEntry: (entry: LedgerEntry) => Promise<boolean>;
   onEditSelectedEntry: (entry: LedgerEntry) => void;
-  onOpenMonthPicker?: () => void;
   onRefreshLedger: () => Promise<void>;
   onSelectCalendarDate: (isoDate: string) => void;
   selectedDate: string;
@@ -187,15 +187,10 @@ function KeyboardAwareContent({
           <AppBannerAd variant="embedded" />
         </View>
       ) : null}
-      <View style={styles.monthHeaderSection}>
-        <CalendarToolbar
-          monthLabel={formatMonthLabel(visibleMonth)}
-          onPressMonthLabel={onOpenMonthPicker}
-        />
-      </View>
       <View style={styles.calendarAdSection}>
         <WeekdayHeader />
         <MonthCalendarPager
+          calendarExpenseColorMode={calendarExpenseColorMode}
           key={calendarFocusRevision}
           currentPage={state.currentMonthPage}
           isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
@@ -226,6 +221,7 @@ function KeyboardAwareContent({
           </View>
         </View>
         <ScrollView
+          alwaysBounceVertical
           contentContainerStyle={styles.transactionScrollContent}
           keyboardShouldPersistTaps="handled"
           nestedScrollEnabled
@@ -355,14 +351,11 @@ function moveMonth(
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: AppColors.background,
+    backgroundColor: AppColors.financialScreenBackground,
     paddingHorizontal: AppLayout.screenPadding,
   },
   screenContent: {
     flex: 1,
-  },
-  monthHeaderSection: {
-    gap: AppLayout.calendarGap,
   },
   calendarAdSection: {
     gap: AppLayout.calendarGap,
@@ -377,19 +370,20 @@ const styles = StyleSheet.create({
     minHeight: 0,
   },
   transactionScrollContent: {
+    flexGrow: 1,
     gap: AppLayout.compactGap,
   },
   adPanel: {
+    ...FullBleedHorizontalStyle,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderColor: AppColors.border,
-    backgroundColor: AppColors.surfaceMuted,
+    backgroundColor: AppColors.adBackground,
     marginBottom: AppLayout.compactGap,
   },
   summaryPanel: {
     borderTopWidth: StyleSheet.hairlineWidth,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderColor: AppColors.border,
-    backgroundColor: AppColors.surfaceMuted,
     marginTop: AppLayout.compactGap,
   },
   error: {

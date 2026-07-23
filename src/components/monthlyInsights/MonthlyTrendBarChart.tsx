@@ -38,7 +38,7 @@ export function MonthlyTrendBarChart({
           <LegendItem color={AppColors.expense} label={MonthlyInsightChartCopy.expenseLabel} />
         </View>
       </View>
-      <View style={styles.card}>
+      <View style={styles.chartFrame}>
         <View style={styles.plotRow}>
           <View style={styles.yAxis}>
             {yAxisTicks.map((tick) => (
@@ -152,12 +152,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 3,
   },
-  card: {
-    borderWidth: 1,
-    borderColor: AppColors.border,
-    borderRadius: 16,
-    backgroundColor: AppColors.surface,
-    padding: 14,
+  chartFrame: {
     gap: 12,
   },
   chartBody: {

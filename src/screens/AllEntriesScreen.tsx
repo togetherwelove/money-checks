@@ -1,5 +1,4 @@
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
-import { useIsFocused } from "@react-navigation/native";
+import { useDeferredValue, useMemo, useState } from "react";
 import {
   Alert,
   FlatList,
@@ -31,7 +30,6 @@ type AllEntriesScreenProps = {
   activeBook: LedgerBook | null;
   onDeleteEntry: (entry: LedgerEntry) => Promise<boolean>;
   onEditEntry: (entry: LedgerEntry) => void;
-  onVisibleEntriesChange?: (entries: readonly LedgerEntry[]) => void;
   showsNativeAds: boolean;
   trackBlockingTask: BusyTaskTracker;
 };
@@ -40,7 +38,6 @@ export function AllEntriesScreen({
   activeBook,
   onDeleteEntry,
   onEditEntry,
-  onVisibleEntriesChange,
   showsNativeAds,
   trackBlockingTask,
 }: AllEntriesScreenProps) {
@@ -70,15 +67,7 @@ export function AllEntriesScreen({
     searchQuery: deferredSearchQuery,
     trackBlockingTask,
   });
-  const isFocused = useIsFocused();
   const isSearching = deferredSearchQuery.length > 0;
-  useEffect(() => {
-    if (!isFocused) {
-      return;
-    }
-
-    onVisibleEntriesChange?.(entries);
-  }, [entries, isFocused, onVisibleEntriesChange]);
   const feedItems = useMemo(() => {
     if (showsNativeAds) {
       return buildAllEntriesFeedItems(entries);
@@ -94,74 +83,76 @@ export function AllEntriesScreen({
   return (
     <View style={styles.screen}>
       <View style={styles.content}>
-        {errorMessage ? (
-          <Pressable
-            accessibilityRole="button"
-            disabled={isRefreshing}
-            onPress={() => {
-              if (isRefreshing) {
-                return;
-              }
+        <View style={styles.controls}>
+          {errorMessage ? (
+            <Pressable
+              accessibilityRole="button"
+              disabled={isRefreshing}
+              onPress={() => {
+                if (isRefreshing) {
+                  return;
+                }
 
-              void refreshEntries();
-            }}
-            style={({ pressed }) => [
-              styles.errorRetry,
-              pressed && !isRefreshing ? styles.errorRetryPressed : null,
-              isRefreshing ? styles.errorRetryDisabled : null,
-            ]}
-          >
-            <Text style={styles.error}>{errorMessage}</Text>
-            <Text style={styles.errorRetryLabel}>재시도</Text>
-          </Pressable>
-        ) : null}
-        <TextInput
-          autoCapitalize="none"
-          autoCorrect={false}
-          clearButtonMode="while-editing"
-          onChangeText={setSearchQuery}
-          placeholder="내용과 메모 검색"
-          returnKeyType="search"
-          style={styles.searchInput}
-          value={searchQuery}
-        />
-        <ScrollView
-          contentContainerStyle={styles.categoryFilterContent}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.categoryFilterList}
-        >
-          <Pressable
-            onPress={() => {
-              setSelectedCategoryId(null);
-            }}
-            style={[
-              styles.categoryFilterChip,
-              selectedCategoryId === null ? styles.activeCategoryFilterChip : null,
-            ]}
-          >
-            <Text
-              style={[
-                styles.categoryFilterLabel,
-                selectedCategoryId === null ? styles.activeCategoryFilterLabel : null,
+                void refreshEntries();
+              }}
+              style={({ pressed }) => [
+                styles.errorRetry,
+                pressed && !isRefreshing ? styles.errorRetryPressed : null,
+                isRefreshing ? styles.errorRetryDisabled : null,
               ]}
             >
-              전체
-            </Text>
-          </Pressable>
-          {categories.map((category) => (
-            <CategoryFilterChip
-              category={category}
-              isSelected={selectedCategoryId === category.id}
-              key={category.id}
+              <Text style={styles.error}>{errorMessage}</Text>
+              <Text style={styles.errorRetryLabel}>재시도</Text>
+            </Pressable>
+          ) : null}
+          <TextInput
+            autoCapitalize="none"
+            autoCorrect={false}
+            clearButtonMode="while-editing"
+            onChangeText={setSearchQuery}
+            placeholder="내용과 메모 검색"
+            returnKeyType="search"
+            style={styles.searchInput}
+            value={searchQuery}
+          />
+          <ScrollView
+            contentContainerStyle={styles.categoryFilterContent}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.categoryFilterList}
+          >
+            <Pressable
               onPress={() => {
-                setSelectedCategoryId((currentCategoryId) =>
-                  currentCategoryId === category.id ? null : category.id,
-                );
+                setSelectedCategoryId(null);
               }}
-            />
-          ))}
-        </ScrollView>
+              style={[
+                styles.categoryFilterChip,
+                selectedCategoryId === null ? styles.activeCategoryFilterChip : null,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.categoryFilterLabel,
+                  selectedCategoryId === null ? styles.activeCategoryFilterLabel : null,
+                ]}
+              >
+                전체
+              </Text>
+            </Pressable>
+            {categories.map((category) => (
+              <CategoryFilterChip
+                category={category}
+                isSelected={selectedCategoryId === category.id}
+                key={category.id}
+                onPress={() => {
+                  setSelectedCategoryId((currentCategoryId) =>
+                    currentCategoryId === category.id ? null : category.id,
+                  );
+                }}
+              />
+            ))}
+          </ScrollView>
+        </View>
         <FlatList
           contentContainerStyle={entries.length === 0 ? styles.emptyContent : styles.listContent}
           data={feedItems}
@@ -204,33 +195,35 @@ export function AllEntriesScreen({
             item.type === "native-ad" ? (
               <AppNativeAdCard slotIndex={item.slotIndex} />
             ) : (
-              <LedgerEntryListItem
-                categoryIconByKey={categoryIconByKey}
-                categoryLabelById={categoryLabelById}
-                entry={item.entry}
-                onDeleteEntry={(entry) => {
-                  Alert.alert(
-                    AppMessages.editorDeleteConfirmTitle,
-                    AppMessages.editorDeleteConfirmMessage,
-                    [
-                      {
-                        style: "cancel",
-                        text: "취소",
-                      },
-                      {
-                        onPress: () => {
-                          void handleDeleteEntry(entry);
+              <View style={styles.entryItem}>
+                <LedgerEntryListItem
+                  categoryIconByKey={categoryIconByKey}
+                  categoryLabelById={categoryLabelById}
+                  entry={item.entry}
+                  onDeleteEntry={(entry) => {
+                    Alert.alert(
+                      AppMessages.editorDeleteConfirmTitle,
+                      AppMessages.editorDeleteConfirmMessage,
+                      [
+                        {
+                          style: "cancel",
+                          text: "취소",
                         },
-                        style: "destructive",
-                        text: AppMessages.editorDeleteConfirmAction,
-                      },
-                    ],
-                  );
-                }}
-                onEditEntry={onEditEntry}
-                showsDate
-                showsInstallmentStatusLine
-              />
+                        {
+                          onPress: () => {
+                            void handleDeleteEntry(entry);
+                          },
+                          style: "destructive",
+                          text: AppMessages.editorDeleteConfirmAction,
+                        },
+                      ],
+                    );
+                  }}
+                  onEditEntry={onEditEntry}
+                  showsDate
+                  showsInstallmentStatusLine
+                />
+              </View>
             )
           }
           style={styles.list}
@@ -290,13 +283,19 @@ function CategoryFilterChip({
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: AppColors.background,
-    paddingHorizontal: AppLayout.screenPadding,
+    backgroundColor: AppColors.financialScreenBackground,
     paddingTop: AppLayout.screenTopPadding,
   },
   content: {
     flex: 1,
     gap: AppLayout.cardGap,
+  },
+  controls: {
+    gap: AppLayout.cardGap,
+    paddingHorizontal: AppLayout.screenPadding,
+  },
+  entryItem: {
+    paddingHorizontal: AppLayout.screenPadding,
   },
   list: {
     flex: 1,

@@ -22,11 +22,6 @@ export const RevenueCatConfig = {
   publicApiKey: process.env.EXPO_PUBLIC_REVENUECAT_API_KEY ?? "",
 } as const;
 
-export const AdMobConfig = {
-  iosAppId: process.env.EXPO_PUBLIC_ADMOB_IOS_APP_ID ?? "",
-  iosBannerAdUnitId: process.env.EXPO_PUBLIC_ADMOB_IOS_BANNER_AD_UNIT_ID ?? "",
-} as const;
-
 export const SubscriptionMessages = {
     freePlanLabel: "Free 플랜",
     heroDescription:

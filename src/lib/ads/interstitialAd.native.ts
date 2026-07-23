@@ -1,11 +1,8 @@
-import { AdEventType, InterstitialAd } from "react-native-google-mobile-ads";
+import { AdEventType, InterstitialAd, TestIds } from "react-native-google-mobile-ads";
 
-import {
-  type AdInterstitialPlacementKey,
-  AdMobInterstitialConfig,
-  AdMobTestUnitIds,
-} from "../../constants/ads";
+import { type AdInterstitialPlacementKey, AdMobInterstitialConfig } from "../../constants/ads";
 import { logAppError, logAppWarning } from "../logAppError";
+import { resolveAdMobAdUnitId } from "./adUnitId";
 import { logAdMobLoadError } from "./adMobLoadError";
 import { getAdRequestOptions } from "./adRequestOptions";
 
@@ -178,9 +175,5 @@ function clearInterstitialLoadRetry() {
 }
 
 function resolveInterstitialAdUnitId() {
-  if (__DEV__) {
-    return AdMobTestUnitIds.iosInterstitial;
-  }
-
-  return AdMobInterstitialConfig.iosAdUnitId;
+  return resolveAdMobAdUnitId(AdMobInterstitialConfig, TestIds.INTERSTITIAL);
 }
