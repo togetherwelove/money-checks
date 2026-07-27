@@ -1,7 +1,8 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
-import { OneLineTextFitProps } from "../constants/textLayout";
+import { CompactTextProps, OneLineTextFitProps } from "../constants/textLayout";
+import { useExpenseTextColor } from "../contexts/ExpenseTextColorContext";
 import { formatCurrency } from "../utils/calendar";
 
 type MonthlySummaryProps = {
@@ -13,24 +14,10 @@ type MonthlySummaryProps = {
   variant?: "default" | "embedded";
 };
 
-type SummaryTone = "balance" | "income" | "expense";
-
 const SUMMARY_HORIZONTAL_PADDING = 8;
 const SUMMARY_VERTICAL_PADDING = 6;
 const SUMMARY_OPERATOR_WIDTH = 16;
 const SUMMARY_VALUE_MINIMUM_FONT_SCALE = 0.85;
-
-const summaryToneStyles = {
-  balance: {
-    valueColor: AppColors.primary,
-  },
-  expense: {
-    valueColor: AppColors.expense,
-  },
-  income: {
-    valueColor: AppColors.income,
-  },
-} as const;
 
 export function MonthlySummary({
   balanceAmount,
@@ -40,21 +27,22 @@ export function MonthlySummary({
   totalIncome,
   variant = "default",
 }: MonthlySummaryProps) {
+  const expenseTextColor = useExpenseTextColor().textColor;
+
   return (
     <View style={[styles.container, variant === "embedded" ? styles.embeddedContainer : null]}>
       <Text {...OneLineTextFitProps} style={styles.summaryLabel}>
         {summaryLabel}
       </Text>
       <View style={styles.metricRow}>
-        <SummaryMetric tone="income" value={totalIncome} />
+        <SummaryMetric value={totalIncome} valueColor={AppColors.income} />
         <FormulaOperator value="-" />
-        <SummaryMetric tone="expense" value={totalExpense} />
+        <SummaryMetric value={totalExpense} valueColor={expenseTextColor} />
         <FormulaOperator value="=" />
         <SummaryMetric
           isResult
-          tone="balance"
           value={balanceLabel ?? formatSignedCurrency(balanceAmount)}
-          valueColor={resolveBalanceValueColor(balanceAmount)}
+          valueColor={resolveBalanceValueColor(balanceAmount, expenseTextColor)}
         />
       </View>
     </View>
@@ -63,27 +51,24 @@ export function MonthlySummary({
 
 function SummaryMetric({
   isResult = false,
-  tone,
   value,
   valueColor,
 }: {
   isResult?: boolean;
-  tone: SummaryTone;
   value: string;
-  valueColor?: string;
+  valueColor: string;
 }) {
-  const toneStyle = summaryToneStyles[tone];
-
   return (
     <View style={[styles.metric, isResult ? styles.resultMetric : null]}>
       <Text
+        {...CompactTextProps}
         adjustsFontSizeToFit
         minimumFontScale={SUMMARY_VALUE_MINIMUM_FONT_SCALE}
         numberOfLines={1}
         style={[
           styles.metricValue,
           isResult ? styles.resultValue : null,
-          { color: valueColor ?? toneStyle.valueColor },
+          { color: valueColor },
         ]}
       >
         {value}
@@ -95,7 +80,7 @@ function SummaryMetric({
 function FormulaOperator({ value }: { value: string }) {
   return (
     <View style={styles.operator}>
-      <Text style={styles.operatorText}>{value}</Text>
+      <Text {...CompactTextProps} style={styles.operatorText}>{value}</Text>
     </View>
   );
 }
@@ -112,13 +97,13 @@ function formatSignedCurrency(amount: number): string {
   return formatCurrency(amount);
 }
 
-function resolveBalanceValueColor(amount: number): string {
+function resolveBalanceValueColor(amount: number, expenseTextColor: string): string {
   if (amount > 0) {
     return AppColors.income;
   }
 
   if (amount < 0) {
-    return AppColors.expense;
+    return expenseTextColor;
   }
 
   return AppColors.primary;
@@ -130,7 +115,7 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderBottomColor: AppColors.border,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    backgroundColor: AppColors.surfaceMuted,
+    backgroundColor: AppColors.screenBackground,
   },
   embeddedContainer: {
     borderTopWidth: 0,

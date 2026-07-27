@@ -335,11 +335,12 @@ const styles = StyleSheet.create({
     gap: CATEGORY_MANAGE_ROW_GAP,
   },
   row: {
-    height: CATEGORY_MANAGE_ROW_HEIGHT,
+    minHeight: CATEGORY_MANAGE_ROW_HEIGHT,
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
     paddingHorizontal: 12,
+    paddingVertical: 8,
     borderWidth: 1,
     borderColor: AppColors.border,
     borderRadius: 14,

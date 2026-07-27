@@ -8,6 +8,7 @@ import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import { DEFAULT_MEMBER_DISPLAY_NAME } from "../constants/ledgerDisplay";
 import type { SubscriptionTier } from "../constants/subscription";
+import { ResponsivePageContentStyle } from "../constants/uiStyles";
 import {
   readCachedLedgerBookMembers,
   writeCachedLedgerBookMembers,
@@ -298,9 +299,10 @@ function sortLedgerBookMembers(members: LedgerBookMember[]): LedgerBookMember[] 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: AppColors.background,
+    backgroundColor: AppColors.screenBackground,
   },
   content: {
+    ...ResponsivePageContentStyle,
     paddingHorizontal: AppLayout.screenPadding,
     paddingTop: AppLayout.screenTopPadding,
     gap: AppLayout.cardGap,

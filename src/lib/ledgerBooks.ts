@@ -32,6 +32,8 @@ const DELETE_OWNED_LEDGER_BOOK_FUNCTION = "delete_owned_ledger_book";
 const LIST_LEDGER_BOOK_RECEIPT_FILES_FUNCTION = "list_ledger_book_receipt_files";
 const SWITCH_ACTIVE_LEDGER_BOOK_FUNCTION = "switch_active_ledger_book";
 const UPDATE_ACTIVE_LEDGER_BOOK_NAME_FUNCTION = "update_active_ledger_book_name";
+const REFRESH_ACTIVE_LEDGER_BOOK_SHARE_CODE_FUNCTION =
+  "refresh_active_ledger_book_share_code_if_expired";
 const PREVIEW_LEDGER_BOOK_JOIN_FUNCTION = "preview_ledger_book_join_by_code";
 const REQUEST_LEDGER_BOOK_JOIN_FUNCTION = "request_ledger_book_join_by_code";
 const TRANSFER_LEDGER_BOOK_OWNERSHIP_FUNCTION = "transfer_ledger_book_ownership";
@@ -229,6 +231,19 @@ export async function updateActiveLedgerBookName(nextName: string): Promise<Ledg
   }
 
   return mapLedgerBookRow(updatedBook);
+}
+
+export async function refreshActiveLedgerBookShareCodeIfExpired(): Promise<LedgerBook> {
+  const { data, error } = await supabase
+    .rpc(REFRESH_ACTIVE_LEDGER_BOOK_SHARE_CODE_FUNCTION)
+    .returns<LedgerBookRow[]>();
+
+  const refreshedBook = resolveLedgerBookRow(data);
+  if (error || !refreshedBook) {
+    throw error ?? new Error("Failed to refresh the active ledger book share code.");
+  }
+
+  return mapLedgerBookRow(refreshedBook);
 }
 
 export async function previewLedgerBookJoinByCode(

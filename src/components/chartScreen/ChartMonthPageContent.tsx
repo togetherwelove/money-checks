@@ -49,7 +49,6 @@ const styles = StyleSheet.create({
     minHeight: 0,
   },
   content: {
-    paddingHorizontal: AppLayout.screenPadding,
     gap: AppLayout.cardGap,
   },
 });

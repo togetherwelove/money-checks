@@ -12,6 +12,7 @@ export const SharedLedgerJoinPreviewCopy = {
       confirmRequestTitle: "참여 요청",
       editorBlocked:
         "Free 플랜에서는 하나의 가계부만 사용할 수 있어요. 현재 공유 가계부에서 나간 뒤 다시 시도해 주세요.",
+      expiredCode: "만료된 공유 코드예요. 소유자에게 새 코드를 받아 주세요.",
       invalidCode: "올바른 공유 코드를 입력해 주세요.",
       joinCooldown: "이 가계부에는 잠시 뒤 다시 요청할 수 있어요.",
       ownerBlocked: "구성원이 있는 가계부의 소유자는 Free 플랜에서 다른 가계부에 참여할 수 없어요.",

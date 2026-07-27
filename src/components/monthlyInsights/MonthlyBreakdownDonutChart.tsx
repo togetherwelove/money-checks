@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import Svg, { Circle, G } from "react-native-svg";
 
 import { AppChartColors, AppColors } from "../../constants/colors";
@@ -6,6 +6,12 @@ import {
   MonthlyInsightChartCopy,
   MonthlyInsightChartLayout,
 } from "../../constants/monthlyInsightCharts";
+import {
+  AppTextScale,
+  CompactTextProps,
+  resolveTextScale,
+} from "../../constants/textLayout";
+import { useExpenseTextColor } from "../../contexts/ExpenseTextColorContext";
 import { formatCurrency } from "../../utils/calendar";
 
 type MonthlyBreakdownItem = {
@@ -26,6 +32,7 @@ type MonthlyBreakdownDonutChartProps = {
   legendItems?: MonthlyBreakdownLegendItem[];
   onToggleItem?: (itemKey: string) => void;
   title: string;
+  variant: "expense" | "income";
 };
 
 const CHART_RADIUS =
@@ -39,7 +46,14 @@ export function MonthlyBreakdownDonutChart({
   legendItems,
   onToggleItem,
   title,
+  variant,
 }: MonthlyBreakdownDonutChartProps) {
+  const { fontScale, width: windowWidth } = useWindowDimensions();
+  const compactFontScale = resolveTextScale(fontScale, AppTextScale.compact);
+  const shouldStackContent =
+    windowWidth < MonthlyInsightChartLayout.donutStackBreakpointWidth * compactFontScale;
+  const expenseTextStyle = useExpenseTextColor().textStyle;
+  const semanticTextStyle = variant === "expense" ? expenseTextStyle : null;
   const totalAmount = items.reduce((sum, item) => sum + item.amount, 0);
   const visibleLegendItems =
     legendItems ?? items.map((item) => ({ ...item, isActive: true }));
@@ -52,10 +66,17 @@ export function MonthlyBreakdownDonutChart({
 
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <Text {...CompactTextProps} style={[styles.sectionTitle, semanticTextStyle]}>
+        {title}
+      </Text>
       <View style={styles.content}>
         {visibleLegendItems.length ? (
-          <View style={styles.chartOverview}>
+          <View
+            style={[
+              styles.chartOverview,
+              shouldStackContent ? styles.stackedChartOverview : null,
+            ]}
+          >
             <View style={styles.chartShell}>
               <Svg
                 height={MonthlyInsightChartLayout.donutSize}
@@ -94,8 +115,12 @@ export function MonthlyBreakdownDonutChart({
                 </G>
               </Svg>
               <View pointerEvents="none" style={styles.chartCenter}>
-                <Text style={styles.centerLabel}>{centerLabel}</Text>
-                <Text style={styles.centerValue}>{formatCurrency(totalAmount)}</Text>
+                <Text {...CompactTextProps} style={[styles.centerLabel, semanticTextStyle]}>
+                  {centerLabel}
+                </Text>
+                <Text {...CompactTextProps} style={[styles.centerValue, semanticTextStyle]}>
+                  {formatCurrency(totalAmount)}
+                </Text>
               </View>
             </View>
             <ScrollView
@@ -132,9 +157,11 @@ export function MonthlyBreakdownDonutChart({
                     ]}
                   />
                   <Text
+                    {...CompactTextProps}
                     numberOfLines={1}
                     style={[
                       styles.selectedSummaryLabel,
+                      semanticTextStyle,
                       !item.isActive ? styles.selectedSummaryTextInactive : null,
                     ]}
                   >
@@ -142,15 +169,24 @@ export function MonthlyBreakdownDonutChart({
                   </Text>
                   <View style={styles.selectedSummaryValueBlock}>
                     <Text
+                      {...CompactTextProps}
                       numberOfLines={1}
                       style={[
                         styles.selectedSummaryAmount,
+                        semanticTextStyle,
                         !item.isActive ? styles.selectedSummaryTextInactive : null,
                       ]}
                     >
                       {formatCurrency(item.amount)}
                     </Text>
-                    <Text style={styles.selectedSummaryShare}>
+                    <Text
+                      {...CompactTextProps}
+                      style={[
+                        styles.selectedSummaryShare,
+                        semanticTextStyle,
+                        !item.isActive ? styles.selectedSummaryTextInactive : null,
+                      ]}
+                    >
                       {item.isActive ? `${Math.round(item.share * 100)}%` : ""}
                     </Text>
                   </View>
@@ -159,7 +195,7 @@ export function MonthlyBreakdownDonutChart({
             </ScrollView>
           </View>
         ) : (
-          <Text style={styles.emptyText}>{emptyMessage}</Text>
+          <Text {...CompactTextProps} style={styles.emptyText}>{emptyMessage}</Text>
         )}
       </View>
     </View>
@@ -267,5 +303,9 @@ const styles = StyleSheet.create({
   selectedSummaryTextInactive: {
     color: AppColors.mutedStrongText,
     textDecorationLine: "line-through",
+  },
+  stackedChartOverview: {
+    alignItems: "stretch",
+    flexDirection: "column",
   },
 });

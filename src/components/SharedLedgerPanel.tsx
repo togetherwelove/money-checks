@@ -11,6 +11,10 @@ import {
 } from "../constants/subscription";
 import { useLedgerBookNickname } from "../hooks/useLedgerBookNickname";
 import { showNativeToast } from "../lib/nativeToast";
+import {
+  isValidLedgerShareCode,
+  normalizeLedgerShareCode,
+} from "../lib/ledgerShareCode";
 import { fetchOwnProfileDisplayName } from "../lib/profiles";
 import {
   resolveJoinPreviewConfirmationKind,
@@ -143,9 +147,14 @@ export function SharedLedgerPanel({
       return;
     }
 
-    const nextShareCode = shareCodeInput.trim();
+    const nextShareCode = normalizeLedgerShareCode(shareCodeInput);
     if (!nextShareCode) {
       showNativeToast("공유 코드를 입력해 주세요.");
+      return;
+    }
+
+    if (!isValidLedgerShareCode(nextShareCode)) {
+      showNativeToast(SharedLedgerJoinPreviewCopy.invalidCode);
       return;
     }
 
@@ -322,7 +331,7 @@ export function SharedLedgerPanel({
       <SharedLedgerJoinCard
         disabled={isReadOnlyDueToPlanLimit}
         onChangeShareCodeInput={(value) => {
-          setShareCodeInput(value.toUpperCase());
+          setShareCodeInput(normalizeLedgerShareCode(value));
         }}
         onJoin={handleJoin}
         shareCodeInput={shareCodeInput}
@@ -414,7 +423,11 @@ function resolveJoinPreviewBlockedMessage(status: JoinSharedLedgerBookPreviewSta
     return SharedLedgerJoinPreviewCopy.joinCooldown;
   }
 
-  if (status === "invalid_code" || status === "expired_code") {
+  if (status === "expired_code") {
+    return SharedLedgerJoinPreviewCopy.expiredCode;
+  }
+
+  if (status === "invalid_code") {
     return SharedLedgerJoinPreviewCopy.invalidCode;
   }
 

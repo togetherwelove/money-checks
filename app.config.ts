@@ -4,6 +4,8 @@ import path from "node:path";
 import { loadProjectEnv } from "@expo/env";
 import type { ExpoConfig } from "expo/config";
 
+import appBrand from "./app-brand.json";
+
 loadProjectEnv(__dirname, { silent: true });
 
 const admobAppIdPattern = /^ca-app-pub-\d+~\d+$/;
@@ -22,10 +24,14 @@ function readRequiredAdMobAppId(environmentVariableName: string) {
 const packageJsonPath = path.join(__dirname, "package.json");
 const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8")) as { version?: string };
 const appVersion = packageJson.version ?? "0.0.0";
-const admobAndroidAppId = readRequiredAdMobAppId("EXPO_PUBLIC_ADMOB_ANDROID_APP_ID");
 const admobIosAppId = readRequiredAdMobAppId("EXPO_PUBLIC_ADMOB_IOS_APP_ID");
 const nativeAdDebuggerEnable = false;
 const appIconPath = "./assets/app/icon.png";
+const splashScreenConfig = {
+  image: appIconPath,
+  resizeMode: "contain" as const,
+  backgroundColor: appBrand.appIconBackground,
+};
 const iosGoogleServicesFilePath = resolveIosGoogleServicesFilePath();
 const iosDevelopmentRegion = "ko";
 const iosBundleLocalizations = ["ko"] as const;
@@ -72,11 +78,7 @@ const config: ExpoConfig = {
       projectId: "36c2b019-99be-4045-b4ce-ed1a031c4aa8",
     },
   },
-  splash: {
-    image: appIconPath,
-    resizeMode: "contain",
-    backgroundColor: "#f5f1e8",
-  },
+  splash: splashScreenConfig,
   assetBundlePatterns: ["**/*"],
   ios: {
     bundleIdentifier: "com.chanwook.moneychecks",
@@ -95,6 +97,7 @@ const config: ExpoConfig = {
     "expo-sqlite",
     "expo-font",
     "expo-secure-store",
+    ["expo-splash-screen", splashScreenConfig],
     "expo-apple-authentication",
     "expo-web-browser",
     "expo-mail-composer",
@@ -115,7 +118,6 @@ const config: ExpoConfig = {
     [
       "react-native-google-mobile-ads",
       {
-        androidAppId: admobAndroidAppId,
         iosAppId: admobIosAppId,
       },
     ],

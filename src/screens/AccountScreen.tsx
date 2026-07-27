@@ -28,8 +28,9 @@ import {
   BrandPlusTextStyle,
   CardTitleTextStyle,
   CompactLabelTextStyle,
-  FormInputTextStyle,
-  SurfaceCardStyle,
+  GroupedSectionStyle,
+  ResponsivePageContentStyle,
+  UnderlineFormInputTextStyle,
 } from "../constants/uiStyles";
 import type { BusyTaskTracker } from "../hooks/ledgerScreenState/types";
 import type { AdTrackingPermissionState } from "../lib/ads/trackingTransparency";
@@ -178,7 +179,7 @@ export function AccountScreen({
         keyboardShouldPersistTaps={KeyboardLayout.persistTaps}
         style={styles.screen}
       >
-        <View style={[styles.card, styles.primaryCard]}>
+        <View style={styles.card}>
           <Text style={styles.cardTitle}>{AppMessages.accountSessionTitle}</Text>
           <InfoRow label={AppMessages.accountEmail} value={<AccountEmailValue email={email} />} />
           <InfoRow label={AppMessages.accountProvider} value={accountProviderLabel} />
@@ -307,19 +308,17 @@ function InfoRow({
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: AppColors.background,
+    backgroundColor: AppColors.screenBackground,
   },
   content: {
+    ...ResponsivePageContentStyle,
     paddingHorizontal: AppLayout.screenPadding,
     paddingTop: AppLayout.screenTopPadding,
     gap: AppLayout.cardGap,
   },
   card: {
-    ...SurfaceCardStyle,
+    ...GroupedSectionStyle,
     gap: 8,
-  },
-  primaryCard: {
-    backgroundColor: AppColors.surfaceMuted,
   },
   cardTitle: CardTitleTextStyle,
   infoRow: {
@@ -328,7 +327,7 @@ const styles = StyleSheet.create({
   },
   label: CompactLabelTextStyle,
   inlineInput: {
-    ...FormInputTextStyle,
+    ...UnderlineFormInputTextStyle,
   },
   value: {
     color: AppColors.text,

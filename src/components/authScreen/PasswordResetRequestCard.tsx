@@ -6,7 +6,7 @@ import {
   FormInputTextStyle,
   FormLabelTextStyle,
   StatusMessageTextStyle,
-  SurfaceCardStyle,
+  ActionSurfaceStyle,
 } from "../../constants/uiStyles";
 import { ActionButton } from "../ActionButton";
 
@@ -70,7 +70,7 @@ export function PasswordResetRequestCard({
 
 const styles = StyleSheet.create({
   card: {
-    ...SurfaceCardStyle,
+    ...ActionSurfaceStyle,
     gap: 12,
   },
   header: {

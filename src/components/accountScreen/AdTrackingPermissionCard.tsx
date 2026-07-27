@@ -5,7 +5,7 @@ import { AppTextBreakProps } from "../../constants/textLayout";
 import {
   CardTitleTextStyle,
   SupportingTextStyle,
-  SurfaceCardStyle,
+  ActionSurfaceStyle,
 } from "../../constants/uiStyles";
 import type { AdTrackingPermissionState } from "../../lib/ads/trackingTransparency";
 import { ActionButton } from "../ActionButton";
@@ -67,7 +67,7 @@ function resolveAdTrackingStatusLabel(permissionState: AdTrackingPermissionState
 
 const styles = StyleSheet.create({
   card: {
-    ...SurfaceCardStyle,
+    ...ActionSurfaceStyle,
     gap: 8,
   },
   title: CardTitleTextStyle,

@@ -4,6 +4,8 @@ import { CalendarDayUi } from "../constants/calendarDay";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import { AppMessages } from "../constants/messages";
+import { CompactTextProps } from "../constants/textLayout";
+import { FullBleedPaddedHorizontalStyle } from "../constants/uiStyles";
 
 const CELL_WIDTH = "14.2857%";
 
@@ -12,7 +14,12 @@ export function WeekdayHeader() {
     <View style={styles.weekdays}>
       {AppMessages.weekdayLabels.map((label, index) => (
         <View key={label} style={styles.weekdayCell}>
-          <Text style={[styles.weekdayText, getWeekendTextStyle(index)]}>{label}</Text>
+          <Text
+            {...CompactTextProps}
+            style={[styles.weekdayText, getWeekendTextStyle(index)]}
+          >
+            {label}
+          </Text>
         </View>
       ))}
     </View>
@@ -33,6 +40,7 @@ function getWeekendTextStyle(index: number) {
 
 const styles = StyleSheet.create({
   weekdays: {
+    ...FullBleedPaddedHorizontalStyle,
     flexDirection: "row",
     borderBottomColor: AppColors.border,
     borderBottomWidth: StyleSheet.hairlineWidth,

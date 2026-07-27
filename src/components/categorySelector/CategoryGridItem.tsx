@@ -7,7 +7,9 @@ import {
   CATEGORY_ITEM_PADDING_HORIZONTAL,
   CATEGORY_ITEM_PADDING_VERTICAL,
 } from "../../constants/categorySelector";
+import { AuthControls } from "../../constants/authControls";
 import { AppColors } from "../../constants/colors";
+import { CompactTextProps } from "../../constants/textLayout";
 import type { CategoryDefinition } from "../../types/category";
 
 type CategoryGridItemProps = {
@@ -41,6 +43,7 @@ export function CategoryGridItem({
         size={CATEGORY_ICON_SIZE}
       />
       <Text
+        {...CompactTextProps}
         adjustsFontSizeToFit
         minimumFontScale={0.86}
         numberOfLines={2}
@@ -58,7 +61,7 @@ const styles = StyleSheet.create({
     paddingVertical: CATEGORY_ITEM_PADDING_VERTICAL,
     borderWidth: 1,
     borderColor: AppColors.border,
-    borderRadius: 16,
+    borderRadius: AuthControls.borderRadius,
     backgroundColor: AppColors.surface,
     alignItems: "center",
     justifyContent: "center",

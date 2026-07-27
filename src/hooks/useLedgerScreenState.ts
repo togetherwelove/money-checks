@@ -1,6 +1,7 @@
 import type { Session } from "@supabase/supabase-js";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useWindowDimensions } from "react-native";
 
 import type { MonthPage } from "../components/monthCalendarPager/monthCalendarPagerUtils";
 import {
@@ -8,6 +9,7 @@ import {
   CalendarSummaryModes,
 } from "../constants/calendarSummary";
 import type { SubscriptionTier } from "../constants/subscription";
+import { AppTextScale, resolveTextScale } from "../constants/textLayout";
 import { buildInstallmentSettlementEntry, buildLedgerEntriesFromDraft } from "../lib/installments";
 import { isLedgerBookEditableWithinPlanLimit } from "../lib/ledgerEditability";
 import { fetchLedgerEntriesSummary } from "../lib/ledgerEntries";
@@ -60,6 +62,8 @@ export function useLedgerScreenState(
     subscriptionTier,
   }: LedgerScreenStateOptions,
 ): LedgerScreenState {
+  const { fontScale } = useWindowDimensions();
+  const calendarFontScale = resolveTextScale(fontScale, AppTextScale.compact);
   const actualToday = startOfMonth(new Date());
   const [visibleMonth, setVisibleMonth] = useState(actualToday);
   const [selectedDate, setSelectedDate] = useState(() => toIsoDate(new Date()));
@@ -81,6 +85,7 @@ export function useLedgerScreenState(
     joinSharedLedgerBookByCode,
     leaveSharedLedgerBook,
     previewSharedLedgerBookJoinByCode,
+    refreshExpiredShareCode,
     removeSharedLedgerMember,
     renameActiveLedgerBook,
     refreshSharedLedgerBook,
@@ -177,16 +182,16 @@ export function useLedgerScreenState(
     [allChartEntries, calendarSummaryBaseDay, calendarSummaryMode],
   );
   const previousMonthPage = useMemo<MonthPage>(
-    () => getMonthPageFromCache(entryCache, addMonths(visibleMonth, -1)),
-    [entryCache, visibleMonth],
+    () => getMonthPageFromCache(entryCache, addMonths(visibleMonth, -1), calendarFontScale),
+    [calendarFontScale, entryCache, visibleMonth],
   );
   const currentMonthPage = useMemo<MonthPage>(
-    () => getMonthPageFromCache(entryCache, visibleMonth),
-    [entryCache, visibleMonth],
+    () => getMonthPageFromCache(entryCache, visibleMonth, calendarFontScale),
+    [calendarFontScale, entryCache, visibleMonth],
   );
   const nextMonthPage = useMemo<MonthPage>(
-    () => getMonthPageFromCache(entryCache, addMonths(visibleMonth, 1)),
-    [entryCache, visibleMonth],
+    () => getMonthPageFromCache(entryCache, addMonths(visibleMonth, 1), calendarFontScale),
+    [calendarFontScale, entryCache, visibleMonth],
   );
   const previousChartMonth = useMemo(
     () => getChartMonthDataFromCache(entryCache, addMonths(visibleMonth, -1), chartDataOptions),
@@ -462,6 +467,7 @@ export function useLedgerScreenState(
     previousChartMonth,
     preloadChartEntries,
     previewSharedLedgerBookJoinByCode,
+    refreshExpiredShareCode,
     approveLedgerJoinRequest,
     rejectLedgerJoinRequest,
     removeSharedLedgerMember,

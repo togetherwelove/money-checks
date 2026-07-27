@@ -1,9 +1,13 @@
-import { Text, type TextProps } from "react-native";
+import { Text, TextInput, type TextInputProps, type TextProps } from "react-native";
 
-import { AppTextBreakProps } from "../constants/textLayout";
+import { AppTextBreakProps, ContentTextProps } from "../constants/textLayout";
 
 type TextWithDefaultProps = typeof Text & {
   defaultProps?: TextProps;
+};
+
+type TextInputWithDefaultProps = typeof TextInput & {
+  defaultProps?: TextInputProps;
 };
 
 let areAppTextDefaultsInstalled = false;
@@ -17,6 +21,13 @@ export function installAppTextDefaults(): void {
   textComponent.defaultProps = {
     ...textComponent.defaultProps,
     ...AppTextBreakProps,
+    ...ContentTextProps,
+  };
+
+  const textInputComponent = TextInput as TextInputWithDefaultProps;
+  textInputComponent.defaultProps = {
+    ...textInputComponent.defaultProps,
+    maxFontSizeMultiplier: ContentTextProps.maxFontSizeMultiplier,
   };
   areAppTextDefaultsInstalled = true;
 }

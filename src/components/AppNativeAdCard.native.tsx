@@ -12,6 +12,7 @@ import {
 
 import { AdMobNativeConfig, NativeAdCardUi, NativeAdListConfig } from "../constants/ads";
 import { AppColors } from "../constants/colors";
+import { AppLayout } from "../constants/layout";
 import { AppTextBreakProps, OneLineTextFitProps } from "../constants/textLayout";
 import { resolveAdMobAdUnitId } from "../lib/ads/adUnitId";
 import { getAdRequestOptions } from "../lib/ads/adRequestOptions";
@@ -117,6 +118,7 @@ export function AppNativeAdCard({ slotIndex }: AppNativeAdCardProps) {
           ) : null}
         </View>
       </View>
+      <View style={styles.bottomDivider} />
     </NativeAdView>
   );
 }
@@ -128,9 +130,12 @@ function resolveNativeAdUnitId() {
 const styles = StyleSheet.create({
   nativeAdView: {
     backgroundColor: AppColors.adBackground,
-    borderBottomWidth: 1,
-    borderColor: AppColors.border,
     minHeight: NativeAdCardUi.minHeight,
+  },
+  bottomDivider: {
+    borderTopWidth: AppLayout.dividerWidth,
+    borderColor: AppColors.border,
+    marginHorizontal: NativeAdCardUi.contentPaddingHorizontal,
   },
   content: {
     paddingHorizontal: NativeAdCardUi.contentPaddingHorizontal,

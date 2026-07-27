@@ -1,4 +1,5 @@
 import { CalendarDayUi } from "../../constants/calendarDay";
+import { AppTextScale, resolveTextScale } from "../../constants/textLayout";
 import type { CalendarDay } from "../../types/ledger";
 
 export const CALENDAR_WEEK_ROWS = 6;
@@ -21,18 +22,36 @@ export const CALENDAR_AMOUNT_SPACE_HEIGHT =
   CALENDAR_MAX_AMOUNT_LINE_COUNT * CalendarDayUi.amountLineHeight;
 
 export const CALENDAR_MAX_HEIGHT =
-  CALENDAR_WEEK_ROWS * resolveCalendarWeekHeightForAmountLineCount(CALENDAR_MAX_AMOUNT_LINE_COUNT) +
+  CALENDAR_WEEK_ROWS *
+    resolveCalendarWeekHeightForAmountLineCount(
+      CALENDAR_MAX_AMOUNT_LINE_COUNT,
+      AppTextScale.compact,
+    ) +
   CALENDAR_BOTTOM_BORDER_CLIP_PADDING;
 
-export function resolveCalendarWeekHeight(_week: readonly CalendarDay[]): number {
-  return resolveCalendarWeekHeightForAmountLineCount(CALENDAR_MAX_AMOUNT_LINE_COUNT);
+export function resolveCalendarWeekHeight(
+  _week: readonly CalendarDay[],
+  fontScale = 1,
+): number {
+  return resolveCalendarWeekHeightForAmountLineCount(
+    CALENDAR_MAX_AMOUNT_LINE_COUNT,
+    resolveTextScale(fontScale, AppTextScale.compact),
+  );
 }
 
-function resolveCalendarWeekHeightForAmountLineCount(amountLineCount: number): number {
+function resolveCalendarWeekHeightForAmountLineCount(
+  amountLineCount: number,
+  fontScale: number,
+): number {
+  const numberHeight =
+    CALENDAR_DAY_NUMBER_LINE_HEIGHT * fontScale +
+    CALENDAR_DAY_NUMBER_PADDING_VERTICAL * 2 +
+    CALENDAR_DAY_NUMBER_BORDER_WIDTH * 2;
   const amountBlockHeight =
     amountLineCount > 0
-      ? CALENDAR_DAY_CONTENT_GAP + amountLineCount * CalendarDayUi.amountLineHeight
+      ? CALENDAR_DAY_CONTENT_GAP +
+        amountLineCount * CalendarDayUi.amountLineHeight * fontScale
       : CALENDAR_DAY_CONTENT_GAP + CALENDAR_AMOUNT_SPACE_HEIGHT;
 
-  return CALENDAR_DAY_CELL_BORDER_WIDTH * 2 + CALENDAR_DAY_NUMBER_HEIGHT + amountBlockHeight;
+  return CALENDAR_DAY_CELL_BORDER_WIDTH * 2 + numberHeight + amountBlockHeight;
 }

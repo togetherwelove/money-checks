@@ -17,6 +17,7 @@ import { KeyboardLayout } from "../constants/keyboard";
 import { AppLayout } from "../constants/layout";
 import { LegalLinks } from "../constants/legal";
 import { AppMessages } from "../constants/messages";
+import { ResponsivePageContentStyle } from "../constants/uiStyles";
 import {
   calculateEmailOtpResendAvailableAt,
   calculateRemainingEmailOtpCooldownSeconds,
@@ -270,9 +271,10 @@ export function SignUpScreen({ onBackToSignIn }: SignUpScreenProps) {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: AppColors.background,
+    backgroundColor: AppColors.screenBackground,
   },
   content: {
+    ...ResponsivePageContentStyle,
     flexGrow: 1,
     padding: AppLayout.screenPadding,
     gap: 16,

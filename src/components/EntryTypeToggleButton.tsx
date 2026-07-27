@@ -2,6 +2,8 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
 import { EntryTypeToggleUi } from "../constants/entryRegistration";
+import { CompactTextProps } from "../constants/textLayout";
+import { useExpenseTextColor } from "../contexts/ExpenseTextColorContext";
 import type { LedgerEntryType } from "../types/ledger";
 
 type EntryTypeToggleButtonProps = {
@@ -12,6 +14,8 @@ type EntryTypeToggleButtonProps = {
 const ENTRY_DIRECTION_ORDER: LedgerEntryType[] = ["expense", "income"];
 
 export function EntryTypeToggleButton({ onSelectType, selectedType }: EntryTypeToggleButtonProps) {
+  const expenseTextStyle = useExpenseTextColor().textStyle;
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -30,10 +34,12 @@ export function EntryTypeToggleButton({ onSelectType, selectedType }: EntryTypeT
             ]}
           >
             <Text
+              {...CompactTextProps}
               style={[
                 styles.optionLabel,
-                isActive && type === "expense" ? styles.activeExpenseLabel : null,
+                isActive && type === "expense" ? expenseTextStyle : null,
                 isActive && type === "income" ? styles.activeIncomeLabel : null,
+                isActive ? styles.activeLabel : null,
               ]}
             >
               {type === "expense" ? "지출" : "수입"}
@@ -52,7 +58,7 @@ const styles = StyleSheet.create({
     borderBottomColor: AppColors.border,
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
-    height: EntryTypeToggleUi.containerHeight,
+    minHeight: EntryTypeToggleUi.containerHeight,
     paddingHorizontal: 0,
   },
   option: {
@@ -77,8 +83,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     lineHeight: EntryTypeToggleUi.labelLineHeight,
   },
-  activeExpenseLabel: {
-    color: AppColors.expense,
+  activeLabel: {
     fontWeight: "800",
   },
   activeIncomeLabel: {

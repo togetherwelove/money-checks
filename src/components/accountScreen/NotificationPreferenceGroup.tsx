@@ -1,6 +1,8 @@
 import { StyleSheet, Text, View } from "react-native";
 
+import { AppSettingsUi } from "../../constants/appSettings";
 import { AppColors } from "../../constants/colors";
+import { AppLayout } from "../../constants/layout";
 import { OneLineTextFitProps } from "../../constants/textLayout";
 import { InsetPanelStyle } from "../../constants/uiStyles";
 import type { NotificationThresholdKey, NotificationThresholdPeriod } from "../../notifications/domain/notificationEvents";
@@ -51,7 +53,7 @@ export function NotificationPreferenceGroup({
         <View style={styles.list}>
           {group.items.map((item, index) => (
             <NotificationPreferenceRow
-              isFirst={index === 0}
+              isLast={index === group.items.length - 1}
               item={item}
               key={item.type}
               onToggle={(enabled) => onToggle(item.eventTypes ?? item.type, enabled)}
@@ -65,8 +67,7 @@ export function NotificationPreferenceGroup({
 
 const styles = StyleSheet.create({
   group: {
-    gap: 8,
-    paddingTop: 6,
+    gap: AppSettingsUi.sectionGap,
   },
   headingBlock: {
     minWidth: 0,
@@ -78,10 +79,7 @@ const styles = StyleSheet.create({
   },
   thresholdBlock: {
     ...InsetPanelStyle,
-    paddingHorizontal: 12,
+    paddingHorizontal: AppLayout.cardContentPadding,
   },
-  list: {
-    ...InsetPanelStyle,
-    paddingHorizontal: 12,
-  },
+  list: InsetPanelStyle,
 });

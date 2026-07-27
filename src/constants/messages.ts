@@ -6,6 +6,7 @@ export const AppMessages = {
     summaryExpense: "총지출",
     calendarTab: "가계부 달력",
     entryScreenTitle: "입출금 등록",
+    entryDatePickerAccessibilityLabel: "등록 날짜 선택",
     editorEmpty: "아직 기록이 없어요.",
     editorAmount: "금액",
     editorUpdate: "수정",
@@ -58,6 +59,9 @@ export const AppMessages = {
     accountJoinRejectError: "참여 요청을 거절하지 못했어요.",
     accountDisconnectHint: "연결을 끊으면 내 개인 가계부로 돌아갑니다.",
     accountDisconnectAction: "연결 끊기",
+    accountDisconnectConfirmMessage:
+      "공유 가계부에 더 이상 접근할 수 없어요. 다시 참여하려면 소유자의 승인이 필요해요.",
+    accountDisconnectConfirmTitle: "공유 가계부에서 나갈까요?",
     accountDisconnectSuccess: "개인 가계부로 돌아왔어요.",
     accountDisconnectError: "공유 가계부 연결을 끊지 못했어요.",
     accountKickAction: "내보내기",

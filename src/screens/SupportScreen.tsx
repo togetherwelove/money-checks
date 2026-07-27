@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SupportPackageIcon } from "../components/SupportPackageIcon";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
+import { OneLineTextFitProps } from "../constants/textLayout";
 import {
   SupportMessages,
   SupportPackageCatalog,
@@ -12,8 +13,10 @@ import {
 } from "../constants/support";
 import {
   CompactLabelTextStyle,
+  ListGroupRowStyle,
+  ListGroupStyle,
+  ResponsivePageContentStyle,
   SupportingTextStyle,
-  SurfaceCardStyle,
 } from "../constants/uiStyles";
 import type { SupportPackageSnapshot } from "../lib/subscription/supportClient";
 
@@ -27,7 +30,7 @@ export function SupportScreen({ isLoading, onPurchasePackage, packages }: Suppor
   return (
     <ScrollView contentContainerStyle={styles.content} style={styles.screen}>
       <View style={styles.packageList}>
-        {SupportPackageCatalog.map((item) => {
+        {SupportPackageCatalog.map((item, index) => {
           const matchingPackage = packages.find(
             (currentPackage) => currentPackage.identifier === item.identifier,
           );
@@ -41,22 +44,23 @@ export function SupportScreen({ isLoading, onPurchasePackage, packages }: Suppor
               onPress={() => onPurchasePackage(item.identifier)}
               style={({ pressed }) => [
                 styles.packageCard,
+                index === SupportPackageCatalog.length - 1 ? styles.lastPackageCard : null,
                 pressed && !isDisabled ? styles.pressedCard : null,
                 isDisabled ? styles.disabledCard : null,
               ]}
             >
               <SupportPackageIcon identifier={item.identifier} />
               <View style={styles.packageContent}>
-                <Text numberOfLines={1} style={styles.packageTitle}>
+                <Text {...OneLineTextFitProps} style={styles.packageTitle}>
                   {item.title}
                 </Text>
-                <Text numberOfLines={1} style={styles.supportLabel}>
+                <Text {...OneLineTextFitProps} style={styles.supportLabel}>
                   {item.description}
                 </Text>
               </View>
               <View style={styles.trailingBlock}>
                 <View style={styles.actionHintRow}>
-                  <Text numberOfLines={1} style={styles.priceLabel}>
+                  <Text {...OneLineTextFitProps} style={styles.priceLabel}>
                     {priceLabel}
                   </Text>
                   <Feather
@@ -80,21 +84,25 @@ export function SupportScreen({ isLoading, onPurchasePackage, packages }: Suppor
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: AppColors.background,
+    backgroundColor: AppColors.screenBackground,
   },
   content: {
+    ...ResponsivePageContentStyle,
     paddingHorizontal: AppLayout.screenPadding,
     paddingTop: AppLayout.screenTopPadding,
     gap: SupportUi.contentGap,
   },
   packageList: {
-    gap: SupportUi.listGap,
+    ...ListGroupStyle,
   },
   packageCard: {
-    ...SurfaceCardStyle,
+    ...ListGroupRowStyle,
     flexDirection: "row",
     alignItems: "center",
     gap: SupportUi.rowGap,
+  },
+  lastPackageCard: {
+    borderBottomWidth: 0,
   },
   disabledCard: {
     opacity: 0.45,

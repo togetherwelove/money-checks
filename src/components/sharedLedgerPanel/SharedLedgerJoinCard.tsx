@@ -1,6 +1,5 @@
 import { Text, TextInput, View } from "react-native";
 
-import { SHARE_CODE_LENGTH } from "../../constants/ledgerDisplay";
 import { AppMessages } from "../../constants/messages";
 import { ActionButton } from "../ActionButton";
 import { sharedLedgerPanelStyles as styles } from "./sharedLedgerPanelStyles";
@@ -25,7 +24,6 @@ export function SharedLedgerJoinCard({
       <TextInput
         autoCapitalize="characters"
         editable={!disabled}
-        maxLength={SHARE_CODE_LENGTH}
         onChangeText={onChangeShareCodeInput}
         onSubmitEditing={onJoin}
         placeholder={AppMessages.accountJoinPlaceholder}

@@ -51,9 +51,13 @@ export function getMonthlyInsightsFromCache(
   );
 }
 
-export function getMonthPageFromCache(entryCache: LedgerEntryCache, targetMonth: Date): MonthPage {
+export function getMonthPageFromCache(
+  entryCache: LedgerEntryCache,
+  targetMonth: Date,
+  fontScale = 1,
+): MonthPage {
   const monthSummary = getMonthlyLedgerFromCache(entryCache, targetMonth);
-  return buildMonthPageFromSummary(getMonthKey(targetMonth), monthSummary);
+  return buildMonthPageFromSummary(getMonthKey(targetMonth), monthSummary, fontScale);
 }
 
 export function getChartMonthDataFromCache(

@@ -1,22 +1,27 @@
-import { useDeferredValue, useMemo, useState } from "react";
+import { Feather } from "@expo/vector-icons";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   FlatList,
   Pressable,
   RefreshControl,
   ScrollView,
+  type StyleProp,
   StyleSheet,
   Text,
   TextInput,
+  type TextStyle,
   View,
 } from "react-native";
 
 import { AppNativeAdCard } from "../components/AppNativeAdCard";
 import { LedgerEntryListItem } from "../components/LedgerEntryListItem";
+import { AllEntriesFilterCopy } from "../constants/allEntries";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import { AppMessages } from "../constants/messages";
 import { FormInputTextStyle } from "../constants/uiStyles";
+import { useExpenseTextColor } from "../contexts/ExpenseTextColorContext";
 import type { BusyTaskTracker } from "../hooks/ledgerScreenState/types";
 import { useAllLedgerEntries } from "../hooks/useAllLedgerEntries";
 import { useLedgerCategories } from "../hooks/useLedgerCategories";
@@ -41,16 +46,25 @@ export function AllEntriesScreen({
   showsNativeAds,
   trackBlockingTask,
 }: AllEntriesScreenProps) {
+  const expenseTextStyle = useExpenseTextColor().textStyle;
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const deferredSearchQuery = useDeferredValue(searchQuery.trim());
   const activeBookId = activeBook?.id ?? null;
   const categories = useLedgerCategories(activeBookId);
   const categoryIconByKey = useLedgerCategoryIconMap(activeBookId);
+  const selectedCategoryIdSet = useMemo(
+    () => new Set(selectedCategoryIds),
+    [selectedCategoryIds],
+  );
   const categoryLabelById = useMemo(
     () => new Map(categories.map((category) => [category.id, category.label])),
     [categories],
   );
+  useEffect(() => {
+    setSearchQuery("");
+    setSelectedCategoryIds([]);
+  }, [activeBookId]);
   const {
     entries,
     errorMessage,
@@ -63,11 +77,12 @@ export function AllEntriesScreen({
     restoreEntryToFeed,
   } = useAllLedgerEntries({
     activeBookId,
-    selectedCategoryId,
+    selectedCategoryIds,
     searchQuery: deferredSearchQuery,
     trackBlockingTask,
   });
-  const isSearching = deferredSearchQuery.length > 0;
+  const hasActiveFilters = searchQuery.trim().length > 0 || selectedCategoryIds.length > 0;
+  const hasAppliedFilters = deferredSearchQuery.length > 0 || selectedCategoryIds.length > 0;
   const feedItems = useMemo(() => {
     if (showsNativeAds) {
       return buildAllEntriesFeedItems(entries);
@@ -105,16 +120,35 @@ export function AllEntriesScreen({
               <Text style={styles.errorRetryLabel}>재시도</Text>
             </Pressable>
           ) : null}
-          <TextInput
-            autoCapitalize="none"
-            autoCorrect={false}
-            clearButtonMode="while-editing"
-            onChangeText={setSearchQuery}
-            placeholder="내용과 메모 검색"
-            returnKeyType="search"
-            style={styles.searchInput}
-            value={searchQuery}
-          />
+          <View style={styles.searchRow}>
+            <TextInput
+              autoCapitalize="none"
+              autoCorrect={false}
+              clearButtonMode="while-editing"
+              onChangeText={setSearchQuery}
+              placeholder="내용과 메모 검색"
+              returnKeyType="search"
+              style={[styles.searchInput, styles.searchInputInRow]}
+              value={searchQuery}
+            />
+            <Pressable
+              accessibilityLabel={AllEntriesFilterCopy.resetAccessibilityLabel}
+              accessibilityRole="button"
+              disabled={!hasActiveFilters}
+              onPress={() => {
+                setSearchQuery("");
+                setSelectedCategoryIds([]);
+              }}
+              style={({ pressed }) => [
+                styles.resetFilterButton,
+                !hasActiveFilters ? styles.disabledResetFilterButton : null,
+                pressed && hasActiveFilters ? styles.pressedResetFilterButton : null,
+              ]}
+            >
+              <Feather color={AppColors.primary} name="rotate-ccw" size={15} />
+              <Text style={styles.resetFilterLabel}>{AllEntriesFilterCopy.resetLabel}</Text>
+            </Pressable>
+          </View>
           <ScrollView
             contentContainerStyle={styles.categoryFilterContent}
             horizontal
@@ -122,18 +156,20 @@ export function AllEntriesScreen({
             style={styles.categoryFilterList}
           >
             <Pressable
+              accessibilityState={{ selected: selectedCategoryIds.length === 0 }}
+              accessibilityRole="button"
               onPress={() => {
-                setSelectedCategoryId(null);
+                setSelectedCategoryIds([]);
               }}
               style={[
                 styles.categoryFilterChip,
-                selectedCategoryId === null ? styles.activeCategoryFilterChip : null,
+                selectedCategoryIds.length === 0 ? styles.activeCategoryFilterChip : null,
               ]}
             >
               <Text
                 style={[
                   styles.categoryFilterLabel,
-                  selectedCategoryId === null ? styles.activeCategoryFilterLabel : null,
+                  selectedCategoryIds.length === 0 ? styles.activeCategoryFilterLabel : null,
                 ]}
               >
                 전체
@@ -142,11 +178,16 @@ export function AllEntriesScreen({
             {categories.map((category) => (
               <CategoryFilterChip
                 category={category}
-                isSelected={selectedCategoryId === category.id}
+                expenseTextStyle={expenseTextStyle}
+                isSelected={selectedCategoryIdSet.has(category.id)}
                 key={category.id}
                 onPress={() => {
-                  setSelectedCategoryId((currentCategoryId) =>
-                    currentCategoryId === category.id ? null : category.id,
+                  setSelectedCategoryIds((currentCategoryIds) =>
+                    currentCategoryIds.includes(category.id)
+                      ? currentCategoryIds.filter(
+                          (currentCategoryId) => currentCategoryId !== category.id,
+                        )
+                      : [...currentCategoryIds, category.id],
                   );
                 }}
               />
@@ -160,10 +201,14 @@ export function AllEntriesScreen({
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <Text style={styles.emptyTitle}>
-                {isSearching ? "검색한 기록이 없어요." : "표시할 기록이 없어요."}
+                {hasAppliedFilters
+                  ? AllEntriesFilterCopy.emptyFilterTitle
+                  : "표시할 기록이 없어요."}
               </Text>
               <Text style={styles.emptyHint}>
-                {isSearching ? "검색어를 다시 확인해 주세요." : "새로운 기록을 추가해 보세요."}
+                {hasAppliedFilters
+                  ? AllEntriesFilterCopy.emptyFilterHint
+                  : "새로운 기록을 추가해 보세요."}
               </Text>
             </View>
           }
@@ -195,35 +240,33 @@ export function AllEntriesScreen({
             item.type === "native-ad" ? (
               <AppNativeAdCard slotIndex={item.slotIndex} />
             ) : (
-              <View style={styles.entryItem}>
-                <LedgerEntryListItem
-                  categoryIconByKey={categoryIconByKey}
-                  categoryLabelById={categoryLabelById}
-                  entry={item.entry}
-                  onDeleteEntry={(entry) => {
-                    Alert.alert(
-                      AppMessages.editorDeleteConfirmTitle,
-                      AppMessages.editorDeleteConfirmMessage,
-                      [
-                        {
-                          style: "cancel",
-                          text: "취소",
+              <LedgerEntryListItem
+                categoryIconByKey={categoryIconByKey}
+                categoryLabelById={categoryLabelById}
+                entry={item.entry}
+                onDeleteEntry={(entry) => {
+                  Alert.alert(
+                    AppMessages.editorDeleteConfirmTitle,
+                    AppMessages.editorDeleteConfirmMessage,
+                    [
+                      {
+                        style: "cancel",
+                        text: "취소",
+                      },
+                      {
+                        onPress: () => {
+                          void handleDeleteEntry(entry);
                         },
-                        {
-                          onPress: () => {
-                            void handleDeleteEntry(entry);
-                          },
-                          style: "destructive",
-                          text: AppMessages.editorDeleteConfirmAction,
-                        },
-                      ],
-                    );
-                  }}
-                  onEditEntry={onEditEntry}
-                  showsDate
-                  showsInstallmentStatusLine
-                />
-              </View>
+                        style: "destructive",
+                        text: AppMessages.editorDeleteConfirmAction,
+                      },
+                    ],
+                  );
+                }}
+                onEditEntry={onEditEntry}
+                showsDate
+                showsInstallmentStatusLine
+              />
             )
           }
           style={styles.list}
@@ -243,15 +286,19 @@ export function AllEntriesScreen({
 
 function CategoryFilterChip({
   category,
+  expenseTextStyle,
   isSelected,
   onPress,
 }: {
   category: CategoryDefinition;
+  expenseTextStyle: StyleProp<TextStyle>;
   isSelected: boolean;
   onPress: () => void;
 }) {
   return (
     <Pressable
+      accessibilityState={{ selected: isSelected }}
+      accessibilityRole="button"
       onPress={onPress}
       style={[
         styles.categoryFilterChip,
@@ -270,7 +317,7 @@ function CategoryFilterChip({
           styles.categoryFilterLabel,
           category.type === "income"
             ? styles.incomeCategoryFilterLabel
-            : styles.expenseCategoryFilterLabel,
+            : expenseTextStyle,
           isSelected ? styles.activeCategoryFilterLabel : null,
         ]}
       >
@@ -283,7 +330,7 @@ function CategoryFilterChip({
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: AppColors.financialScreenBackground,
+    backgroundColor: AppColors.screenBackground,
     paddingTop: AppLayout.screenTopPadding,
   },
   content: {
@@ -294,13 +341,38 @@ const styles = StyleSheet.create({
     gap: AppLayout.cardGap,
     paddingHorizontal: AppLayout.screenPadding,
   },
-  entryItem: {
-    paddingHorizontal: AppLayout.screenPadding,
-  },
   list: {
     flex: 1,
   },
   searchInput: FormInputTextStyle,
+  searchInputInRow: {
+    flex: 1,
+    minWidth: 0,
+  },
+  searchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: AppLayout.compactGap,
+  },
+  resetFilterButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    minHeight: 40,
+    paddingHorizontal: 4,
+  },
+  disabledResetFilterButton: {
+    opacity: 0.38,
+  },
+  pressedResetFilterButton: {
+    opacity: 0.7,
+  },
+  resetFilterLabel: {
+    color: AppColors.primary,
+    fontSize: 12,
+    fontWeight: "700",
+  },
   categoryFilterList: {
     flexGrow: 0,
   },
@@ -322,13 +394,11 @@ const styles = StyleSheet.create({
   },
   expenseCategoryFilterChip: {
     borderColor: AppColors.expense,
-    backgroundColor: AppColors.expenseSoft,
-    opacity: 0.52,
+    backgroundColor: AppColors.screenBackground,
   },
   incomeCategoryFilterChip: {
     borderColor: AppColors.income,
-    backgroundColor: AppColors.incomeSoft,
-    opacity: 0.52,
+    backgroundColor: AppColors.surface,
   },
   activeExpenseCategoryFilterChip: {
     borderColor: AppColors.expense,
@@ -345,9 +415,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     fontWeight: "600",
-  },
-  expenseCategoryFilterLabel: {
-    color: AppColors.expense,
   },
   incomeCategoryFilterLabel: {
     color: AppColors.income,

@@ -7,7 +7,7 @@ import {
   MonthlyInsightChartCopy,
   MonthlyInsightChartLayout,
 } from "../constants/monthlyInsightCharts";
-import { FullBleedHorizontalStyle } from "../constants/uiStyles";
+import { CompactTextProps } from "../constants/textLayout";
 import { useLedgerCategoryIconMap } from "../hooks/useLedgerCategoryIconMap";
 import type { CategoryIconName } from "../types/category";
 import type { MonthlyInsights } from "../types/ledger";
@@ -165,14 +165,16 @@ export function MonthlyInsightsSection({
         </View>
       ) : null}
       {scope === "periodic" ? (
-        <MonthlyTrendBarChart
-          title={
-            insights.comparisonBasis === "period"
-              ? MonthlyInsightChartCopy.periodTrendTitle
-              : MonthlyInsightChartCopy.trendTitle
-          }
-          trendMonths={insights.trendMonths}
-        />
+        <View style={styles.chartContent}>
+          <MonthlyTrendBarChart
+            title={
+              insights.comparisonBasis === "period"
+                ? MonthlyInsightChartCopy.periodTrendTitle
+                : MonthlyInsightChartCopy.trendTitle
+            }
+            trendMonths={insights.trendMonths}
+          />
+        </View>
       ) : null}
       {/* {scope === "periodic" ? <MonthlyComparisonSection insights={insights} /> : null} */}
       <View
@@ -193,24 +195,27 @@ export function MonthlyInsightsSection({
             onPress={() => setBreakdownMode("member")}
           />
         </View>
-        <MonthlyBreakdownDonutChart
-          centerLabel={MonthlyInsightChartCopy.totalExpenseLabel}
-          emptyMessage={
-            breakdownItems.length
-              ? MonthlyInsightChartCopy.filteredEmpty
-              : isCategoryMode
-                ? MonthlyInsightChartCopy.categoryEmpty
-                : MonthlyInsightChartCopy.memberEmpty
-          }
-          items={activeBreakdownItems}
-          legendItems={breakdownLegendItems}
-          onToggleItem={(itemKey) => toggleBreakdownItem(breakdownFilterKey, itemKey)}
-          title={
-            isCategoryMode
-              ? MonthlyInsightChartCopy.categoryTitle
-              : MonthlyInsightChartCopy.memberTitle
-          }
-        />
+        <View style={styles.chartContent}>
+          <MonthlyBreakdownDonutChart
+            centerLabel={MonthlyInsightChartCopy.totalExpenseLabel}
+            emptyMessage={
+              breakdownItems.length
+                ? MonthlyInsightChartCopy.filteredEmpty
+                : isCategoryMode
+                  ? MonthlyInsightChartCopy.categoryEmpty
+                  : MonthlyInsightChartCopy.memberEmpty
+            }
+            items={activeBreakdownItems}
+            legendItems={breakdownLegendItems}
+            onToggleItem={(itemKey) => toggleBreakdownItem(breakdownFilterKey, itemKey)}
+            title={
+              isCategoryMode
+                ? MonthlyInsightChartCopy.categoryTitle
+                : MonthlyInsightChartCopy.memberTitle
+            }
+            variant="expense"
+          />
+        </View>
       </View>
       <View style={[styles.breakdownSection, styles.separatedBreakdownSection]}>
         <View style={styles.segmentedControl}>
@@ -225,24 +230,27 @@ export function MonthlyInsightsSection({
             onPress={() => setIncomeBreakdownMode("member")}
           />
         </View>
-        <MonthlyBreakdownDonutChart
-          centerLabel={MonthlyInsightChartCopy.totalIncomeLabel}
-          emptyMessage={
-            incomeBreakdownItems.length
-              ? MonthlyInsightChartCopy.filteredEmpty
-              : isIncomeCategoryMode
-                ? MonthlyInsightChartCopy.incomeCategoryEmpty
-                : MonthlyInsightChartCopy.incomeMemberEmpty
-          }
-          items={activeIncomeBreakdownItems}
-          legendItems={incomeBreakdownLegendItems}
-          onToggleItem={(itemKey) => toggleBreakdownItem(incomeBreakdownFilterKey, itemKey)}
-          title={
-            isIncomeCategoryMode
-              ? MonthlyInsightChartCopy.incomeCategoryTitle
-              : MonthlyInsightChartCopy.incomeMemberTitle
-          }
-        />
+        <View style={styles.chartContent}>
+          <MonthlyBreakdownDonutChart
+            centerLabel={MonthlyInsightChartCopy.totalIncomeLabel}
+            emptyMessage={
+              incomeBreakdownItems.length
+                ? MonthlyInsightChartCopy.filteredEmpty
+                : isIncomeCategoryMode
+                  ? MonthlyInsightChartCopy.incomeCategoryEmpty
+                  : MonthlyInsightChartCopy.incomeMemberEmpty
+            }
+            items={activeIncomeBreakdownItems}
+            legendItems={incomeBreakdownLegendItems}
+            onToggleItem={(itemKey) => toggleBreakdownItem(incomeBreakdownFilterKey, itemKey)}
+            title={
+              isIncomeCategoryMode
+                ? MonthlyInsightChartCopy.incomeCategoryTitle
+                : MonthlyInsightChartCopy.incomeMemberTitle
+            }
+            variant="income"
+          />
+        </View>
       </View>
     </View>
   );
@@ -370,7 +378,10 @@ function SegmentButton({
       onPress={onPress}
       style={[styles.segmentButton, isSelected ? styles.segmentButtonSelected : null]}
     >
-      <Text style={[styles.segmentText, isSelected ? styles.segmentTextSelected : null]}>
+      <Text
+        {...CompactTextProps}
+        style={[styles.segmentText, isSelected ? styles.segmentTextSelected : null]}
+      >
         {label}
       </Text>
     </Pressable>
@@ -379,7 +390,6 @@ function SegmentButton({
 
 const styles = StyleSheet.create({
   adPanel: {
-    ...FullBleedHorizontalStyle,
     backgroundColor: AppColors.adBackground,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderColor: AppColors.border,
@@ -387,6 +397,9 @@ const styles = StyleSheet.create({
   },
   breakdownSection: {
     gap: 10,
+  },
+  chartContent: {
+    paddingHorizontal: AppLayout.screenPadding,
   },
   separatedBreakdownSection: {
     borderTopWidth: StyleSheet.hairlineWidth,
@@ -415,6 +428,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: AppColors.border,
     flexDirection: "row",
+    paddingHorizontal: AppLayout.screenPadding,
   },
   section: {
     paddingTop: AppLayout.screenTopPadding,

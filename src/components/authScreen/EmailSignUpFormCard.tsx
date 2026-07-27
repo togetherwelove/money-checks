@@ -6,7 +6,7 @@ import {
   FormInputTextStyle,
   FormLabelTextStyle,
   StatusMessageTextStyle,
-  SurfaceCardStyle,
+  ActionSurfaceStyle,
 } from "../../constants/uiStyles";
 import { isPasswordValid } from "../../lib/auth/passwordValidation";
 import { ActionButton } from "../ActionButton";
@@ -123,7 +123,7 @@ export function EmailSignUpFormCard({
 
 const styles = StyleSheet.create({
   card: {
-    ...SurfaceCardStyle,
+    ...ActionSurfaceStyle,
     gap: 12,
   },
   fieldGroup: {

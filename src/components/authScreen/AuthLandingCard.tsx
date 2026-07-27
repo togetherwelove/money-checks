@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../../constants/colors";
-import { SurfaceCardStyle } from "../../constants/uiStyles";
+import { ActionSurfaceStyle } from "../../constants/uiStyles";
 import { ActionButton } from "../ActionButton";
 import { AppleSignInButton } from "./AppleSignInButton";
 import { GoogleSignInButton } from "./GoogleSignInButton";
@@ -54,7 +54,7 @@ export function AuthLandingCard({
 
 const styles = StyleSheet.create({
   card: {
-    ...SurfaceCardStyle,
+    ...ActionSurfaceStyle,
     gap: 16,
   },
   actionGroup: {

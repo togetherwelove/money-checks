@@ -5,6 +5,7 @@ import {
   MonthlyComparisonLayout,
   MonthlyInsightChartCopy,
 } from "../../constants/monthlyInsightCharts";
+import { useExpenseTextColor } from "../../contexts/ExpenseTextColorContext";
 import {
   type MonthlyComparisonTone,
   buildMonthlyComparisonSummary,
@@ -50,6 +51,7 @@ function ComparisonRow({
   previousMonthLabel,
   variant,
 }: ComparisonCardProps) {
+  const expenseTextStyle = useExpenseTextColor().textStyle;
   const summary = buildMonthlyComparisonSummary(
     comparison,
     previousMonthLabel,
@@ -71,7 +73,7 @@ function ComparisonRow({
           <Text
             style={[
               styles.metricLabel,
-              variant === "income" ? styles.incomeText : styles.expenseText,
+              variant === "income" ? styles.incomeText : expenseTextStyle,
             ]}
           >
             {variantLabel}
@@ -80,10 +82,14 @@ function ComparisonRow({
             {summary.previousAmountLabel}
           </Text>
         </View>
-        <Text style={[
-          styles.currentAmount,
-          variant === "income" ? styles.incomeText : styles.expenseText,
-        ]}>{summary.currentAmountLabel}</Text>
+        <Text
+          style={[
+            styles.currentAmount,
+            variant === "income" ? styles.incomeText : expenseTextStyle,
+          ]}
+        >
+          {summary.currentAmountLabel}
+        </Text>
         {/* <Text style={styles.comparisonSentence}>
           {summary.comparisonSentence}
         </Text> */}
@@ -161,9 +167,6 @@ const styles = StyleSheet.create({
   },
   incomeText: {
     color: AppColors.income,
-  },
-  expenseText: {
-    color: AppColors.expense,
   },
   mutedText: {
     color: AppColors.mutedText,

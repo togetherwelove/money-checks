@@ -5,7 +5,12 @@ import { AppLinks } from "../constants/appLinks";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import { LegalLinks } from "../constants/legal";
-import { SupportingTextStyle, SurfaceCardStyle } from "../constants/uiStyles";
+import { ReadingTextProps } from "../constants/textLayout";
+import {
+  ListGroupStyle,
+  ResponsivePageContentStyle,
+  SupportingTextStyle,
+} from "../constants/uiStyles";
 import { showNativeToast } from "../lib/nativeToast";
 
 type HelpLinkItem = {
@@ -48,7 +53,9 @@ export function HelpScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.content} style={styles.screen}>
-      <Text style={styles.description}>필요한 정책 문서를 브라우저에서 확인할 수 있어요.</Text>
+      <Text {...ReadingTextProps} style={styles.description}>
+        필요한 정책 문서를 브라우저에서 확인할 수 있어요.
+      </Text>
       <View style={styles.linkList}>
         {HELP_LINK_ITEMS.map((item, index) => (
           <Pressable
@@ -61,7 +68,9 @@ export function HelpScreen() {
           >
             <View style={styles.linkTextBlock}>
               <Text style={styles.linkLabel}>{item.label}</Text>
-              <Text style={styles.linkDescription}>{item.description}</Text>
+              <Text {...ReadingTextProps} style={styles.linkDescription}>
+                {item.description}
+              </Text>
             </View>
             <Feather color={AppColors.mutedStrongText} name="external-link" size={18} />
           </Pressable>
@@ -74,9 +83,10 @@ export function HelpScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: AppColors.background,
+    backgroundColor: AppColors.screenBackground,
   },
   content: {
+    ...ResponsivePageContentStyle,
     paddingHorizontal: AppLayout.screenPadding,
     paddingTop: AppLayout.screenTopPadding,
     gap: AppLayout.cardGap,
@@ -86,7 +96,7 @@ const styles = StyleSheet.create({
     color: AppColors.mutedStrongText,
   },
   linkList: {
-    ...SurfaceCardStyle,
+    ...ListGroupStyle,
     gap: 0,
     paddingVertical: 0,
   },
@@ -95,6 +105,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: AppLayout.cardGap,
+    paddingHorizontal: AppLayout.cardContentPadding,
     paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: AppColors.border,

@@ -18,11 +18,11 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: AppColors.sessionLoadingBackground,
+    backgroundColor: AppColors.appIconBackground,
   },
   logo: {
     width: LOGO_SIZE,
     height: LOGO_SIZE,
-    backgroundColor: AppColors.sessionLoadingBackground,
+    backgroundColor: AppColors.appIconBackground,
   },
 });

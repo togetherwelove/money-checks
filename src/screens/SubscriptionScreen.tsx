@@ -1,17 +1,25 @@
 import { Feather } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { useState } from "react";
 import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { ActionButton } from "../components/ActionButton";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { TextLinkButton } from "../components/TextLinkButton";
-import { AppColors, AppGradientColors } from "../constants/colors";
+import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import { LegalLinks } from "../constants/legal";
 import { SubscriptionMessages } from "../constants/subscription";
-import { AppTextBreakProps, OneLineTextFitProps } from "../constants/textLayout";
-import { BrandPlusTextStyle, CompactLabelTextStyle, SurfaceCardStyle } from "../constants/uiStyles";
+import {
+  AppTextBreakProps,
+  CompactTextProps,
+  OneLineTextFitProps,
+} from "../constants/textLayout";
+import {
+  BrandPlusTextStyle,
+  CompactLabelTextStyle,
+  ListGroupStyle,
+  ResponsivePageContentStyle,
+} from "../constants/uiStyles";
 import { showNativeToast } from "../lib/nativeToast";
 
 type SubscriptionScreenProps = {
@@ -39,28 +47,6 @@ export function SubscriptionScreen({
 
   return (
     <View style={styles.screen}>
-      <LinearGradient
-        colors={AppGradientColors.subscriptionPlusBase}
-        end={{ x: 0.5, y: 1 }}
-        locations={[0, 0.5, 1]}
-        start={{ x: 0.5, y: 0 }}
-        style={styles.backgroundGradient}
-      />
-      <LinearGradient
-        colors={AppGradientColors.subscriptionPlusWarmOverlay}
-        end={{ x: 0.5, y: 1 }}
-        locations={[0, 0.6, 1]}
-        start={{ x: 0.5, y: 0 }}
-        style={styles.topOverlayGradient}
-      />
-      <LinearGradient
-        colors={AppGradientColors.subscriptionPlusSoftOverlay}
-        end={{ x: 0.5, y: 1 }}
-        locations={[0, 0.65, 1]}
-        start={{ x: 0.5, y: 0 }}
-        style={styles.bottomOverlayGradient}
-      />
-
       <KeyboardAwareScrollView contentContainerStyle={styles.content} style={styles.scrollView}>
         <View style={styles.salesContent}>
           <View style={styles.copySection}>
@@ -80,7 +66,9 @@ export function SubscriptionScreen({
           <View style={styles.ctaSection}>
             {isPlusActive ? (
               <View style={styles.activeChip}>
-                <Text style={styles.activeChipText}>{SubscriptionMessages.plusSummary}</Text>
+                <Text {...CompactTextProps} style={styles.activeChipText}>
+                  {SubscriptionMessages.plusSummary}
+                </Text>
               </View>
             ) : hasAvailablePlusPackage ? (
               <ActionButton
@@ -107,7 +95,7 @@ export function SubscriptionScreen({
               onPress={() => setIsPurchaseInfoExpanded((currentValue) => !currentValue)}
               style={styles.detailToggle}
             >
-              <Text style={styles.detailToggleLabel}>
+              <Text {...CompactTextProps} style={styles.detailToggleLabel}>
                 {isPurchaseInfoExpanded ? "접기" : "자세히보기"}
               </Text>
               <Feather
@@ -118,7 +106,7 @@ export function SubscriptionScreen({
             </Pressable>
             {isPurchaseInfoExpanded ? (
               <View style={styles.purchaseInfoCard}>
-                <View style={[styles.purchaseInfoRow, styles.purchaseInfoFirstRow]}>
+                <View style={styles.purchaseInfoRow}>
                   <Text style={styles.purchaseInfoLabel}>
                     {SubscriptionMessages.purchaseInfoNameLabel}
                   </Text>
@@ -164,30 +152,14 @@ export function SubscriptionScreen({
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: AppColors.background,
-  },
-  backgroundGradient: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  topOverlayGradient: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: "62%",
-  },
-  bottomOverlayGradient: {
-    position: "absolute",
-    top: "18%",
-    left: 0,
-    right: 0,
-    bottom: 0,
+    backgroundColor: AppColors.screenBackground,
   },
   scrollView: {
     flex: 1,
-    backgroundColor: "transparent",
+    backgroundColor: AppColors.screenBackground,
   },
   content: {
+    ...ResponsivePageContentStyle,
     flexGrow: 1,
     paddingHorizontal: AppLayout.screenPadding,
     paddingTop: AppLayout.screenTopPadding,
@@ -224,28 +196,29 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   purchaseInfoCard: {
-    ...SurfaceCardStyle,
+    ...ListGroupStyle,
     width: "100%",
   },
   purchaseInfoRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    flexWrap: "wrap",
+    gap: AppLayout.compactGap,
     borderBottomWidth: 1,
+    paddingHorizontal: AppLayout.cardContentPadding,
     paddingVertical: 12,
     borderBottomColor: AppColors.border,
   },
   purchaseInfoLastRow: {
     borderBottomWidth: 0,
   },
-  purchaseInfoFirstRow: {
-    paddingTop: 0,
-  },
   legalLinkRow: {
     flexDirection: "row",
     alignItems: "center",
+    flexWrap: "wrap",
     gap: 12,
-    paddingTop: 12,
+    padding: AppLayout.cardContentPadding,
     borderTopWidth: 1,
     borderTopColor: AppColors.border,
   },

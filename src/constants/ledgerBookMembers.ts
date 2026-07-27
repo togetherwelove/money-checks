@@ -15,7 +15,6 @@ export const LedgerBookMembersUi = {
   disabledActionButtonOpacity: 0.45,
   rowHorizontalPadding: 10,
   rowVerticalPadding: 5,
-  listBorderRadius: 14,
   labelFontSize: 11,
   labelLineHeight: 16,
   labelBottomMargin: 2,

@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import { Modal, Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 
 import { ActionButton } from "../ActionButton";
+import { AppSettingsUi } from "../../constants/appSettings";
 import { AppColors } from "../../constants/colors";
 import { CurrencyUnitLabels } from "../../constants/currency";
+import { AppLayout } from "../../constants/layout";
 import { AppTextBreakProps } from "../../constants/textLayout";
 import { ModalActionRowStyle } from "../../constants/uiStyles";
 import { resolveDisplayCurrency } from "../../lib/currencyPreference";
@@ -186,9 +188,9 @@ const styles = StyleSheet.create({
     color: AppColors.text,
     fontSize: 14,
     fontWeight: "600",
-    height: 36,
+    minHeight: 36,
     paddingHorizontal: NotificationThresholdAmountInput.horizontalPadding,
-    paddingVertical: 0,
+    paddingVertical: 4,
   },
   amountControl: {
     alignItems: "center",
@@ -218,6 +220,7 @@ const styles = StyleSheet.create({
   },
   field: {
     gap: 10,
+    minHeight: AppSettingsUi.rowMinHeight,
     paddingVertical: 10,
   },
   amountField: {
@@ -247,7 +250,7 @@ const styles = StyleSheet.create({
   },
   modalSheet: {
     backgroundColor: AppColors.surface,
-    borderRadius: 20,
+    borderRadius: AppLayout.cardRadius,
     gap: 12,
     marginHorizontal: 16,
     padding: 16,

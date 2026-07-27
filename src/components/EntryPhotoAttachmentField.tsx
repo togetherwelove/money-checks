@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
   attachmentImage: {
     width: "100%",
     height: ENTRY_PHOTO_THUMBNAIL_SIZE,
-    borderRadius: 14,
+    borderRadius: ENTRY_PHOTO_PREVIEW_BORDER_RADIUS,
     backgroundColor: AppColors.surfaceMuted,
   },
   attachmentName: {

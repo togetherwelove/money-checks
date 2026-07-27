@@ -59,6 +59,7 @@ export type LedgerScreenState = {
   previousMonthPage: MonthPage;
   previousChartMonth: ChartMonthData;
   previewSharedLedgerBookJoinByCode: (shareCode: string) => Promise<JoinSharedLedgerBookPreview>;
+  refreshExpiredShareCode: () => Promise<void>;
   approveLedgerJoinRequest: (requestId: string) => Promise<LedgerBookJoinApprovalAttempt>;
   rejectLedgerJoinRequest: (requestId: string) => Promise<boolean>;
   removeSharedLedgerMember: (targetUserId: string) => Promise<boolean>;

@@ -22,33 +22,69 @@ const FormInputBaseStyle: TextStyle = {
   lineHeight: FORM_INPUT_LINE_HEIGHT,
 };
 
-export const SurfaceCardStyle: ViewStyle = {
-  borderWidth: 1,
+export const PageSectionStyle: ViewStyle = {
+  backgroundColor: AppColors.screenBackground,
+  paddingHorizontal: CARD_PADDING,
+  paddingVertical: CARD_PADDING,
+};
+
+export const ListGroupStyle: ViewStyle = {
+  borderWidth: AppLayout.dividerWidth,
   borderColor: AppColors.border,
-  borderRadius: AppLayout.cardRadius,
-  backgroundColor: AppColors.surface,
-  padding: CARD_PADDING,
+  borderRadius: AppLayout.groupRadius,
+  backgroundColor: AppColors.screenBackground,
+  overflow: "hidden",
+};
+
+export const ListGroupRowStyle: ViewStyle = {
+  borderBottomColor: AppColors.border,
+  borderBottomWidth: AppLayout.dividerWidth,
+  backgroundColor: AppColors.screenBackground,
+  paddingHorizontal: CARD_PADDING,
+  paddingVertical: CARD_PADDING,
+};
+
+export const ActionSurfaceStyle: ViewStyle = {
+  borderWidth: AppLayout.dividerWidth,
+  borderColor: AppColors.border,
+  borderRadius: AppLayout.groupRadius,
+  backgroundColor: AppColors.surfaceMuted,
+  paddingHorizontal: CARD_PADDING,
+  paddingVertical: CARD_PADDING,
+};
+
+export const GroupedSectionStyle: ViewStyle = {
+  ...ListGroupStyle,
+  ...PageSectionStyle,
 };
 
 export const InsetBoxStyle: ViewStyle = {
-  borderWidth: 1,
-  borderColor: AppColors.border,
-  borderRadius: AuthControls.borderRadius,
-  backgroundColor: AppColors.background,
+  borderRadius: AppLayout.groupRadius,
+  backgroundColor: AppColors.surfaceStrong,
   paddingHorizontal: AuthControls.horizontalPadding,
   paddingVertical: AuthControls.verticalPadding,
 };
 
 export const InsetPanelStyle: ViewStyle = {
-  borderWidth: 1,
-  borderColor: AppColors.border,
-  borderRadius: AuthControls.borderRadius,
-  backgroundColor: AppColors.background,
+  ...ListGroupStyle,
 };
 
 export const CardTitleTextStyle: TextStyle = {
   color: AppColors.text,
   fontSize: 15,
+  fontWeight: "800",
+};
+
+export const SettingValueActionStyle: ViewStyle = {
+  alignItems: "center",
+  flexDirection: "row",
+  flexShrink: 0,
+  gap: AppLayout.compactGap,
+};
+
+export const SettingValueTextStyle: TextStyle = {
+  color: AppColors.text,
+  fontSize: 13,
   fontWeight: "800",
 };
 
@@ -75,7 +111,7 @@ export const BrandPlusTextStyle: TextStyle = {
 
 export const FormInputTextStyle: TextStyle = {
   ...FormInputBaseStyle,
-  height: FORM_INPUT_HEIGHT,
+  minHeight: FORM_INPUT_HEIGHT,
 };
 
 export const FormMultilineInputTextStyle: TextStyle = {
@@ -104,6 +140,17 @@ export const UnderlineFormMultilineInputTextStyle: TextStyle = {
 
 export const FullBleedHorizontalStyle: ViewStyle = {
   marginHorizontal: -AppLayout.screenPadding,
+};
+
+export const FullBleedPaddedHorizontalStyle: ViewStyle = {
+  ...FullBleedHorizontalStyle,
+  paddingHorizontal: AppLayout.screenPadding,
+};
+
+export const ResponsivePageContentStyle: ViewStyle = {
+  alignSelf: "center",
+  maxWidth: AppLayout.pageContentMaxWidth,
+  width: "100%",
 };
 
 export const StatusMessageTextStyle: TextStyle = {

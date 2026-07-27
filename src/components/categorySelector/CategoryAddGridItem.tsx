@@ -1,6 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import { Pressable, StyleSheet } from "react-native";
 
+import { AuthControls } from "../../constants/authControls";
 import { CategoryCustomizerCopy } from "../../constants/categoryCustomizer";
 import { AppColors } from "../../constants/colors";
 
@@ -37,7 +38,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderStyle: "dashed",
     borderColor: AppColors.border,
-    borderRadius: 16,
+    borderRadius: AuthControls.borderRadius,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: AppColors.background,

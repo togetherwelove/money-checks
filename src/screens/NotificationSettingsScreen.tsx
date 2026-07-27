@@ -4,6 +4,7 @@ import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { NotificationSettingsCard } from "../components/accountScreen/NotificationSettingsCard";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
+import { ResponsivePageContentStyle } from "../constants/uiStyles";
 import type { NotificationPermissionState } from "../lib/notifications/pushNotifications";
 import type {
   NotificationEventType,
@@ -67,9 +68,10 @@ export function NotificationSettingsScreen({
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: AppColors.background,
+    backgroundColor: AppColors.screenBackground,
   },
   content: {
+    ...ResponsivePageContentStyle,
     paddingHorizontal: AppLayout.screenPadding,
     paddingTop: AppLayout.screenTopPadding,
   },

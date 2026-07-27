@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { AuthControls } from "../../constants/authControls";
 import { AppColors } from "../../constants/colors";
 import { GoogleGIcon } from "./GoogleGIcon";
 
@@ -23,7 +24,7 @@ const styles = StyleSheet.create({
     minHeight: 48,
     borderWidth: 1,
     borderColor: AppColors.border,
-    borderRadius: 16,
+    borderRadius: AuthControls.borderRadius,
     backgroundColor: AppColors.surface,
     flexDirection: "row",
     alignItems: "center",

@@ -16,13 +16,6 @@ export const CalendarDayUi = {
       "rgba(29, 122, 99, 0.29)",
       "rgba(29, 122, 99, 0.37)",
     ],
-    mixed: [
-      "rgba(35, 83, 71, 0.07)",
-      "rgba(35, 83, 71, 0.12)",
-      "rgba(35, 83, 71, 0.18)",
-      "rgba(35, 83, 71, 0.25)",
-      "rgba(35, 83, 71, 0.33)",
-    ],
   },
   heatmapLevelThresholds: [0.2, 0.4, 0.6, 0.8],
   saturdayTextColor: AppColors.mutedStrongText,

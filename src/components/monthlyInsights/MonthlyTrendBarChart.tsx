@@ -1,11 +1,12 @@
-import { StyleSheet, Text, View } from "react-native";
+import { type StyleProp, StyleSheet, Text, type TextStyle, View } from "react-native";
 
 import { AppColors } from "../../constants/colors";
 import {
   MonthlyInsightChartCopy,
   MonthlyInsightChartLayout,
 } from "../../constants/monthlyInsightCharts";
-import { OneLineTextFitProps } from "../../constants/textLayout";
+import { CompactTextProps, OneLineTextFitProps } from "../../constants/textLayout";
+import { useExpenseTextColor } from "../../contexts/ExpenseTextColorContext";
 import type { MonthlyTrendPoint } from "../../types/ledger";
 import { formatChartAxisCurrency } from "../../utils/currency";
 
@@ -23,6 +24,7 @@ export function MonthlyTrendBarChart({
   title = MonthlyInsightChartCopy.trendTitle,
   trendMonths,
 }: MonthlyTrendBarChartProps) {
+  const expenseTextStyle = useExpenseTextColor().textStyle;
   const maxAmount = Math.max(
     ...trendMonths.flatMap((point) => [point.incomeAmount, point.expenseAmount]),
     0,
@@ -32,10 +34,14 @@ export function MonthlyTrendBarChart({
   return (
     <View style={styles.section}>
       <View style={styles.headerRow}>
-        <Text style={styles.sectionTitle}>{title}</Text>
+        <Text {...CompactTextProps} style={styles.sectionTitle}>{title}</Text>
         <View style={styles.legend}>
           <LegendItem color={AppColors.income} label={MonthlyInsightChartCopy.incomeLabel} />
-          <LegendItem color={AppColors.expense} label={MonthlyInsightChartCopy.expenseLabel} />
+          <LegendItem
+            color={AppColors.expense}
+            label={MonthlyInsightChartCopy.expenseLabel}
+            textStyle={expenseTextStyle}
+          />
         </View>
       </View>
       <View style={styles.chartFrame}>
@@ -111,11 +117,19 @@ function TrendBar({
   return <View style={[styles.bar, { backgroundColor: color, height }]} />;
 }
 
-function LegendItem({ color, label }: { color: string; label: string }) {
+function LegendItem({
+  color,
+  label,
+  textStyle,
+}: {
+  color: string;
+  label: string;
+  textStyle?: StyleProp<TextStyle>;
+}) {
   return (
     <View style={styles.legendItem}>
       <View style={[styles.legendDot, { backgroundColor: color }]} />
-      <Text style={styles.legendText}>{label}</Text>
+      <Text {...CompactTextProps} style={[styles.legendText, textStyle]}>{label}</Text>
     </View>
   );
 }
@@ -183,6 +197,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
+    flexWrap: "wrap",
   },
   legend: {
     flexDirection: "row",

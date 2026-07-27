@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Animated, StyleSheet } from "react-native";
 import PagerView from "react-native-pager-view";
 
+import { FullBleedHorizontalStyle } from "../constants/uiStyles";
 import { MonthCalendarPageView } from "./monthCalendarPager/MonthCalendarPageView";
 import { CALENDAR_MAX_HEIGHT } from "./monthCalendarPager/calendarLayout";
 import type { MonthCalendarPagerProps } from "./monthCalendarPager/monthCalendarPagerTypes";
@@ -15,7 +16,6 @@ import {
 } from "./monthCalendarPager/monthCalendarScrollSnap";
 
 export function MonthCalendarPager({
-  calendarExpenseColorMode,
   currentPage,
   isCalendarHeatmapEnabled,
   isReadOnlyDueToPlanLimit = false,
@@ -112,21 +112,18 @@ export function MonthCalendarPager({
         }}
       >
         <MonthPageSlot
-          calendarExpenseColorMode={calendarExpenseColorMode}
           isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
           isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
           page={previousPage}
           {...{ onSelectDate, selectedDate }}
         />
         <MonthPageSlot
-          calendarExpenseColorMode={calendarExpenseColorMode}
           isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
           isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
           page={currentPage}
           {...{ onSelectDate, selectedDate }}
         />
         <MonthPageSlot
-          calendarExpenseColorMode={calendarExpenseColorMode}
           isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
           isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
           page={nextPage}
@@ -138,14 +135,12 @@ export function MonthCalendarPager({
 }
 
 function MonthPageSlot({
-  calendarExpenseColorMode,
   isCalendarHeatmapEnabled,
   isReadOnlyDueToPlanLimit,
   onSelectDate,
   page,
   selectedDate,
 }: {
-  calendarExpenseColorMode: MonthCalendarPagerProps["calendarExpenseColorMode"];
   isCalendarHeatmapEnabled: boolean;
   isReadOnlyDueToPlanLimit: boolean;
   onSelectDate: (isoDate: string) => void;
@@ -154,7 +149,6 @@ function MonthPageSlot({
 }) {
   return (
     <MonthCalendarPageView
-      calendarExpenseColorMode={calendarExpenseColorMode}
       days={page.summary.days}
       isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
       isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
@@ -171,8 +165,8 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   viewport: {
+    ...FullBleedHorizontalStyle,
     height: CALENDAR_MAX_HEIGHT,
     overflow: "hidden",
-    width: "100%",
   },
 });

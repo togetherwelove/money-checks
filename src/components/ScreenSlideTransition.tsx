@@ -8,6 +8,8 @@ import Animated, {
   SlideOutRight,
 } from "react-native-reanimated";
 
+import { AppColors } from "../constants/colors";
+
 const SCREEN_TRANSITION_DURATION_MS = 220;
 
 type ScreenSlideTransitionProps = {
@@ -48,6 +50,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     overflow: "hidden",
+    backgroundColor: AppColors.screenBackground,
   },
   layer: {
     ...StyleSheet.absoluteFillObject,

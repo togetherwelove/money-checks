@@ -8,9 +8,10 @@ import { TextLinkButton } from "../components/TextLinkButton";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import {
-  FormInputTextStyle,
+  ActionSurfaceStyle,
+  ResponsivePageContentStyle,
   StatusMessageTextStyle,
-  SurfaceCardStyle,
+  UnderlineFormInputTextStyle,
 } from "../constants/uiStyles";
 import { isApplePrivateRelayEmail } from "../lib/auth/applePrivateRelayEmail";
 import { scheduleIdleTask } from "../lib/idleScheduler";
@@ -124,17 +125,18 @@ export function NicknameSetupScreen({
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: AppColors.background,
+    backgroundColor: AppColors.screenBackground,
   },
   content: {
+    ...ResponsivePageContentStyle,
     padding: AppLayout.screenPadding,
     gap: 12,
   },
   card: {
-    ...SurfaceCardStyle,
+    ...ActionSurfaceStyle,
     gap: 10,
   },
-  input: FormInputTextStyle,
+  input: UnderlineFormInputTextStyle,
   accountDescription: {
     color: AppColors.mutedStrongText,
     fontSize: 12,

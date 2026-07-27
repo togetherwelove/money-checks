@@ -1,10 +1,15 @@
 import { Feather } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { AppSettingsUi } from "../../constants/appSettings";
 import { AppColors } from "../../constants/colors";
 import { AppLayout } from "../../constants/layout";
 import { AppTextBreakProps } from "../../constants/textLayout";
-import { InsetPanelStyle, SupportingTextStyle, SurfaceCardStyle } from "../../constants/uiStyles";
+import {
+  InsetPanelStyle,
+  ListGroupRowStyle,
+  SupportingTextStyle,
+} from "../../constants/uiStyles";
 import type { NotificationPermissionState } from "../../lib/notifications/pushNotifications";
 import {
   NotificationSettingsUi,
@@ -127,19 +132,17 @@ function NotificationPermissionContent({
 
 const styles = StyleSheet.create({
   card: {
-    ...SurfaceCardStyle,
-    gap: 8,
+    gap: AppSettingsUi.sectionGap,
   },
-  permissionList: {
-    ...InsetPanelStyle,
-    paddingHorizontal: 12,
-  },
+  permissionList: InsetPanelStyle,
   permissionRow: {
+    ...ListGroupRowStyle,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
-    paddingVertical: 8,
+    borderBottomWidth: 0,
+    minHeight: AppSettingsUi.rowMinHeight,
   },
   pressedRow: {
     backgroundColor: AppColors.surfaceMuted,
@@ -151,13 +154,13 @@ const styles = StyleSheet.create({
   },
   label: {
     color: AppColors.text,
-    fontSize: 13,
-    fontWeight: "700",
+    fontSize: 14,
+    fontWeight: "800",
   },
   value: {
     color: AppColors.text,
     flexShrink: 1,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "700",
   },
   permissionAction: {
@@ -168,7 +171,6 @@ const styles = StyleSheet.create({
   },
   statusText: SupportingTextStyle,
   preferenceBlock: {
-    gap: 10,
-    paddingTop: 2,
+    gap: AppSettingsUi.sectionSpacing,
   },
 });

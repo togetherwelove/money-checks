@@ -29,6 +29,7 @@ export const MonthlyInsightChartLayout = {
   donutLegendRowPaddingHorizontal: 2,
   donutLegendRowMinHeight: 26,
   donutSize: 152,
+  donutStackBreakpointWidth: 360,
   donutStrokeWidth: 24,
   minVisibleBarHeight: 3,
   segmentIndicatorHeight: 2,

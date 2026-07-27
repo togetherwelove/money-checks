@@ -22,19 +22,23 @@ const HEIGHT_ANIMATION_CONFIG = {
 export function buildMonthPageFromSummary(
   monthKey: string,
   summary: MonthlyLedgerSummary,
+  fontScale = 1,
 ): MonthPage {
   return {
-    height: resolveCalendarHeight(summary.days),
+    height: resolveCalendarHeight(summary.days, fontScale),
     key: monthKey,
     signature: buildMonthPageSignature(summary),
     summary,
   };
 }
 
-function resolveCalendarHeight(days: MonthlyLedgerSummary["days"]): number {
+export function resolveCalendarHeight(
+  days: MonthlyLedgerSummary["days"],
+  fontScale = 1,
+): number {
   return (
     getVisibleCalendarWeeks(days).reduce(
-      (totalHeight, week) => totalHeight + resolveCalendarWeekHeight(week),
+      (totalHeight, week) => totalHeight + resolveCalendarWeekHeight(week, fontScale),
       0,
     ) + CALENDAR_BOTTOM_BORDER_CLIP_PADDING
   );

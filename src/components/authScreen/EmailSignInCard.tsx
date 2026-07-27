@@ -2,7 +2,11 @@ import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { AppColors } from "../../constants/colors";
 import { EmailAuthCopy } from "../../constants/emailAuth";
-import { FormInputTextStyle, FormLabelTextStyle, SurfaceCardStyle } from "../../constants/uiStyles";
+import {
+  ActionSurfaceStyle,
+  FormInputTextStyle,
+  FormLabelTextStyle,
+} from "../../constants/uiStyles";
 import { ActionButton } from "../ActionButton";
 
 type EmailSignInCardProps = {
@@ -94,7 +98,7 @@ export function EmailSignInCard({
 
 const styles = StyleSheet.create({
   card: {
-    ...SurfaceCardStyle,
+    ...ActionSurfaceStyle,
     gap: 12,
   },
   fieldGroup: {

@@ -161,16 +161,17 @@ const styles = StyleSheet.create({
     paddingTop: 2,
   },
   list: {
-    gap: 8,
+    gap: 0,
   },
   requestCard: {
     gap: SharedLedgerPanelUi.joinRequestCardGap,
     paddingHorizontal: SharedLedgerPanelUi.joinRequestCardPaddingHorizontal,
     paddingVertical: SharedLedgerPanelUi.joinRequestCardPaddingVertical,
-    borderWidth: 1,
-    borderColor: AppColors.border,
-    borderRadius: SharedLedgerPanelUi.joinRequestCardRadius,
-    backgroundColor: AppColors.background,
+    borderWidth: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: AppColors.border,
+    borderRadius: 0,
+    backgroundColor: AppColors.screenBackground,
   },
   cardFooter: {
     flexDirection: "row",

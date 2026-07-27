@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
 import { SubscriptionMessages } from "../constants/subscription";
+import { CompactTextProps } from "../constants/textLayout";
 import { BrandPlusTextStyle } from "../constants/uiStyles";
 
 import { IconActionButton } from "./IconActionButton";
@@ -11,7 +12,10 @@ type AppHeaderProps = {
   canSwitchTitle?: boolean;
   isMenuOpen?: boolean;
   isReadOnlyTitle?: boolean;
+  leadingActionAccessibilityLabel?: string;
+  leadingActionLabel?: string | null;
   onOpenMenu: () => void;
+  onPressLeadingAction?: () => void;
   onPressTitle?: () => void;
   titleLabel?: string | null;
 };
@@ -20,26 +24,43 @@ export function AppHeader({
   canSwitchTitle = false,
   isMenuOpen = false,
   isReadOnlyTitle = false,
+  leadingActionAccessibilityLabel,
+  leadingActionLabel = null,
   onOpenMenu,
+  onPressLeadingAction,
   onPressTitle,
   titleLabel = null,
 }: AppHeaderProps) {
   const centerLabel = titleLabel;
   const canPressTitle = Boolean(centerLabel && canSwitchTitle && onPressTitle);
+  const canPressLeadingAction = Boolean(leadingActionLabel && onPressLeadingAction);
   const titleContent = centerLabel ? (
     <View style={styles.titleRow}>
+      {canPressLeadingAction ? (
+        <Pressable
+          accessibilityLabel={leadingActionAccessibilityLabel}
+          accessibilityRole="button"
+          onPress={onPressLeadingAction}
+          style={styles.leadingAction}
+        >
+          <Text {...CompactTextProps} numberOfLines={1} style={styles.titleText}>
+            {leadingActionLabel}
+          </Text>
+          <Feather color={AppColors.mutedStrongText} name="chevron-down" size={16} />
+        </Pressable>
+      ) : null}
       {centerLabel === SubscriptionMessages.screenTitle ? (
-        <Text style={styles.titleText}>
-          알뜰 <Text style={BrandPlusTextStyle}>plus</Text>
+        <Text {...CompactTextProps} style={styles.titleText}>
+          알뜰 <Text {...CompactTextProps} style={BrandPlusTextStyle}>plus</Text>
         </Text>
       ) : (
         <>
-          <Text numberOfLines={1} style={styles.titleText}>
+          <Text {...CompactTextProps} numberOfLines={1} style={styles.titleText}>
             {centerLabel}
           </Text>
           {isReadOnlyTitle ? (
             <View style={styles.readOnlyChip}>
-              <Text style={styles.readOnlyChipText}>조회 전용</Text>
+              <Text {...CompactTextProps} style={styles.readOnlyChipText}>조회 전용</Text>
             </View>
           ) : null}
           {canSwitchTitle ? (
@@ -97,6 +118,13 @@ const styles = StyleSheet.create({
   titleButton: {
     minWidth: 0,
     maxWidth: "100%",
+  },
+  leadingAction: {
+    alignItems: "center",
+    flexDirection: "row",
+    flexShrink: 1,
+    gap: 2,
+    minWidth: 0,
   },
   titleRow: {
     flexDirection: "row",

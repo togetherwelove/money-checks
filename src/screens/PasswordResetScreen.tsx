@@ -15,8 +15,9 @@ import { AppMessages } from "../constants/messages";
 import {
   FormInputTextStyle,
   FormLabelTextStyle,
+  ResponsivePageContentStyle,
   StatusMessageTextStyle,
-  SurfaceCardStyle,
+  ActionSurfaceStyle,
 } from "../constants/uiStyles";
 import { resolvePasswordResetErrorMessage, updateEmailPassword } from "../lib/auth/passwordReset";
 import { isPasswordValid } from "../lib/auth/passwordValidation";
@@ -102,9 +103,10 @@ export function PasswordResetScreen({ onComplete }: PasswordResetScreenProps) {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: AppColors.background,
+    backgroundColor: AppColors.screenBackground,
   },
   content: {
+    ...ResponsivePageContentStyle,
     flexGrow: 1,
     padding: AppLayout.screenPadding,
     gap: 16,
@@ -132,7 +134,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   card: {
-    ...SurfaceCardStyle,
+    ...ActionSurfaceStyle,
     gap: 12,
   },
   fieldGroup: {

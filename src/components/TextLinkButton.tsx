@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text } from "react-native";
 
 import { AppColors } from "../constants/colors";
-import { AppTextBreakProps } from "../constants/textLayout";
+import { AppTextBreakProps, CompactTextProps } from "../constants/textLayout";
 
 type TextLinkButtonProps = {
   align?: "center" | "start";
@@ -29,6 +29,7 @@ export function TextLinkButton({
     >
       <Text
         {...AppTextBreakProps}
+        {...CompactTextProps}
         style={[styles.text, tone === "destructive" ? styles.destructiveText : null]}
       >
         {label}

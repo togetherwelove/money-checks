@@ -6,7 +6,6 @@ export const SharedLedgerPanelUi = {
   joinRequestCardGap: 10,
   joinRequestCardPaddingHorizontal: 10,
   joinRequestCardPaddingVertical: 10,
-  joinRequestCardRadius: 14,
   joinRequestHeaderGap: 8,
   joinRequestMetaGap: 3,
   joinRequestStatusPaddingHorizontal: 8,

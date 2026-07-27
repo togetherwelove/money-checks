@@ -1,20 +1,22 @@
 import { Alert, Pressable, StyleSheet, Switch, Text, View } from "react-native";
 
+import { AppSettingsUi } from "../../constants/appSettings";
 import { AppColors } from "../../constants/colors";
 import { AppTextBreakProps } from "../../constants/textLayout";
+import { ListGroupRowStyle } from "../../constants/uiStyles";
 import { NotificationUiCopy } from "../../notifications/config/notificationCopy";
 import type { NotificationPreferenceItem } from "../../notifications/preferences/notificationPreferences";
 
 const HELP_ICON_SIZE = 18;
 
 type NotificationPreferenceRowProps = {
-  isFirst?: boolean;
+  isLast?: boolean;
   item: NotificationPreferenceItem;
   onToggle: (enabled: boolean) => void;
 };
 
 export function NotificationPreferenceRow({
-  isFirst = false,
+  isLast = false,
   item,
   onToggle,
 }: NotificationPreferenceRowProps) {
@@ -27,7 +29,7 @@ export function NotificationPreferenceRow({
   };
 
   return (
-    <View style={[styles.row, isFirst && styles.firstRow]}>
+    <View style={[styles.row, isLast ? styles.lastRow : null]}>
       <View style={styles.textBlock}>
         <View style={styles.labelRow}>
           <Text {...AppTextBreakProps} style={styles.label}>
@@ -60,16 +62,15 @@ export function NotificationPreferenceRow({
 
 const styles = StyleSheet.create({
   row: {
+    ...ListGroupRowStyle,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
-    paddingVertical: 8,
-    borderTopWidth: 1,
-    borderTopColor: AppColors.border,
+    minHeight: AppSettingsUi.rowMinHeight,
   },
-  firstRow: {
-    borderTopWidth: 0,
+  lastRow: {
+    borderBottomWidth: 0,
   },
   textBlock: {
     flex: 1,
@@ -84,8 +85,8 @@ const styles = StyleSheet.create({
   label: {
     color: AppColors.text,
     flex: 1,
-    fontSize: 13,
-    fontWeight: "700",
+    fontSize: 14,
+    fontWeight: "800",
     minWidth: 0,
   },
   helpButton: {

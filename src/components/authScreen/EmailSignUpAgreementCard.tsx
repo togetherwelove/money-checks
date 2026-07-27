@@ -3,7 +3,8 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../../constants/colors";
 import { EmailAuthCopy, EmailSignUpAgreementUi } from "../../constants/emailAuth";
-import { SurfaceCardStyle } from "../../constants/uiStyles";
+import { ReadingTextProps } from "../../constants/textLayout";
+import { ActionSurfaceStyle } from "../../constants/uiStyles";
 import { ActionButton } from "../ActionButton";
 import { TextLinkButton } from "../TextLinkButton";
 
@@ -104,9 +105,9 @@ function AgreementRow({
         </View>
       </Pressable>
       <Pressable onPress={onPress} style={styles.labelButton}>
-        <Text style={styles.label}>
+        <Text {...ReadingTextProps} style={styles.label}>
           {required ? (
-            <Text style={styles.requiredPrefix}>
+            <Text {...ReadingTextProps} style={styles.requiredPrefix}>
               [{EmailAuthCopy.signUp.agreementRequiredPrefix}]{" "}
             </Text>
           ) : null}
@@ -122,7 +123,7 @@ function AgreementRow({
 
 const styles = StyleSheet.create({
   card: {
-    ...SurfaceCardStyle,
+    ...ActionSurfaceStyle,
     gap: EmailSignUpAgreementUi.cardGap,
   },
   row: {

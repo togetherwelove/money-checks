@@ -1,6 +1,7 @@
 import { AntDesign } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { AuthControls } from "../../constants/authControls";
 import { AppColors } from "../../constants/colors";
 
 type AppleSignInButtonProps = {
@@ -21,7 +22,7 @@ export function AppleSignInButton({ onPress }: AppleSignInButtonProps) {
 const styles = StyleSheet.create({
   button: {
     minHeight: 48,
-    borderRadius: 16,
+    borderRadius: AuthControls.borderRadius,
     backgroundColor: AppColors.text,
     flexDirection: "row",
     alignItems: "center",

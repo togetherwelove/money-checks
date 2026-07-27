@@ -13,6 +13,7 @@ import {
   fetchLedgerBookById,
   leaveActiveLedgerBook,
   previewLedgerBookJoinByCode,
+  refreshActiveLedgerBookShareCodeIfExpired,
   removeMemberFromActiveLedgerBook,
   requestLedgerBookJoinByCode,
   switchActiveLedgerBook,
@@ -73,6 +74,7 @@ type ActiveLedgerBookState = {
   ) => Promise<JoinSharedLedgerBookAttempt>;
   leaveSharedLedgerBook: () => Promise<boolean>;
   previewSharedLedgerBookJoinByCode: (shareCode: string) => Promise<JoinSharedLedgerBookPreview>;
+  refreshExpiredShareCode: () => Promise<void>;
   removeSharedLedgerMember: (targetUserId: string) => Promise<boolean>;
   renameActiveLedgerBook: (nextName: string) => Promise<boolean>;
   refreshSharedLedgerBook: () => Promise<void>;
@@ -473,6 +475,22 @@ export function useActiveLedgerBook(
     await trackBusyTask(loadActiveBook);
   };
 
+  const refreshExpiredShareCode = async () => {
+    try {
+      const nextBook = await trackBusyTask(refreshActiveLedgerBookShareCodeIfExpired);
+      setActiveBook(nextBook);
+      setAccessibleBooks((currentBooks) =>
+        currentBooks.map((book) => (book.id === nextBook.id ? { ...book, ...nextBook } : book)),
+      );
+    } catch (error) {
+      logAppError("ActiveLedgerBook", error, {
+        activeBookId: activeBook?.id ?? null,
+        step: "refresh_expired_share_code",
+        userId,
+      });
+    }
+  };
+
   const createLedgerBook = async (nextName: string) => {
     setActiveBookError(null);
     const previousBook = activeBook;
@@ -566,6 +584,7 @@ export function useActiveLedgerBook(
     joinSharedLedgerBookByCode,
     leaveSharedLedgerBook,
     previewSharedLedgerBookJoinByCode,
+    refreshExpiredShareCode,
     removeSharedLedgerMember,
     renameActiveLedgerBook,
     refreshSharedLedgerBook,

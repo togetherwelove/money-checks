@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     minHeight: AuthControls.inlineControlHeight,
     paddingHorizontal: AuthControls.inlineHorizontalPadding,
     paddingVertical: AuthControls.inlineVerticalPadding,
-    borderRadius: 10,
+    borderRadius: AuthControls.borderRadius,
   },
   largeButton: {
     paddingHorizontal: AuthControls.horizontalPadding,

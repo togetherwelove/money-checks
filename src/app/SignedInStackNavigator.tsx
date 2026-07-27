@@ -1,7 +1,7 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
-import type { CalendarExpenseColorMode } from "../constants/calendarExpenseColor";
 import type { CalendarSummaryMode } from "../constants/calendarSummary";
+import { AppColors } from "../constants/colors";
 import type { SubscriptionTier } from "../constants/subscription";
 import type { SupportPackageIdentifier } from "../constants/support";
 import type { BusyTaskTracker } from "../hooks/ledgerScreenState/types";
@@ -39,7 +39,6 @@ type SignedInStackNavigatorProps = {
   adTrackingPermissionState: AdTrackingPermissionState;
   email: string;
   fallbackDisplayName: string;
-  calendarExpenseColorMode: CalendarExpenseColorMode;
   calendarSummaryBaseDay: number | null;
   calendarSummaryMode: CalendarSummaryMode;
   hasAvailablePlusPackage: boolean;
@@ -50,7 +49,6 @@ type SignedInStackNavigatorProps = {
   notificationPermissionLabel: string;
   notificationPermissionState: NotificationPermissionState;
   notificationStatusMessage: string | null;
-  onChangeCalendarExpenseColorMode: (mode: CalendarExpenseColorMode) => void;
   onChangeCalendarSummaryBaseDay: (day: number) => void;
   onChangeCalendarSummaryMode: (mode: CalendarSummaryMode) => void;
   onChangeNotificationThresholdEnabled: (enabled: boolean) => void;
@@ -105,7 +103,6 @@ export function SignedInStackNavigator({
   adTrackingPermissionState,
   email,
   fallbackDisplayName,
-  calendarExpenseColorMode,
   calendarSummaryBaseDay,
   calendarSummaryMode,
   hasAvailablePlusPackage,
@@ -116,7 +113,6 @@ export function SignedInStackNavigator({
   notificationPermissionLabel,
   notificationPermissionState,
   notificationStatusMessage,
-  onChangeCalendarExpenseColorMode,
   onChangeCalendarSummaryBaseDay,
   onChangeCalendarSummaryMode,
   onChangeNotificationThresholdEnabled,
@@ -158,7 +154,7 @@ export function SignedInStackNavigator({
       initialRouteName="calendar"
       screenOptions={{
         animation: "slide_from_right",
-        contentStyle: { backgroundColor: "transparent" },
+        contentStyle: { backgroundColor: AppColors.screenBackground },
         fullScreenGestureEnabled: true,
         gestureEnabled: true,
         headerShown: false,
@@ -167,7 +163,6 @@ export function SignedInStackNavigator({
       <Stack.Screen name="calendar">
         {() => (
           <HomeScreen
-            calendarExpenseColorMode={calendarExpenseColorMode}
             calendarSummaryMode={calendarSummaryMode}
             isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
             onDeleteSelectedEntry={onDeleteSelectedEntry}
@@ -203,7 +198,14 @@ export function SignedInStackNavigator({
       <Stack.Screen name="charts">
         {() => <ChartScreen showsBannerAd={showsBannerAd} state={ledgerState} userId={userId} />}
       </Stack.Screen>
-      <Stack.Screen name="share">
+      <Stack.Screen
+        listeners={{
+          focus: () => {
+            void ledgerState.refreshExpiredShareCode();
+          },
+        }}
+        name="share"
+      >
         {() => (
           <ShareLedgerScreen
             accessibleBooks={ledgerState.accessibleBooks}
@@ -253,7 +255,6 @@ export function SignedInStackNavigator({
       <Stack.Screen name="app-settings">
         {() => (
           <AppSettingsScreen
-            calendarExpenseColorMode={calendarExpenseColorMode}
             notificationPermissionLabel={notificationPermissionLabel}
             notificationPermissionState={notificationPermissionState}
             notificationPreferenceGroups={notificationPreferenceGroups}
@@ -261,7 +262,6 @@ export function SignedInStackNavigator({
             calendarSummaryBaseDay={calendarSummaryBaseDay}
             calendarSummaryMode={calendarSummaryMode}
             isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
-            onChangeCalendarExpenseColorMode={onChangeCalendarExpenseColorMode}
             onChangeCalendarSummaryMode={onChangeCalendarSummaryMode}
             onChangeCalendarSummaryBaseDay={onChangeCalendarSummaryBaseDay}
             isPlusActive={isPlusActive}

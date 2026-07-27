@@ -11,8 +11,9 @@ import {
   CompactLabelTextStyle,
   FormInputTextStyle,
   FormMultilineInputTextStyle,
+  ResponsivePageContentStyle,
   SupportingTextStyle,
-  SurfaceCardStyle,
+  ActionSurfaceStyle,
 } from "../constants/uiStyles";
 import { showNativeToast } from "../lib/nativeToast";
 import {
@@ -145,15 +146,16 @@ export function SupportContactScreen({ email }: SupportContactScreenProps) {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: AppColors.background,
+    backgroundColor: AppColors.screenBackground,
   },
   content: {
+    ...ResponsivePageContentStyle,
     flexGrow: 1,
     paddingHorizontal: AppLayout.screenPadding,
     paddingTop: AppLayout.screenTopPadding,
   },
   card: {
-    ...SurfaceCardStyle,
+    ...ActionSurfaceStyle,
     gap: AppLayout.cardGap,
   },
   fieldGroup: {
@@ -163,7 +165,7 @@ const styles = StyleSheet.create({
   input: FormInputTextStyle,
   bodyInput: {
     ...FormMultilineInputTextStyle,
-    height: 144,
+    minHeight: 144,
   },
   emailValue: {
     ...SupportingTextStyle,
@@ -196,7 +198,7 @@ const styles = StyleSheet.create({
   attachmentImage: {
     width: "100%",
     height: 104,
-    borderRadius: 14,
+    borderRadius: 8,
     backgroundColor: AppColors.surfaceMuted,
   },
   attachmentName: {

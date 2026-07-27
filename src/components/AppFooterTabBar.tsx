@@ -1,9 +1,14 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppColors } from "../constants/colors";
-import { FooterActionPopoverUi, FooterTabBarMetrics, FooterTabBarUi } from "../constants/menu";
+import {
+  FooterActionPopoverUi,
+  FooterTabBarUi,
+  resolveFooterTabBarHeight,
+} from "../constants/menu";
+import { CompactTextProps } from "../constants/textLayout";
 import type { FooterTabItem, FooterTabScreen } from "../lib/footerTabs";
 import { FooterActionPopover, type FooterActionPopoverAction } from "./FooterActionPopover";
 
@@ -29,6 +34,8 @@ export function AppFooterTabBar({
   tabs,
 }: AppFooterTabBarProps) {
   const safeAreaInsets = useSafeAreaInsets();
+  const { fontScale } = useWindowDimensions();
+  const footerTabBarHeight = resolveFooterTabBarHeight(fontScale);
   const hasPrimaryActionMenu =
     primaryActionMenuActions.length > 0 && Boolean(onDismissPrimaryActionMenu);
   const shouldShowPrimaryActionMenu = hasPrimaryActionMenu && onDismissPrimaryActionMenu;
@@ -39,7 +46,7 @@ export function AppFooterTabBar({
         <FooterActionPopover
           actions={primaryActionMenuActions}
           bottomOffset={
-            safeAreaInsets.bottom + FooterTabBarMetrics.height + FooterActionPopoverUi.bottomOffset
+            safeAreaInsets.bottom + footerTabBarHeight + FooterActionPopoverUi.bottomOffset
           }
           onDismiss={shouldShowPrimaryActionMenu}
           visible={isPrimaryActionMenuOpen}
@@ -75,6 +82,9 @@ export function AppFooterTabBar({
               </View>
               {tab.isPrimary ? null : (
                 <Text
+                  {...CompactTextProps}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.85}
                   numberOfLines={1}
                   style={[styles.tabLabel, isActive ? styles.activeTabLabel : null]}
                 >
@@ -156,8 +166,6 @@ const styles = StyleSheet.create({
     width: FooterTabBarUi.badgeDotSize,
     height: FooterTabBarUi.badgeDotSize,
     borderRadius: FooterTabBarUi.badgeDotSize / 2,
-    borderWidth: FooterTabBarUi.badgeDotBorderWidth,
-    borderColor: AppColors.surface,
     backgroundColor: AppColors.expense,
   },
   tabLabel: {

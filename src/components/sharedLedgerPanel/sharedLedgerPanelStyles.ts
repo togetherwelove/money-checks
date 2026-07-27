@@ -8,14 +8,15 @@ import { FormInputTextStyle } from "../../constants/uiStyles";
 
 export const sharedLedgerPanelStyles = StyleSheet.create({
   panel: {
-    gap: AppLayout.cardGap,
+    gap: AppLayout.cardContentPadding,
   },
   section: {
     gap: 8,
-    borderWidth: 1,
+    borderWidth: AppLayout.dividerWidth,
     borderColor: AppColors.border,
-    borderRadius: AppLayout.cardRadius,
-    backgroundColor: AppColors.surface,
+    borderRadius: AppLayout.groupRadius,
+    backgroundColor: AppColors.screenBackground,
+    overflow: "hidden",
   },
   primarySection: {
     backgroundColor: AppColors.surfaceMuted,
@@ -51,7 +52,7 @@ export const sharedLedgerPanelStyles = StyleSheet.create({
     alignItems: "center",
     flex: 1,
     gap: 6,
-    height: AuthControls.inlineControlHeight,
+    minHeight: AuthControls.inlineControlHeight,
   },
   bookName: {
     flexShrink: 1,
@@ -129,12 +130,13 @@ export const sharedLedgerPanelStyles = StyleSheet.create({
     lineHeight: 16,
   },
   input: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 0,
     paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: AppColors.border,
-    borderRadius: 14,
-    backgroundColor: AppColors.background,
+    borderWidth: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: AppColors.border,
+    borderRadius: 0,
+    backgroundColor: AppColors.transparent,
     color: AppColors.text,
     fontSize: 16,
     textTransform: "uppercase",
@@ -156,7 +158,7 @@ export const sharedLedgerPanelStyles = StyleSheet.create({
     paddingTop: 2,
   },
   ledgerBookList: {
-    gap: 6,
+    gap: 0,
     paddingHorizontal: AppLayout.cardContentPadding,
   },
   ledgerBookMembersBlock: {
@@ -169,17 +171,17 @@ export const sharedLedgerPanelStyles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 10,
     paddingVertical: 9,
-    borderWidth: 1,
-    borderColor: AppColors.border,
-    borderRadius: 14,
-    backgroundColor: AppColors.background,
+    borderWidth: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: AppColors.border,
+    borderRadius: 0,
+    backgroundColor: AppColors.screenBackground,
   },
   activeLedgerBookItem: {
-    borderColor: AppColors.primary,
+    borderBottomColor: AppColors.primary,
     backgroundColor: AppColors.surfaceMuted,
   },
   readOnlyLedgerBookItem: {
-    backgroundColor: AppColors.surfaceMuted,
     opacity: 0.78,
   },
   ledgerBookItemContent: {
@@ -196,6 +198,9 @@ export const sharedLedgerPanelStyles = StyleSheet.create({
     color: AppColors.text,
     fontSize: 14,
     fontWeight: "800",
+  },
+  activeLedgerBookItemName: {
+    color: AppColors.primary,
   },
   readOnlyLedgerBookChip: {
     borderRadius: 999,

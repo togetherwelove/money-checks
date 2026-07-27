@@ -23,6 +23,7 @@ import { supabase } from "./supabase";
 
 const LEDGER_TABLE = "ledger_entries";
 const GET_ENRICHED_LEDGER_ENTRIES_FUNCTION = "get_enriched_ledger_entries";
+const GET_ENRICHED_LEDGER_ENTRIES_V2_FUNCTION = "get_enriched_ledger_entries_v2";
 const GET_LEDGER_ENTRY_SUMMARIES_FUNCTION = "get_ledger_entry_summaries_with_names";
 const DEFAULT_SOURCE_TYPE = "manual";
 
@@ -98,7 +99,7 @@ export async function fetchLedgerEntriesPage(
     cursor?: LedgerEntriesPageCursor | null;
     limit: number;
     ascending?: boolean;
-    categoryId?: string | null;
+    categoryIds?: readonly string[];
     orderBy?: LedgerEntryOrderBy;
     searchQuery?: string;
   },
@@ -111,7 +112,7 @@ export async function fetchLedgerEntriesPage(
     cursor,
     limit,
     ascending = true,
-    categoryId,
+    categoryIds,
     orderBy = "created_at",
     searchQuery,
   } = params;
@@ -120,7 +121,7 @@ export async function fetchLedgerEntriesPage(
   const pageOffset = usesOffsetPagination ? (cursor?.offset ?? 0) : 0;
   const rows = await fetchEnrichedLedgerEntryRows(bookId, {
     ascending,
-    categoryId,
+    categoryIds,
     cursor: usesOffsetPagination || orderBy !== "created_at" ? null : cursor,
     limit: limit + 1,
     orderBy,
@@ -150,7 +151,7 @@ async function fetchEnrichedLedgerEntryRows(
   bookId: string,
   params: {
     ascending: boolean;
-    categoryId?: string | null;
+    categoryIds?: readonly string[];
     cursor?: LedgerEntriesPageCursor | null;
     dateFrom?: string | null;
     dateTo?: string | null;
@@ -161,22 +162,31 @@ async function fetchEnrichedLedgerEntryRows(
     searchQuery?: string;
   },
 ): Promise<EnrichedLedgerEntryRow[]> {
-  const { data, error } = await supabase
-    .rpc(GET_ENRICHED_LEDGER_ENTRIES_FUNCTION, {
-      category_filter: params.categoryId ?? null,
-      date_from: params.dateFrom ?? null,
-      date_to: params.dateTo ?? null,
-      installment_group_filter: params.installmentGroupId ?? null,
-      order_ascending: params.ascending,
-      order_by_column: params.orderBy,
-      page_cursor_created_at: params.cursor?.createdAt ?? null,
-      page_cursor_id: params.cursor?.id ?? null,
-      page_limit: params.limit ?? null,
-      page_offset: params.pageOffset ?? 0,
-      search_query: params.searchQuery ?? null,
-      target_book_id: bookId,
-    })
-    .returns<EnrichedLedgerEntryRow[]>();
+  const commonRpcParams = {
+    date_from: params.dateFrom ?? null,
+    date_to: params.dateTo ?? null,
+    installment_group_filter: params.installmentGroupId ?? null,
+    order_ascending: params.ascending,
+    order_by_column: params.orderBy,
+    page_cursor_created_at: params.cursor?.createdAt ?? null,
+    page_cursor_id: params.cursor?.id ?? null,
+    page_limit: params.limit ?? null,
+    page_offset: params.pageOffset ?? 0,
+    search_query: params.searchQuery ?? null,
+    target_book_id: bookId,
+  };
+  const query =
+    params.categoryIds === undefined
+      ? supabase.rpc(GET_ENRICHED_LEDGER_ENTRIES_FUNCTION, {
+          ...commonRpcParams,
+          category_filter: null,
+        })
+      : supabase.rpc(GET_ENRICHED_LEDGER_ENTRIES_V2_FUNCTION, {
+          ...commonRpcParams,
+          category_filters:
+            params.categoryIds.length > 0 ? [...new Set(params.categoryIds)] : null,
+        });
+  const { data, error } = await query.returns<EnrichedLedgerEntryRow[]>();
 
   if (error) {
     throw error;

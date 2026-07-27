@@ -7,7 +7,7 @@ import {
   FormLabelTextStyle,
   InsetBoxStyle,
   StatusMessageTextStyle,
-  SurfaceCardStyle,
+  ActionSurfaceStyle,
 } from "../../constants/uiStyles";
 import { ActionButton } from "../ActionButton";
 import { TextLinkButton } from "../TextLinkButton";
@@ -101,7 +101,7 @@ export function EmailSignUpOtpCard({
 
 const styles = StyleSheet.create({
   card: {
-    ...SurfaceCardStyle,
+    ...ActionSurfaceStyle,
     gap: 12,
   },
   header: {

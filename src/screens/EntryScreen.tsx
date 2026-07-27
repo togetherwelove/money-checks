@@ -3,8 +3,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, type TextInput, View, findNodeHandle } from "react-native";
 
 import { AppBannerAd } from "../components/AppBannerAd";
-import { EntryDatePickerModal } from "../components/EntryDatePickerModal";
-import { EntryDateToolbar } from "../components/EntryDateToolbar";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { LedgerEditorPanel } from "../components/LedgerEditorPanel";
 import { AppColors } from "../constants/colors";
@@ -19,7 +17,6 @@ import { logAppError } from "../lib/logAppError";
 import { showNativeToast } from "../lib/nativeToast";
 import type { LedgerEntry } from "../types/ledger";
 import type { LedgerBookMember } from "../types/ledgerBookMember";
-import { formatSelectedDate } from "../utils/calendar";
 
 type EntryScreenProps = {
   currentUserId: string;
@@ -41,7 +38,6 @@ export function EntryScreen({
   state,
 }: EntryScreenProps) {
   const scrollViewRef = useRef<ComponentRef<typeof KeyboardAwareScrollView>>(null);
-  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [focusedInputHeight, setFocusedInputHeight] = useState(0);
   const [members, setMembers] = useState<LedgerBookMember[]>([]);
   const {
@@ -51,8 +47,6 @@ export function EntryScreen({
     errorMessage,
     isRefreshing,
     refreshLedger,
-    selectedDate,
-    handleSelectDate,
     updateDraftField,
     updateDraftInstallmentMonths,
     updateDraftPhotoAttachments,
@@ -60,7 +54,6 @@ export function EntryScreen({
   } = state;
   const activeBookId = state.activeBook?.id ?? null;
   const editingEntry = entries.find((entry) => entry.id === editingEntryId) ?? null;
-  const entryFormDate = editingEntryId ? draft.date : selectedDate;
 
   useEffect(() => {
     let isMounted = true;
@@ -117,19 +110,6 @@ export function EntryScreen({
     updateDraftField("targetMemberId", fallbackMemberId);
     updateDraftField("targetMemberName", fallbackMember.displayName);
   }, [currentUserId, draft.targetMemberId, draft.targetMemberName, members, updateDraftField]);
-  const applyEntryFormDate = (isoDate: string) => {
-    if (editingEntryId) {
-      updateDraftField("date", isoDate);
-      return;
-    }
-
-    handleSelectDate(isoDate);
-  };
-
-  const handleOpenDatePicker = () => {
-    setIsDatePickerOpen(true);
-  };
-
   const handlePickPhotoAttachments = async () => {
     try {
       const remainingAttachmentSlots = Math.max(
@@ -192,73 +172,61 @@ export function EntryScreen({
   );
 
   return (
-    <>
-      <KeyboardAwareScrollView
-        ref={scrollViewRef}
-        contentContainerStyle={contentContainerStyle}
-        extraScrollHeight={entryKeyboardExtraScrollHeight}
-        style={styles.screen}
-      >
-        {showsBannerAd ? (
-          <View style={styles.fullBleedAd}>
-            <AppBannerAd />
-          </View>
-        ) : null}
-        {errorMessage ? (
-          <Pressable
-            accessibilityRole="button"
-            disabled={isRefreshing}
-            onPress={() => {
-              if (isRefreshing) {
-                return;
-              }
+    <KeyboardAwareScrollView
+      ref={scrollViewRef}
+      contentContainerStyle={contentContainerStyle}
+      extraScrollHeight={entryKeyboardExtraScrollHeight}
+      style={styles.screen}
+    >
+      {showsBannerAd ? (
+        <View style={styles.fullBleedAd}>
+          <AppBannerAd />
+        </View>
+      ) : null}
+      {errorMessage ? (
+        <Pressable
+          accessibilityRole="button"
+          disabled={isRefreshing}
+          onPress={() => {
+            if (isRefreshing) {
+              return;
+            }
 
-              void refreshLedger();
-            }}
-            style={({ pressed }) => [
-              styles.errorRetry,
-              pressed && !isRefreshing ? styles.errorRetryPressed : null,
-              isRefreshing ? styles.errorRetryDisabled : null,
-            ]}
-          >
-            <Text style={styles.error}>{errorMessage}</Text>
-            <Text style={styles.errorRetryLabel}>재시도</Text>
-          </Pressable>
-        ) : null}
-        <EntryDateToolbar
-          dateLabel={formatSelectedDate(entryFormDate)}
-          onPressDateLabel={handleOpenDatePicker}
-        />
-        <LedgerEditorPanel
-          activeBookId={activeBookId}
-          draft={draft}
-          editingEntryId={editingEntryId}
-          members={members}
-          onChangeDraft={updateDraftField}
-          onChangeInstallmentMonths={updateDraftInstallmentMonths}
-          onInputBlur={() => setFocusedInputHeight(0)}
-          onInputFocus={handleEntryInputFocus}
-          onPickPhotoAttachments={handlePickPhotoAttachments}
-          onRemovePhotoAttachment={handleRemovePhotoAttachment}
-          onSaveEntry={onSaveEntry}
-          onSelectType={updateDraftType}
-          onSettleInstallmentEntry={
-            editingEntry ? () => onSettleInstallmentEntry(editingEntry) : null
-          }
-          showInstallmentSettleAction={Boolean(
-            editingEntry?.installmentMonths &&
-              editingEntry.installmentOrder &&
-              editingEntry.installmentOrder < editingEntry.installmentMonths,
-          )}
-        />
-      </KeyboardAwareScrollView>
-      <EntryDatePickerModal
-        isOpen={isDatePickerOpen}
-        onClose={() => setIsDatePickerOpen(false)}
-        onSelectDate={applyEntryFormDate}
-        selectedDate={entryFormDate}
+            void refreshLedger();
+          }}
+          style={({ pressed }) => [
+            styles.errorRetry,
+            pressed && !isRefreshing ? styles.errorRetryPressed : null,
+            isRefreshing ? styles.errorRetryDisabled : null,
+          ]}
+        >
+          <Text style={styles.error}>{errorMessage}</Text>
+          <Text style={styles.errorRetryLabel}>재시도</Text>
+        </Pressable>
+      ) : null}
+      <LedgerEditorPanel
+        activeBookId={activeBookId}
+        draft={draft}
+        editingEntryId={editingEntryId}
+        members={members}
+        onChangeDraft={updateDraftField}
+        onChangeInstallmentMonths={updateDraftInstallmentMonths}
+        onInputBlur={() => setFocusedInputHeight(0)}
+        onInputFocus={handleEntryInputFocus}
+        onPickPhotoAttachments={handlePickPhotoAttachments}
+        onRemovePhotoAttachment={handleRemovePhotoAttachment}
+        onSaveEntry={onSaveEntry}
+        onSelectType={updateDraftType}
+        onSettleInstallmentEntry={
+          editingEntry ? () => onSettleInstallmentEntry(editingEntry) : null
+        }
+        showInstallmentSettleAction={Boolean(
+          editingEntry?.installmentMonths &&
+            editingEntry.installmentOrder &&
+            editingEntry.installmentOrder < editingEntry.installmentMonths,
+        )}
       />
-    </>
+    </KeyboardAwareScrollView>
   );
 }
 
@@ -277,7 +245,7 @@ function resolveFocusedInputKeyboardExtraScrollHeight(inputHeight: number) {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: AppColors.financialScreenBackground,
+    backgroundColor: AppColors.screenBackground,
   },
   content: {
     paddingHorizontal: AppLayout.screenPadding,

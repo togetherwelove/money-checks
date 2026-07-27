@@ -11,7 +11,7 @@ import type { BusyTaskTracker } from "./ledgerScreenState/types";
 
 type UseAllLedgerEntriesParams = {
   activeBookId: string | null;
-  selectedCategoryId: string | null;
+  selectedCategoryIds: readonly string[];
   searchQuery: string;
   trackBlockingTask: BusyTaskTracker;
 };
@@ -20,7 +20,7 @@ const EMPTY_ENTRIES: LedgerEntry[] = [];
 
 export function useAllLedgerEntries({
   activeBookId,
-  selectedCategoryId,
+  selectedCategoryIds,
   searchQuery,
   trackBlockingTask,
 }: UseAllLedgerEntriesParams) {
@@ -30,10 +30,14 @@ export function useAllLedgerEntries({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [nextCursor, setNextCursor] = useState<LedgerEntriesPageCursor | null>(null);
+  const queryRevisionRef = useRef(0);
   const realtimeRefreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadFirstPage = useCallback(
     async (usesBlockingOverlay: boolean) => {
+      const queryRevision = queryRevisionRef.current + 1;
+      queryRevisionRef.current = queryRevision;
+
       if (!activeBookId) {
         setEntries(EMPTY_ENTRIES);
         setErrorMessage(null);
@@ -45,6 +49,7 @@ export function useAllLedgerEntries({
       }
 
       setErrorMessage(null);
+      setIsLoadingMore(false);
       if (!usesBlockingOverlay) {
         setIsRefreshing(true);
       }
@@ -61,27 +66,33 @@ export function useAllLedgerEntries({
         } = await executeTask(() =>
           fetchLedgerEntriesPage(activeBookId, {
             ascending: false,
-            categoryId: selectedCategoryId,
+            categoryIds: selectedCategoryIds,
             limit: LedgerQueryConfig.allEntriesPageSize,
             searchQuery,
           }),
         );
+        if (queryRevisionRef.current !== queryRevision) {
+          return;
+        }
         setEntries(nextEntries);
         setHasMore(nextHasMore);
         setNextCursor(firstPageNextCursor);
       } catch (error) {
+        if (queryRevisionRef.current !== queryRevision) {
+          return;
+        }
         logAppError("AllEntriesScreen", error, {
           activeBookId,
           step: "load_all_ledger_entries_first_page",
         });
         setErrorMessage(AppMessages.ledgerError);
       } finally {
-        if (!usesBlockingOverlay) {
+        if (!usesBlockingOverlay && queryRevisionRef.current === queryRevision) {
           setIsRefreshing(false);
         }
       }
     },
-    [activeBookId, searchQuery, selectedCategoryId, trackBlockingTask],
+    [activeBookId, searchQuery, selectedCategoryIds, trackBlockingTask],
   );
 
   useEffect(() => {
@@ -126,6 +137,7 @@ export function useAllLedgerEntries({
 
     setIsLoadingMore(true);
     setErrorMessage(null);
+    const queryRevision = queryRevisionRef.current;
 
     try {
       const {
@@ -134,15 +146,21 @@ export function useAllLedgerEntries({
         nextCursor: loadedPageNextCursor,
       } = await fetchLedgerEntriesPage(activeBookId, {
         ascending: false,
-        categoryId: selectedCategoryId,
+        categoryIds: selectedCategoryIds,
         cursor: nextCursor,
         limit: LedgerQueryConfig.allEntriesPageSize,
         searchQuery,
       });
+      if (queryRevisionRef.current !== queryRevision) {
+        return;
+      }
       setEntries((currentEntries) => [...currentEntries, ...nextEntries]);
       setHasMore(nextHasMore);
       setNextCursor(loadedPageNextCursor);
     } catch (error) {
+      if (queryRevisionRef.current !== queryRevision) {
+        return;
+      }
       logAppError("AllEntriesScreen", error, {
         activeBookId,
         cursor: nextCursor,
@@ -150,7 +168,9 @@ export function useAllLedgerEntries({
       });
       setErrorMessage(AppMessages.ledgerError);
     } finally {
-      setIsLoadingMore(false);
+      if (queryRevisionRef.current === queryRevision) {
+        setIsLoadingMore(false);
+      }
     }
   }, [
     activeBookId,
@@ -159,7 +179,7 @@ export function useAllLedgerEntries({
     isRefreshing,
     nextCursor,
     searchQuery,
-    selectedCategoryId,
+    selectedCategoryIds,
   ]);
 
   return {

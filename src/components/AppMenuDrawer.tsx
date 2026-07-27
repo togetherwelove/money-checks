@@ -1,6 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { useEffect } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   Extrapolation,
@@ -32,7 +32,6 @@ type AppMenuDrawerProps = {
   sections: AppMenuSection[];
 };
 
-const CLOSED_TRANSLATE_X = MenuUi.drawerWidth;
 const OPEN_TRANSLATE_X = 0;
 
 export function AppMenuDrawer({
@@ -43,13 +42,21 @@ export function AppMenuDrawer({
   onSelectItem,
   sections,
 }: AppMenuDrawerProps) {
-  const drawerTranslateX = useSharedValue(isOpen ? OPEN_TRANSLATE_X : CLOSED_TRANSLATE_X);
+  const { width: windowWidth } = useWindowDimensions();
+  const drawerWidth = Math.min(
+    MenuUi.drawerWidth,
+    windowWidth - MenuUi.drawerHorizontalMargin * 2,
+  );
+  const closedTranslateX = drawerWidth;
+  const drawerTranslateX = useSharedValue(
+    isOpen ? OPEN_TRANSLATE_X : closedTranslateX,
+  );
 
   useEffect(() => {
-    drawerTranslateX.value = withTiming(isOpen ? OPEN_TRANSLATE_X : CLOSED_TRANSLATE_X, {
+    drawerTranslateX.value = withTiming(isOpen ? OPEN_TRANSLATE_X : closedTranslateX, {
       duration: MenuUi.drawerAnimationDurationMs,
     });
-  }, [drawerTranslateX, isOpen]);
+  }, [closedTranslateX, drawerTranslateX, isOpen]);
 
   const openDrawer = () => {
     "worklet";
@@ -61,7 +68,7 @@ export function AppMenuDrawer({
 
   const closeDrawer = () => {
     "worklet";
-    drawerTranslateX.value = withTiming(CLOSED_TRANSLATE_X, {
+    drawerTranslateX.value = withTiming(closedTranslateX, {
       duration: MenuUi.drawerAnimationDurationMs,
     });
     runOnJS(onClose)();
@@ -71,15 +78,18 @@ export function AppMenuDrawer({
     .activeOffsetX(-MenuUi.drawerSwipeActiveOffsetX)
     .failOffsetY([-MenuUi.drawerSwipeFailOffsetY, MenuUi.drawerSwipeFailOffsetY])
     .onBegin(() => {
-      drawerTranslateX.value = CLOSED_TRANSLATE_X;
+      drawerTranslateX.value = closedTranslateX;
     })
     .onUpdate((event) => {
-      drawerTranslateX.value = clampDrawerTranslateX(CLOSED_TRANSLATE_X + event.translationX);
+      drawerTranslateX.value = clampDrawerTranslateX(
+        closedTranslateX + event.translationX,
+        closedTranslateX,
+      );
     })
     .onEnd((event) => {
       const shouldOpen =
         event.velocityX <= MenuUi.drawerSwipeCloseVelocityX ||
-        drawerTranslateX.value < CLOSED_TRANSLATE_X * MenuUi.drawerSwipeOpenThresholdRatio;
+        drawerTranslateX.value < closedTranslateX * MenuUi.drawerSwipeOpenThresholdRatio;
 
       if (shouldOpen) {
         openDrawer();
@@ -93,12 +103,12 @@ export function AppMenuDrawer({
     .activeOffsetX(MenuUi.drawerSwipeActiveOffsetX)
     .failOffsetY([-MenuUi.drawerSwipeFailOffsetY, MenuUi.drawerSwipeFailOffsetY])
     .onUpdate((event) => {
-      drawerTranslateX.value = clampDrawerTranslateX(event.translationX);
+      drawerTranslateX.value = clampDrawerTranslateX(event.translationX, closedTranslateX);
     })
     .onEnd((event) => {
       const shouldClose =
         event.velocityX >= MenuUi.drawerSwipeOpenVelocityX ||
-        drawerTranslateX.value > CLOSED_TRANSLATE_X * MenuUi.drawerSwipeOpenThresholdRatio;
+        drawerTranslateX.value > closedTranslateX * MenuUi.drawerSwipeOpenThresholdRatio;
 
       if (shouldClose) {
         closeDrawer();
@@ -111,7 +121,7 @@ export function AppMenuDrawer({
   const overlayStyle = useAnimatedStyle(() => ({
     opacity: interpolate(
       drawerTranslateX.value,
-      [OPEN_TRANSLATE_X, CLOSED_TRANSLATE_X],
+      [OPEN_TRANSLATE_X, closedTranslateX],
       [1, 0],
       Extrapolation.CLAMP,
     ),
@@ -136,9 +146,9 @@ export function AppMenuDrawer({
       <GestureDetector gesture={dragDrawerGesture}>
         <Animated.View
           pointerEvents={isOpen ? "auto" : "none"}
-          style={[styles.drawer, drawerStyle]}
+          style={[styles.drawer, { width: drawerWidth }, drawerStyle]}
         >
-          <View style={styles.sections}>
+          <ScrollView contentContainerStyle={styles.sections}>
             {sections.map((section, index) => (
               <View key={section.label} style={styles.section}>
                 <View style={index === 0 ? styles.firstSectionHeader : null}>
@@ -163,7 +173,7 @@ export function AppMenuDrawer({
                         index === section.items.length - 1 ? styles.lastItem : null,
                       ]}
                     >
-                      <Feather color={AppColors.primary} name={item.icon} size={18} />
+                      <Feather color={AppColors.mutedStrongText} name={item.icon} size={18} />
                       {isNavigationMenuItem(item) && item.targetScreen === "subscription" ? (
                         <Text {...OneLineTextFitProps} style={styles.itemLabel}>
                           알뜰 <Text style={styles.itemPlusLabel}>plus</Text>
@@ -178,16 +188,16 @@ export function AppMenuDrawer({
                 </View>
               </View>
             ))}
-          </View>
+          </ScrollView>
         </Animated.View>
       </GestureDetector>
     </View>
   );
 }
 
-function clampDrawerTranslateX(nextTranslateX: number): number {
+function clampDrawerTranslateX(nextTranslateX: number, closedTranslateX: number): number {
   "worklet";
-  return Math.max(OPEN_TRANSLATE_X, Math.min(CLOSED_TRANSLATE_X, nextTranslateX));
+  return Math.max(OPEN_TRANSLATE_X, Math.min(closedTranslateX, nextTranslateX));
 }
 
 function isNavigationMenuItem(
@@ -221,7 +231,6 @@ const styles = StyleSheet.create({
     top: 0,
     right: 0,
     bottom: 0,
-    width: MenuUi.drawerWidth,
     backgroundColor: AppColors.surface,
     paddingHorizontal: AppLayout.screenPadding * 2,
     gap: MenuUi.drawerGap,

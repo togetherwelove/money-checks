@@ -27,6 +27,7 @@ import { AppHeader } from "./components/AppHeader";
 import { AppMenuDrawer } from "./components/AppMenuDrawer";
 import { BlockingOverlay } from "./components/BlockingOverlay";
 import { DailyFirstEntryAdNoticeOverlay } from "./components/DailyFirstEntryAdNoticeOverlay";
+import { EntryDatePickerModal } from "./components/EntryDatePickerModal";
 import { LedgerBookSwitcherModal } from "./components/LedgerBookSwitcherModal";
 import { OnboardingTransitionScreen } from "./components/OnboardingTransitionScreen";
 import { SessionLoadingScreen } from "./components/SessionLoadingScreen";
@@ -37,6 +38,7 @@ import { CardSmsClipboardCopy } from "./constants/cardSmsClipboard";
 import { AppColors } from "./constants/colors";
 import { EntryRegistrationCopy } from "./constants/entryRegistration";
 import { EXPENSE_CATEGORY_LABELS } from "./constants/expenseCategories";
+import { InitialPermissionTiming } from "./constants/initialPermissions";
 import { INCOME_CATEGORY_LABELS } from "./constants/incomeCategories";
 import { formatYearMonthLabel } from "./constants/ledgerDisplay";
 import { LedgerBookManagementCopy } from "./constants/ledgerBookManagement";
@@ -44,11 +46,12 @@ import { AppMessages } from "./constants/messages";
 import { NotificationBadgeScopes } from "./constants/notificationBadges";
 import { SubscriptionMessages, SubscriptionTiers } from "./constants/subscription";
 import { SupportMessages, type SupportPackageIdentifier } from "./constants/support";
+import { ExpenseTextColorProvider } from "./contexts/ExpenseTextColorContext";
 import { useAnnualLedgerReportAction } from "./hooks/useAnnualLedgerReportAction";
 import { useAuthOnboarding } from "./hooks/useAuthOnboarding";
-import { useCalendarExpenseColorSetting } from "./hooks/useCalendarExpenseColorSetting";
 import { useCalendarHeatmapSetting } from "./hooks/useCalendarHeatmapSetting";
 import { useCalendarSummaryModeSetting } from "./hooks/useCalendarSummaryModeSetting";
+import { useExpenseTextColorSetting } from "./hooks/useExpenseTextColorSetting";
 import { useGoogleAuthRedirectCompletion } from "./hooks/useGoogleAuthRedirectCompletion";
 import { useLedgerCategories } from "./hooks/useLedgerCategories";
 import { useLedgerNotifications } from "./hooks/useLedgerNotifications";
@@ -120,7 +123,7 @@ import { PasswordResetScreen } from "./screens/PasswordResetScreen";
 import type { LedgerAppScreen } from "./types/app";
 import type { CategoryDefinition } from "./types/category";
 import type { LedgerEntry, LedgerEntryDraft } from "./types/ledger";
-import { getMonthKey, toIsoDate } from "./utils/calendar";
+import { formatSelectedDate, getMonthKey, toIsoDate } from "./utils/calendar";
 import { createDraft } from "./utils/ledgerEntries";
 import { resolveFallbackDisplayName } from "./utils/sessionDisplayName";
 
@@ -164,7 +167,7 @@ export default function App() {
 function SignedOutAppShell({ children }: { children: React.ReactNode }) {
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={AppColors.background} />
+      <StatusBar barStyle="dark-content" backgroundColor={AppColors.screenBackground} />
       <SafeAreaView edges={["top"]} style={styles.signedOutSafeArea} />
       <SafeAreaView edges={["left", "right"]} style={styles.signedOutBodySafeArea}>
         <View style={styles.signedOutBody}>{children}</View>
@@ -187,6 +190,7 @@ function SignedInApp({ session }: { session: Session }) {
   const [isLedgerSwitcherOpen, setIsLedgerSwitcherOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNicknameScreenReady, setIsNicknameScreenReady] = useState(false);
+  const [isEntryDatePickerOpen, setIsEntryDatePickerOpen] = useState(false);
   const [isYearPickerOpen, setIsYearPickerOpen] = useState(false);
   const [entryActionMenuDraft, setEntryActionMenuDraft] = useState<CardSmsClipboardDraft | null>(
     null,
@@ -195,6 +199,8 @@ function SignedInApp({ session }: { session: Session }) {
   const [isDailyFirstEntryAdNoticeVisible, setIsDailyFirstEntryAdNoticeVisible] = useState(false);
   const [adTrackingPermissionState, setAdTrackingPermissionState] =
     useState<AdTrackingPermissionState>("unavailable");
+  const [hasSettledInitialAdTrackingPermission, setHasSettledInitialAdTrackingPermission] =
+    useState(false);
   const [isMobileAdsReady, setIsMobileAdsReady] = useState(false);
   const authProvider = resolveSessionAuthProvider(session);
   const metadataDisplayName = resolveFallbackDisplayName(
@@ -205,7 +211,7 @@ function SignedInApp({ session }: { session: Session }) {
     metadataDisplayName || (authProvider === "apple" ? "사용자" : "");
   const accountProviderLabel = resolveSessionAuthProviderLabel(session);
   const notifications = useLedgerNotifications(session.user.id);
-  const calendarExpenseColorSetting = useCalendarExpenseColorSetting();
+  const expenseTextColorSetting = useExpenseTextColorSetting();
   const calendarHeatmapSetting = useCalendarHeatmapSetting();
   const calendarSummaryModeSetting = useCalendarSummaryModeSetting();
   const subscription = useSubscriptionPlan(session.user.id);
@@ -231,6 +237,9 @@ function SignedInApp({ session }: { session: Session }) {
     subscriptionTier: subscription.currentTier,
   });
   const notificationBadges = useNotificationBadges(session.user.id);
+  const entryFormDate = ledgerState.editingEntryId
+    ? ledgerState.draft.date
+    : ledgerState.selectedDate;
   const canSwitchHeaderLedgerBook =
     currentScreen === "calendar" && ledgerState.accessibleBooks.length > 1;
   useLedgerWidgetSync(ledgerState.activeBook?.id ?? null, ledgerState.entries);
@@ -338,20 +347,31 @@ function SignedInApp({ session }: { session: Session }) {
   useEffect(() => {
     let isMounted = true;
 
+    if (subscription.isLoading) {
+      setIsMobileAdsReady(false);
+      setHasSettledInitialAdTrackingPermission(false);
+      return () => {
+        isMounted = false;
+      };
+    }
+
     if (!shouldServeAdMobAds) {
       setIsMobileAdsReady(false);
+      setHasSettledInitialAdTrackingPermission(true);
       return () => {
         isMounted = false;
       };
     }
 
     setIsMobileAdsReady(false);
+    setHasSettledInitialAdTrackingPermission(false);
 
     void requestAdTrackingPermissionIfNeeded()
       .then(async (nextPermissionState) => {
         applyAdTrackingPermissionToAdRequests(nextPermissionState);
         if (isMounted) {
           setAdTrackingPermissionState(nextPermissionState);
+          setHasSettledInitialAdTrackingPermission(true);
         }
 
         await ensureMobileAdsInitialized();
@@ -366,12 +386,15 @@ function SignedInApp({ session }: { session: Session }) {
         logAppError("App", error, {
           step: "initialize_mobile_ads_with_tracking_permission",
         });
+        if (isMounted) {
+          setHasSettledInitialAdTrackingPermission(true);
+        }
       });
 
     return () => {
       isMounted = false;
     };
-  }, [shouldServeAdMobAds]);
+  }, [shouldServeAdMobAds, subscription.isLoading]);
 
   const syncCurrentRouteState = useCallback(() => {
     if (!navigationRef.isReady()) {
@@ -386,6 +409,7 @@ function SignedInApp({ session }: { session: Session }) {
     const previousActiveScreen = lastSyncedScreenRef.current;
 
     if (previousActiveScreen === "entry" && activeRouteName !== "entry") {
+      setIsEntryDatePickerOpen(false);
       ledgerState.resetEditor(ledgerState.selectedDate);
     }
 
@@ -820,6 +844,21 @@ function SignedInApp({ session }: { session: Session }) {
 
     setIsYearPickerOpen(true);
   };
+  const handleOpenEntryDatePicker = () => {
+    if (currentScreen !== "entry") {
+      return;
+    }
+
+    setIsEntryDatePickerOpen(true);
+  };
+  const handleSelectEntryDate = (isoDate: string) => {
+    if (ledgerState.editingEntryId) {
+      ledgerState.updateDraftField("date", isoDate);
+      return;
+    }
+
+    ledgerState.handleSelectDate(isoDate);
+  };
 
   const handleCompleteNicknameOnboarding = async (displayName: string) => {
     try {
@@ -1192,6 +1231,7 @@ function SignedInApp({ session }: { session: Session }) {
       !notifications.isSupported ||
       notifications.permissionState !== "default" ||
       ledgerState.isLoading ||
+      !hasSettledInitialAdTrackingPermission ||
       hasScheduledInitialPermissionRequestRef.current
     ) {
       return;
@@ -1205,7 +1245,7 @@ function SignedInApp({ session }: { session: Session }) {
         void notifications
           .requestNotifications()
           .finally(authOnboarding.completePermissionOnboarding);
-      }, 700);
+      }, InitialPermissionTiming.notificationRequestDelayMs);
     });
 
     return () => {
@@ -1224,6 +1264,7 @@ function SignedInApp({ session }: { session: Session }) {
     authOnboarding.hasCompletedPermissionOnboarding,
     authOnboarding.isLoading,
     authOnboarding.step,
+    hasSettledInitialAdTrackingPermission,
     ledgerState.isLoading,
     notifications.isSupported,
     notifications.permissionState,
@@ -1255,7 +1296,11 @@ function SignedInApp({ session }: { session: Session }) {
   }
 
   return (
-    <View style={styles.container}>
+    <ExpenseTextColorProvider
+      mode={expenseTextColorSetting.expenseTextColorMode}
+      onChange={expenseTextColorSetting.updateExpenseTextColorMode}
+    >
+      <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={AppColors.surface} />
       <SafeAreaView edges={["top"]} style={styles.headerSafeArea}>
         <View style={styles.headerShell}>
@@ -1263,7 +1308,14 @@ function SignedInApp({ session }: { session: Session }) {
             canSwitchTitle={currentScreen === "calendar"}
             isMenuOpen={isMenuOpen}
             isReadOnlyTitle={currentScreen === "calendar" && ledgerState.isReadOnlyDueToPlanLimit}
+            leadingActionAccessibilityLabel={AppMessages.entryDatePickerAccessibilityLabel}
+            leadingActionLabel={
+              currentScreen === "entry" ? formatSelectedDate(entryFormDate) : null
+            }
             onPressTitle={currentScreen === "calendar" ? handleOpenYearPicker : undefined}
+            onPressLeadingAction={
+              currentScreen === "entry" ? handleOpenEntryDatePicker : undefined
+            }
             titleLabel={
               currentScreen === "calendar"
                 ? formatYearMonthLabel(ledgerState.visibleMonth)
@@ -1286,7 +1338,6 @@ function SignedInApp({ session }: { session: Session }) {
               <SignedInStackNavigator
                 accountProviderLabel={accountProviderLabel}
                 adTrackingPermissionState={adTrackingPermissionState}
-                calendarExpenseColorMode={calendarExpenseColorSetting.calendarExpenseColorMode}
                 calendarSummaryBaseDay={calendarSummaryModeSetting.calendarSummaryBaseDay}
                 calendarSummaryMode={calendarSummaryModeSetting.calendarSummaryMode}
                 email={session.user.email ?? ""}
@@ -1299,9 +1350,6 @@ function SignedInApp({ session }: { session: Session }) {
                 notificationPermissionLabel={notifications.permissionLabel}
                 notificationPermissionState={notifications.permissionState}
                 notificationStatusMessage={notifications.statusMessage}
-                onChangeCalendarExpenseColorMode={
-                  calendarExpenseColorSetting.updateCalendarExpenseColorMode
-                }
                 onBeforeCopyShareCode={handleBeforeCopyShareCode}
                 onBeforeSendJoinRequest={handleBeforeSendJoinRequest}
                 onChangeCalendarSummaryMode={
@@ -1401,6 +1449,12 @@ function SignedInApp({ session }: { session: Session }) {
           onSelectDate={ledgerState.handleSelectDate}
           selectedDate={ledgerState.selectedDate}
         />
+        <EntryDatePickerModal
+          isOpen={currentScreen === "entry" && isEntryDatePickerOpen}
+          onClose={() => setIsEntryDatePickerOpen(false)}
+          onSelectDate={handleSelectEntryDate}
+          selectedDate={entryFormDate}
+        />
         <AnnualReportRangePickerModal
           endDate={annualReport.customRangeDraft?.endDate ?? ledgerState.selectedDate}
           isOpen={annualReport.customRangeDraft?.isOpen ?? false}
@@ -1415,8 +1469,9 @@ function SignedInApp({ session }: { session: Session }) {
       annualReport.isDownloading ? (
         <BlockingOverlay />
       ) : null}
-      <DailyFirstEntryAdNoticeOverlay isVisible={isDailyFirstEntryAdNoticeVisible} />
-    </View>
+        <DailyFirstEntryAdNoticeOverlay isVisible={isDailyFirstEntryAdNoticeVisible} />
+      </View>
+    </ExpenseTextColorProvider>
   );
 
   async function notifySharedLedgerEntryChange(
@@ -1654,28 +1709,28 @@ const styles = StyleSheet.create({
   },
   bodySafeArea: {
     flex: 1,
-    backgroundColor: AppColors.background,
+    backgroundColor: AppColors.screenBackground,
   },
   body: {
     flex: 1,
-    backgroundColor: AppColors.background,
+    backgroundColor: AppColors.screenBackground,
   },
   navigationShell: {
     flex: 1,
-    backgroundColor: AppColors.background,
+    backgroundColor: AppColors.screenBackground,
   },
   footerSafeArea: {
     backgroundColor: AppColors.surface,
   },
   signedOutSafeArea: {
-    backgroundColor: AppColors.background,
+    backgroundColor: AppColors.screenBackground,
   },
   signedOutBodySafeArea: {
     flex: 1,
-    backgroundColor: AppColors.background,
+    backgroundColor: AppColors.screenBackground,
   },
   signedOutBody: {
     flex: 1,
-    backgroundColor: AppColors.background,
+    backgroundColor: AppColors.screenBackground,
   },
 });

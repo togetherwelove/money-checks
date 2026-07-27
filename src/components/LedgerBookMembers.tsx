@@ -277,11 +277,11 @@ const styles = StyleSheet.create({
   },
   memberList: {
     overflow: "hidden",
-    borderWidth: 1,
-    borderTopColor: AppColors.border,
-    borderColor: AppColors.border,
-    borderRadius: LedgerBookMembersUi.listBorderRadius,
-    backgroundColor: AppColors.background,
+    borderWidth: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: AppColors.border,
+    borderRadius: 0,
+    backgroundColor: AppColors.screenBackground,
   },
   memberListScroll: {
     maxHeight: LedgerBookMembersLayout.listMaxHeight,

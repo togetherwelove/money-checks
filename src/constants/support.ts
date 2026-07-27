@@ -24,8 +24,8 @@ export type SupportPackageCatalogItem = {
 export const SupportPackageCatalog: readonly SupportPackageCatalogItem[] = [
     {
       description: "개발자가 가장 좋아합니다.",
-      iconBackgroundColor: AppColors.accentSoft,
-      iconColor: AppColors.accent,
+      iconBackgroundColor: AppColors.surfaceMuted,
+      iconColor: AppColors.primary,
       iconName: "cup-outline",
       identifier: SupportConfig.packageIdentifiers.small,
       title: "바나나우유",
@@ -40,8 +40,8 @@ export const SupportPackageCatalog: readonly SupportPackageCatalogItem[] = [
     },
     {
       description: "개발자 가족의 하루가 완벽해집니다.",
-      iconBackgroundColor: AppColors.expenseSoft,
-      iconColor: AppColors.expense,
+      iconBackgroundColor: AppColors.surfaceMuted,
+      iconColor: AppColors.primary,
       iconName: "food-drumstick-outline",
       identifier: SupportConfig.packageIdentifiers.large,
       title: "치킨 한 마리",
@@ -59,12 +59,10 @@ export const SupportMessages = {
 
 export const SupportUi = {
   actionIconSize: 14,
-  cardGap: 10,
   contentGap: 16,
-  iconContainerRadius: 14,
+  iconContainerRadius: 8,
   iconContainerSize: 48,
   iconSize: 24,
-  listGap: 10,
   priceLabelFontSize: 16,
   rowGap: 12,
   subtitleFontSize: 12,

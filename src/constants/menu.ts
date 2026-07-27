@@ -9,6 +9,7 @@ export const MenuCopy = {
 
 export const MenuUi = {
   drawerAnimationDurationMs: 220,
+  drawerHorizontalMargin: 16,
   drawerWidth: 220,
   drawerGap: 20,
   drawerSwipeActiveOffsetX: 36,
@@ -30,9 +31,8 @@ export const FooterTabBarUi = {
   primaryIconButtonSize: 36,
   barPaddingHorizontal: 8,
   borderTopWidth: 1,
-  badgeDotBorderWidth: 2,
   badgeDotOffset: -1,
-  badgeDotSize: 10,
+  badgeDotSize: 8,
   iconSize: 21,
   labelFontSize: 10,
   labelGap: 1,
@@ -42,14 +42,23 @@ export const FooterTabBarUi = {
 } as const;
 
 export const FooterTabBarMetrics = {
-  height:
+  height: resolveFooterTabBarHeight(),
+} as const;
+
+export function resolveFooterTabBarHeight(fontScale = 1): number {
+  const compactFontScale = resolveTextScale(fontScale, AppTextScale.compact);
+
+  return (
     Math.max(
       FooterTabBarUi.primaryIconButtonSize,
-      FooterTabBarUi.iconButtonSize + FooterTabBarUi.labelGap + FooterTabBarUi.labelLineHeight,
+      FooterTabBarUi.iconButtonSize +
+        FooterTabBarUi.labelGap +
+        FooterTabBarUi.labelLineHeight * compactFontScale,
     ) +
     FooterTabBarUi.tabPaddingVertical * 2 +
-    FooterTabBarUi.borderTopWidth,
-} as const;
+    FooterTabBarUi.borderTopWidth
+  );
+}
 
 export const FooterActionPopoverUi = {
   actionMinHeight: 46,
@@ -60,3 +69,4 @@ export const FooterActionPopoverUi = {
   maxWidth: 320,
   textFontSize: 14,
 } as const;
+import { AppTextScale, resolveTextScale } from "./textLayout";

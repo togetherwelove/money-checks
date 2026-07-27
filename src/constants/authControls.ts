@@ -1,5 +1,5 @@
 export const AuthControls = {
-  borderRadius: 16,
+  borderRadius: 8,
   controlHeight: 32,
   inlineControlHeight: 32,
   multilineControlMinHeight: 96,

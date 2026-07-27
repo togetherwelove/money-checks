@@ -269,7 +269,13 @@ export function LedgerBookManagementCard({
                     {shouldShowPendingRequestBadge ? (
                       <View style={styles.pendingRequestBadge} />
                     ) : null}
-                    <Text numberOfLines={1} style={styles.ledgerBookItemName}>
+                    <Text
+                      numberOfLines={1}
+                      style={[
+                        styles.ledgerBookItemName,
+                        isActiveBook ? styles.activeLedgerBookItemName : null,
+                      ]}
+                    >
                       {book.name}
                     </Text>
                     {isReadOnlyBook ? (
@@ -351,7 +357,9 @@ export function LedgerBookManagementCard({
         <View style={[styles.disconnectActionRow, styles.sectionBottomInset]}>
           <TextLinkButton
             label={AppMessages.accountDisconnectAction}
-            onPress={onLeave}
+            onPress={() => {
+              confirmLeaveSharedLedgerBook(onLeave);
+            }}
             tone="destructive"
           />
         </View>
@@ -366,6 +374,24 @@ export function LedgerBookManagementCard({
         </View>
       ) : null}
     </View>
+  );
+}
+
+function confirmLeaveSharedLedgerBook(onConfirm: () => unknown) {
+  Alert.alert(
+    AppMessages.accountDisconnectConfirmTitle,
+    AppMessages.accountDisconnectConfirmMessage,
+    [
+      {
+        style: "cancel",
+        text: "취소",
+      },
+      {
+        onPress: onConfirm,
+        style: "destructive",
+        text: AppMessages.accountDisconnectAction,
+      },
+    ],
   );
 }
 

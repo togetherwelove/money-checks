@@ -16,7 +16,6 @@ import { LedgerEntryList } from "../components/LedgerEntryList";
 import { MonthCalendarPager } from "../components/MonthCalendarPager";
 import { MonthlySummary } from "../components/MonthlySummary";
 import { WeekdayHeader } from "../components/WeekdayHeader";
-import type { CalendarExpenseColorMode } from "../constants/calendarExpenseColor";
 import {
   type CalendarSummaryMode,
   CalendarSummaryLabels,
@@ -26,20 +25,21 @@ import {
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import { AppMessages } from "../constants/messages";
-import { FullBleedHorizontalStyle } from "../constants/uiStyles";
+import {
+  FullBleedHorizontalStyle,
+  FullBleedPaddedHorizontalStyle,
+} from "../constants/uiStyles";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
 import type { LedgerEntry } from "../types/ledger";
 import {
   addMonths,
   formatCurrency,
-  formatLedgerListHeaderDate,
   parseIsoDate,
   startOfMonth,
   toIsoDate,
 } from "../utils/calendar";
 
 type HomeScreenProps = {
-  calendarExpenseColorMode: CalendarExpenseColorMode;
   calendarSummaryMode: CalendarSummaryMode;
   onDeleteSelectedEntry: (entry: LedgerEntry) => Promise<boolean>;
   onEditSelectedEntry: (entry: LedgerEntry) => void;
@@ -58,7 +58,6 @@ type DisplayedSummary = {
 };
 
 export function HomeScreen({
-  calendarExpenseColorMode,
   calendarSummaryMode,
   onDeleteSelectedEntry,
   onEditSelectedEntry,
@@ -80,7 +79,6 @@ export function HomeScreen({
     selectedEntries,
     visibleMonth,
   } = state;
-  const selectedDateLabel = formatLedgerListHeaderDate(selectedDate);
 
   useEffect(() => {
     if (!wasScreenFocusedRef.current && isScreenFocused) {
@@ -92,7 +90,6 @@ export function HomeScreen({
   return (
     <View style={styles.screen}>
       <KeyboardAwareContent
-        calendarExpenseColorMode={calendarExpenseColorMode}
         errorMessage={errorMessage}
         calendarFocusRevision={calendarFocusRevision}
         calendarSummaryMode={calendarSummaryMode}
@@ -105,7 +102,6 @@ export function HomeScreen({
         onRefreshLedger={refreshLedger}
         onSelectCalendarDate={onSelectCalendarDate}
         selectedDate={selectedDate}
-        selectedDateLabel={selectedDateLabel}
         selectedEntries={selectedEntries}
         showsBannerAd={showsBannerAd}
         state={state}
@@ -117,7 +113,6 @@ export function HomeScreen({
 }
 
 function KeyboardAwareContent({
-  calendarExpenseColorMode,
   errorMessage,
   calendarFocusRevision,
   calendarSummaryMode,
@@ -130,14 +125,12 @@ function KeyboardAwareContent({
   onRefreshLedger,
   onSelectCalendarDate,
   selectedDate,
-  selectedDateLabel,
   selectedEntries,
   showsBannerAd,
   state,
   todayIsoDate,
   visibleMonth,
 }: {
-  calendarExpenseColorMode: CalendarExpenseColorMode;
   errorMessage: string | null;
   calendarFocusRevision: number;
   calendarSummaryMode: CalendarSummaryMode;
@@ -150,7 +143,6 @@ function KeyboardAwareContent({
   onRefreshLedger: () => Promise<void>;
   onSelectCalendarDate: (isoDate: string) => void;
   selectedDate: string;
-  selectedDateLabel: string;
   selectedEntries: LedgerEntry[];
   showsBannerAd: boolean;
   state: LedgerScreenState;
@@ -188,9 +180,18 @@ function KeyboardAwareContent({
         </View>
       ) : null}
       <View style={styles.calendarAdSection}>
+        <View style={styles.summaryPanel}>
+          <MonthlySummary
+            balanceAmount={displayedSummary.balanceAmount}
+            balanceLabel={displayedSummary.balanceLabel}
+            summaryLabel={displayedSummary.summaryLabel}
+            totalExpense={displayedSummary.totalExpense}
+            totalIncome={displayedSummary.totalIncome}
+            variant="embedded"
+          />
+        </View>
         <WeekdayHeader />
         <MonthCalendarPager
-          calendarExpenseColorMode={calendarExpenseColorMode}
           key={calendarFocusRevision}
           currentPage={state.currentMonthPage}
           isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
@@ -203,23 +204,8 @@ function KeyboardAwareContent({
           previousPage={state.previousMonthPage}
           selectedDate={selectedDate}
         />
-        <View style={styles.summaryPanel}>
-          <MonthlySummary
-            balanceAmount={displayedSummary.balanceAmount}
-            balanceLabel={displayedSummary.balanceLabel}
-            summaryLabel={displayedSummary.summaryLabel}
-            totalExpense={displayedSummary.totalExpense}
-            totalIncome={displayedSummary.totalIncome}
-            variant="embedded"
-          />
-        </View>
       </View>
       <View style={styles.transactionSection}>
-        <View style={styles.selectionRow}>
-          <View style={styles.selectedDateInfo}>
-            <Text style={styles.selectedDate}>{selectedDateLabel}</Text>
-          </View>
-        </View>
         <ScrollView
           alwaysBounceVertical
           contentContainerStyle={styles.transactionScrollContent}
@@ -351,7 +337,7 @@ function moveMonth(
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: AppColors.financialScreenBackground,
+    backgroundColor: AppColors.screenBackground,
     paddingHorizontal: AppLayout.screenPadding,
   },
   screenContent: {
@@ -361,9 +347,12 @@ const styles = StyleSheet.create({
     gap: AppLayout.calendarGap,
   },
   transactionSection: {
+    ...FullBleedHorizontalStyle,
     flex: 1,
     minHeight: 0,
-    gap: AppLayout.compactGap,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderColor: AppColors.border,
+    paddingTop: AppLayout.compactGap,
   },
   transactionScroll: {
     flex: 1,
@@ -381,10 +370,10 @@ const styles = StyleSheet.create({
     marginBottom: AppLayout.compactGap,
   },
   summaryPanel: {
+    ...FullBleedPaddedHorizontalStyle,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderColor: AppColors.border,
-    marginTop: AppLayout.compactGap,
   },
   error: {
     color: AppColors.expense,
@@ -404,28 +393,6 @@ const styles = StyleSheet.create({
     color: AppColors.primary,
     fontSize: 12,
     fontWeight: "700",
-  },
-  selectedDate: {
-    color: AppColors.text,
-    fontSize: 13,
-    fontWeight: "700",
-    paddingTop: 8,
-  },
-  selectionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-start",
-    gap: AppLayout.compactGap,
-  },
-  selectedDateInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    minWidth: 0,
-  },
-  selectionActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: AppLayout.compactGap,
   },
   selectedDateLoading: {
     minHeight: 160,

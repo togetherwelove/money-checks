@@ -4,7 +4,9 @@ import { useRef } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
+import { AppLayout } from "../constants/layout";
 import { AppMessages } from "../constants/messages";
+import { useExpenseTextColor } from "../contexts/ExpenseTextColorContext";
 import { formatInstallmentProgressLabel, stripInstallmentNoteSuffix } from "../lib/installments";
 import type { CategoryIconName } from "../types/category";
 import type { LedgerEntry } from "../types/ledger";
@@ -54,6 +56,7 @@ export function LedgerEntryListItem({
   showsDate = false,
   showsInstallmentStatusLine = false,
 }: LedgerEntryListItemProps) {
+  const expenseTextStyle = useExpenseTextColor().textStyle;
   const installmentProgressLabel = formatInstallmentProgressLabel(entry);
   const noteLabel = stripInstallmentNoteSuffix(entry.note);
   const categoryLabel = categoryLabelById.get(entry.categoryId) ?? entry.category;
@@ -99,7 +102,7 @@ export function LedgerEntryListItem({
                 <Text
                   style={[
                     styles.entryAmount,
-                    entry.type === "income" ? styles.income : styles.expense,
+                    entry.type === "income" ? styles.income : expenseTextStyle,
                   ]}
                 >
                   {entry.type === "income" ? "+" : "-"}
@@ -220,6 +223,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: ENTRY_ROW_GAP,
+    paddingHorizontal: AppLayout.screenPadding,
     paddingVertical: 6,
     borderBottomWidth: 1,
     borderBottomColor: AppColors.border,
@@ -255,19 +259,19 @@ const styles = StyleSheet.create({
     gap: ENTRY_ROW_GAP,
   },
   entryContent: {
+    flex: 1,
+    minWidth: 0,
     color: AppColors.text,
     fontSize: 14,
     fontWeight: "600",
   },
   entryAmount: {
+    flexShrink: 0,
     fontSize: 13,
     fontWeight: "700",
   },
   income: {
     color: AppColors.income,
-  },
-  expense: {
-    color: AppColors.expense,
   },
   entryMeta: {
     flexShrink: 1,

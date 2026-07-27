@@ -1,8 +1,9 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { AuthControls } from "../constants/authControls";
 import { AppColors } from "../constants/colors";
 import { EntryRegistrationCopy } from "../constants/entryRegistration";
-import { AppLayout } from "../constants/layout";
+import { CompactTextProps } from "../constants/textLayout";
 import { FormLabelTextStyle } from "../constants/uiStyles";
 import type { LedgerBookMember } from "../types/ledgerBookMember";
 
@@ -33,7 +34,10 @@ export function EntryTargetMemberSelector({
               onPress={() => onSelectMember(member)}
               style={[styles.option, isSelected ? styles.optionSelected : null]}
             >
-              <Text style={[styles.optionLabel, isSelected ? styles.optionLabelSelected : null]}>
+              <Text
+                {...CompactTextProps}
+                style={[styles.optionLabel, isSelected ? styles.optionLabelSelected : null]}
+              >
                 {member.displayName}
               </Text>
             </Pressable>
@@ -57,14 +61,14 @@ const styles = StyleSheet.create({
   option: {
     borderWidth: 1,
     borderColor: AppColors.border,
-    borderRadius: AppLayout.cardRadius,
+    borderRadius: AuthControls.borderRadius,
     backgroundColor: AppColors.background,
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
   optionSelected: {
     borderColor: AppColors.primary,
-    backgroundColor: AppColors.surfaceMuted,
+    backgroundColor: AppColors.screenBackground,
   },
   optionLabel: {
     color: AppColors.text,
