@@ -36,11 +36,11 @@ export function resolveCalendarHeight(
   days: MonthlyLedgerSummary["days"],
   fontScale = 1,
 ): number {
-  return (
+  return Math.ceil(
     getVisibleCalendarWeeks(days).reduce(
       (totalHeight, week) => totalHeight + resolveCalendarWeekHeight(week, fontScale),
       0,
-    ) + CALENDAR_BOTTOM_BORDER_CLIP_PADDING
+    ) + CALENDAR_BOTTOM_BORDER_CLIP_PADDING + 1,
   );
 }
 
