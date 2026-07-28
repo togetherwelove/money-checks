@@ -2,6 +2,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import type { CalendarSummaryMode } from "../constants/calendarSummary";
 import { AppColors } from "../constants/colors";
+import { EntryNativeSheetUi } from "../constants/entryRegistration";
 import type { SubscriptionTier } from "../constants/subscription";
 import type { SupportPackageIdentifier } from "../constants/support";
 import type { BusyTaskTracker } from "../hooks/ledgerScreenState/types";
@@ -20,7 +21,7 @@ import { AccountScreen } from "../screens/AccountScreen";
 import { AllEntriesScreen } from "../screens/AllEntriesScreen";
 import { AppSettingsScreen } from "../screens/AppSettingsScreen";
 import { ChartScreen } from "../screens/ChartScreen";
-import { EntryScreen } from "../screens/EntryScreen";
+import { EntryNativeSheetScreen } from "../screens/EntryNativeSheetScreen";
 import { HelpScreen } from "../screens/HelpScreen";
 import { HomeScreen } from "../screens/HomeScreen";
 import { NotificationSettingsScreen } from "../screens/NotificationSettingsScreen";
@@ -57,6 +58,7 @@ type SignedInStackNavigatorProps = {
   onBeforeCopyShareCode: () => Promise<void> | void;
   onBeforeSendJoinRequest: () => Promise<void> | void;
   onDeleteSelectedEntry: (entry: LedgerEntry) => Promise<boolean>;
+  onDiscardEntryDraft: () => void;
   onEditSelectedEntryFromAllEntries: (entry: LedgerEntry) => void;
   onEditSelectedEntryFromCalendar: (entry: LedgerEntry) => void;
   onOpenSubscription: () => void;
@@ -67,8 +69,9 @@ type SignedInStackNavigatorProps = {
   onRequestNotificationPermission: () => Promise<boolean>;
   onRequestAdTrackingPermission: () => void;
   onRestorePurchases: () => Promise<void>;
-  onSaveEntry: () => Promise<void>;
+  onSaveEntry: () => Promise<boolean>;
   onSelectCalendarDate: (isoDate: string) => void;
+  onSettleInstallmentEntry: (entry: LedgerEntry) => Promise<boolean>;
   onToggleCalendarHeatmap: (isEnabled: boolean) => void;
   onSendPendingJoinRequestNotification: () => Promise<void>;
   onSendPushNotificationToBookMembers: (
@@ -82,7 +85,6 @@ type SignedInStackNavigatorProps = {
     targetUserIds: string[],
     bookId?: string,
   ) => Promise<void>;
-  onSettleInstallmentEntry: (entry: LedgerEntry) => Promise<void>;
   onToggleNotificationPreference: (
     eventTypes: NotificationEventType | readonly NotificationEventType[],
     enabled: boolean,
@@ -121,6 +123,7 @@ export function SignedInStackNavigator({
   onBeforeCopyShareCode,
   onBeforeSendJoinRequest,
   onDeleteSelectedEntry,
+  onDiscardEntryDraft,
   onEditSelectedEntryFromAllEntries,
   onEditSelectedEntryFromCalendar,
   onOpenAdTrackingSettings,
@@ -133,11 +136,11 @@ export function SignedInStackNavigator({
   onRestorePurchases,
   onSaveEntry,
   onSelectCalendarDate,
+  onSettleInstallmentEntry,
   onToggleCalendarHeatmap,
   onSendPendingJoinRequestNotification,
   onSendPushNotificationToBookMembers,
   onSendPushNotificationToUsers,
-  onSettleInstallmentEntry,
   onToggleNotificationPreference,
   plusPriceLabel,
   showAdTrackingPermissionCard,
@@ -173,6 +176,29 @@ export function SignedInStackNavigator({
           />
         )}
       </Stack.Screen>
+      <Stack.Screen
+        name="entry-sheet"
+        options={{
+          fullScreenGestureEnabled: false,
+          headerShown: false,
+          presentation: "formSheet",
+          sheetAllowedDetents: [EntryNativeSheetUi.detentRatio],
+          sheetExpandsWhenScrolledToEdge: false,
+          sheetGrabberVisible: true,
+          sheetInitialDetentIndex: EntryNativeSheetUi.initialDetentIndex,
+          sheetLargestUndimmedDetentIndex: "none",
+        }}
+      >
+        {() => (
+          <EntryNativeSheetScreen
+            currentUserId={userId}
+            onDiscard={onDiscardEntryDraft}
+            onSaveEntry={onSaveEntry}
+            onSettleInstallmentEntry={onSettleInstallmentEntry}
+            state={ledgerState}
+          />
+        )}
+      </Stack.Screen>
       <Stack.Screen name="all-entries">
         {() => (
           <AllEntriesScreen
@@ -181,17 +207,6 @@ export function SignedInStackNavigator({
             onEditEntry={onEditSelectedEntryFromAllEntries}
             showsNativeAds={showsBannerAd}
             trackBlockingTask={trackBlockingTask}
-          />
-        )}
-      </Stack.Screen>
-      <Stack.Screen name="entry">
-        {() => (
-          <EntryScreen
-            currentUserId={userId}
-            onSaveEntry={onSaveEntry}
-            onSettleInstallmentEntry={onSettleInstallmentEntry}
-            showsBannerAd={showsBannerAd}
-            state={ledgerState}
           />
         )}
       </Stack.Screen>

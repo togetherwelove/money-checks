@@ -95,20 +95,9 @@ export function LedgerEntryListItem({
               />
             </View>
             <View style={styles.entryTextBlock}>
-              <View style={styles.entryPrimaryRow}>
-                <Text style={styles.entryContent} numberOfLines={1}>
-                  {resolveEntryContentLabel(entry, categoryLabel)}
-                </Text>
-                <Text
-                  style={[
-                    styles.entryAmount,
-                    entry.type === "income" ? styles.income : expenseTextStyle,
-                  ]}
-                >
-                  {entry.type === "income" ? "+" : "-"}
-                  {formatCurrency(entry.amount)}
-                </Text>
-              </View>
+              <Text style={styles.entryContent} numberOfLines={1}>
+                {resolveEntryContentLabel(entry, categoryLabel)}
+              </Text>
               <View style={styles.entryMetaRow}>
                 <Text style={styles.entryMeta} numberOfLines={1}>
                   {buildEntryMainMetaParts({
@@ -144,6 +133,15 @@ export function LedgerEntryListItem({
                 <Text style={styles.entryStatus}>{installmentProgressLabel}</Text>
               ) : null}
             </View>
+            <Text
+              style={[
+                styles.entryAmount,
+                entry.type === "income" ? styles.income : expenseTextStyle,
+              ]}
+            >
+              {entry.type === "income" ? "+" : "-"}
+              {formatCurrency(entry.amount)}
+            </Text>
           </View>
         </MenuView>
       </Pressable>
@@ -252,15 +250,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 4,
   },
-  entryPrimaryRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-start",
-    gap: ENTRY_ROW_GAP,
-  },
   entryContent: {
-    flex: 1,
-    minWidth: 0,
     color: AppColors.text,
     fontSize: 14,
     fontWeight: "600",

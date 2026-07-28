@@ -1,44 +1,34 @@
-import type { ComponentRef } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, StyleSheet, Text, type TextInput, View, findNodeHandle } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
 
-import { AppBannerAd } from "../components/AppBannerAd";
-import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { LedgerEditorPanel } from "../components/LedgerEditorPanel";
 import { AppColors } from "../constants/colors";
 import { ENTRY_PHOTO_LIMIT, EntryPhotoCopy } from "../constants/entryPhotos";
 import { KeyboardLayout } from "../constants/keyboard";
 import { AppLayout } from "../constants/layout";
-import { FullBleedHorizontalStyle } from "../constants/uiStyles";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
 import { pickImageAttachments } from "../lib/imageAttachments";
 import { fetchLedgerBookMembers } from "../lib/ledgerBooks";
 import { logAppError } from "../lib/logAppError";
 import { showNativeToast } from "../lib/nativeToast";
-import type { LedgerEntry } from "../types/ledger";
+import type { LedgerEntry, LedgerEntryDraft, LedgerEntryType } from "../types/ledger";
 import type { LedgerBookMember } from "../types/ledgerBookMember";
 
 type EntryScreenProps = {
   currentUserId: string;
+  onDraftChange: () => void;
   onSaveEntry: () => Promise<void>;
   onSettleInstallmentEntry: (entry: LedgerEntry) => Promise<void>;
-  showsBannerAd: boolean;
   state: LedgerScreenState;
-};
-
-type KeyboardAwareScrollViewRef = ComponentRef<typeof KeyboardAwareScrollView> & {
-  scrollToFocusedInput?: (nodeHandle: number) => void;
 };
 
 export function EntryScreen({
   currentUserId,
+  onDraftChange,
   onSaveEntry,
   onSettleInstallmentEntry,
-  showsBannerAd,
   state,
 }: EntryScreenProps) {
-  const scrollViewRef = useRef<ComponentRef<typeof KeyboardAwareScrollView>>(null);
-  const [focusedInputHeight, setFocusedInputHeight] = useState(0);
   const [members, setMembers] = useState<LedgerBookMember[]>([]);
   const {
     draft,
@@ -128,6 +118,7 @@ export function EntryScreen({
         return;
       }
 
+      onDraftChange();
       updateDraftPhotoAttachments([
         ...draft.photoAttachments,
         ...nextAttachments.map((attachment) => ({
@@ -142,6 +133,7 @@ export function EntryScreen({
   };
 
   const handleRemovePhotoAttachment = (attachmentId: string) => {
+    onDraftChange();
     updateDraftPhotoAttachments(
       draft.photoAttachments.filter(
         (attachment) => (attachment.id ?? attachment.uri) !== attachmentId,
@@ -149,40 +141,39 @@ export function EntryScreen({
     );
   };
 
-  const handleEntryInputFocus = (input: TextInput | null, inputHeight: number) => {
-    setFocusedInputHeight(inputHeight);
+  const handleChangeDraft = useCallback(
+    (field: keyof LedgerEntryDraft, value: string) => {
+      onDraftChange();
+      updateDraftField(field, value);
+    },
+    [onDraftChange, updateDraftField],
+  );
 
-    const inputNodeHandle = input ? findNodeHandle(input) : null;
-    const keyboardAwareScrollView = scrollViewRef.current as KeyboardAwareScrollViewRef | null;
-    if (!inputNodeHandle || !keyboardAwareScrollView?.scrollToFocusedInput) {
-      return;
-    }
+  const handleChangeInstallmentMonths = useCallback(
+    (installmentMonths: number) => {
+      onDraftChange();
+      updateDraftInstallmentMonths(installmentMonths);
+    },
+    [onDraftChange, updateDraftInstallmentMonths],
+  );
 
-    requestAnimationFrame(() => {
-      keyboardAwareScrollView.scrollToFocusedInput?.(inputNodeHandle);
-    });
-  };
-
-  const entryKeyboardExtraScrollHeight =
-    resolveFocusedInputKeyboardExtraScrollHeight(focusedInputHeight);
-  const contentBottomPadding = entryKeyboardExtraScrollHeight;
-  const contentContainerStyle = useMemo(
-    () => [styles.content, { paddingBottom: contentBottomPadding }],
-    [contentBottomPadding],
+  const handleSelectType = useCallback(
+    (entryType: LedgerEntryType) => {
+      onDraftChange();
+      updateDraftType(entryType);
+    },
+    [onDraftChange, updateDraftType],
   );
 
   return (
-    <KeyboardAwareScrollView
-      ref={scrollViewRef}
-      contentContainerStyle={contentContainerStyle}
-      extraScrollHeight={entryKeyboardExtraScrollHeight}
+    <ScrollView
+      automaticallyAdjustKeyboardInsets
+      contentInsetAdjustmentBehavior="automatic"
+      contentContainerStyle={styles.content}
+      keyboardDismissMode={KeyboardLayout.dismissMode}
+      keyboardShouldPersistTaps={KeyboardLayout.persistTaps}
       style={styles.screen}
     >
-      {showsBannerAd ? (
-        <View style={styles.fullBleedAd}>
-          <AppBannerAd />
-        </View>
-      ) : null}
       {errorMessage ? (
         <Pressable
           accessibilityRole="button"
@@ -209,14 +200,12 @@ export function EntryScreen({
         draft={draft}
         editingEntryId={editingEntryId}
         members={members}
-        onChangeDraft={updateDraftField}
-        onChangeInstallmentMonths={updateDraftInstallmentMonths}
-        onInputBlur={() => setFocusedInputHeight(0)}
-        onInputFocus={handleEntryInputFocus}
+        onChangeDraft={handleChangeDraft}
+        onChangeInstallmentMonths={handleChangeInstallmentMonths}
         onPickPhotoAttachments={handlePickPhotoAttachments}
         onRemovePhotoAttachment={handleRemovePhotoAttachment}
         onSaveEntry={onSaveEntry}
-        onSelectType={updateDraftType}
+        onSelectType={handleSelectType}
         onSettleInstallmentEntry={
           editingEntry ? () => onSettleInstallmentEntry(editingEntry) : null
         }
@@ -226,19 +215,7 @@ export function EntryScreen({
             editingEntry.installmentOrder < editingEntry.installmentMonths,
         )}
       />
-    </KeyboardAwareScrollView>
-  );
-}
-
-function resolveFocusedInputKeyboardExtraScrollHeight(inputHeight: number) {
-  if (inputHeight <= 0) {
-    return 0;
-  }
-
-  const measuredExtraHeight = inputHeight * KeyboardLayout.focusedInputExtraScrollHeightRatio;
-  return Math.min(
-    KeyboardLayout.focusedInputExtraScrollHeightMax,
-    Math.max(KeyboardLayout.focusedInputExtraScrollHeightMin, measuredExtraHeight),
+    </ScrollView>
   );
 }
 
@@ -249,8 +226,8 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: AppLayout.screenPadding,
+    paddingTop: AppLayout.cardContentPadding,
   },
-  fullBleedAd: FullBleedHorizontalStyle,
   error: {
     color: AppColors.expense,
     fontSize: 12,

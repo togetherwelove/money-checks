@@ -6,7 +6,6 @@ export const AppMessages = {
     summaryExpense: "총지출",
     calendarTab: "가계부 달력",
     entryScreenTitle: "입출금 등록",
-    entryDatePickerAccessibilityLabel: "등록 날짜 선택",
     editorEmpty: "아직 기록이 없어요.",
     editorAmount: "금액",
     editorUpdate: "수정",

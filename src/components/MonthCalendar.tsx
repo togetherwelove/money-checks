@@ -10,6 +10,7 @@ import { formatAmountNumber } from "../utils/amount";
 import { parseIsoDate } from "../utils/calendar";
 import {
   CALENDAR_AMOUNT_SPACE_HEIGHT,
+  CALENDAR_AMOUNT_PADDING_VERTICAL,
   CALENDAR_DAY_CELL_BORDER_WIDTH,
   CALENDAR_DAY_CONTENT_GAP,
   CALENDAR_DAY_NUMBER_BORDER_WIDTH,
@@ -17,6 +18,7 @@ import {
   CALENDAR_DAY_NUMBER_LINE_HEIGHT,
   CALENDAR_DAY_NUMBER_PADDING_VERTICAL,
   CALENDAR_DAY_NUMBER_WIDTH,
+  CALENDAR_WEEK_DIVIDER_WIDTH,
 } from "./monthCalendarPager/calendarLayout";
 import { CompactTextProps } from "../constants/textLayout";
 import { getVisibleCalendarWeeks } from "./monthCalendarPager/calendarWeekCount";
@@ -413,7 +415,7 @@ const styles = StyleSheet.create({
   emptyDayCell: {},
   weekDivider: {
     borderTopColor: AppColors.border,
-    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopWidth: CALENDAR_WEEK_DIVIDER_WIDTH,
   },
   dayContent: {
     alignItems: "center",
@@ -469,8 +471,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 0,
     minHeight: CALENDAR_AMOUNT_SPACE_HEIGHT,
-    paddingTop: 1,
-    paddingBottom: 1,
+    paddingVertical: CALENDAR_AMOUNT_PADDING_VERTICAL,
   },
   emptyAmountLine: {
     color: AppColors.transparent,

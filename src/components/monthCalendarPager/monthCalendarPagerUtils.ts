@@ -4,6 +4,7 @@ import type { MonthlyLedgerSummary } from "../../types/ledger";
 import {
   CALENDAR_BOTTOM_BORDER_CLIP_PADDING,
   resolveCalendarWeekHeight,
+  resolveCalendarWeekDividerHeight,
 } from "./calendarLayout";
 import { getVisibleCalendarWeeks } from "./calendarWeekCount";
 
@@ -36,11 +37,15 @@ export function resolveCalendarHeight(
   days: MonthlyLedgerSummary["days"],
   fontScale = 1,
 ): number {
+  const visibleWeeks = getVisibleCalendarWeeks(days);
+
   return Math.ceil(
-    getVisibleCalendarWeeks(days).reduce(
+    visibleWeeks.reduce(
       (totalHeight, week) => totalHeight + resolveCalendarWeekHeight(week, fontScale),
       0,
-    ) + CALENDAR_BOTTOM_BORDER_CLIP_PADDING + 1,
+    ) +
+      resolveCalendarWeekDividerHeight(visibleWeeks.length) +
+      CALENDAR_BOTTOM_BORDER_CLIP_PADDING,
   );
 }
 

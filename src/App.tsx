@@ -27,7 +27,6 @@ import { AppHeader } from "./components/AppHeader";
 import { AppMenuDrawer } from "./components/AppMenuDrawer";
 import { BlockingOverlay } from "./components/BlockingOverlay";
 import { DailyFirstEntryAdNoticeOverlay } from "./components/DailyFirstEntryAdNoticeOverlay";
-import { EntryDatePickerModal } from "./components/EntryDatePickerModal";
 import { LedgerBookSwitcherModal } from "./components/LedgerBookSwitcherModal";
 import { OnboardingTransitionScreen } from "./components/OnboardingTransitionScreen";
 import { SessionLoadingScreen } from "./components/SessionLoadingScreen";
@@ -73,9 +72,9 @@ import {
 import { preloadInterstitialAd, showInterstitialAd } from "./lib/ads/interstitialAd";
 import { ensureMobileAdsInitialized } from "./lib/ads/mobileAds";
 import {
-  isRewardedInterstitialAdReady,
   preloadRewardedInterstitialAd,
   showRewardedInterstitialAd,
+  waitForRewardedInterstitialAdReady,
 } from "./lib/ads/rewardedInterstitialAd";
 import {
   type AdTrackingPermissionState,
@@ -123,7 +122,7 @@ import { PasswordResetScreen } from "./screens/PasswordResetScreen";
 import type { LedgerAppScreen } from "./types/app";
 import type { CategoryDefinition } from "./types/category";
 import type { LedgerEntry, LedgerEntryDraft } from "./types/ledger";
-import { formatSelectedDate, getMonthKey, toIsoDate } from "./utils/calendar";
+import { getMonthKey, toIsoDate } from "./utils/calendar";
 import { createDraft } from "./utils/ledgerEntries";
 import { resolveFallbackDisplayName } from "./utils/sessionDisplayName";
 
@@ -179,7 +178,6 @@ function SignedOutAppShell({ children }: { children: React.ReactNode }) {
 function SignedInApp({ session }: { session: Session }) {
   const navigationRef = useRef(createNavigationContainerRef<SignedInStackParamList>()).current;
   const clipboardImportBaseDate = useRef(new Date()).current;
-  const lastSyncedScreenRef = useRef<LedgerAppScreen>("calendar");
   const hasScheduledInitialPermissionRequestRef = useRef(false);
   const hasStartedInitialPermissionRequestRef = useRef(false);
   const permissionRequestTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -190,7 +188,6 @@ function SignedInApp({ session }: { session: Session }) {
   const [isLedgerSwitcherOpen, setIsLedgerSwitcherOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNicknameScreenReady, setIsNicknameScreenReady] = useState(false);
-  const [isEntryDatePickerOpen, setIsEntryDatePickerOpen] = useState(false);
   const [isYearPickerOpen, setIsYearPickerOpen] = useState(false);
   const [entryActionMenuDraft, setEntryActionMenuDraft] = useState<CardSmsClipboardDraft | null>(
     null,
@@ -236,10 +233,10 @@ function SignedInApp({ session }: { session: Session }) {
     onReadOnlyEditBlocked: handleReadOnlyEditBlocked,
     subscriptionTier: subscription.currentTier,
   });
+  const discardEntryDraft = useCallback(() => {
+    ledgerState.resetEditor(ledgerState.selectedDate);
+  }, [ledgerState]);
   const notificationBadges = useNotificationBadges(session.user.id);
-  const entryFormDate = ledgerState.editingEntryId
-    ? ledgerState.draft.date
-    : ledgerState.selectedDate;
   const canSwitchHeaderLedgerBook =
     currentScreen === "calendar" && ledgerState.accessibleBooks.length > 1;
   useLedgerWidgetSync(ledgerState.activeBook?.id ?? null, ledgerState.entries);
@@ -403,19 +400,15 @@ function SignedInApp({ session }: { session: Session }) {
 
     const rootState = navigationRef.getRootState();
     const activeRoute = rootState.routes[rootState.index];
+    if (activeRoute?.name === "entry-sheet") {
+      return;
+    }
+
     const activeRouteName = isSignedInStackScreen(activeRoute?.name)
       ? activeRoute.name
       : "calendar";
-    const previousActiveScreen = lastSyncedScreenRef.current;
-
-    if (previousActiveScreen === "entry" && activeRouteName !== "entry") {
-      setIsEntryDatePickerOpen(false);
-      ledgerState.resetEditor(ledgerState.selectedDate);
-    }
-
-    lastSyncedScreenRef.current = activeRouteName;
     setCurrentScreen(activeRouteName);
-  }, [ledgerState, navigationRef]);
+  }, [navigationRef]);
 
   const returnToCalendarRoot = useCallback(() => {
     if (!navigationRef.isReady()) {
@@ -431,7 +424,7 @@ function SignedInApp({ session }: { session: Session }) {
   }, [navigationRef]);
 
   const navigateToStackScreen = useCallback(
-    (screen: Exclude<LedgerAppScreen, "calendar">) => {
+    (screen: Exclude<LedgerAppScreen, "calendar" | "entry">) => {
       if (!navigationRef.isReady()) {
         return;
       }
@@ -455,14 +448,26 @@ function SignedInApp({ session }: { session: Session }) {
     [ledgerState.switchLedgerBook],
   );
 
+  const openEntrySheet = useCallback(() => {
+    if (
+      !navigationRef.isReady() ||
+      navigationRef.getCurrentRoute()?.name === "entry-sheet"
+    ) {
+      return;
+    }
+
+    navigationRef.navigate("entry-sheet");
+  }, [navigationRef]);
+
   const navigateToEntryFromCalendar = useCallback(() => {
-    navigateToStackScreen("entry");
-  }, [navigateToStackScreen]);
+    ledgerState.resetEditor(ledgerState.selectedDate);
+    openEntrySheet();
+  }, [ledgerState, openEntrySheet]);
 
   const navigateToEntryForEdit = useCallback(() => {
     setEntryActionMenuDraft(null);
-    navigateToStackScreen("entry");
-  }, [navigateToStackScreen]);
+    openEntrySheet();
+  }, [openEntrySheet]);
 
   const shouldIgnoreCardSmsClipboardDraft = useCallback(
     (clipboardDraft: CardSmsClipboardDraft) => {
@@ -501,16 +506,22 @@ function SignedInApp({ session }: { session: Session }) {
       return;
     }
 
-    markDailyFirstEntrySaveInterstitialShown(session.user.id, todayKey);
-
-    if (!isMobileAdsReady || !isRewardedInterstitialAdReady()) {
+    if (!isMobileAdsReady) {
       preloadRewardedInterstitialAd();
+      return;
+    }
+
+    const isRewardedInterstitialReady = await waitForRewardedInterstitialAdReady();
+    if (!isRewardedInterstitialReady) {
       return;
     }
 
     await showDailyFirstEntryAdNoticeIfNeeded(session.user.id, setIsDailyFirstEntryAdNoticeVisible);
 
-    await showRewardedInterstitialAd();
+    const rewardedInterstitialResult = await showRewardedInterstitialAd();
+    if (rewardedInterstitialResult.didOpen) {
+      markDailyFirstEntrySaveInterstitialShown(session.user.id, todayKey);
+    }
   }, [isMobileAdsReady, session.user.id, subscription.currentTier, subscription.isLoading]);
 
   const handleSaveCardSmsClipboardDraft = useCallback(
@@ -608,7 +619,7 @@ function SignedInApp({ session }: { session: Session }) {
     if (
       !isSignedInInteractionReady ||
       ledgerState.isReadOnlyDueToPlanLimit ||
-      currentScreen === "entry" ||
+      navigationRef.getCurrentRoute()?.name === "entry-sheet" ||
       entryActionMenuDraft
     ) {
       return;
@@ -621,10 +632,10 @@ function SignedInApp({ session }: { session: Session }) {
 
     setEntryActionMenuDraft(clipboardDraft);
   }, [
-    currentScreen,
     entryActionMenuDraft,
     isSignedInInteractionReady,
     ledgerState.isReadOnlyDueToPlanLimit,
+    navigationRef,
     readAvailableCardSmsClipboardDraft,
   ]);
 
@@ -844,22 +855,6 @@ function SignedInApp({ session }: { session: Session }) {
 
     setIsYearPickerOpen(true);
   };
-  const handleOpenEntryDatePicker = () => {
-    if (currentScreen !== "entry") {
-      return;
-    }
-
-    setIsEntryDatePickerOpen(true);
-  };
-  const handleSelectEntryDate = (isoDate: string) => {
-    if (ledgerState.editingEntryId) {
-      ledgerState.updateDraftField("date", isoDate);
-      return;
-    }
-
-    ledgerState.handleSelectDate(isoDate);
-  };
-
   const handleCompleteNicknameOnboarding = async (displayName: string) => {
     try {
       const savedDisplayName = await updateOwnProfileDisplayName(session.user.id, displayName);
@@ -1018,17 +1013,12 @@ function SignedInApp({ session }: { session: Session }) {
         step: "save_entry",
       });
       showNativeToast(resolveLedgerSaveErrorMessage(error));
-      return;
+      return false;
     }
     if (savedEntries.length === 0) {
-      return;
+      return false;
     }
 
-    if (navigationRef.isReady() && navigationRef.canGoBack()) {
-      navigationRef.goBack();
-    } else {
-      returnToCalendarRoot();
-    }
     showNativeToast(
       wasEditingEntry
         ? EntryRegistrationCopy.saveUpdateSuccess
@@ -1040,6 +1030,7 @@ function SignedInApp({ session }: { session: Session }) {
       wasEditingEntry ? "update" : "create",
       ledgerState.draft.date,
     );
+    return true;
   };
 
   const handleEditEntryFromCalendar = (entry: LedgerEntry) => {
@@ -1065,22 +1056,18 @@ function SignedInApp({ session }: { session: Session }) {
   const handleSettleInstallmentEntry = async (entry: LedgerEntry) => {
     if (ledgerState.isReadOnlyDueToPlanLimit) {
       handleReadOnlyEditBlocked();
-      return;
+      return false;
     }
 
     try {
       const savedSettlementEntry = await ledgerState.handleSettleInstallmentEntry(entry);
       if (!savedSettlementEntry) {
         showNativeToast(EntryRegistrationCopy.installmentSettleUnavailable);
-        return;
+        return false;
       }
 
-      if (navigationRef.isReady() && navigationRef.canGoBack()) {
-        navigationRef.goBack();
-      } else {
-        returnToCalendarRoot();
-      }
       showNativeToast(EntryRegistrationCopy.installmentSettleSuccess);
+      return true;
     } catch (error) {
       logAppError("App", error, {
         entryId: entry.id,
@@ -1088,6 +1075,7 @@ function SignedInApp({ session }: { session: Session }) {
         step: "settle_installment_entry",
       });
       showNativeToast(resolveLedgerSaveErrorMessage(error));
+      return false;
     }
   };
 
@@ -1308,14 +1296,7 @@ function SignedInApp({ session }: { session: Session }) {
             canSwitchTitle={currentScreen === "calendar"}
             isMenuOpen={isMenuOpen}
             isReadOnlyTitle={currentScreen === "calendar" && ledgerState.isReadOnlyDueToPlanLimit}
-            leadingActionAccessibilityLabel={AppMessages.entryDatePickerAccessibilityLabel}
-            leadingActionLabel={
-              currentScreen === "entry" ? formatSelectedDate(entryFormDate) : null
-            }
             onPressTitle={currentScreen === "calendar" ? handleOpenYearPicker : undefined}
-            onPressLeadingAction={
-              currentScreen === "entry" ? handleOpenEntryDatePicker : undefined
-            }
             titleLabel={
               currentScreen === "calendar"
                 ? formatYearMonthLabel(ledgerState.visibleMonth)
@@ -1362,6 +1343,7 @@ function SignedInApp({ session }: { session: Session }) {
                 onChangeNotificationThresholdEnabled={notifications.updateThresholdEnabled}
                 onChangeNotificationThresholdPeriod={notifications.updateThresholdPeriod}
                 onDeleteSelectedEntry={handleDeleteEntryFromCalendar}
+                onDiscardEntryDraft={discardEntryDraft}
                 onEditSelectedEntryFromAllEntries={handleEditEntryFromAllEntries}
                 onEditSelectedEntryFromCalendar={handleEditEntryFromCalendar}
                 onOpenAdTrackingSettings={handleOpenAdTrackingSettings}
@@ -1377,6 +1359,7 @@ function SignedInApp({ session }: { session: Session }) {
                   ledgerState.handleSelectDate(isoDate);
                   handleOpenCalendar();
                 }}
+                onSettleInstallmentEntry={handleSettleInstallmentEntry}
                 onSendPendingJoinRequestNotification={
                   notifications.sendPendingJoinRequestNotification
                 }
@@ -1384,7 +1367,6 @@ function SignedInApp({ session }: { session: Session }) {
                   notifications.sendPushNotificationToBookMembers
                 }
                 onSendPushNotificationToUsers={notifications.sendPushNotificationToUsers}
-                onSettleInstallmentEntry={handleSettleInstallmentEntry}
                 onToggleCalendarHeatmap={calendarHeatmapSetting.updateCalendarHeatmapEnabled}
                 onToggleNotificationPreference={notifications.updatePreference}
                 plusPriceLabel={subscription.plusPriceLabel}
@@ -1448,12 +1430,6 @@ function SignedInApp({ session }: { session: Session }) {
           onClose={() => setIsYearPickerOpen(false)}
           onSelectDate={ledgerState.handleSelectDate}
           selectedDate={ledgerState.selectedDate}
-        />
-        <EntryDatePickerModal
-          isOpen={currentScreen === "entry" && isEntryDatePickerOpen}
-          onClose={() => setIsEntryDatePickerOpen(false)}
-          onSelectDate={handleSelectEntryDate}
-          selectedDate={entryFormDate}
         />
         <AnnualReportRangePickerModal
           endDate={annualReport.customRangeDraft?.endDate ?? ledgerState.selectedDate}
@@ -1634,7 +1610,7 @@ function resolveCardSmsClipboardFallbackCategory(
 
 function navigateToSingleInstanceStackScreen(
   navigationRef: ReturnType<typeof createNavigationContainerRef<SignedInStackParamList>>,
-  screen: Exclude<LedgerAppScreen, "calendar">,
+  screen: Exclude<LedgerAppScreen, "calendar" | "entry">,
 ) {
   const rootState = navigationRef.getRootState();
   const targetRouteIndex = rootState.routes.findIndex((route) => route.name === screen);
