@@ -67,7 +67,6 @@ function SummaryMetric({
         numberOfLines={1}
         style={[
           styles.metricValue,
-          isResult ? styles.resultValue : null,
           { color: valueColor },
         ]}
       >
@@ -147,9 +146,6 @@ const styles = StyleSheet.create({
   },
   resultMetric: {
     flex: 1.15,
-  },
-  resultValue: {
-    fontSize: 14,
   },
   summaryLabel: {
     color: AppColors.mutedStrongText,

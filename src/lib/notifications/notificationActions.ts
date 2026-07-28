@@ -115,7 +115,7 @@ export function buildNotificationActionCategoryDefinitions(): readonly {
 export function resolveNotificationActionRoute(
   actionIdentifier: string,
   data: Record<string, unknown> | undefined,
-): LedgerAppScreen {
+): Exclude<LedgerAppScreen, "entry"> {
   const payloadRoute =
     typeof data?.actionRoute === "string"
       ? resolveNotificationPayloadRoute(data.actionRoute)
@@ -140,7 +140,7 @@ export function resolveNotificationActionRoute(
   return NotificationActionPayloadRoutes.calendar;
 }
 
-function resolveNotificationPayloadRoute(route: string): LedgerAppScreen | null {
+function resolveNotificationPayloadRoute(route: string): Exclude<LedgerAppScreen, "entry"> | null {
   if (
     route === NotificationActionPayloadRoutes.calendar ||
     route === NotificationActionPayloadRoutes.allEntries ||

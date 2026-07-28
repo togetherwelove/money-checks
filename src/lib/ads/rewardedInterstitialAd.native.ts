@@ -6,7 +6,10 @@ import {
   TestIds,
 } from "react-native-google-mobile-ads";
 
-import { AdMobRewardedInterstitialConfig } from "../../constants/ads";
+import {
+  AdMobRewardedInterstitialConfig,
+  RewardedInterstitialNoticeConfig,
+} from "../../constants/ads";
 import { logAppError, logAppWarning } from "../logAppError";
 import { resolveAdMobAdUnitId } from "./adUnitId";
 import { logAdMobLoadError } from "./adMobLoadError";
@@ -28,7 +31,7 @@ const REWARDED_INTERSTITIAL_RESULT_TIMEOUT_MS = 120_000;
 
 type RewardedInterstitialShowResult =
   | {
-      didEarnReward: boolean;
+      result: RewardedInterstitialDisplayResult;
       type: "result";
     }
   | {
@@ -38,6 +41,11 @@ type RewardedInterstitialShowResult =
       error: unknown;
       type: "show-error";
     };
+
+export type RewardedInterstitialDisplayResult = {
+  didEarnReward: boolean;
+  didOpen: boolean;
+};
 
 export function preloadRewardedInterstitialAd() {
   const adUnitId = resolveRewardedInterstitialAdUnitId();
@@ -61,7 +69,24 @@ export function isRewardedInterstitialAdReady() {
   );
 }
 
-export async function showRewardedInterstitialAd(): Promise<boolean> {
+export async function waitForRewardedInterstitialAdReady(): Promise<boolean> {
+  preloadRewardedInterstitialAd();
+  const startedAtMs = Date.now();
+
+  while (
+    Date.now() - startedAtMs < RewardedInterstitialNoticeConfig.readyWaitTimeoutMs
+  ) {
+    if (isRewardedInterstitialAdReady()) {
+      return true;
+    }
+
+    await wait(RewardedInterstitialNoticeConfig.readyPollIntervalMs);
+  }
+
+  return isRewardedInterstitialAdReady();
+}
+
+export async function showRewardedInterstitialAd(): Promise<RewardedInterstitialDisplayResult> {
   if (!rewardedInterstitialAd) {
     preloadRewardedInterstitialAd();
   }
@@ -73,7 +98,10 @@ export async function showRewardedInterstitialAd(): Promise<boolean> {
       step: "show_rewarded_interstitial_ad",
     });
     preloadRewardedInterstitialAd();
-    return false;
+    return {
+      didEarnReward: false,
+      didOpen: false,
+    };
   }
 
   try {
@@ -82,8 +110,8 @@ export async function showRewardedInterstitialAd(): Promise<boolean> {
     const rewardPromise = waitForRewardedInterstitialResult(rewardedInterstitialAd);
     const showPromise = rewardedInterstitialAd.show();
     const firstResult = await Promise.race<RewardedInterstitialShowResult>([
-      rewardPromise.then((didEarnReward) => ({
-        didEarnReward,
+      rewardPromise.then((result) => ({
+        result,
         type: "result",
       })),
       showPromise.then(
@@ -103,27 +131,31 @@ export async function showRewardedInterstitialAd(): Promise<boolean> {
 
     if (firstResult.type === "result") {
       rewardedInterstitialShowAttemptStartedAtMs = null;
-      return firstResult.didEarnReward;
+      return firstResult.result;
     }
 
-    const didEarnReward = await rewardPromise;
+    const result = await rewardPromise;
     rewardedInterstitialShowAttemptStartedAtMs = null;
-    return didEarnReward;
+    return result;
   } catch (error) {
     rewardedInterstitialShowAttemptStartedAtMs = null;
     logAppError("AdMob", error, {
       step: "show_rewarded_interstitial_ad",
     });
     rebuildRewardedInterstitialAd();
-    return false;
+    return {
+      didEarnReward: false,
+      didOpen: false,
+    };
   }
 }
 
 function waitForRewardedInterstitialResult(
   currentRewardedInterstitialAd: RewardedInterstitialAd,
-): Promise<boolean> {
-  return new Promise<boolean>((resolve, reject) => {
+): Promise<RewardedInterstitialDisplayResult> {
+  return new Promise<RewardedInterstitialDisplayResult>((resolve, reject) => {
     let hasEarnedReward = false;
+    let didOpen = false;
     let hasSettled = false;
     let resultTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -132,6 +164,7 @@ function waitForRewardedInterstitialResult(
         clearTimeout(resultTimeout);
         resultTimeout = null;
       }
+      openedDisposer();
       closeDisposer();
       errorDisposer();
       rewardDisposer();
@@ -147,13 +180,25 @@ function waitForRewardedInterstitialResult(
       nextHandler();
     };
 
+    const openedDisposer = currentRewardedInterstitialAd.addAdEventListener(
+      AdEventType.OPENED,
+      () => {
+        didOpen = true;
+      },
+    );
+
     const closeDisposer = currentRewardedInterstitialAd.addAdEventListener(
       AdEventType.CLOSED,
       () => {
         logRewardedInterstitialTrace("result_closed", {
           hasEarnedReward,
         });
-        settle(() => resolve(hasEarnedReward));
+        settle(() =>
+          resolve({
+            didEarnReward: hasEarnedReward,
+            didOpen,
+          }),
+        );
       },
     );
 
@@ -178,7 +223,10 @@ function waitForRewardedInterstitialResult(
         logAppWarning("AdMob", "Rewarded interstitial ad result timed out", {
           step: "rewarded_interstitial_result_timeout",
         });
-        resolve(false);
+        resolve({
+          didEarnReward: hasEarnedReward,
+          didOpen,
+        });
       });
     }, REWARDED_INTERSTITIAL_RESULT_TIMEOUT_MS);
   });
@@ -305,6 +353,12 @@ function logRewardedInterstitialTrace(step: string, context?: Record<string, unk
     isLoaded: isRewardedInterstitialLoaded,
     isShowing: isRewardedInterstitialShowing,
     step,
+  });
+}
+
+function wait(durationMs: number) {
+  return new Promise<void>((resolve) => {
+    setTimeout(resolve, durationMs);
   });
 }
 

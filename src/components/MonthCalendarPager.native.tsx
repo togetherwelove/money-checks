@@ -1,10 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Animated, StyleSheet } from "react-native";
 import PagerView from "react-native-pager-view";
 
 import { FullBleedHorizontalStyle } from "../constants/uiStyles";
 import { MonthCalendarPageView } from "./monthCalendarPager/MonthCalendarPageView";
-import { CALENDAR_MAX_HEIGHT } from "./monthCalendarPager/calendarLayout";
+import {
+  CALENDAR_BOTTOM_BORDER_CLIP_PADDING,
+  CALENDAR_MAX_HEIGHT,
+} from "./monthCalendarPager/calendarLayout";
 import type { MonthCalendarPagerProps } from "./monthCalendarPager/monthCalendarPagerTypes";
 import {
   type MonthPage,
@@ -32,8 +35,21 @@ export function MonthCalendarPager({
   const currentPageHeightRef = useRef(currentPage.height);
   const viewportHeight = useRef(new Animated.Value(currentPage.height)).current;
   const [isInteractionLocked, setIsInteractionLocked] = useState(false);
+  const [measuredPageHeights, setMeasuredPageHeights] = useState<Record<string, number>>({});
   const currentPageKey = currentPage.key;
-  const currentPageHeight = currentPage.height;
+  const currentPageHeight = resolvePageHeight(currentPage);
+  const handleContentHeightChange = useCallback((pageKey: string, contentHeight: number) => {
+    if (!Number.isFinite(contentHeight) || contentHeight <= 0) {
+      return;
+    }
+
+    const measuredHeight = Math.ceil(contentHeight + CALENDAR_BOTTOM_BORDER_CLIP_PADDING);
+    setMeasuredPageHeights((currentHeights) =>
+      currentHeights[pageKey] === measuredHeight
+        ? currentHeights
+        : { ...currentHeights, [pageKey]: measuredHeight },
+    );
+  }, []);
 
   useEffect(() => {
     if (!isReadyRef.current) {
@@ -48,6 +64,19 @@ export function MonthCalendarPager({
 
     finishMonthTransition(currentPageKey, currentPageHeight);
   }, [currentPageHeight, currentPageKey]);
+
+  useEffect(() => {
+    const visiblePageKeys = new Set([previousPage.key, currentPage.key, nextPage.key]);
+    setMeasuredPageHeights((currentHeights) => {
+      const nextHeights = Object.fromEntries(
+        Object.entries(currentHeights).filter(([pageKey]) => visiblePageKeys.has(pageKey)),
+      );
+
+      return Object.keys(nextHeights).length === Object.keys(currentHeights).length
+        ? currentHeights
+        : nextHeights;
+    });
+  }, [currentPage.key, nextPage.key, previousPage.key]);
 
   function initializeCurrentPage(pageKey: string, pageHeight: number) {
     isReadyRef.current = true;
@@ -98,6 +127,10 @@ export function MonthCalendarPager({
     onMoveMonth(monthOffset);
   }
 
+  function resolvePageHeight(page: MonthPage): number {
+    return measuredPageHeights[page.key] ?? page.height;
+  }
+
   return (
     <Animated.View style={[styles.viewport, { height: viewportHeight }]}>
       <PagerView
@@ -114,19 +147,25 @@ export function MonthCalendarPager({
         <MonthPageSlot
           isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
           isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
+          onContentHeightChange={handleContentHeightChange}
           page={previousPage}
+          pageHeight={resolvePageHeight(previousPage)}
           {...{ onSelectDate, selectedDate }}
         />
         <MonthPageSlot
           isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
           isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
+          onContentHeightChange={handleContentHeightChange}
           page={currentPage}
+          pageHeight={resolvePageHeight(currentPage)}
           {...{ onSelectDate, selectedDate }}
         />
         <MonthPageSlot
           isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
           isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
+          onContentHeightChange={handleContentHeightChange}
           page={nextPage}
+          pageHeight={resolvePageHeight(nextPage)}
           {...{ onSelectDate, selectedDate }}
         />
       </PagerView>
@@ -137,14 +176,18 @@ export function MonthCalendarPager({
 function MonthPageSlot({
   isCalendarHeatmapEnabled,
   isReadOnlyDueToPlanLimit,
+  onContentHeightChange,
   onSelectDate,
   page,
+  pageHeight,
   selectedDate,
 }: {
   isCalendarHeatmapEnabled: boolean;
   isReadOnlyDueToPlanLimit: boolean;
+  onContentHeightChange: (pageKey: string, contentHeight: number) => void;
   onSelectDate: (isoDate: string) => void;
   page: MonthPage;
+  pageHeight: number;
   selectedDate: string;
 }) {
   return (
@@ -152,8 +195,10 @@ function MonthPageSlot({
       days={page.summary.days}
       isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
       isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
+      onContentHeightChange={onContentHeightChange}
       onSelectDate={onSelectDate}
-      pageHeight={page.height}
+      pageHeight={pageHeight}
+      pageKey={page.key}
       selectedDate={selectedDate}
     />
   );

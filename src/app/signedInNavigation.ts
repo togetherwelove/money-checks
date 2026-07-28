@@ -1,5 +1,7 @@
 import type { LedgerAppScreen } from "../types/app";
 
+export type SignedInStackScreen = Exclude<LedgerAppScreen, "entry">;
+
 export type SignedInStackParamList = {
   account: undefined;
   "all-entries": undefined;
@@ -7,7 +9,7 @@ export type SignedInStackParamList = {
   calendar: undefined;
   charts: undefined;
   "contact-support": undefined;
-  entry: undefined;
+  "entry-sheet": undefined;
   help: undefined;
   "notification-settings": undefined;
   share: undefined;
@@ -15,7 +17,7 @@ export type SignedInStackParamList = {
   support: undefined;
 };
 
-export function isSignedInStackScreen(value: string | undefined): value is LedgerAppScreen {
+export function isSignedInStackScreen(value: string | undefined): value is SignedInStackScreen {
   if (!value) {
     return false;
   }
@@ -27,7 +29,6 @@ export function isSignedInStackScreen(value: string | undefined): value is Ledge
     value === "calendar" ||
     value === "charts" ||
     value === "contact-support" ||
-    value === "entry" ||
     value === "help" ||
     value === "notification-settings" ||
     value === "share" ||

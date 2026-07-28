@@ -54,7 +54,7 @@ export function EntryTypeToggleButton({ onSelectType, selectedType }: EntryTypeT
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
-    alignSelf: "flex-start",
+    alignSelf: "stretch",
     borderBottomColor: AppColors.border,
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
@@ -66,6 +66,7 @@ const styles = StyleSheet.create({
     alignSelf: "stretch",
     borderBottomColor: AppColors.transparent,
     borderBottomWidth: EntryTypeToggleUi.indicatorHeight,
+    flex: 1,
     justifyContent: "center",
     minWidth: EntryTypeToggleUi.optionMinWidth,
     paddingHorizontal: EntryTypeToggleUi.optionPaddingHorizontal,

@@ -1,7 +1,7 @@
 import { appStorage } from "../appStorage";
 
 const DAILY_FIRST_ENTRY_SAVE_INTERSTITIAL_STORAGE_KEY_PREFIX =
-  "money-checks.ads.daily-first-entry-save";
+  "money-checks.ads.daily-first-entry-save.v2";
 const DAILY_FIRST_ENTRY_SAVE_INTERSTITIAL_NOTICE_STORAGE_KEY_PREFIX =
   "money-checks.ads.daily-first-entry-save.notice";
 const DAILY_FIRST_ENTRY_SAVE_INTERSTITIAL_NOTICE_SHOWN_VALUE = "shown";

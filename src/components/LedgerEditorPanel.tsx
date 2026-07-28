@@ -1,4 +1,4 @@
-import { StyleSheet, type TextInput, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import type { LedgerEntryDraft, LedgerEntryType } from "../types/ledger";
 import type { LedgerBookMember } from "../types/ledgerBookMember";
@@ -12,8 +12,6 @@ type LedgerEditorPanelProps = {
   onChangeDraft: (field: keyof LedgerEntryDraft, value: string) => void;
   onChangeInstallmentMonths: (installmentMonths: number) => void;
   onPickPhotoAttachments: () => void | Promise<void>;
-  onInputBlur?: (() => void) | null;
-  onInputFocus?: ((input: TextInput | null, inputHeight: number) => void) | null;
   onRemovePhotoAttachment: (attachmentId: string) => void;
   onSaveEntry: () => void | Promise<void>;
   onSelectType: (type: LedgerEntryType) => void;
@@ -32,8 +30,6 @@ export function LedgerEditorPanel(props: LedgerEditorPanelProps) {
         onChangeDraft={props.onChangeDraft}
         onChangeInstallmentMonths={props.onChangeInstallmentMonths}
         onPickPhotoAttachments={props.onPickPhotoAttachments}
-        onInputBlur={props.onInputBlur}
-        onInputFocus={props.onInputFocus}
         onRemovePhotoAttachment={props.onRemovePhotoAttachment}
         onSaveEntry={props.onSaveEntry}
         onSelectType={props.onSelectType}
