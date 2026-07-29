@@ -10,9 +10,7 @@ import { AppMessages } from "../constants/messages";
 import {
   FormLabelTextStyle,
   UnderlineFormInputTextStyle,
-  UnderlineFormMultilineInputTextStyle,
 } from "../constants/uiStyles";
-import { formatInstallmentLabel } from "../lib/installments";
 import { showNativeToast } from "../lib/nativeToast";
 import type { LedgerEntryDraft, LedgerEntryType } from "../types/ledger";
 import type { LedgerBookMember } from "../types/ledgerBookMember";
@@ -22,6 +20,8 @@ import {
   resolveFormattedAmountInputSelection,
 } from "../utils/amount";
 import { ActionButton } from "./ActionButton";
+import { EntryDateSelector } from "./EntryDateSelector";
+import { EntryInstallmentSelector } from "./EntryInstallmentSelector";
 import { EntryPhotoAttachmentField } from "./EntryPhotoAttachmentField";
 import { EntryTypeToggleButton } from "./EntryTypeToggleButton";
 import { InstallmentPickerModal } from "./InstallmentPickerModal";
@@ -132,6 +132,10 @@ export function LedgerEntryForm({
 
   return (
     <View style={styles.form}>
+      <EntryDateSelector
+        onSelectDate={(isoDate) => onChangeDraft("date", isoDate)}
+        selectedDate={draft.date}
+      />
       <View style={styles.fieldGroup}>
         <EntryTypeToggleButton onSelectType={onSelectType} selectedType={draft.type} />
         <TextInput
@@ -180,17 +184,15 @@ export function LedgerEntryForm({
         selectedCategoryId={draft.categoryId}
         title={EntryRegistrationCopy.categoryLabel}
       />
+      {!editingEntryId ? (
+        <EntryInstallmentSelector
+          installmentMonths={draft.installmentMonths}
+          onPress={() => setIsInstallmentPickerOpen(true)}
+        />
+      ) : null}
       <View style={styles.fieldGroup}>
         <View style={styles.fieldHeaderRow}>
           <Text style={styles.label}>{EntryRegistrationCopy.contentLabel}</Text>
-          {!editingEntryId ? (
-            <ActionButton
-              label={formatInstallmentLabel(draft.installmentMonths)}
-              onPress={() => setIsInstallmentPickerOpen(true)}
-              size="inline"
-              variant="secondary"
-            />
-          ) : null}
         </View>
         <TextInput
           ref={contentInputRef}
@@ -207,13 +209,16 @@ export function LedgerEntryForm({
         />
       </View>
       <View style={styles.fieldGroup}>
-        <Text style={styles.label}>{EntryRegistrationCopy.noteLabel}</Text>
+        <View style={styles.fieldHeaderRow}>
+          <Text style={styles.label}>{EntryRegistrationCopy.noteLabel}</Text>
+        </View>
         <TextInput
-          multiline
+          submitBehavior="blurAndSubmit"
           onChangeText={(value) => onChangeDraft("note", value)}
-          placeholder={EntryRegistrationCopy.noteLabel}
-          style={styles.multilineInput}
-          textAlignVertical="top"
+          onSubmitEditing={() => Keyboard.dismiss()}
+          placeholder={EntryRegistrationCopy.notePlaceholder}
+          returnKeyType="done"
+          style={styles.input}
           value={draft.note}
         />
       </View>
@@ -287,7 +292,6 @@ const styles = StyleSheet.create({
   },
   label: FormLabelTextStyle,
   input: UnderlineFormInputTextStyle,
-  multilineInput: UnderlineFormMultilineInputTextStyle,
   formActions: {
     paddingTop: 4,
     gap: 8,

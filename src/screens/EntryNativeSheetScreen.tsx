@@ -29,10 +29,14 @@ export function EntryNativeSheetScreen({
   const [isDirty, setIsDirty] = useState(false);
   const didCompleteRef = useRef(false);
   const onDiscardRef = useRef(onDiscard);
-  const pendingCloseRef = useRef(false);
   onDiscardRef.current = onDiscard;
 
   usePreventRemove(isDirty, ({ data }) => {
+    if (didCompleteRef.current) {
+      navigation.dispatch(data.action);
+      return;
+    }
+
     Alert.alert(
       EntryRegistrationCopy.discardChangesTitle,
       EntryRegistrationCopy.discardChangesMessage,
@@ -50,13 +54,6 @@ export function EntryNativeSheetScreen({
     );
   });
 
-  useEffect(() => {
-    if (!isDirty && pendingCloseRef.current) {
-      pendingCloseRef.current = false;
-      navigation.goBack();
-    }
-  }, [isDirty, navigation]);
-
   useEffect(
     () => () => {
       if (!didCompleteRef.current) {
@@ -68,14 +65,8 @@ export function EntryNativeSheetScreen({
 
   const closeAfterCompletion = useCallback(() => {
     didCompleteRef.current = true;
-    if (!isDirty) {
-      navigation.goBack();
-      return;
-    }
-
-    pendingCloseRef.current = true;
-    setIsDirty(false);
-  }, [isDirty, navigation]);
+    navigation.goBack();
+  }, [navigation]);
 
   const handleSaveEntry = useCallback(async () => {
     if (await onSaveEntry()) {

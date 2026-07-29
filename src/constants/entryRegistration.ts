@@ -6,6 +6,9 @@ export const EntryRegistrationCopy = {
   contentLabel: "내용",
   contentPlaceholder: "내용 입력",
   contentRequiredError: "내용을 입력해 주세요.",
+  datePickerAccessibilityLabel: "내역 날짜 선택",
+  datePickerConfirmAction: "확인",
+  datePickerTitle: "날짜 선택",
   dailyFirstEntryAdNoticeMessage: "매일 첫 등록 시 한 번만 진행됩니다.",
   dailyFirstEntryAdNoticeTitle: "저장 전 광고가 표시됩니다",
   dailyFirstEntryAdUnavailableError: "광고를 불러오지 못했어요. 잠시 후 다시 등록해 주세요.",
@@ -20,11 +23,24 @@ export const EntryRegistrationCopy = {
   installmentSettleSuccess: "할부를 정리했어요.",
   installmentSettleUnavailable: "정리할 할부가 없어요.",
   noteLabel: "메모",
+  notePlaceholder: "메모 입력",
+  paymentMethodAccessibilityLabel: "결제 방식 선택",
+  paymentMethodLabel: "결제 방식",
   saveCreateSuccess: "내역을 등록했어요.",
   saveError: "기록 저장에 실패했어요.",
   saveMigrationError: "DB 마이그레이션 적용이 필요해요.",
   saveUpdateSuccess: "내역을 수정했어요.",
   targetMemberLabel: "대상 구성원",
+} as const;
+
+export const EntryDateSelectorUi = {
+  iconSize: 18,
+  pressedOpacity: 0.7,
+} as const;
+
+export const EntryInstallmentSelectorUi = {
+  iconSize: 16,
+  pressedOpacity: 0.7,
 } as const;
 
 export const EntryNativeSheetUi = {
