@@ -6,7 +6,6 @@ import { type LedgerEntriesPageCursor, fetchLedgerEntriesPage } from "../lib/led
 import { subscribeToLedgerEntryChanges } from "../lib/ledgerEntryRealtime";
 import { logAppError } from "../lib/logAppError";
 import type { LedgerEntry } from "../types/ledger";
-import { compareLedgerEntriesByCreatedAtDesc } from "../utils/ledgerEntryOrdering";
 import type { BusyTaskTracker } from "./ledgerScreenState/types";
 
 type UseAllLedgerEntriesParams = {
@@ -190,15 +189,11 @@ export function useAllLedgerEntries({
     isRefreshing,
     loadMoreEntries,
     refreshEntries: () => loadFirstPage(false),
-    removeEntryFromFeed: (entryId: string) =>
-      setEntries((currentEntries) => currentEntries.filter((entry) => entry.id !== entryId)),
-    restoreEntryToFeed: (entryToRestore: LedgerEntry) =>
-      setEntries((currentEntries) => {
-        if (currentEntries.some((entry) => entry.id === entryToRestore.id)) {
-          return currentEntries;
-        }
-
-        return [...currentEntries, entryToRestore].sort(compareLedgerEntriesByCreatedAtDesc);
-      }),
+    removeEntriesFromFeed: (entryIds: readonly string[]) => {
+      const deletedEntryIds = new Set(entryIds);
+      setEntries((currentEntries) =>
+        currentEntries.filter((entry) => !deletedEntryIds.has(entry.id)),
+      );
+    },
   };
 }

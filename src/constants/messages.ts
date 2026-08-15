@@ -12,7 +12,16 @@ export const AppMessages = {
     editorDeleteConfirmAction: "삭제",
     editorDeleteConfirmMessage: "이 기록을 삭제할까요?",
     editorDeleteConfirmTitle: "기록 삭제",
+    editorDeleteCancelAction: "취소",
     editorDeleteError: "기록을 삭제하지 못했어요.",
+    editorInstallmentDeleteAllAction: "전체 할부 내역 삭제",
+    editorInstallmentDeleteConfirmMessage:
+      "해당 건은 할부로 등록된 거래입니다. 나머지 할부 내역도 함께 삭제하시겠습니까?",
+    editorInstallmentDeleteConfirmTitle: "할부 내역 삭제",
+    editorInstallmentDeleteSingleAction: "이 회차만 삭제",
+    editorPrepaidInstallmentDeleteAction: "일괄 삭제",
+    editorPrepaidInstallmentDeleteConfirmMessage:
+      "이미 선결제로 정산이 완료된 할부 내역입니다. 연관된 과거 내역과 선결제 합산 내역을 모두 삭제하시겠습니까?",
     editorNewEntry: "등록",
     entryFormerMemberSuffix: "(탈퇴)",
     authLoading: "세션을 확인하는 중이에요.",

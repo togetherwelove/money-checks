@@ -2,7 +2,6 @@ import { useIsFocused } from "@react-navigation/native";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -12,6 +11,7 @@ import {
 } from "react-native";
 
 import { AppBannerAd } from "../components/AppBannerAd";
+import { showLedgerEntryDeleteAlert } from "../components/ledgerEntryDeleteAlert";
 import { LedgerEntryList } from "../components/LedgerEntryList";
 import { MonthCalendarPager } from "../components/MonthCalendarPager";
 import { MonthlySummary } from "../components/MonthlySummary";
@@ -31,6 +31,8 @@ import {
 } from "../constants/uiStyles";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
 import type { LedgerEntry } from "../types/ledger";
+import type { LedgerEntryDeleteHandler } from "../types/ledgerEntryDeletion";
+import type { InstallmentPrepaymentHandler } from "../types/installmentTransactions";
 import {
   addMonths,
   formatCurrency,
@@ -41,8 +43,9 @@ import {
 
 type HomeScreenProps = {
   calendarSummaryMode: CalendarSummaryMode;
-  onDeleteSelectedEntry: (entry: LedgerEntry) => Promise<boolean>;
+  onDeleteSelectedEntry: LedgerEntryDeleteHandler;
   onEditSelectedEntry: (entry: LedgerEntry) => void;
+  onPrepayInstallmentEntry: InstallmentPrepaymentHandler;
   onSelectCalendarDate: (isoDate: string) => void;
   isCalendarHeatmapEnabled: boolean;
   showsBannerAd: boolean;
@@ -61,6 +64,7 @@ export function HomeScreen({
   calendarSummaryMode,
   onDeleteSelectedEntry,
   onEditSelectedEntry,
+  onPrepayInstallmentEntry,
   onSelectCalendarDate,
   isCalendarHeatmapEnabled,
   showsBannerAd,
@@ -99,6 +103,7 @@ export function HomeScreen({
         isReadOnlyDueToPlanLimit={state.isReadOnlyDueToPlanLimit}
         onDeleteSelectedEntry={onDeleteSelectedEntry}
         onEditSelectedEntry={onEditSelectedEntry}
+        onPrepayInstallmentEntry={onPrepayInstallmentEntry}
         onRefreshLedger={refreshLedger}
         onSelectCalendarDate={onSelectCalendarDate}
         selectedDate={selectedDate}
@@ -122,6 +127,7 @@ function KeyboardAwareContent({
   isReadOnlyDueToPlanLimit,
   onDeleteSelectedEntry,
   onEditSelectedEntry,
+  onPrepayInstallmentEntry,
   onRefreshLedger,
   onSelectCalendarDate,
   selectedDate,
@@ -138,8 +144,9 @@ function KeyboardAwareContent({
   isLoadingSelectedDateEntries: boolean;
   isRefreshing: boolean;
   isReadOnlyDueToPlanLimit: boolean;
-  onDeleteSelectedEntry: (entry: LedgerEntry) => Promise<boolean>;
+  onDeleteSelectedEntry: LedgerEntryDeleteHandler;
   onEditSelectedEntry: (entry: LedgerEntry) => void;
+  onPrepayInstallmentEntry: InstallmentPrepaymentHandler;
   onRefreshLedger: () => Promise<void>;
   onSelectCalendarDate: (isoDate: string) => void;
   selectedDate: string;
@@ -231,25 +238,10 @@ function KeyboardAwareContent({
                 activeBookId={state.activeBook?.id ?? null}
                 entries={selectedEntries}
                 onDeleteEntry={(entry) => {
-                  Alert.alert(
-                    AppMessages.editorDeleteConfirmTitle,
-                    AppMessages.editorDeleteConfirmMessage,
-                    [
-                      {
-                        style: "cancel",
-                        text: "취소",
-                      },
-                      {
-                        onPress: () => {
-                          void onDeleteSelectedEntry(entry);
-                        },
-                        style: "destructive",
-                        text: AppMessages.editorDeleteConfirmAction,
-                      },
-                    ],
-                  );
+                  showLedgerEntryDeleteAlert(entry, onDeleteSelectedEntry);
                 }}
                 onEditEntry={onEditSelectedEntry}
+                onPrepayInstallmentEntry={onPrepayInstallmentEntry}
               />
             </>
           )}

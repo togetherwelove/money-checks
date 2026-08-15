@@ -1,9 +1,11 @@
 
 export const EntryRegistrationCopy = {
+  amountClearAccessibilityLabel: "금액 지우기",
   amountRequiredError: "금액을 입력해 주세요.",
   categoryLabel: "분류",
   categoryRequiredError: "분류를 선택해 주세요.",
   contentLabel: "내용",
+  contentClearAccessibilityLabel: "내용 지우기",
   contentPlaceholder: "내용 입력",
   contentRequiredError: "내용을 입력해 주세요.",
   datePickerAccessibilityLabel: "내역 날짜 선택",
@@ -18,10 +20,11 @@ export const EntryRegistrationCopy = {
   discardChangesMessage: "입력한 내용은 저장되지 않아요.",
   discardChangesTitle: "작성 중인 내역을 폐기할까요?",
   installmentPickerTitle: "할부 선택",
-  installmentSettleAction: "할부 정리",
-  installmentSettleConfirmMessage: "할부 금액을 이번 달에 모두 결제할까요?",
-  installmentSettleSuccess: "할부를 정리했어요.",
-  installmentSettleUnavailable: "정리할 할부가 없어요.",
+  installmentPrepaymentAction: "남은 할부금 즉시 상환",
+  installmentPrepaymentConfirmAction: "즉시 상환",
+  installmentPrepaymentError: "남은 할부금을 즉시 상환하지 못했어요.",
+  installmentPrepaymentSuccess: "남은 할부금을 즉시 상환했어요.",
+  installmentPrepaymentUnavailable: "즉시 상환할 미래 할부 내역이 없어요.",
   noteLabel: "메모",
   notePlaceholder: "메모 입력",
   paymentMethodAccessibilityLabel: "결제 방식 선택",
@@ -32,6 +35,13 @@ export const EntryRegistrationCopy = {
   saveUpdateSuccess: "내역을 수정했어요.",
   targetMemberLabel: "대상 구성원",
 } as const;
+
+export function buildInstallmentPrepaymentConfirmMessage(
+  installmentCount: number,
+  formattedAmount: string,
+): string {
+  return `남은 할부 잔액 총 ${installmentCount}건(${formattedAmount})을 오늘 날짜로 즉시 상환 처리하시겠습니까? 예정된 미래의 할부 내역은 오늘 날짜의 지출로 합산됩니다.`;
+}
 
 export const EntryDateSelectorUi = {
   iconSize: 18,

@@ -18,7 +18,7 @@ import { logAppError } from "../../lib/logAppError";
 import { createPerformanceTrace } from "../../lib/performanceTrace";
 import { fetchProfileDisplayName } from "../../lib/profiles";
 import type { LedgerEntry } from "../../types/ledger";
-import { getMonthKey } from "../../utils/calendar";
+import { getMonthKey, parseIsoDate } from "../../utils/calendar";
 import { mapLedgerEntryRow } from "../../utils/ledgerMapper";
 import { loadLedgerMonthsEntries } from "./helpers";
 import {
@@ -43,12 +43,22 @@ type LedgerEntriesState = {
   isRefreshing: boolean;
   preloadChartEntries: () => Promise<void>;
   refreshLedger: () => Promise<void>;
+  removeEntriesFromCache: (entryIds: readonly string[]) => void;
+  replaceInstallmentGroupInCache: (
+    installmentGroupId: string,
+    entries: readonly LedgerEntry[],
+  ) => void;
   setEntries: Dispatch<SetStateAction<LedgerEntry[]>>;
 };
 
 export function useLedgerEntries(
   activeBookId: string | null,
   visibleMonth: Date,
+  initialEntryBootstrap: {
+    bookId: string;
+    entries: LedgerEntry[];
+    month: Date;
+  } | null,
 ): LedgerEntriesState {
   const [entryCacheByBookId, setEntryCacheByBookId] = useState<Record<string, LedgerEntryCache>>(
     {},
@@ -84,6 +94,30 @@ export function useLedgerEntries(
     () => getVisibleWindowEntries(entryCache, visibleMonth),
     [entryCache, visibleMonth],
   );
+  const hasPendingInitialBootstrap = Boolean(
+    activeBookId &&
+      initialEntryBootstrap?.bookId === activeBookId &&
+      getMonthKey(initialEntryBootstrap.month) === getMonthKey(visibleMonth) &&
+      !hasVisibleMonthCached,
+  );
+
+  useEffect(() => {
+    if (!activeBookId || initialEntryBootstrap?.bookId !== activeBookId) {
+      return;
+    }
+
+    setEntryCacheByBookId((currentCacheByBookId) =>
+      updateBookEntryCache(currentCacheByBookId, activeBookId, (currentCache) =>
+        hasCachedMonth(currentCache, initialEntryBootstrap.month)
+          ? currentCache
+          : setMonthEntriesInCache(
+              currentCache,
+              initialEntryBootstrap.month,
+              initialEntryBootstrap.entries,
+            ),
+      ),
+    );
+  }, [activeBookId, initialEntryBootstrap]);
   const loadMonthsIntoBookCache = useCallback(
     async (months: Date[], step: string) => {
       if (!activeBookId || months.length === 0) {
@@ -146,6 +180,12 @@ export function useLedgerEntries(
     let isMounted = true;
     if (!activeBookId) {
       setIsLoadingEntries(false);
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    if (hasPendingInitialBootstrap) {
       return () => {
         isMounted = false;
       };
@@ -277,6 +317,7 @@ export function useLedgerEntries(
     };
   }, [
     activeBookId,
+    hasPendingInitialBootstrap,
     hasVisibleMonthCached,
     missingBackgroundPreloadMonths,
     missingPagePreloadMonths,
@@ -422,6 +463,44 @@ export function useLedgerEntries(
     isLoadingEntries,
     isRefreshing,
     refreshLedger,
+    removeEntriesFromCache: (entryIds) => {
+      if (!activeBookId || entryIds.length === 0) {
+        return;
+      }
+
+      setEntryCacheByBookId((currentCacheByBookId) =>
+        updateBookEntryCache(currentCacheByBookId, activeBookId, (currentCache) =>
+          entryIds.reduce(removeEntryFromCache, currentCache),
+        ),
+      );
+    },
+    replaceInstallmentGroupInCache: (installmentGroupId, nextEntries) => {
+      if (!activeBookId) {
+        return;
+      }
+
+      setEntryCacheByBookId((currentCacheByBookId) =>
+        updateBookEntryCache(currentCacheByBookId, activeBookId, (currentCache) => {
+          let nextCache = Object.fromEntries(
+            Object.entries(currentCache).map(([monthKey, monthEntries]) => [
+              monthKey,
+              monthEntries.filter(
+                (entry) => entry.installmentGroupId !== installmentGroupId,
+              ),
+            ]),
+          );
+
+          for (const entry of nextEntries) {
+            const monthKey = getMonthKey(parseIsoDate(entry.date));
+            if (monthKey in currentCache) {
+              nextCache = upsertEntryInCachedMonth(nextCache, entry);
+            }
+          }
+
+          return nextCache;
+        }),
+      );
+    },
     preloadChartEntries,
     setEntries: (updater) =>
       setEntryCacheByBookId((currentCacheByBookId) => {

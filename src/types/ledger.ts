@@ -1,3 +1,5 @@
+import type { InstallmentStatus } from "../constants/installments";
+
 export type LedgerEntryType = "income" | "expense";
 
 export type LedgerEntryPhotoAttachment = {
@@ -25,6 +27,7 @@ export type LedgerEntry = {
   installmentGroupId?: string | null;
   installmentMonths?: number | null;
   installmentOrder?: number | null;
+  installmentStatus?: InstallmentStatus | null;
   note: string;
   photoAttachments: LedgerEntryPhotoAttachment[];
   sourceType?: string;

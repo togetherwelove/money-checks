@@ -6,22 +6,26 @@ import { Alert } from "react-native";
 import type { SignedInStackParamList } from "../app/signedInNavigation";
 import { EntryRegistrationCopy } from "../constants/entryRegistration";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
+import { showNativeToast } from "../lib/nativeToast";
 import type { LedgerEntry } from "../types/ledger";
+import type { InstallmentPrepaymentHandler } from "../types/installmentTransactions";
 import { EntryScreen } from "./EntryScreen";
 
 type EntryNativeSheetScreenProps = {
+  autoFocusContent?: boolean;
   currentUserId: string;
   onDiscard: () => void;
   onSaveEntry: () => Promise<boolean>;
-  onSettleInstallmentEntry: (entry: LedgerEntry) => Promise<boolean>;
+  onPrepayInstallmentEntry: InstallmentPrepaymentHandler;
   state: LedgerScreenState;
 };
 
 export function EntryNativeSheetScreen({
+  autoFocusContent = false,
   currentUserId,
   onDiscard,
   onSaveEntry,
-  onSettleInstallmentEntry,
+  onPrepayInstallmentEntry,
   state,
 }: EntryNativeSheetScreenProps) {
   const navigation =
@@ -29,6 +33,7 @@ export function EntryNativeSheetScreen({
   const [isDirty, setIsDirty] = useState(false);
   const didCompleteRef = useRef(false);
   const onDiscardRef = useRef(onDiscard);
+  const pendingSaveSuccessMessageRef = useRef<string | null>(null);
   onDiscardRef.current = onDiscard;
 
   usePreventRemove(isDirty, ({ data }) => {
@@ -63,32 +68,58 @@ export function EntryNativeSheetScreen({
     [],
   );
 
+  useEffect(
+    () =>
+      navigation.addListener("transitionEnd", ({ data }) => {
+        const successMessage = pendingSaveSuccessMessageRef.current;
+        if (!data.closing || !successMessage) {
+          return;
+        }
+
+        pendingSaveSuccessMessageRef.current = null;
+        showNativeToast(successMessage);
+      }),
+    [navigation],
+  );
+
   const closeAfterCompletion = useCallback(() => {
     didCompleteRef.current = true;
     navigation.goBack();
   }, [navigation]);
+  const handleDraftChange = useCallback(() => {
+    setIsDirty(true);
+  }, []);
 
   const handleSaveEntry = useCallback(async () => {
-    if (await onSaveEntry()) {
-      closeAfterCompletion();
+    const wasEditingEntry = Boolean(state.editingEntryId);
+    if (!(await onSaveEntry())) {
+      return;
     }
-  }, [closeAfterCompletion, onSaveEntry]);
 
-  const handleSettleInstallmentEntry = useCallback(
+    pendingSaveSuccessMessageRef.current = wasEditingEntry
+      ? EntryRegistrationCopy.saveUpdateSuccess
+      : EntryRegistrationCopy.saveCreateSuccess;
+    closeAfterCompletion();
+  }, [closeAfterCompletion, onSaveEntry, state.editingEntryId]);
+
+  const handlePrepayInstallmentEntry = useCallback(
     async (entry: LedgerEntry) => {
-      if (await onSettleInstallmentEntry(entry)) {
+      const didPrepay = await onPrepayInstallmentEntry(entry);
+      if (didPrepay) {
         closeAfterCompletion();
       }
+      return didPrepay;
     },
-    [closeAfterCompletion, onSettleInstallmentEntry],
+    [closeAfterCompletion, onPrepayInstallmentEntry],
   );
 
   return (
     <EntryScreen
+      autoFocusContent={autoFocusContent}
       currentUserId={currentUserId}
-      onDraftChange={() => setIsDirty(true)}
+      onDraftChange={handleDraftChange}
       onSaveEntry={handleSaveEntry}
-      onSettleInstallmentEntry={handleSettleInstallmentEntry}
+      onPrepayInstallmentEntry={handlePrepayInstallmentEntry}
       state={state}
     />
   );

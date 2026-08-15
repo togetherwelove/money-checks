@@ -1,4 +1,7 @@
-import { resolveLedgerEntryTargetMemberId } from "../lib/ledgerEntryMetadata";
+import {
+  resolveLedgerEntryInstallmentStatus,
+  resolveLedgerEntryTargetMemberId,
+} from "../lib/ledgerEntryMetadata";
 import type { LedgerEntry } from "../types/ledger";
 import type { LedgerEntryRow } from "../types/supabase";
 
@@ -18,6 +21,7 @@ export function mapLedgerEntryRow(row: LedgerEntryRow, authorName?: string): Led
     installmentGroupId: row.installment_group_id,
     installmentMonths: row.installment_months,
     installmentOrder: row.installment_order,
+    installmentStatus: resolveLedgerEntryInstallmentStatus(row),
     note: row.note,
     photoAttachments: [],
     sourceType: row.source_type,

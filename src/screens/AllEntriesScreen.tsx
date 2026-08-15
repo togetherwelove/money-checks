@@ -1,7 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import {
-  Alert,
   FlatList,
   Pressable,
   RefreshControl,
@@ -15,6 +14,7 @@ import {
 } from "react-native";
 
 import { AppNativeAdCard } from "../components/AppNativeAdCard";
+import { showLedgerEntryDeleteAlert } from "../components/ledgerEntryDeleteAlert";
 import { LedgerEntryListItem } from "../components/LedgerEntryListItem";
 import { AllEntriesFilterCopy } from "../constants/allEntries";
 import { AppColors } from "../constants/colors";
@@ -29,12 +29,19 @@ import { useLedgerCategoryIconMap } from "../hooks/useLedgerCategoryIconMap";
 import { buildAllEntriesFeedItems } from "../lib/allEntriesFeedItems";
 import type { CategoryDefinition } from "../types/category";
 import type { LedgerEntry } from "../types/ledger";
+import {
+  LedgerEntryDeleteScopes,
+  type LedgerEntryDeleteHandler,
+  type LedgerEntryDeleteScope,
+} from "../types/ledgerEntryDeletion";
 import type { LedgerBook } from "../types/ledgerBook";
+import type { InstallmentPrepaymentHandler } from "../types/installmentTransactions";
 
 type AllEntriesScreenProps = {
   activeBook: LedgerBook | null;
-  onDeleteEntry: (entry: LedgerEntry) => Promise<boolean>;
+  onDeleteEntry: LedgerEntryDeleteHandler;
   onEditEntry: (entry: LedgerEntry) => void;
+  onPrepayInstallmentEntry: InstallmentPrepaymentHandler;
   showsNativeAds: boolean;
   trackBlockingTask: BusyTaskTracker;
 };
@@ -43,6 +50,7 @@ export function AllEntriesScreen({
   activeBook,
   onDeleteEntry,
   onEditEntry,
+  onPrepayInstallmentEntry,
   showsNativeAds,
   trackBlockingTask,
 }: AllEntriesScreenProps) {
@@ -73,8 +81,7 @@ export function AllEntriesScreen({
     isRefreshing,
     loadMoreEntries,
     refreshEntries,
-    removeEntryFromFeed,
-    restoreEntryToFeed,
+    removeEntriesFromFeed,
   } = useAllLedgerEntries({
     activeBookId,
     selectedCategoryIds,
@@ -245,25 +252,12 @@ export function AllEntriesScreen({
                 categoryLabelById={categoryLabelById}
                 entry={item.entry}
                 onDeleteEntry={(entry) => {
-                  Alert.alert(
-                    AppMessages.editorDeleteConfirmTitle,
-                    AppMessages.editorDeleteConfirmMessage,
-                    [
-                      {
-                        style: "cancel",
-                        text: "취소",
-                      },
-                      {
-                        onPress: () => {
-                          void handleDeleteEntry(entry);
-                        },
-                        style: "destructive",
-                        text: AppMessages.editorDeleteConfirmAction,
-                      },
-                    ],
-                  );
+                  showLedgerEntryDeleteAlert(entry, handleDeleteEntry);
                 }}
                 onEditEntry={onEditEntry}
+                onPrepayInstallmentEntry={(entry) => {
+                  void handlePrepayInstallmentEntry(entry);
+                }}
                 showsDate
                 showsInstallmentStatusLine
               />
@@ -275,11 +269,26 @@ export function AllEntriesScreen({
     </View>
   );
 
-  async function handleDeleteEntry(entry: LedgerEntry) {
-    removeEntryFromFeed(entry.id);
-    const didDelete = await onDeleteEntry(entry);
+  async function handleDeleteEntry(entry: LedgerEntry, scope: LedgerEntryDeleteScope) {
+    const didDelete = await onDeleteEntry(entry, scope);
     if (!didDelete) {
-      restoreEntryToFeed(entry);
+      return;
+    }
+
+    const deletedEntryIds =
+      scope === LedgerEntryDeleteScopes.installmentGroup && entry.installmentGroupId
+        ? entries
+            .filter(
+              (currentEntry) => currentEntry.installmentGroupId === entry.installmentGroupId,
+            )
+            .map((currentEntry) => currentEntry.id)
+        : [entry.id];
+    removeEntriesFromFeed(deletedEntryIds);
+  }
+
+  async function handlePrepayInstallmentEntry(entry: LedgerEntry) {
+    if (await onPrepayInstallmentEntry(entry)) {
+      await refreshEntries();
     }
   }
 }

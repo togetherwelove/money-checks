@@ -6,6 +6,7 @@ import { AppMessages } from "../constants/messages";
 import { useLedgerCategoryIconMap } from "../hooks/useLedgerCategoryIconMap";
 import { useLedgerCategoryLabelMap } from "../hooks/useLedgerCategoryLabelMap";
 import type { LedgerEntry } from "../types/ledger";
+import type { InstallmentPrepaymentHandler } from "../types/installmentTransactions";
 import { LedgerEntryListItem } from "./LedgerEntryListItem";
 
 type LedgerEntryListProps = {
@@ -13,6 +14,7 @@ type LedgerEntryListProps = {
   entries: LedgerEntry[];
   onDeleteEntry: (entry: LedgerEntry) => void | Promise<void>;
   onEditEntry: (entry: LedgerEntry) => void;
+  onPrepayInstallmentEntry: InstallmentPrepaymentHandler;
 };
 
 export function LedgerEntryList({
@@ -20,6 +22,7 @@ export function LedgerEntryList({
   entries,
   onDeleteEntry,
   onEditEntry,
+  onPrepayInstallmentEntry,
 }: LedgerEntryListProps) {
   const categoryIconByKey = useLedgerCategoryIconMap(activeBookId);
   const categoryLabelById = useLedgerCategoryLabelMap(activeBookId);
@@ -42,6 +45,7 @@ export function LedgerEntryList({
           key={entry.id}
           onDeleteEntry={onDeleteEntry}
           onEditEntry={onEditEntry}
+          onPrepayInstallmentEntry={onPrepayInstallmentEntry}
         />
       ))}
     </View>

@@ -25,6 +25,12 @@ export type LedgerEntrySummaryRow = LedgerEntryRow & {
   target_member_display_name: string | null;
 };
 
+export type LedgerAppBootstrapRow = {
+  active_book_id: string;
+  books: AccessibleLedgerBookStateRow[];
+  entries: LedgerEntrySummaryRow[];
+};
+
 export type EnrichedLedgerEntryPhotoAttachmentRow = {
   content_type: string;
   id: string;

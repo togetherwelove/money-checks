@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { Alert, Keyboard, StyleSheet, Text, TextInput, View } from "react-native";
+import { Keyboard, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { CategorySelector } from "../components/CategorySelector";
 import { EntryTargetMemberSelector } from "../components/EntryTargetMemberSelector";
 import { CATEGORY_OPTIONS } from "../constants/categories";
+import { AppColors } from "../constants/colors";
 import { EntryRegistrationCopy } from "../constants/entryRegistration";
 import { AppLayout } from "../constants/layout";
 import { AppMessages } from "../constants/messages";
@@ -24,12 +25,14 @@ import { EntryDateSelector } from "./EntryDateSelector";
 import { EntryInstallmentSelector } from "./EntryInstallmentSelector";
 import { EntryPhotoAttachmentField } from "./EntryPhotoAttachmentField";
 import { EntryTypeToggleButton } from "./EntryTypeToggleButton";
+import { IconActionButton } from "./IconActionButton";
 import { InstallmentPickerModal } from "./InstallmentPickerModal";
 
 const AMOUNT_SELECTION_IGNORE_RESET_DELAY_MS = 16;
 
 type LedgerEntryFormProps = {
   activeBookId?: string | null;
+  autoFocusContent?: boolean;
   draft: LedgerEntryDraft;
   editingEntryId: string | null;
   members: LedgerBookMember[];
@@ -39,12 +42,13 @@ type LedgerEntryFormProps = {
   onRemovePhotoAttachment: (attachmentId: string) => void;
   onSaveEntry: () => void | Promise<void>;
   onSelectType: (type: LedgerEntryType) => void;
-  onSettleInstallmentEntry?: (() => void | Promise<void>) | null;
-  showInstallmentSettleAction?: boolean;
+  onPrepayInstallmentEntry?: (() => unknown) | null;
+  showInstallmentPrepaymentAction?: boolean;
 };
 
 export function LedgerEntryForm({
   activeBookId = null,
+  autoFocusContent = false,
   draft,
   editingEntryId,
   members,
@@ -54,8 +58,8 @@ export function LedgerEntryForm({
   onRemovePhotoAttachment,
   onSaveEntry,
   onSelectType,
-  onSettleInstallmentEntry = null,
-  showInstallmentSettleAction = false,
+  onPrepayInstallmentEntry = null,
+  showInstallmentPrepaymentAction = false,
 }: LedgerEntryFormProps) {
   const categories = CATEGORY_OPTIONS[draft.type];
   const formattedAmountValue = formatAmountInput(draft.amount);
@@ -138,29 +142,42 @@ export function LedgerEntryForm({
       />
       <View style={styles.fieldGroup}>
         <EntryTypeToggleButton onSelectType={onSelectType} selectedType={draft.type} />
-        <TextInput
-          ref={amountInputRef}
-          submitBehavior="blurAndSubmit"
-          keyboardType="number-pad"
-          onChangeText={handleAmountChangeText}
-          onSelectionChange={(event) => {
-            if (shouldIgnoreNextAmountSelectionChangeRef.current) {
-              shouldIgnoreNextAmountSelectionChangeRef.current = false;
-              if (amountSelectionIgnoreResetTimeoutRef.current) {
-                clearTimeout(amountSelectionIgnoreResetTimeoutRef.current);
-                amountSelectionIgnoreResetTimeoutRef.current = null;
+        <View style={styles.clearableInputRow}>
+          <TextInput
+            ref={amountInputRef}
+            submitBehavior="blurAndSubmit"
+            keyboardType="number-pad"
+            onChangeText={handleAmountChangeText}
+            onSelectionChange={(event) => {
+              if (shouldIgnoreNextAmountSelectionChangeRef.current) {
+                shouldIgnoreNextAmountSelectionChangeRef.current = false;
+                if (amountSelectionIgnoreResetTimeoutRef.current) {
+                  clearTimeout(amountSelectionIgnoreResetTimeoutRef.current);
+                  amountSelectionIgnoreResetTimeoutRef.current = null;
+                }
+                return;
               }
-              return;
-            }
 
-            updateAmountSelection(event.nativeEvent.selection);
-          }}
-          onSubmitEditing={() => Keyboard.dismiss()}
-          placeholder={AppMessages.editorAmount}
-          selection={amountSelection}
-          style={styles.input}
-          value={formattedAmountValue}
-        />
+              updateAmountSelection(event.nativeEvent.selection);
+            }}
+            onSubmitEditing={() => Keyboard.dismiss()}
+            placeholder={AppMessages.editorAmount}
+            selection={amountSelection}
+            style={styles.clearableInput}
+            value={formattedAmountValue}
+          />
+          {formattedAmountValue ? (
+            <IconActionButton
+              accessibilityLabel={EntryRegistrationCopy.amountClearAccessibilityLabel}
+              icon="x-circle"
+              onPress={() => {
+                handleAmountChangeText("");
+                amountInputRef.current?.focus();
+              }}
+              size="compact"
+            />
+          ) : null}
+        </View>
       </View>
       <EntryTargetMemberSelector
         members={members}
@@ -194,19 +211,33 @@ export function LedgerEntryForm({
         <View style={styles.fieldHeaderRow}>
           <Text style={styles.label}>{EntryRegistrationCopy.contentLabel}</Text>
         </View>
-        <TextInput
-          ref={contentInputRef}
-          submitBehavior="blurAndSubmit"
-          onChangeText={(value) => onChangeDraft("content", value)}
-          onSubmitEditing={() => {
-            Keyboard.dismiss();
-            void handlePressSaveEntry();
-          }}
-          placeholder={EntryRegistrationCopy.contentPlaceholder}
-          returnKeyType="done"
-          style={styles.input}
-          value={draft.content}
-        />
+        <View style={styles.clearableInputRow}>
+          <TextInput
+            autoFocus={autoFocusContent}
+            ref={contentInputRef}
+            submitBehavior="blurAndSubmit"
+            onChangeText={(value) => onChangeDraft("content", value)}
+            onSubmitEditing={() => {
+              Keyboard.dismiss();
+              void handlePressSaveEntry();
+            }}
+            placeholder={EntryRegistrationCopy.contentPlaceholder}
+            returnKeyType="done"
+            style={styles.clearableInput}
+            value={draft.content}
+          />
+          {draft.content ? (
+            <IconActionButton
+              accessibilityLabel={EntryRegistrationCopy.contentClearAccessibilityLabel}
+              icon="x-circle"
+              onPress={() => {
+                onChangeDraft("content", "");
+                contentInputRef.current?.focus();
+              }}
+              size="compact"
+            />
+          ) : null}
+        </View>
       </View>
       <View style={styles.fieldGroup}>
         <View style={styles.fieldHeaderRow}>
@@ -239,27 +270,12 @@ export function LedgerEntryForm({
             variant="primary"
           />
         </View>
-        {showInstallmentSettleAction && onSettleInstallmentEntry ? (
+        {showInstallmentPrepaymentAction && onPrepayInstallmentEntry ? (
           <View style={styles.secondaryActionRow}>
             <ActionButton
-              label={EntryRegistrationCopy.installmentSettleAction}
+              label={EntryRegistrationCopy.installmentPrepaymentAction}
               onPress={() => {
-                Alert.alert(
-                  EntryRegistrationCopy.installmentSettleAction,
-                  EntryRegistrationCopy.installmentSettleConfirmMessage,
-                  [
-                    {
-                      style: "cancel",
-                      text: "취소",
-                    },
-                    {
-                      onPress: () => {
-                        void onSettleInstallmentEntry();
-                      },
-                      text: "확인",
-                    },
-                  ],
-                );
+                void onPrepayInstallmentEntry();
               }}
               size="inline"
               variant="secondary"
@@ -292,6 +308,18 @@ const styles = StyleSheet.create({
   },
   label: FormLabelTextStyle,
   input: UnderlineFormInputTextStyle,
+  clearableInputRow: {
+    alignItems: "center",
+    borderBottomColor: AppColors.border,
+    borderBottomWidth: AppLayout.dividerWidth,
+    flexDirection: "row",
+  },
+  clearableInput: {
+    ...UnderlineFormInputTextStyle,
+    borderBottomWidth: 0,
+    flex: 1,
+    minWidth: 0,
+  },
   formActions: {
     paddingTop: 4,
     gap: 8,

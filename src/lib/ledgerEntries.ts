@@ -268,6 +268,12 @@ export async function insertLedgerEntries(
   userId: string,
   entries: LedgerEntry[],
 ): Promise<LedgerEntry[]> {
+  const trace = createPerformanceTrace("LedgerEntriesWrite", {
+    bookId,
+    entryCount: entries.length,
+    photoCount: entries[0]?.photoAttachments.length ?? 0,
+    step: "insert_ledger_entries",
+  });
   const { data, error } = await supabase
     .from(LEDGER_TABLE)
     .insert(
@@ -282,7 +288,10 @@ export async function insertLedgerEntries(
         currency: entry.currency ?? resolveDisplayCurrency(),
         category: entry.category,
         category_id: entry.categoryId,
-        metadata: buildLedgerEntryMetadata(entry.targetMemberId ?? userId),
+        metadata: buildLedgerEntryMetadata(
+          entry.targetMemberId ?? userId,
+          entry.installmentStatus,
+        ),
         installment_group_id: entry.installmentGroupId ?? null,
         installment_months: entry.installmentMonths ?? null,
         installment_order: entry.installmentOrder ?? null,
@@ -295,24 +304,40 @@ export async function insertLedgerEntries(
   if (error || !data) {
     throw error ?? new Error("Failed to create ledger entries.");
   }
+  trace("inserted_ledger_entry_rows", { rowCount: data.length });
 
+  let savedPhotoAttachments = entries[0]?.photoAttachments ?? [];
   if (entries.length > 0) {
     const targetInstallmentGroupId = data[0]?.installment_group_id ?? null;
     const photoAttachments = entries[0]?.photoAttachments ?? [];
     if (data[0]?.id && photoAttachments.length > 0) {
-      await syncLedgerEntryPhotoAttachments({
+      savedPhotoAttachments = await syncLedgerEntryPhotoAttachments({
         entryId: data[0].id,
         installmentGroupId: targetInstallmentGroupId,
         photoAttachments,
         userId,
       });
+      trace("synced_ledger_entry_photos", { photoCount: savedPhotoAttachments.length });
     }
   }
 
-  return fetchSavedLedgerEntries(bookId, data);
+  const savedEntries = data.map((row, index) =>
+    mapSavedLedgerEntry(row, entries[index] ?? entries[0], savedPhotoAttachments),
+  );
+  trace("completed_insert", { savedEntryCount: savedEntries.length });
+  return savedEntries;
 }
 
-export async function updateLedgerEntry(entry: LedgerEntry): Promise<LedgerEntry> {
+export async function updateLedgerEntry(
+  entry: LedgerEntry,
+  options?: { syncPhotoAttachments?: boolean },
+): Promise<LedgerEntry> {
+  const trace = createPerformanceTrace("LedgerEntriesWrite", {
+    entryId: entry.id,
+    photoCount: entry.photoAttachments.length,
+    step: "update_ledger_entry",
+    syncPhotoAttachments: options?.syncPhotoAttachments !== false,
+  });
   const { data, error } = await supabase
     .from(LEDGER_TABLE)
     .update({
@@ -323,7 +348,10 @@ export async function updateLedgerEntry(entry: LedgerEntry): Promise<LedgerEntry
       content: entry.content,
       category: entry.category,
       category_id: entry.categoryId,
-      metadata: buildLedgerEntryMetadata(entry.targetMemberId ?? entry.authorId ?? ""),
+      metadata: buildLedgerEntryMetadata(
+        entry.targetMemberId ?? entry.authorId ?? "",
+        entry.installmentStatus,
+      ),
       note: entry.note,
     })
     .eq("id", entry.id)
@@ -333,18 +361,19 @@ export async function updateLedgerEntry(entry: LedgerEntry): Promise<LedgerEntry
   if (error || !data) {
     throw error ?? new Error("Failed to update ledger entry.");
   }
+  trace("updated_ledger_entry_row");
 
-  const savedPhotoAttachments = await syncLedgerEntryPhotoAttachments({
-    entryId: data.id,
-    installmentGroupId: data.installment_group_id,
-    photoAttachments: entry.photoAttachments,
-    userId: await resolveLedgerEntryAttachmentOwnerId(data.user_id),
-  });
-  const [savedEntry] = await fetchSavedLedgerEntries(data.book_id, [data]);
-  return {
-    ...(savedEntry ?? mapLedgerEntryRow(data)),
-    photoAttachments: savedPhotoAttachments,
-  };
+  const savedPhotoAttachments =
+    options?.syncPhotoAttachments === false
+      ? entry.photoAttachments
+      : await syncLedgerEntryPhotoAttachments({
+          entryId: data.id,
+          installmentGroupId: data.installment_group_id,
+          photoAttachments: entry.photoAttachments,
+          userId: await resolveLedgerEntryAttachmentOwnerId(data.user_id),
+        });
+  trace("completed_update", { savedPhotoCount: savedPhotoAttachments.length });
+  return mapSavedLedgerEntry(data, entry, savedPhotoAttachments);
 }
 
 export async function deleteLedgerEntry(entryId: string): Promise<void> {
@@ -366,71 +395,42 @@ export async function deleteLedgerEntry(entryId: string): Promise<void> {
   }
 }
 
-export async function deleteLedgerEntries(entryIds: string[]): Promise<void> {
-  if (entryIds.length === 0) {
-    return;
-  }
-
-  const { data: entryRows, error: entryRowsError } = await supabase
-    .from(LEDGER_TABLE)
-    .select(LedgerEntrySelectColumns.attachmentCleanup)
-    .in("id", entryIds)
-    .returns<Pick<LedgerEntryRow, "id" | "installment_group_id">[]>();
-
-  if (entryRowsError) {
-    throw entryRowsError;
-  }
-
-  await deleteLedgerEntryPhotoAttachmentsForEntries(entryRows ?? []);
-
-  const { error } = await supabase.from(LEDGER_TABLE).delete().in("id", entryIds);
-  if (error) {
-    throw error;
-  }
-}
-
 export async function fetchLedgerEntriesByInstallmentGroup(
   bookId: string,
   installmentGroupId: string,
+  options?: { includePhotoAttachments?: boolean },
 ): Promise<LedgerEntry[]> {
   const rows = await fetchEnrichedLedgerEntryRows(bookId, {
     ascending: true,
     installmentGroupId,
     orderBy: "occurred_on",
   });
-  return mapEnrichedLedgerEntries(rows, { includePhotoAttachments: true });
-}
-
-async function fetchSavedLedgerEntries(
-  bookId: string,
-  savedRows: LedgerEntryRow[],
-): Promise<LedgerEntry[]> {
-  if (savedRows.length === 0) {
-    return [];
-  }
-
-  const savedEntryIds = new Set(savedRows.map((row) => row.id));
-  const savedDates = savedRows.map((row) => row.occurred_on).sort();
-  const rows = await fetchEnrichedLedgerEntryRows(bookId, {
-    ascending: true,
-    dateFrom: savedDates[0],
-    dateTo: savedDates[savedDates.length - 1],
-    orderBy: "created_at",
+  return mapEnrichedLedgerEntries(rows, {
+    includePhotoAttachments: options?.includePhotoAttachments ?? false,
   });
-  const enrichedEntries = await mapEnrichedLedgerEntries(
-    rows.filter((row) => savedEntryIds.has(row.id)),
-    { includePhotoAttachments: true },
-  );
-  const enrichedEntryMap = new Map(enrichedEntries.map((entry) => [entry.id, entry]));
-
-  return savedRows.map((row) => enrichedEntryMap.get(row.id) ?? mapLedgerEntryRow(row));
 }
 
-function mapLedgerEntrySummaries(rows: LedgerEntrySummaryRow[]): LedgerEntry[] {
+export function mapLedgerEntrySummaries(rows: LedgerEntrySummaryRow[]): LedgerEntry[] {
   return rows.map((row) => ({
     ...mapLedgerEntryRow(row, resolveAuthorDisplayName(row)),
     targetMemberName: resolveTargetMemberDisplayName(row),
   }));
+}
+
+function mapSavedLedgerEntry(
+  row: LedgerEntryRow,
+  sourceEntry: LedgerEntry | undefined,
+  photoAttachments: LedgerEntry["photoAttachments"],
+): LedgerEntry {
+  const mappedEntry = mapLedgerEntryRow(row, sourceEntry?.authorName);
+  return {
+    ...sourceEntry,
+    ...mappedEntry,
+    authorHasBookAccess: sourceEntry?.authorHasBookAccess ?? Boolean(row.user_id),
+    photoAttachments,
+    targetMemberHasBookAccess:
+      sourceEntry?.targetMemberHasBookAccess ?? Boolean(mappedEntry.targetMemberId),
+  };
 }
 
 async function mapEnrichedLedgerEntries(

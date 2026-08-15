@@ -1,5 +1,4 @@
 import {
-  deleteLedgerEntries,
   deleteLedgerEntry,
   fetchLedgerEntries,
   fetchLedgerEntriesByInstallmentGroup,
@@ -79,10 +78,18 @@ export async function saveLedgerEntry(params: {
   entry: LedgerEntry;
   trackBusyTask: BusyTaskTracker;
   userId: string;
+  syncPhotoAttachments?: boolean;
 }): Promise<LedgerEntry> {
-  const { activeBookId, editingEntryId, entry, trackBusyTask, userId } = params;
+  const {
+    activeBookId,
+    editingEntryId,
+    entry,
+    syncPhotoAttachments,
+    trackBusyTask,
+    userId,
+  } = params;
   if (editingEntryId) {
-    return trackBusyTask(() => updateLedgerEntry(entry));
+    return trackBusyTask(() => updateLedgerEntry(entry, { syncPhotoAttachments }));
   }
 
   return trackBusyTask(() => insertLedgerEntry(activeBookId, userId, entry));
@@ -102,19 +109,15 @@ export async function removeLedgerEntry(entryId: string): Promise<void> {
   await deleteLedgerEntry(entryId);
 }
 
-export async function removeLedgerEntries(
-  entryIds: string[],
-  trackBusyTask: BusyTaskTracker,
-): Promise<void> {
-  await trackBusyTask(() => deleteLedgerEntries(entryIds));
-}
-
 export async function loadInstallmentEntries(
   activeBookId: string,
   installmentGroupId: string,
   trackBusyTask: BusyTaskTracker,
+  includePhotoAttachments = false,
 ): Promise<LedgerEntry[]> {
   return trackBusyTask(() =>
-    fetchLedgerEntriesByInstallmentGroup(activeBookId, installmentGroupId),
+    fetchLedgerEntriesByInstallmentGroup(activeBookId, installmentGroupId, {
+      includePhotoAttachments,
+    }),
   );
 }

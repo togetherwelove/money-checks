@@ -1,4 +1,5 @@
 import { CurrencyFormatConfig } from "../constants/currency";
+import { InstallmentStatuses } from "../constants/installments";
 import type { LedgerEntry, LedgerEntryDraft } from "../types/ledger";
 import { parseIsoDate, toIsoDate } from "../utils/calendar";
 import { ONE_TIME_INSTALLMENT_MONTHS } from "../utils/ledgerEntries";
@@ -10,7 +11,7 @@ const InstallmentCopy = {
     oneTimeLabel: "일시불",
     progressLabel: "할부",
     progressSuffix: "진행 중",
-    settlementNoteSuffix: "남은 할부 정리",
+    prepaidLabel: "선결제 완료",
     monthsSuffix: "개월",
   } as const;
 export const MAX_INSTALLMENT_MONTHS = 24;
@@ -33,6 +34,7 @@ export function buildLedgerEntriesFromDraft(draft: LedgerEntryDraft): LedgerEntr
         amount,
         currency,
         targetMemberId: draft.targetMemberId,
+        targetMemberName: draft.targetMemberName,
         content: trimmedContent,
         category: trimmedCategory,
         categoryId: trimmedCategoryId,
@@ -59,12 +61,14 @@ export function buildLedgerEntriesFromDraft(draft: LedgerEntryDraft): LedgerEntr
       amount: installmentAmount,
       currency,
       targetMemberId: draft.targetMemberId,
+      targetMemberName: draft.targetMemberName,
       content: trimmedContent,
       category: trimmedCategory,
       categoryId: trimmedCategoryId,
       installmentGroupId,
       installmentMonths: draft.installmentMonths,
       installmentOrder,
+      installmentStatus: InstallmentStatuses.proceeding,
       note: appendInstallmentNote(trimmedNote, installmentOrder, draft.installmentMonths),
       photoAttachments,
       sourceType: "manual",
@@ -81,6 +85,10 @@ export function formatInstallmentLabel(installmentMonths: number): string {
 }
 
 export function formatInstallmentProgressLabel(entry: LedgerEntry): string | null {
+  if (entry.installmentStatus === InstallmentStatuses.prepaid) {
+    return InstallmentCopy.prepaidLabel;
+  }
+
   if (
     !entry.installmentMonths ||
     entry.installmentMonths <= ONE_TIME_INSTALLMENT_MONTHS ||
@@ -96,36 +104,8 @@ export function formatInstallmentProgressLabel(entry: LedgerEntry): string | nul
   return `${InstallmentCopy.progressLabel} ${entry.installmentOrder}/${entry.installmentMonths}`;
 }
 
-export function buildInstallmentSettlementEntry(
-  currentEntry: LedgerEntry,
-  remainingAmount: number,
-): LedgerEntry {
-  return {
-    id: "",
-    date: currentEntry.date,
-    type: currentEntry.type,
-    amount: remainingAmount,
-    targetMemberId: currentEntry.targetMemberId,
-    content: currentEntry.content,
-    category: currentEntry.category,
-    categoryId: currentEntry.categoryId,
-    note: appendSettlementNote(currentEntry),
-    photoAttachments: [],
-    sourceType: "manual",
-  };
-}
-
 export function stripInstallmentNoteSuffix(note: string): string {
   return removeInstallmentNote(note);
-}
-
-function appendSettlementNote(entry: LedgerEntry): string {
-  const baseNote = removeInstallmentNote(entry.note).trim();
-  if (!baseNote) {
-    return InstallmentCopy.settlementNoteSuffix;
-  }
-
-  return `${baseNote} ${InstallmentCopy.settlementNoteSuffix}`;
 }
 
 function appendInstallmentNote(note: string, installmentOrder: number, installmentMonths: number) {
