@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
 
 import { LedgerEditorPanel } from "../components/LedgerEditorPanel";
 import { AppColors } from "../constants/colors";
+import { InstallmentStatuses } from "../constants/installments";
 import { ENTRY_PHOTO_LIMIT, EntryPhotoCopy } from "../constants/entryPhotos";
 import { KeyboardLayout } from "../constants/keyboard";
 import { AppLayout } from "../constants/layout";
@@ -13,20 +14,23 @@ import { logAppError } from "../lib/logAppError";
 import { showNativeToast } from "../lib/nativeToast";
 import type { LedgerEntry, LedgerEntryDraft, LedgerEntryType } from "../types/ledger";
 import type { LedgerBookMember } from "../types/ledgerBookMember";
+import type { InstallmentPrepaymentHandler } from "../types/installmentTransactions";
 
 type EntryScreenProps = {
+  autoFocusContent?: boolean;
   currentUserId: string;
   onDraftChange: () => void;
   onSaveEntry: () => Promise<void>;
-  onSettleInstallmentEntry: (entry: LedgerEntry) => Promise<void>;
+  onPrepayInstallmentEntry: InstallmentPrepaymentHandler;
   state: LedgerScreenState;
 };
 
 export function EntryScreen({
+  autoFocusContent = false,
   currentUserId,
   onDraftChange,
   onSaveEntry,
-  onSettleInstallmentEntry,
+  onPrepayInstallmentEntry,
   state,
 }: EntryScreenProps) {
   const [members, setMembers] = useState<LedgerBookMember[]>([]);
@@ -197,6 +201,7 @@ export function EntryScreen({
       ) : null}
       <LedgerEditorPanel
         activeBookId={activeBookId}
+        autoFocusContent={autoFocusContent}
         draft={draft}
         editingEntryId={editingEntryId}
         members={members}
@@ -206,13 +211,13 @@ export function EntryScreen({
         onRemovePhotoAttachment={handleRemovePhotoAttachment}
         onSaveEntry={onSaveEntry}
         onSelectType={handleSelectType}
-        onSettleInstallmentEntry={
-          editingEntry ? () => onSettleInstallmentEntry(editingEntry) : null
+        onPrepayInstallmentEntry={
+          editingEntry ? () => onPrepayInstallmentEntry(editingEntry) : null
         }
-        showInstallmentSettleAction={Boolean(
-          editingEntry?.installmentMonths &&
-            editingEntry.installmentOrder &&
-            editingEntry.installmentOrder < editingEntry.installmentMonths,
+        showInstallmentPrepaymentAction={Boolean(
+          editingEntry?.type === "expense" &&
+            editingEntry.installmentStatus !== InstallmentStatuses.prepaid &&
+            editingEntry.installmentGroupId,
         )}
       />
     </ScrollView>

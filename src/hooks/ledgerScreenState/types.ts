@@ -17,6 +17,11 @@ import type {
   LedgerBookJoinRequest,
   LedgerBookJoinRequestCountByBookId,
 } from "../../types/ledgerBookJoinRequest";
+import type { LedgerEntryDeleteScope } from "../../types/ledgerEntryDeletion";
+import type {
+  InstallmentPrepaymentPreview,
+  InstallmentPrepaymentResult,
+} from "../../types/installmentTransactions";
 
 export type BusyTaskTracker = <T>(task: () => Promise<T>) => Promise<T>;
 
@@ -76,12 +81,22 @@ export type LedgerScreenState = {
   setVisibleMonth: (nextMonth: Date) => void;
   switchLedgerBook: (bookId: string) => Promise<boolean>;
   visibleMonth: Date;
-  handleDeleteEntry: (entryId: string) => Promise<void>;
+  handleDeleteEntry: (
+    entry: LedgerEntry,
+    scope: LedgerEntryDeleteScope,
+  ) => Promise<LedgerEntry[]>;
   handleEditEntry: (entry: LedgerEntry) => void;
-  handleSaveDraftEntry: (draft: LedgerEntryDraft) => Promise<LedgerEntry[]>;
   handleSaveEntry: () => Promise<LedgerEntry[]>;
-  handleSettleInstallmentEntry: (entry: LedgerEntry) => Promise<LedgerEntry | null>;
+  prepayInstallmentEntry: (
+    entry: LedgerEntry,
+    prepaymentDate: string,
+  ) => Promise<InstallmentPrepaymentResult | null>;
+  previewInstallmentPrepayment: (
+    entry: LedgerEntry,
+    prepaymentDate: string,
+  ) => Promise<InstallmentPrepaymentPreview | null>;
   handleSelectDate: (isoDate: string) => void;
+  prepareDraftEntry: (draft: LedgerEntryDraft) => void;
   resetEditor: (isoDate: string) => void;
   updateDraftField: (field: keyof LedgerEntryDraft, value: string) => void;
   updateDraftInstallmentMonths: (installmentMonths: number) => void;

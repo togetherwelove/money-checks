@@ -1,4 +1,7 @@
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import {
+  createNativeStackNavigator,
+  type NativeStackNavigationOptions,
+} from "@react-navigation/native-stack";
 
 import type { CalendarSummaryMode } from "../constants/calendarSummary";
 import { AppColors } from "../constants/colors";
@@ -30,10 +33,29 @@ import { SubscriptionScreen } from "../screens/SubscriptionScreen";
 import { SupportContactScreen } from "../screens/SupportContactScreen";
 import { SupportScreen } from "../screens/SupportScreen";
 import type { LedgerEntry } from "../types/ledger";
+import type { LedgerEntryDeleteHandler } from "../types/ledgerEntryDeletion";
+import type { InstallmentPrepaymentHandler } from "../types/installmentTransactions";
 import type { LedgerWidgetSummary } from "../types/widget";
 import type { SignedInStackParamList } from "./signedInNavigation";
 
 const Stack = createNativeStackNavigator<SignedInStackParamList>();
+const signedInStackScreenOptions: NativeStackNavigationOptions = {
+  animation: "slide_from_right",
+  contentStyle: { backgroundColor: AppColors.screenBackground },
+  fullScreenGestureEnabled: true,
+  gestureEnabled: true,
+  headerShown: false,
+};
+const entryNativeSheetOptions: NativeStackNavigationOptions = {
+  fullScreenGestureEnabled: false,
+  headerShown: false,
+  presentation: "formSheet",
+  sheetAllowedDetents: [EntryNativeSheetUi.detentRatio],
+  sheetExpandsWhenScrolledToEdge: false,
+  sheetGrabberVisible: true,
+  sheetInitialDetentIndex: EntryNativeSheetUi.initialDetentIndex,
+  sheetLargestUndimmedDetentIndex: "none",
+};
 
 type SignedInStackNavigatorProps = {
   accountProviderLabel: string;
@@ -57,7 +79,7 @@ type SignedInStackNavigatorProps = {
   onChangeNotificationThreshold: (key: NotificationThresholdKey, value: string) => void;
   onBeforeCopyShareCode: () => Promise<void> | void;
   onBeforeSendJoinRequest: () => Promise<void> | void;
-  onDeleteSelectedEntry: (entry: LedgerEntry) => Promise<boolean>;
+  onDeleteSelectedEntry: LedgerEntryDeleteHandler;
   onDiscardEntryDraft: () => void;
   onEditSelectedEntryFromAllEntries: (entry: LedgerEntry) => void;
   onEditSelectedEntryFromCalendar: (entry: LedgerEntry) => void;
@@ -71,7 +93,7 @@ type SignedInStackNavigatorProps = {
   onRestorePurchases: () => Promise<void>;
   onSaveEntry: () => Promise<boolean>;
   onSelectCalendarDate: (isoDate: string) => void;
-  onSettleInstallmentEntry: (entry: LedgerEntry) => Promise<boolean>;
+  onPrepayInstallmentEntry: InstallmentPrepaymentHandler;
   onToggleCalendarHeatmap: (isEnabled: boolean) => void;
   onSendPendingJoinRequestNotification: () => Promise<void>;
   onSendPushNotificationToBookMembers: (
@@ -136,7 +158,7 @@ export function SignedInStackNavigator({
   onRestorePurchases,
   onSaveEntry,
   onSelectCalendarDate,
-  onSettleInstallmentEntry,
+  onPrepayInstallmentEntry,
   onToggleCalendarHeatmap,
   onSendPendingJoinRequestNotification,
   onSendPushNotificationToBookMembers,
@@ -155,13 +177,7 @@ export function SignedInStackNavigator({
   return (
     <Stack.Navigator
       initialRouteName="calendar"
-      screenOptions={{
-        animation: "slide_from_right",
-        contentStyle: { backgroundColor: AppColors.screenBackground },
-        fullScreenGestureEnabled: true,
-        gestureEnabled: true,
-        headerShown: false,
-      }}
+      screenOptions={signedInStackScreenOptions}
     >
       <Stack.Screen name="calendar">
         {() => (
@@ -170,6 +186,7 @@ export function SignedInStackNavigator({
             isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
             onDeleteSelectedEntry={onDeleteSelectedEntry}
             onEditSelectedEntry={onEditSelectedEntryFromCalendar}
+            onPrepayInstallmentEntry={onPrepayInstallmentEntry}
             onSelectCalendarDate={onSelectCalendarDate}
             showsBannerAd={showsBannerAd}
             state={ledgerState}
@@ -178,23 +195,15 @@ export function SignedInStackNavigator({
       </Stack.Screen>
       <Stack.Screen
         name="entry-sheet"
-        options={{
-          fullScreenGestureEnabled: false,
-          headerShown: false,
-          presentation: "formSheet",
-          sheetAllowedDetents: [EntryNativeSheetUi.detentRatio],
-          sheetExpandsWhenScrolledToEdge: false,
-          sheetGrabberVisible: true,
-          sheetInitialDetentIndex: EntryNativeSheetUi.initialDetentIndex,
-          sheetLargestUndimmedDetentIndex: "none",
-        }}
+        options={entryNativeSheetOptions}
       >
-        {() => (
+        {({ route }) => (
           <EntryNativeSheetScreen
+            autoFocusContent={route.params?.autoFocusContent ?? false}
             currentUserId={userId}
             onDiscard={onDiscardEntryDraft}
             onSaveEntry={onSaveEntry}
-            onSettleInstallmentEntry={onSettleInstallmentEntry}
+            onPrepayInstallmentEntry={onPrepayInstallmentEntry}
             state={ledgerState}
           />
         )}
@@ -205,6 +214,7 @@ export function SignedInStackNavigator({
             activeBook={ledgerState.activeBook}
             onDeleteEntry={onDeleteSelectedEntry}
             onEditEntry={onEditSelectedEntryFromAllEntries}
+            onPrepayInstallmentEntry={onPrepayInstallmentEntry}
             showsNativeAds={showsBannerAd}
             trackBlockingTask={trackBlockingTask}
           />

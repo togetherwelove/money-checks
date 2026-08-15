@@ -11,6 +11,7 @@ import {
   type ExpenseTextColorMode,
   ExpenseTextColorModes,
 } from "../constants/expenseTextColor";
+import { useExpenseTextColorSetting } from "../hooks/useExpenseTextColorSetting";
 
 type ExpenseTextColorContextValue = {
   mode: ExpenseTextColorMode;
@@ -30,29 +31,28 @@ const ExpenseTextColorContext = createContext<ExpenseTextColorContextValue>({
   updateMode: () => undefined,
 });
 
-type ExpenseTextColorProviderProps = PropsWithChildren<{
-  mode: ExpenseTextColorMode;
-  onChange: (mode: ExpenseTextColorMode) => void;
-}>;
+type ExpenseTextColorProviderProps = PropsWithChildren;
 
 export function ExpenseTextColorProvider({
   children,
-  mode,
-  onChange,
 }: ExpenseTextColorProviderProps) {
+  const { expenseTextColorMode, updateExpenseTextColorMode } =
+    useExpenseTextColorSetting();
   const value = useMemo<ExpenseTextColorContextValue>(
     () => {
       const textColor =
-        mode === ExpenseTextColorModes.expense ? AppColors.expense : AppColors.text;
+        expenseTextColorMode === ExpenseTextColorModes.expense
+          ? AppColors.expense
+          : AppColors.text;
 
       return {
-        mode,
+        mode: expenseTextColorMode,
         textColor,
         textStyle: { color: textColor },
-        updateMode: onChange,
+        updateMode: updateExpenseTextColorMode,
       };
     },
-    [mode, onChange],
+    [expenseTextColorMode, updateExpenseTextColorMode],
   );
 
   return (

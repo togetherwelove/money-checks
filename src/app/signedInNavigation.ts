@@ -9,7 +9,7 @@ export type SignedInStackParamList = {
   calendar: undefined;
   charts: undefined;
   "contact-support": undefined;
-  "entry-sheet": undefined;
+  "entry-sheet": { autoFocusContent?: boolean } | undefined;
   help: undefined;
   "notification-settings": undefined;
   share: undefined;

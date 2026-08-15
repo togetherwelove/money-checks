@@ -9,7 +9,7 @@ import { buildLedgerEntryListSignature } from "../../utils/ledgerEntrySignature"
 
 type SelectedDateEntriesState = {
   isLoadingSelectedDateEntries: boolean;
-  removeSelectedDateEntry: (entryId: string) => void;
+  removeSelectedDateEntries: (entryIds: readonly string[]) => void;
   refreshSelectedDateEntries: () => Promise<void>;
   selectedEntries: LedgerEntry[];
   selectedEntriesError: string | null;
@@ -129,29 +129,32 @@ export function useSelectedDateEntries(
     };
   }, [activeBookId, entriesByDate, selectedDate, selectedDateEntrySignature, signatureByDate]);
 
-  const removeSelectedDateEntry = useCallback(
-    (entryId: string) => {
-      const currentEntries = entriesByDate[selectedDate];
-      if (!currentEntries?.some((entry) => entry.id === entryId)) {
+  const removeSelectedDateEntries = useCallback(
+    (entryIds: readonly string[]) => {
+      if (entryIds.length === 0) {
         return;
       }
 
-      const nextEntries = currentEntries.filter((entry) => entry.id !== entryId);
-      setEntriesByDate({
-        ...entriesByDate,
-        [selectedDate]: nextEntries,
-      });
-      setSignatureByDate({
-        ...signatureByDate,
-        [selectedDate]: buildLedgerEntryListSignature(nextEntries),
+      const deletedEntryIds = new Set(entryIds);
+      setEntriesByDate((currentEntriesByDate) => {
+        const currentEntries = currentEntriesByDate[selectedDate] ?? [];
+        const nextEntries = currentEntries.filter((entry) => !deletedEntryIds.has(entry.id));
+        if (nextEntries.length === currentEntries.length) {
+          return currentEntriesByDate;
+        }
+
+        return {
+          ...currentEntriesByDate,
+          [selectedDate]: nextEntries,
+        };
       });
     },
-    [entriesByDate, selectedDate, signatureByDate],
+    [selectedDate],
   );
 
   return {
     isLoadingSelectedDateEntries,
-    removeSelectedDateEntry,
+    removeSelectedDateEntries,
     refreshSelectedDateEntries: async () => {
       if (!activeBookId) {
         return;

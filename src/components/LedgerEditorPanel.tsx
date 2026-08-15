@@ -6,6 +6,7 @@ import { LedgerEntryForm } from "./LedgerEntryForm";
 
 type LedgerEditorPanelProps = {
   activeBookId?: string | null;
+  autoFocusContent?: boolean;
   draft: LedgerEntryDraft;
   editingEntryId: string | null;
   members: LedgerBookMember[];
@@ -15,8 +16,8 @@ type LedgerEditorPanelProps = {
   onRemovePhotoAttachment: (attachmentId: string) => void;
   onSaveEntry: () => void | Promise<void>;
   onSelectType: (type: LedgerEntryType) => void;
-  onSettleInstallmentEntry?: (() => void | Promise<void>) | null;
-  showInstallmentSettleAction?: boolean;
+  onPrepayInstallmentEntry?: (() => unknown) | null;
+  showInstallmentPrepaymentAction?: boolean;
 };
 
 export function LedgerEditorPanel(props: LedgerEditorPanelProps) {
@@ -24,6 +25,7 @@ export function LedgerEditorPanel(props: LedgerEditorPanelProps) {
     <View style={styles.container}>
       <LedgerEntryForm
         activeBookId={props.activeBookId}
+        autoFocusContent={props.autoFocusContent}
         draft={props.draft}
         editingEntryId={props.editingEntryId}
         members={props.members}
@@ -33,8 +35,8 @@ export function LedgerEditorPanel(props: LedgerEditorPanelProps) {
         onRemovePhotoAttachment={props.onRemovePhotoAttachment}
         onSaveEntry={props.onSaveEntry}
         onSelectType={props.onSelectType}
-        onSettleInstallmentEntry={props.onSettleInstallmentEntry}
-        showInstallmentSettleAction={props.showInstallmentSettleAction}
+        onPrepayInstallmentEntry={props.onPrepayInstallmentEntry}
+        showInstallmentPrepaymentAction={props.showInstallmentPrepaymentAction}
       />
     </View>
   );

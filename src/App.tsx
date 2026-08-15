@@ -27,6 +27,7 @@ import { AppHeader } from "./components/AppHeader";
 import { AppMenuDrawer } from "./components/AppMenuDrawer";
 import { BlockingOverlay } from "./components/BlockingOverlay";
 import { DailyFirstEntryAdNoticeOverlay } from "./components/DailyFirstEntryAdNoticeOverlay";
+import { confirmInstallmentPrepayment } from "./components/installmentPrepaymentAlert";
 import { LedgerBookSwitcherModal } from "./components/LedgerBookSwitcherModal";
 import { OnboardingTransitionScreen } from "./components/OnboardingTransitionScreen";
 import { SessionLoadingScreen } from "./components/SessionLoadingScreen";
@@ -50,7 +51,6 @@ import { useAnnualLedgerReportAction } from "./hooks/useAnnualLedgerReportAction
 import { useAuthOnboarding } from "./hooks/useAuthOnboarding";
 import { useCalendarHeatmapSetting } from "./hooks/useCalendarHeatmapSetting";
 import { useCalendarSummaryModeSetting } from "./hooks/useCalendarSummaryModeSetting";
-import { useExpenseTextColorSetting } from "./hooks/useExpenseTextColorSetting";
 import { useGoogleAuthRedirectCompletion } from "./hooks/useGoogleAuthRedirectCompletion";
 import { useLedgerCategories } from "./hooks/useLedgerCategories";
 import { useLedgerNotifications } from "./hooks/useLedgerNotifications";
@@ -122,6 +122,7 @@ import { PasswordResetScreen } from "./screens/PasswordResetScreen";
 import type { LedgerAppScreen } from "./types/app";
 import type { CategoryDefinition } from "./types/category";
 import type { LedgerEntry, LedgerEntryDraft } from "./types/ledger";
+import type { LedgerEntryDeleteScope } from "./types/ledgerEntryDeletion";
 import { getMonthKey, toIsoDate } from "./utils/calendar";
 import { createDraft } from "./utils/ledgerEntries";
 import { resolveFallbackDisplayName } from "./utils/sessionDisplayName";
@@ -184,6 +185,7 @@ function SignedInApp({ session }: { session: Session }) {
   const hasCheckedInitialClipboardImportRef = useRef(false);
   const previousClipboardImportAppStateRef = useRef(AppState.currentState);
   const lastReadNotificationBadgeScreenKeyRef = useRef<string | null>(null);
+  const dailyFirstEntryAdTaskRef = useRef<Promise<void> | null>(null);
   const [currentScreen, setCurrentScreen] = useState<LedgerAppScreen>("calendar");
   const [isLedgerSwitcherOpen, setIsLedgerSwitcherOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -208,7 +210,6 @@ function SignedInApp({ session }: { session: Session }) {
     metadataDisplayName || (authProvider === "apple" ? "사용자" : "");
   const accountProviderLabel = resolveSessionAuthProviderLabel(session);
   const notifications = useLedgerNotifications(session.user.id);
-  const expenseTextColorSetting = useExpenseTextColorSetting();
   const calendarHeatmapSetting = useCalendarHeatmapSetting();
   const calendarSummaryModeSetting = useCalendarSummaryModeSetting();
   const subscription = useSubscriptionPlan(session.user.id);
@@ -448,7 +449,7 @@ function SignedInApp({ session }: { session: Session }) {
     [ledgerState.switchLedgerBook],
   );
 
-  const openEntrySheet = useCallback(() => {
+  const openEntrySheet = useCallback((autoFocusContent = false) => {
     if (
       !navigationRef.isReady() ||
       navigationRef.getCurrentRoute()?.name === "entry-sheet"
@@ -456,7 +457,7 @@ function SignedInApp({ session }: { session: Session }) {
       return;
     }
 
-    navigationRef.navigate("entry-sheet");
+    navigationRef.navigate("entry-sheet", { autoFocusContent });
   }, [navigationRef]);
 
   const navigateToEntryFromCalendar = useCallback(() => {
@@ -492,77 +493,74 @@ function SignedInApp({ session }: { session: Session }) {
     [clipboardImportBaseDate, shouldIgnoreCardSmsClipboardDraft],
   );
 
-  const handleDailyFirstEntrySaveInterstitial = useCallback(async () => {
-    if (subscription.isLoading) {
-      return;
+  const handleDailyFirstEntrySaveInterstitial = useCallback(() => {
+    if (dailyFirstEntryAdTaskRef.current) {
+      return dailyFirstEntryAdTaskRef.current;
     }
 
-    if (subscription.currentTier !== SubscriptionTiers.free) {
-      return;
-    }
+    const task = (async () => {
+      if (subscription.isLoading) {
+        return;
+      }
 
-    const todayKey = toIsoDate(new Date());
-    if (hasShownDailyFirstEntrySaveInterstitial(session.user.id, todayKey)) {
-      return;
-    }
+      if (subscription.currentTier !== SubscriptionTiers.free) {
+        return;
+      }
 
-    if (!isMobileAdsReady) {
-      preloadRewardedInterstitialAd();
-      return;
-    }
+      const todayKey = toIsoDate(new Date());
+      if (hasShownDailyFirstEntrySaveInterstitial(session.user.id, todayKey)) {
+        return;
+      }
 
-    const isRewardedInterstitialReady = await waitForRewardedInterstitialAdReady();
-    if (!isRewardedInterstitialReady) {
-      return;
-    }
+      if (!isMobileAdsReady) {
+        preloadRewardedInterstitialAd();
+        return;
+      }
 
-    await showDailyFirstEntryAdNoticeIfNeeded(session.user.id, setIsDailyFirstEntryAdNoticeVisible);
+      const isRewardedInterstitialReady = await waitForRewardedInterstitialAdReady();
+      if (!isRewardedInterstitialReady) {
+        return;
+      }
 
-    const rewardedInterstitialResult = await showRewardedInterstitialAd();
-    if (rewardedInterstitialResult.didOpen) {
-      markDailyFirstEntrySaveInterstitialShown(session.user.id, todayKey);
-    }
+      await showDailyFirstEntryAdNoticeIfNeeded(
+        session.user.id,
+        setIsDailyFirstEntryAdNoticeVisible,
+      );
+
+      const rewardedInterstitialResult = await showRewardedInterstitialAd();
+      if (rewardedInterstitialResult.didOpen) {
+        markDailyFirstEntrySaveInterstitialShown(session.user.id, todayKey);
+      }
+    })().finally(() => {
+      if (dailyFirstEntryAdTaskRef.current === task) {
+        dailyFirstEntryAdTaskRef.current = null;
+      }
+    });
+
+    dailyFirstEntryAdTaskRef.current = task;
+    return task;
   }, [isMobileAdsReady, session.user.id, subscription.currentTier, subscription.isLoading]);
 
-  const handleSaveCardSmsClipboardDraft = useCallback(
-    async (clipboardDraft: CardSmsClipboardDraft) => {
+  const handleOpenCardSmsClipboardDraft = useCallback(
+    (clipboardDraft: CardSmsClipboardDraft) => {
       if (ledgerState.isReadOnlyDueToPlanLimit) {
         handleReadOnlyEditBlocked();
         return;
       }
 
-      const currentEntries = ledgerState.entries;
-      const draftToSave = buildCardSmsClipboardLedgerEntryDraft({
+      const draftToEdit = buildCardSmsClipboardLedgerEntryDraft({
         clipboardDraft,
         fallbackDate: ledgerState.selectedDate,
         userId: session.user.id,
         visibleCategories,
       });
-      let savedEntries: LedgerEntry[] = [];
-
-      await handleDailyFirstEntrySaveInterstitial();
-
-      try {
-        savedEntries = await ledgerState.handleSaveDraftEntry(draftToSave);
-      } catch (error) {
-        logAppError("App", error, {
-          step: "save_card_sms_clipboard_entry",
-        });
-        showNativeToast(resolveLedgerSaveErrorMessage(error));
-        return;
-      }
-
-      if (savedEntries.length === 0) {
-        return;
-      }
-
-      showNativeToast(EntryRegistrationCopy.saveCreateSuccess);
-      void runEntrySaveSideEffects(savedEntries, currentEntries, "create", draftToSave.date);
+      ledgerState.prepareDraftEntry(draftToEdit);
+      openEntrySheet(true);
     },
     [
-      handleDailyFirstEntrySaveInterstitial,
       handleReadOnlyEditBlocked,
       ledgerState,
+      openEntrySheet,
       session.user.id,
       visibleCategories,
     ],
@@ -581,9 +579,9 @@ function SignedInApp({ session }: { session: Session }) {
     }
 
     setEntryActionMenuDraft(null);
-    void handleSaveCardSmsClipboardDraft(clipboardDraft);
+    handleOpenCardSmsClipboardDraft(clipboardDraft);
   }, [
-    handleSaveCardSmsClipboardDraft,
+    handleOpenCardSmsClipboardDraft,
     isSignedInInteractionReady,
     navigateToEntryFromCalendar,
     readAvailableCardSmsClipboardDraft,
@@ -687,12 +685,12 @@ function SignedInApp({ session }: { session: Session }) {
       return;
     }
 
-    const draftToSave = entryActionMenuDraft;
+    const clipboardDraft = entryActionMenuDraft;
     setEntryActionMenuDraft(null);
     setTimeout(() => {
-      void handleSaveCardSmsClipboardDraft(draftToSave);
-    }, CardSmsClipboardCopy.modalDismissBeforeSaveDelayMs);
-  }, [entryActionMenuDraft, handleSaveCardSmsClipboardDraft]);
+      handleOpenCardSmsClipboardDraft(clipboardDraft);
+    }, CardSmsClipboardCopy.modalDismissBeforeEditorDelayMs);
+  }, [entryActionMenuDraft, handleOpenCardSmsClipboardDraft]);
 
   const handleOpenClipboardImportFromWidget = useCallback(() => {
     void handleImportCardSmsClipboardDraft();
@@ -1002,10 +1000,6 @@ function SignedInApp({ session }: { session: Session }) {
     const currentEntries = ledgerState.entries;
     const wasEditingEntry = Boolean(ledgerState.editingEntryId);
     let savedEntries: LedgerEntry[] = [];
-    if (!wasEditingEntry) {
-      await handleDailyFirstEntrySaveInterstitial();
-    }
-
     try {
       savedEntries = await ledgerState.handleSaveEntry();
     } catch (error) {
@@ -1019,17 +1013,15 @@ function SignedInApp({ session }: { session: Session }) {
       return false;
     }
 
-    showNativeToast(
-      wasEditingEntry
-        ? EntryRegistrationCopy.saveUpdateSuccess
-        : EntryRegistrationCopy.saveCreateSuccess,
-    );
     void runEntrySaveSideEffects(
       savedEntries,
       currentEntries,
       wasEditingEntry ? "update" : "create",
       ledgerState.draft.date,
     );
+    if (!wasEditingEntry) {
+      void handleDailyFirstEntrySaveInterstitial();
+    }
     return true;
   };
 
@@ -1053,50 +1045,80 @@ function SignedInApp({ session }: { session: Session }) {
     navigateToEntryForEdit();
   };
 
-  const handleSettleInstallmentEntry = async (entry: LedgerEntry) => {
+  const handlePrepayInstallmentEntry = async (entry: LedgerEntry) => {
     if (ledgerState.isReadOnlyDueToPlanLimit) {
       handleReadOnlyEditBlocked();
       return false;
     }
 
     try {
-      const savedSettlementEntry = await ledgerState.handleSettleInstallmentEntry(entry);
-      if (!savedSettlementEntry) {
-        showNativeToast(EntryRegistrationCopy.installmentSettleUnavailable);
+      const prepaymentDate = toIsoDate(new Date());
+      const preview = await ledgerState.previewInstallmentPrepayment(entry, prepaymentDate);
+      if (!preview) {
+        showNativeToast(EntryRegistrationCopy.installmentPrepaymentUnavailable);
         return false;
       }
 
-      showNativeToast(EntryRegistrationCopy.installmentSettleSuccess);
+      if (!(await confirmInstallmentPrepayment(preview))) {
+        return false;
+      }
+
+      const result = await ledgerState.prepayInstallmentEntry(entry, prepaymentDate);
+      if (!result) {
+        showNativeToast(EntryRegistrationCopy.installmentPrepaymentUnavailable);
+        return false;
+      }
+
+      showNativeToast(EntryRegistrationCopy.installmentPrepaymentSuccess);
       return true;
     } catch (error) {
       logAppError("App", error, {
         entryId: entry.id,
         installmentGroupId: entry.installmentGroupId,
-        step: "settle_installment_entry",
+        step: "prepay_installment_entry",
       });
-      showNativeToast(resolveLedgerSaveErrorMessage(error));
+      showNativeToast(
+        isMissingInstallmentTransactionMigration(error)
+          ? EntryRegistrationCopy.saveMigrationError
+          : EntryRegistrationCopy.installmentPrepaymentError,
+      );
       return false;
     }
   };
 
-  const handleDeleteEntryFromCalendar = async (entry: LedgerEntry) => {
+  const handleDeleteEntryFromCalendar = async (
+    entry: LedgerEntry,
+    scope: LedgerEntryDeleteScope,
+  ) => {
     if (ledgerState.isReadOnlyDueToPlanLimit) {
       handleReadOnlyEditBlocked();
       return false;
     }
 
     try {
-      await ledgerState.handleDeleteEntry(entry.id);
+      const deletedEntries = await ledgerState.handleDeleteEntry(entry, scope);
+      if (deletedEntries.length === 0) {
+        showNativeToast(AppMessages.editorDeleteError);
+        return false;
+      }
+
+      for (const deletedEntry of deletedEntries) {
+        void runEntryDeleteSideEffects(deletedEntry);
+      }
     } catch (error) {
       logAppError("App", error, {
         entryId: entry.id,
+        installmentGroupId: entry.installmentGroupId,
+        scope,
         step: "delete_entry",
       });
-      showNativeToast(AppMessages.editorDeleteError);
+      showNativeToast(
+        isMissingInstallmentTransactionMigration(error)
+          ? EntryRegistrationCopy.saveMigrationError
+          : AppMessages.editorDeleteError,
+      );
       return false;
     }
-
-    void runEntryDeleteSideEffects(entry);
     return true;
   };
 
@@ -1284,10 +1306,7 @@ function SignedInApp({ session }: { session: Session }) {
   }
 
   return (
-    <ExpenseTextColorProvider
-      mode={expenseTextColorSetting.expenseTextColorMode}
-      onChange={expenseTextColorSetting.updateExpenseTextColorMode}
-    >
+    <ExpenseTextColorProvider>
       <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={AppColors.surface} />
       <SafeAreaView edges={["top"]} style={styles.headerSafeArea}>
@@ -1359,7 +1378,7 @@ function SignedInApp({ session }: { session: Session }) {
                   ledgerState.handleSelectDate(isoDate);
                   handleOpenCalendar();
                 }}
-                onSettleInstallmentEntry={handleSettleInstallmentEntry}
+                onPrepayInstallmentEntry={handlePrepayInstallmentEntry}
                 onSendPendingJoinRequestNotification={
                   notifications.sendPendingJoinRequestNotification
                 }
@@ -1639,6 +1658,10 @@ function navigateToSingleInstanceStackScreen(
 function resolveLedgerSaveErrorMessage(error: unknown): string {
   const errorText = extractLedgerSaveErrorText(error);
 
+  if (isMissingInstallmentTransactionMigration(error)) {
+    return EntryRegistrationCopy.saveMigrationError;
+  }
+
   if (
     errorText.includes("column") &&
     (errorText.includes("content") ||
@@ -1651,6 +1674,17 @@ function resolveLedgerSaveErrorMessage(error: unknown): string {
   }
 
   return EntryRegistrationCopy.saveError;
+}
+
+function isMissingInstallmentTransactionMigration(error: unknown): boolean {
+  const errorText = extractLedgerSaveErrorText(error);
+  const referencesInstallmentTransaction =
+    errorText.includes("delete_installment_group") ||
+    errorText.includes("prepay_installment_group");
+  return (
+    referencesInstallmentTransaction &&
+    (errorText.includes("could not find") || errorText.includes("does not exist"))
+  );
 }
 
 function extractLedgerSaveErrorText(error: unknown): string {

@@ -1,6 +1,6 @@
 
 const CardSmsClipboardLocalizedCopy = {
-    applyAction: "등록",
+    applyAction: "불러오기",
     amountCurrencySuffix: "원",
     dateDaysAgoSuffix: "일 전",
     dateDaysLaterPrefix: "",
@@ -17,7 +17,7 @@ export const CardSmsClipboardCopy = {
   actionPreviewContentMaxLength: 12,
   dateDisplaySeparator: "/",
   actionPreviewSuffix: "",
-  modalDismissBeforeSaveDelayMs: 320,
+  modalDismissBeforeEditorDelayMs: 320,
   previewOmissionIndicator: "...",
   previewSeparator: " · ",
 } as const;

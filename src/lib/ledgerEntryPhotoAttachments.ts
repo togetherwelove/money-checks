@@ -1,8 +1,6 @@
 import {
   ENTRY_PHOTO_BUCKET,
-  ENTRY_PHOTO_RANDOM_MAX,
   ENTRY_PHOTO_SIGNED_URL_EXPIRES_IN_SECONDS,
-  ENTRY_PHOTO_STORAGE_FOLDER,
 } from "../constants/entryPhotos";
 import type { LedgerEntryPhotoAttachment } from "../types/ledger";
 import type {
@@ -11,127 +9,20 @@ import type {
   LedgerEntryRow,
   ReceiptFileRow,
 } from "../types/supabase";
+import { logAppWarning } from "./logAppError";
+import {
+  mapUploadedReceiptFileAttachment,
+  uploadReceiptFiles,
+} from "./ledgerEntryPhotoUpload";
 import { supabase } from "./supabase";
 
 const LEDGER_ENTRY_ATTACHMENTS_TABLE = "ledger_entry_attachments";
 const LEDGER_ENTRIES_TABLE = "ledger_entries";
 const RECEIPT_FILES_TABLE = "receipt_files";
-const DEFAULT_ATTACHMENT_CONTENT_TYPE = "image/jpeg";
-const FILE_NAME_REPLACEMENT_PATTERN = /[^A-Za-z0-9._-]/g;
-const FILE_NAME_FALLBACK = "photo.jpg";
-const STORAGE_PATH_SEPARATOR = "/";
-
-type FileSystemModule = {
-  File: new (...segments: string[]) => { arrayBuffer: () => Promise<ArrayBuffer> };
-};
-
 type ReceiptFileAttachmentSource = Pick<
   ReceiptFileRow,
   "content_type" | "id" | "original_filename" | "storage_bucket" | "storage_path"
 >;
-
-export async function fetchLedgerEntryPhotoAttachmentMap(
-  entryRows: LedgerEntryRow[],
-): Promise<Map<string, LedgerEntryPhotoAttachment[]>> {
-  if (entryRows.length === 0) {
-    return new Map();
-  }
-
-  const entryIds = entryRows.map((row) => row.id);
-  const installmentGroupIds = [
-    ...new Set(
-      entryRows
-        .map((row) => row.installment_group_id)
-        .filter((installmentGroupId): installmentGroupId is string => Boolean(installmentGroupId)),
-    ),
-  ];
-  const directAttachmentQuery = supabase
-    .from(LEDGER_ENTRY_ATTACHMENTS_TABLE)
-    .select("*")
-    .in("ledger_entry_id", entryIds)
-    .returns<LedgerEntryAttachmentRow[]>();
-  const installmentAttachmentQuery =
-    installmentGroupIds.length > 0
-      ? supabase
-          .from(LEDGER_ENTRY_ATTACHMENTS_TABLE)
-          .select("*")
-          .in("installment_group_id", installmentGroupIds)
-          .returns<LedgerEntryAttachmentRow[]>()
-      : Promise.resolve({
-          data: [] as LedgerEntryAttachmentRow[],
-          error: null,
-        });
-  const [directAttachmentResult, installmentAttachmentResult] = await Promise.all([
-    directAttachmentQuery,
-    installmentAttachmentQuery,
-  ]);
-
-  if (directAttachmentResult.error) {
-    throw directAttachmentResult.error;
-  }
-
-  if (installmentAttachmentResult.error) {
-    throw installmentAttachmentResult.error;
-  }
-
-  const attachmentRows = [
-    ...(directAttachmentResult.data ?? []),
-    ...(installmentAttachmentResult.data ?? []),
-  ];
-
-  if (attachmentRows.length === 0) {
-    return new Map();
-  }
-
-  const receiptFileIds = [...new Set(attachmentRows.map((row) => row.receipt_file_id))];
-  const { data: receiptFileRows, error: receiptFileError } = await supabase
-    .from(RECEIPT_FILES_TABLE)
-    .select("*")
-    .in("id", receiptFileIds)
-    .returns<ReceiptFileRow[]>();
-
-  if (receiptFileError) {
-    throw receiptFileError;
-  }
-
-  const receiptFileMap = new Map((receiptFileRows ?? []).map((row) => [row.id, row]));
-  const signedUrlMap = await createSignedUrlMap(receiptFileRows ?? []);
-  const entryMap = new Map<string, LedgerEntryPhotoAttachment[]>();
-  const entryIdsByInstallmentGroup = new Map<string, string[]>();
-
-  for (const entryRow of entryRows) {
-    if (!entryRow.installment_group_id) {
-      continue;
-    }
-
-    const currentEntryIds = entryIdsByInstallmentGroup.get(entryRow.installment_group_id) ?? [];
-    currentEntryIds.push(entryRow.id);
-    entryIdsByInstallmentGroup.set(entryRow.installment_group_id, currentEntryIds);
-  }
-
-  for (const attachmentRow of attachmentRows) {
-    const receiptFile = receiptFileMap.get(attachmentRow.receipt_file_id);
-    if (!receiptFile) {
-      continue;
-    }
-
-    const attachment = mapLedgerEntryPhotoAttachment(receiptFile, signedUrlMap.get(receiptFile.id));
-    if (attachmentRow.ledger_entry_id) {
-      appendPhotoAttachment(entryMap, attachmentRow.ledger_entry_id, attachment);
-      continue;
-    }
-
-    if (attachmentRow.installment_group_id) {
-      const groupedEntryIds =
-        entryIdsByInstallmentGroup.get(attachmentRow.installment_group_id) ?? [];
-      for (const entryId of groupedEntryIds) {
-        appendPhotoAttachment(entryMap, entryId, attachment);
-      }
-    }
-  }
-
-  return entryMap;
-}
 
 export async function createLedgerEntryPhotoSignedUrlMap(
   receiptFileRows: EnrichedLedgerEntryPhotoAttachmentRow[],
@@ -172,7 +63,7 @@ export async function syncLedgerEntryPhotoAttachments(params: {
     const attachmentTargetRows = uploadedReceiptFiles.map((receiptFile) => ({
       installment_group_id: installmentGroupId,
       ledger_entry_id: installmentGroupId ? null : entryId,
-      receipt_file_id: receiptFile.id,
+      receipt_file_id: receiptFile.receiptFile.id,
       user_id: userId,
     }));
 
@@ -180,35 +71,35 @@ export async function syncLedgerEntryPhotoAttachments(params: {
       .from(LEDGER_ENTRY_ATTACHMENTS_TABLE)
       .insert(attachmentTargetRows);
     if (insertError) {
+      await removeReceiptFiles(
+        uploadedReceiptFiles.map((uploadedFile) => uploadedFile.receiptFile.id),
+      ).catch((cleanupError) => {
+        logAppWarning("LedgerEntryPhotoAttachments", "Failed to roll back uploaded photos.", {
+          cleanupError,
+          entryId,
+          step: "rollback_attachment_link_insert",
+        });
+      });
       throw insertError;
     }
+
+    let uploadedAttachmentIndex = 0;
+    return photoAttachments.map((attachment) => {
+      if (attachment.id) {
+        return attachment;
+      }
+
+      const uploadedFile = uploadedReceiptFiles[uploadedAttachmentIndex];
+      uploadedAttachmentIndex += 1;
+      if (!uploadedFile) {
+        throw new Error("Uploaded receipt file metadata is missing.");
+      }
+
+      return mapUploadedReceiptFileAttachment(uploadedFile);
+    });
   }
 
-  const entryRows: LedgerEntryRow[] = [
-    {
-      amount: 0,
-      book_id: "",
-      category: "",
-      category_id: "",
-      content: "",
-      created_at: "",
-      currency: "",
-      entry_type: "expense",
-      id: entryId,
-      installment_group_id: installmentGroupId,
-      installment_months: null,
-      installment_order: null,
-      metadata: {},
-      note: "",
-      occurred_on: "",
-      source_type: "manual",
-      updated_at: "",
-      user_id: userId,
-    },
-  ];
-
-  const attachmentMap = await fetchLedgerEntryPhotoAttachmentMap(entryRows);
-  return attachmentMap.get(entryId) ?? [];
+  return photoAttachments;
 }
 
 export async function deleteLedgerEntryPhotoAttachmentsForEntries(
@@ -275,16 +166,6 @@ export async function deleteLedgerEntryPhotoAttachmentsForEntries(
   if (receiptFileIds.length > 0) {
     await removeReceiptFiles(receiptFileIds);
   }
-}
-
-function appendPhotoAttachment(
-  entryMap: Map<string, LedgerEntryPhotoAttachment[]>,
-  entryId: string,
-  attachment: LedgerEntryPhotoAttachment,
-) {
-  const currentAttachments = entryMap.get(entryId) ?? [];
-  currentAttachments.push(attachment);
-  entryMap.set(entryId, currentAttachments);
 }
 
 async function createSignedUrlMap(receiptFileRows: ReceiptFileAttachmentSource[]) {
@@ -373,63 +254,4 @@ async function removeReceiptFiles(receiptFileIds: string[]) {
   if (deleteFileError) {
     throw deleteFileError;
   }
-}
-
-async function uploadReceiptFiles(
-  attachments: LedgerEntryPhotoAttachment[],
-  userId: string,
-): Promise<ReceiptFileRow[]> {
-  const fileSystem = (await import("expo-file-system")) as unknown as FileSystemModule;
-  const uploadedReceiptFiles: ReceiptFileRow[] = [];
-
-  for (const attachment of attachments) {
-    const storagePath = buildStoragePath(userId, attachment.fileName);
-    const attachmentFile = new fileSystem.File(attachment.uri);
-    const arrayBuffer = await attachmentFile.arrayBuffer();
-    const contentType = attachment.mimeType ?? DEFAULT_ATTACHMENT_CONTENT_TYPE;
-
-    const { error: uploadError } = await supabase.storage
-      .from(ENTRY_PHOTO_BUCKET)
-      .upload(storagePath, arrayBuffer, {
-        contentType,
-        upsert: false,
-      });
-
-    if (uploadError) {
-      throw uploadError;
-    }
-
-    const { data: receiptFileRow, error: receiptFileError } = await supabase
-      .from(RECEIPT_FILES_TABLE)
-      .insert({
-        content_type: contentType,
-        original_filename: attachment.fileName,
-        storage_bucket: ENTRY_PHOTO_BUCKET,
-        storage_path: storagePath,
-        user_id: userId,
-      })
-      .select("*")
-      .single<ReceiptFileRow>();
-
-    if (receiptFileError || !receiptFileRow) {
-      throw receiptFileError ?? new Error("Failed to save receipt file.");
-    }
-
-    uploadedReceiptFiles.push(receiptFileRow);
-  }
-
-  return uploadedReceiptFiles;
-}
-
-function buildStoragePath(userId: string, fileName: string) {
-  const sanitizedFileName = sanitizeFileName(fileName);
-  const uniquePrefix = `${Date.now()}-${Math.floor(Math.random() * ENTRY_PHOTO_RANDOM_MAX)}`;
-  return [userId, ENTRY_PHOTO_STORAGE_FOLDER, `${uniquePrefix}-${sanitizedFileName}`].join(
-    STORAGE_PATH_SEPARATOR,
-  );
-}
-
-function sanitizeFileName(fileName: string) {
-  const sanitizedFileName = fileName.replace(FILE_NAME_REPLACEMENT_PATTERN, "-");
-  return sanitizedFileName || FILE_NAME_FALLBACK;
 }

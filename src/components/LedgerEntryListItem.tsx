@@ -4,6 +4,8 @@ import { useRef } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
+import { EntryRegistrationCopy } from "../constants/entryRegistration";
+import { InstallmentStatuses } from "../constants/installments";
 import { AppLayout } from "../constants/layout";
 import { AppMessages } from "../constants/messages";
 import { useExpenseTextColor } from "../contexts/ExpenseTextColorContext";
@@ -11,6 +13,7 @@ import { formatInstallmentProgressLabel, stripInstallmentNoteSuffix } from "../l
 import type { CategoryIconName } from "../types/category";
 import type { LedgerEntry } from "../types/ledger";
 import { formatCurrency, formatEntryMetaDate } from "../utils/calendar";
+import { InstallmentStatusBadge } from "./InstallmentStatusBadge";
 
 type LedgerEntryListItemProps = {
   categoryIconByKey: Map<string, CategoryIconName>;
@@ -18,12 +21,14 @@ type LedgerEntryListItemProps = {
   entry: LedgerEntry;
   onDeleteEntry: (entry: LedgerEntry) => void | Promise<void>;
   onEditEntry: (entry: LedgerEntry) => void;
+  onPrepayInstallmentEntry?: (entry: LedgerEntry) => unknown;
   showsDate?: boolean;
   showsInstallmentStatusLine?: boolean;
 };
 
 const LedgerEntryMenuAction = {
   delete: "delete-entry",
+  prepayInstallment: "prepay-installment",
 } as const;
 const ENTRY_META_SEPARATOR = " · ";
 const FALLBACK_CATEGORY_ICON_NAME: CategoryIconName = "grid";
@@ -31,15 +36,25 @@ const CATEGORY_ICON_SIZE = 16;
 const ENTRY_ATTACHMENT_ICON_SIZE = 12;
 const ENTRY_ROW_GAP = 8;
 const LEDGER_ENTRY_DELETE_MENU_ICON_NAME = "trash";
+const LEDGER_ENTRY_PREPAY_MENU_ICON_NAME = "creditcard";
 const LEDGER_ENTRY_MENU_PRESS_SUPPRESSION_MS = 800;
-const ledgerEntryMenuActions: MenuAction[] = [
-  {
-    attributes: { destructive: true },
-    id: LedgerEntryMenuAction.delete,
-    image: LEDGER_ENTRY_DELETE_MENU_ICON_NAME,
-    imageColor: AppColors.expense,
-    title: AppMessages.editorDeleteConfirmAction,
-  },
+const deleteLedgerEntryMenuAction: MenuAction = {
+  attributes: { destructive: true },
+  id: LedgerEntryMenuAction.delete,
+  image: LEDGER_ENTRY_DELETE_MENU_ICON_NAME,
+  imageColor: AppColors.expense,
+  title: AppMessages.editorDeleteConfirmAction,
+};
+const prepayInstallmentMenuAction: MenuAction = {
+  id: LedgerEntryMenuAction.prepayInstallment,
+  image: LEDGER_ENTRY_PREPAY_MENU_ICON_NAME,
+  imageColor: AppColors.primary,
+  title: EntryRegistrationCopy.installmentPrepaymentAction,
+};
+const ledgerEntryMenuActions: MenuAction[] = [deleteLedgerEntryMenuAction];
+const installmentLedgerEntryMenuActions: MenuAction[] = [
+  prepayInstallmentMenuAction,
+  deleteLedgerEntryMenuAction,
 ];
 
 type EntryMetaPart = {
@@ -53,11 +68,19 @@ export function LedgerEntryListItem({
   entry,
   onDeleteEntry,
   onEditEntry,
+  onPrepayInstallmentEntry,
   showsDate = false,
   showsInstallmentStatusLine = false,
 }: LedgerEntryListItemProps) {
   const expenseTextStyle = useExpenseTextColor().textStyle;
   const installmentProgressLabel = formatInstallmentProgressLabel(entry);
+  const isPrepaidInstallment = entry.installmentStatus === InstallmentStatuses.prepaid;
+  const showsInstallmentPrepaymentAction = Boolean(
+    onPrepayInstallmentEntry &&
+      entry.type === "expense" &&
+      entry.installmentGroupId &&
+      entry.installmentStatus !== InstallmentStatuses.prepaid,
+  );
   const noteLabel = stripInstallmentNoteSuffix(entry.note);
   const categoryLabel = categoryLabelById.get(entry.categoryId) ?? entry.category;
   const lastMenuInteractionAtRef = useRef(0);
@@ -74,7 +97,11 @@ export function LedgerEntryListItem({
     <View style={styles.entryRow}>
       <Pressable onPress={handlePressEntry} style={styles.entryPressable}>
         <MenuView
-          actions={ledgerEntryMenuActions}
+          actions={
+            showsInstallmentPrepaymentAction
+              ? installmentLedgerEntryMenuActions
+              : ledgerEntryMenuActions
+          }
           isAnchoredToRight
           onCloseMenu={markMenuInteraction}
           onOpenMenu={markMenuInteraction}
@@ -122,14 +149,18 @@ export function LedgerEntryListItem({
                     size={ENTRY_ATTACHMENT_ICON_SIZE}
                   />
                 ) : null}
-                {!showsInstallmentStatusLine && installmentProgressLabel ? (
+                {!showsInstallmentStatusLine && isPrepaidInstallment ? (
+                  <InstallmentStatusBadge entry={entry} />
+                ) : !showsInstallmentStatusLine && installmentProgressLabel ? (
                   <Text style={styles.entryMeta} numberOfLines={1}>
                     {ENTRY_META_SEPARATOR}
                     {installmentProgressLabel}
                   </Text>
                 ) : null}
               </View>
-              {showsInstallmentStatusLine && installmentProgressLabel ? (
+              {showsInstallmentStatusLine && isPrepaidInstallment ? (
+                <InstallmentStatusBadge entry={entry} />
+              ) : showsInstallmentStatusLine && installmentProgressLabel ? (
                 <Text style={styles.entryStatus}>{installmentProgressLabel}</Text>
               ) : null}
             </View>
@@ -157,6 +188,11 @@ export function LedgerEntryListItem({
 
     if (event.nativeEvent.event === LedgerEntryMenuAction.delete) {
       onDeleteEntry(entry);
+      return;
+    }
+
+    if (event.nativeEvent.event === LedgerEntryMenuAction.prepayInstallment) {
+      onPrepayInstallmentEntry?.(entry);
     }
   }
 }

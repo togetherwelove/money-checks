@@ -8,13 +8,23 @@ import {
   type CalendarSummaryMode,
   CalendarSummaryModes,
 } from "../constants/calendarSummary";
+import { InstallmentStatuses } from "../constants/installments";
+import { DEFAULT_MEMBER_DISPLAY_NAME } from "../constants/ledgerDisplay";
 import type { SubscriptionTier } from "../constants/subscription";
 import { AppTextScale, resolveTextScale } from "../constants/textLayout";
-import { buildInstallmentSettlementEntry, buildLedgerEntriesFromDraft } from "../lib/installments";
+import { buildLedgerEntriesFromDraft } from "../lib/installments";
+import {
+  deleteInstallmentGroup,
+  prepayInstallmentGroup,
+} from "../lib/installmentTransactions";
 import { isLedgerBookEditableWithinPlanLimit } from "../lib/ledgerEditability";
 import { fetchLedgerEntriesSummary } from "../lib/ledgerEntries";
 import { logAppError } from "../lib/logAppError";
 import type { LedgerEntry, LedgerEntryDraft, LedgerEntryPhotoAttachment } from "../types/ledger";
+import {
+  LedgerEntryDeleteScopes,
+  type LedgerEntryDeleteScope,
+} from "../types/ledgerEntryDeletion";
 import { addMonths, getMonthKey, parseIsoDate, startOfMonth, toIsoDate } from "../utils/calendar";
 import {
   canSubmitDraft,
@@ -23,6 +33,7 @@ import {
   sanitizeAmountInput,
 } from "../utils/ledgerEntries";
 import { buildLedgerEntryListSignature } from "../utils/ledgerEntrySignature";
+import { resolveFallbackDisplayName } from "../utils/sessionDisplayName";
 import { buildSelectedMonthSummaryRangeForMonth } from "../utils/calendarSummaryRange";
 import {
   getChartMonthDataFromCache,
@@ -32,7 +43,6 @@ import {
 } from "./ledgerScreenState/calendarMonthData";
 import {
   loadInstallmentEntries,
-  removeLedgerEntries,
   removeLedgerEntry,
   saveLedgerEntries,
   saveLedgerEntry,
@@ -65,10 +75,13 @@ export function useLedgerScreenState(
   const { fontScale } = useWindowDimensions();
   const calendarFontScale = resolveTextScale(fontScale, AppTextScale.compact);
   const actualToday = startOfMonth(new Date());
+  const initialBootstrapMonth = useRef(actualToday).current;
   const [visibleMonth, setVisibleMonth] = useState(actualToday);
   const [selectedDate, setSelectedDate] = useState(() => toIsoDate(new Date()));
   const [allChartEntries, setAllChartEntries] = useState<LedgerEntry[] | null>(null);
+  const [ledgerMutationRevision, setLedgerMutationRevision] = useState(0);
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
+  const [editingEntrySnapshot, setEditingEntrySnapshot] = useState<LedgerEntry | null>(null);
   const previousActiveBookId = useRef<string | null>(null);
   const [draft, setDraft] = useState<LedgerEntryDraft>(() =>
     createDraft(toIsoDate(new Date()), session.user.id),
@@ -82,6 +95,7 @@ export function useLedgerScreenState(
     createLedgerBook,
     deleteActiveLedgerBook,
     isLoadingBook,
+    initialEntryBootstrap,
     joinSharedLedgerBookByCode,
     leaveSharedLedgerBook,
     previewSharedLedgerBookJoinByCode,
@@ -91,7 +105,7 @@ export function useLedgerScreenState(
     refreshSharedLedgerBook,
     switchLedgerBook,
     transferSharedLedgerOwnership,
-  } = useActiveLedgerBook(session.user.id, trackBusyTask);
+  } = useActiveLedgerBook(session.user.id, trackBusyTask, initialBootstrapMonth);
   const isReadOnlyDueToPlanLimit =
     Boolean(activeBook) &&
     !isLedgerBookEditableWithinPlanLimit(subscriptionTier, accessibleBooks, activeBook?.id);
@@ -117,8 +131,10 @@ export function useLedgerScreenState(
     isRefreshing,
     preloadChartEntries,
     refreshLedger,
+    removeEntriesFromCache,
+    replaceInstallmentGroupInCache,
     setEntries,
-  } = useLedgerEntries(activeBook?.id ?? null, visibleMonth);
+  } = useLedgerEntries(activeBook?.id ?? null, visibleMonth, initialEntryBootstrap);
   const selectedDateSummaryEntries = useMemo(
     () => entries.filter((entry) => entry.date === selectedDate),
     [entries, selectedDate],
@@ -129,14 +145,18 @@ export function useLedgerScreenState(
   );
   const {
     isLoadingSelectedDateEntries,
-    removeSelectedDateEntry,
+    removeSelectedDateEntries,
     refreshSelectedDateEntries,
     selectedEntries,
     selectedEntriesError,
   } = useSelectedDateEntries(activeBook?.id ?? null, selectedDate, selectedDateEntrySignature);
   const totalSummaryRefreshKey = useMemo(
-    () => buildLedgerEntryListSignature(Object.values(entryCache).flat()),
-    [entryCache],
+    () =>
+      JSON.stringify([
+        buildLedgerEntryListSignature(Object.values(entryCache).flat()),
+        ledgerMutationRevision,
+      ]),
+    [entryCache, ledgerMutationRevision],
   );
   const selectedMonthSummaryRange = useMemo(
     () =>
@@ -243,13 +263,22 @@ export function useLedgerScreenState(
 
     previousActiveBookId.current = nextActiveBookId;
     setEditingEntryId(null);
+    setEditingEntrySnapshot(null);
     setDraft(createDraft(selectedDate, session.user.id));
   }, [activeBook?.id, selectedDate, session.user.id]);
 
   const resetEditor = (isoDate: string) => {
     setSelectedDate(isoDate);
     setEditingEntryId(null);
+    setEditingEntrySnapshot(null);
     setDraft(createDraft(isoDate, session.user.id));
+  };
+
+  const prepareDraftEntry = (nextDraft: LedgerEntryDraft) => {
+    setSelectedDate(nextDraft.date);
+    setEditingEntryId(null);
+    setEditingEntrySnapshot(null);
+    setDraft(nextDraft);
   };
 
   const handleSelectDate = (isoDate: string) => {
@@ -270,16 +299,6 @@ export function useLedgerScreenState(
     return savedEntries;
   };
 
-  const handleSaveDraftEntry = async (draftToSave: LedgerEntryDraft) => {
-    const savedEntries = await persistDraftEntry(draftToSave, null);
-    if (savedEntries.length === 0) {
-      return [];
-    }
-
-    handleSelectDate(draftToSave.date);
-    return savedEntries;
-  };
-
   const persistDraftEntry = async (
     draftToSave: LedgerEntryDraft,
     targetEditingEntryId: string | null,
@@ -297,13 +316,26 @@ export function useLedgerScreenState(
     }
 
     if (targetEditingEntryId) {
+      const sourceEntry =
+        editingEntrySnapshot?.id === targetEditingEntryId
+          ? editingEntrySnapshot
+          : entries.find((entry) => entry.id === targetEditingEntryId);
+      const authorName =
+        sourceEntry?.authorName ?? resolveCurrentUserDisplayName(session, entries);
       const nextEntry: LedgerEntry = {
+        ...sourceEntry,
+        authorId: sourceEntry?.authorId ?? session.user.id,
+        authorHasBookAccess: sourceEntry?.authorHasBookAccess ?? true,
+        authorName,
         id: targetEditingEntryId,
         date: draftToSave.date,
         type: draftToSave.type,
         amount: Number(draftToSave.amount),
         targetMemberId: draftToSave.targetMemberId,
-        targetMemberName: draftToSave.targetMemberName,
+        targetMemberHasBookAccess: sourceEntry?.targetMemberHasBookAccess ?? true,
+        targetMemberName:
+          draftToSave.targetMemberName ??
+          (draftToSave.targetMemberId === session.user.id ? authorName : undefined),
         content: draftToSave.content.trim(),
         category: draftToSave.category.trim(),
         categoryId: draftToSave.categoryId.trim(),
@@ -316,6 +348,10 @@ export function useLedgerScreenState(
         activeBookId: activeBook.id,
         editingEntryId: targetEditingEntryId,
         entry: nextEntry,
+        syncPhotoAttachments: havePhotoAttachmentsChanged(
+          sourceEntry?.photoAttachments ?? [],
+          draftToSave.photoAttachments,
+        ),
         trackBusyTask,
         userId: session.user.id,
       });
@@ -325,7 +361,17 @@ export function useLedgerScreenState(
       return [savedEntry];
     }
 
-    const entriesToSave = buildLedgerEntriesFromDraft(draftToSave);
+    const authorName = resolveCurrentUserDisplayName(session, entries);
+    const entriesToSave = buildLedgerEntriesFromDraft(draftToSave).map((entry) => ({
+      ...entry,
+      authorHasBookAccess: true,
+      authorId: session.user.id,
+      authorName,
+      targetMemberHasBookAccess: true,
+      targetMemberName:
+        entry.targetMemberName ??
+        (entry.targetMemberId === session.user.id ? authorName : undefined),
+    }));
     const savedEntries = await saveLedgerEntries({
       activeBookId: activeBook.id,
       entries: entriesToSave,
@@ -337,31 +383,59 @@ export function useLedgerScreenState(
     return savedEntries;
   };
 
-  const handleDeleteEntry = async (entryId: string) => {
+  const handleDeleteEntry = async (entry: LedgerEntry, scope: LedgerEntryDeleteScope) => {
     if (blockReadOnlyEditIfNeeded()) {
-      return;
+      return [];
     }
 
-    await removeLedgerEntry(entryId);
-    setEntries((currentEntries) => currentEntries.filter((entry) => entry.id !== entryId));
-    removeSelectedDateEntry(entryId);
-    if (editingEntryId === entryId) {
+    if (entry.installmentStatus === InstallmentStatuses.prepaid && !entry.installmentGroupId) {
+      return [];
+    }
+
+    let entriesToDelete = [entry];
+    let deletedEntryIds = [entry.id];
+    const installmentGroupId = entry.installmentGroupId;
+    if (
+      (scope === LedgerEntryDeleteScopes.installmentGroup ||
+        entry.installmentStatus === InstallmentStatuses.prepaid) &&
+      activeBook &&
+      installmentGroupId
+    ) {
+      entriesToDelete = await loadInstallmentEntries(
+        activeBook.id,
+        installmentGroupId,
+        trackBusyTask,
+      );
+      deletedEntryIds = await trackBusyTask(() =>
+        deleteInstallmentGroup(activeBook.id, installmentGroupId),
+      );
+    } else {
+      await removeLedgerEntry(entry.id);
+    }
+
+    const deletedEntryIdSet = new Set(deletedEntryIds);
+    removeEntriesFromCache(deletedEntryIds);
+    removeSelectedDateEntries(deletedEntryIds);
+    setAllChartEntries((currentEntries) =>
+      currentEntries?.filter((currentEntry) => !deletedEntryIdSet.has(currentEntry.id)) ?? null,
+    );
+    if (editingEntryId && deletedEntryIdSet.has(editingEntryId)) {
       resetEditor(selectedDate);
     }
+    setLedgerMutationRevision((currentRevision) => currentRevision + 1);
+
+    return entriesToDelete;
   };
 
-  const handleSettleInstallmentEntry = async (entry: LedgerEntry) => {
-    if (blockReadOnlyEditIfNeeded()) {
-      return null;
-    }
-
-    const currentInstallmentOrder = entry.installmentOrder;
+  const previewInstallmentPrepayment = async (
+    entry: LedgerEntry,
+    prepaymentDate: string,
+  ) => {
     if (
+      blockReadOnlyEditIfNeeded() ||
       !activeBook ||
       !entry.installmentGroupId ||
-      !entry.installmentMonths ||
-      !currentInstallmentOrder ||
-      currentInstallmentOrder >= entry.installmentMonths
+      entry.installmentStatus === InstallmentStatuses.prepaid
     ) {
       return null;
     }
@@ -372,51 +446,71 @@ export function useLedgerScreenState(
       trackBusyTask,
     );
     const futureEntries = installmentEntries.filter(
-      (installmentEntry) =>
-        installmentEntry.installmentOrder &&
-        installmentEntry.installmentOrder > currentInstallmentOrder,
+      (installmentEntry) => installmentEntry.date > prepaymentDate,
     );
-
     if (futureEntries.length === 0) {
       return null;
     }
 
-    const remainingAmount = futureEntries.reduce(
-      (totalAmount, futureEntry) => totalAmount + futureEntry.amount,
-      0,
-    );
-    const settlementEntry = buildInstallmentSettlementEntry(entry, remainingAmount);
+    return {
+      installmentCount: futureEntries.length,
+      totalAmount: futureEntries.reduce(
+        (totalAmount, futureEntry) => totalAmount + futureEntry.amount,
+        0,
+      ),
+    };
+  };
 
-    await removeLedgerEntries(
-      futureEntries.map((futureEntry) => futureEntry.id),
-      trackBusyTask,
-    );
-    const [savedSettlementEntry] = await saveLedgerEntries({
-      activeBookId: activeBook.id,
-      entries: [settlementEntry],
-      trackBusyTask,
-      userId: session.user.id,
-    });
-
-    if (!savedSettlementEntry) {
+  const prepayInstallmentEntry = async (
+    entry: LedgerEntry,
+    prepaymentDate: string,
+  ) => {
+    const installmentGroupId = entry.installmentGroupId;
+    if (
+      blockReadOnlyEditIfNeeded() ||
+      !activeBook ||
+      !installmentGroupId ||
+      entry.installmentStatus === InstallmentStatuses.prepaid
+    ) {
       return null;
     }
 
-    setEntries((currentEntries) =>
-      mergeEntries(
-        currentEntries.filter(
-          (currentEntry) =>
-            !futureEntries.some((futureEntry) => futureEntry.id === currentEntry.id),
-        ),
-        [savedSettlementEntry],
-      ),
+    const transactionResult = await trackBusyTask(() =>
+      prepayInstallmentGroup(activeBook.id, installmentGroupId, prepaymentDate),
+    );
+    const updatedEntries = await loadInstallmentEntries(
+      activeBook.id,
+      installmentGroupId,
+      trackBusyTask,
+      true,
     );
 
-    return savedSettlementEntry;
+    replaceInstallmentGroupInCache(installmentGroupId, updatedEntries);
+    await refreshSelectedDateEntries();
+    setAllChartEntries((currentEntries) =>
+      currentEntries
+        ? mergeEntries(
+            currentEntries.filter(
+              (currentEntry) => currentEntry.installmentGroupId !== installmentGroupId,
+            ),
+            updatedEntries,
+          )
+        : null,
+    );
+    setLedgerMutationRevision((currentRevision) => currentRevision + 1);
+
+    return {
+      deletedEntryIds: transactionResult.deletedEntryIds,
+      installmentCount: transactionResult.installmentCount,
+      prepaidEntryId: transactionResult.prepaidEntryId,
+      totalAmount: transactionResult.totalAmount,
+      updatedEntries,
+    };
   };
 
   const handleEditEntry = (entry: LedgerEntry) => {
     setEditingEntryId(entry.id);
+    setEditingEntrySnapshot(entry);
     setSelectedDate(entry.date);
     setDraft({
       date: entry.date,
@@ -485,10 +579,11 @@ export function useLedgerScreenState(
     visibleMonth,
     handleDeleteEntry,
     handleEditEntry,
-    handleSaveDraftEntry,
     handleSaveEntry,
-    handleSettleInstallmentEntry,
+    prepayInstallmentEntry,
+    previewInstallmentPrepayment,
     handleSelectDate,
+    prepareDraftEntry,
     resetEditor,
     updateDraftField: (field, value) =>
       setDraft((currentDraft) => ({
@@ -502,6 +597,35 @@ export function useLedgerScreenState(
     updateDraftType: (type) =>
       setDraft((currentDraft) => ({ ...currentDraft, category: "", categoryId: "", type })),
   };
+}
+
+function havePhotoAttachmentsChanged(
+  currentAttachments: LedgerEntryPhotoAttachment[],
+  nextAttachments: LedgerEntryPhotoAttachment[],
+): boolean {
+  if (currentAttachments.length !== nextAttachments.length) {
+    return true;
+  }
+
+  return currentAttachments.some((currentAttachment, index) => {
+    const nextAttachment = nextAttachments[index];
+    return (
+      !nextAttachment ||
+      currentAttachment.id !== nextAttachment.id ||
+      currentAttachment.uri !== nextAttachment.uri ||
+      currentAttachment.fileName !== nextAttachment.fileName ||
+      currentAttachment.mimeType !== nextAttachment.mimeType
+    );
+  });
+}
+
+function resolveCurrentUserDisplayName(session: Session, entries: LedgerEntry[]): string {
+  const cachedEntryName = entries.find((entry) => entry.authorId === session.user.id)?.authorName;
+  return (
+    cachedEntryName?.trim() ||
+    resolveFallbackDisplayName(session.user.user_metadata, session.user.email).trim() ||
+    DEFAULT_MEMBER_DISPLAY_NAME
+  );
 }
 
 async function runBusyTask<T>(

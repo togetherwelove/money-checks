@@ -20,7 +20,8 @@ import {
   transferActiveLedgerBookOwnership,
   updateActiveLedgerBookName,
 } from "../../lib/ledgerBooks";
-import { logAppError } from "../../lib/logAppError";
+import { fetchLedgerAppBootstrap } from "../../lib/ledgerAppBootstrap";
+import { logAppError, logAppWarning } from "../../lib/logAppError";
 import { createPerformanceTrace } from "../../lib/performanceTrace";
 import {
   clearSharedLedgerExitIntent,
@@ -28,6 +29,7 @@ import {
 } from "../../lib/sharedLedgerExitIntent";
 import { resolveSharedLedgerJoinErrorMessage } from "../../lib/sharedLedgerJoinError";
 import { supabase } from "../../lib/supabase";
+import type { LedgerEntry } from "../../types/ledger";
 import type { AccessibleLedgerBook, LedgerBook } from "../../types/ledgerBook";
 import type {
   JoinSharedLedgerBookAttempt,
@@ -36,6 +38,8 @@ import type {
 } from "../../types/ledgerBookJoinRequest";
 import type { LedgerBookMemberRow, LedgerBookRow, ProfileRow } from "../../types/supabase";
 import { mapLedgerBookRow } from "../../utils/ledgerBookMapper";
+import { getMonthKey } from "../../utils/calendar";
+import { getLedgerMonthEnd, getLedgerMonthStart } from "../../utils/ledgerMonthWindow";
 import type { BusyTaskTracker } from "./types";
 
 let realtimeChannelSequence = 0;
@@ -68,6 +72,11 @@ type ActiveLedgerBookState = {
   createLedgerBook: (nextName: string) => Promise<boolean>;
   deleteActiveLedgerBook: () => Promise<boolean>;
   isLoadingBook: boolean;
+  initialEntryBootstrap: {
+    bookId: string;
+    entries: LedgerEntry[];
+    month: Date;
+  } | null;
   joinSharedLedgerBookByCode: (
     shareCode: string,
     joinResolution?: JoinSharedLedgerBookResolution,
@@ -85,11 +94,15 @@ type ActiveLedgerBookState = {
 export function useActiveLedgerBook(
   userId: string,
   trackBusyTask: BusyTaskTracker,
+  initialBootstrapMonth: Date,
 ): ActiveLedgerBookState {
   const [activeBook, setActiveBook] = useState<LedgerBook | null>(null);
   const [accessibleBooks, setAccessibleBooks] = useState<AccessibleLedgerBook[]>([]);
   const [activeBookError, setActiveBookError] = useState<string | null>(null);
   const [isLoadingBook, setIsLoadingBook] = useState(true);
+  const [initialEntryBootstrap, setInitialEntryBootstrap] = useState<
+    ActiveLedgerBookState["initialEntryBootstrap"]
+  >(null);
 
   const refreshAccessibleLedgerBookState = async () => {
     const { nextActiveBook, nextBooks } = await fetchLedgerBookState(userId);
@@ -123,12 +136,42 @@ export function useActiveLedgerBook(
     void (async () => {
       setIsLoadingBook(true);
       setActiveBookError(null);
+      setInitialEntryBootstrap(null);
 
       try {
-        const { nextActiveBook, nextBooks } = await fetchLedgerBookState(userId);
+        let nextActiveBook: LedgerBook | null;
+        let nextBooks: AccessibleLedgerBook[];
+        let nextInitialEntryBootstrap: ActiveLedgerBookState["initialEntryBootstrap"] = null;
+
+        try {
+          const bootstrap = await fetchLedgerAppBootstrap(
+            userId,
+            getLedgerMonthStart(initialBootstrapMonth),
+            getLedgerMonthEnd(initialBootstrapMonth),
+          );
+          nextActiveBook = bootstrap.activeBook;
+          nextBooks = bootstrap.books;
+          nextInitialEntryBootstrap = {
+            bookId: bootstrap.activeBook.id,
+            entries: bootstrap.entries,
+            month: initialBootstrapMonth,
+          };
+        } catch (bootstrapError) {
+          logAppWarning("ActiveLedgerBook", "Falling back from ledger app bootstrap.", {
+            error: bootstrapError,
+            monthKey: getMonthKey(initialBootstrapMonth),
+            step: "load_ledger_app_bootstrap",
+            userId,
+          });
+          const bookState = await fetchLedgerBookState(userId);
+          nextActiveBook = bookState.nextActiveBook;
+          nextBooks = bookState.nextBooks;
+        }
+
         if (isMounted) {
           setActiveBook(nextActiveBook);
           setAccessibleBooks(nextBooks);
+          setInitialEntryBootstrap(nextInitialEntryBootstrap);
         }
       } catch (error) {
         logAppError("ActiveLedgerBook", error, { step: "load_active_book", userId });
@@ -149,7 +192,7 @@ export function useActiveLedgerBook(
     return () => {
       isMounted = false;
     };
-  }, [userId]);
+  }, [initialBootstrapMonth, userId]);
 
   useEffect(() => {
     let isMounted = true;
@@ -580,6 +623,7 @@ export function useActiveLedgerBook(
     accessibleBooks,
     createLedgerBook,
     deleteActiveLedgerBook,
+    initialEntryBootstrap,
     isLoadingBook,
     joinSharedLedgerBookByCode,
     leaveSharedLedgerBook,
