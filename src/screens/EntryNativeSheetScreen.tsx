@@ -33,7 +33,6 @@ export function EntryNativeSheetScreen({
   const [isDirty, setIsDirty] = useState(false);
   const didCompleteRef = useRef(false);
   const onDiscardRef = useRef(onDiscard);
-  const pendingSaveSuccessMessageRef = useRef<string | null>(null);
   onDiscardRef.current = onDiscard;
 
   usePreventRemove(isDirty, ({ data }) => {
@@ -68,23 +67,27 @@ export function EntryNativeSheetScreen({
     [],
   );
 
-  useEffect(
-    () =>
-      navigation.addListener("transitionEnd", ({ data }) => {
-        const successMessage = pendingSaveSuccessMessageRef.current;
-        if (!data.closing || !successMessage) {
-          return;
-        }
-
-        pendingSaveSuccessMessageRef.current = null;
-        showNativeToast(successMessage);
-      }),
-    [navigation],
-  );
-
   const closeAfterCompletion = useCallback(() => {
     didCompleteRef.current = true;
     navigation.goBack();
+  }, [navigation]);
+  const closeForPendingSave = useCallback(() => {
+    didCompleteRef.current = true;
+
+    return new Promise<void>((resolve) => {
+      const removeTransitionEndListener = navigation.addListener(
+        "transitionEnd",
+        ({ data }) => {
+          if (!data.closing) {
+            return;
+          }
+
+          removeTransitionEndListener();
+          resolve();
+        },
+      );
+      navigation.goBack();
+    });
   }, [navigation]);
   const handleDraftChange = useCallback(() => {
     setIsDirty(true);
@@ -92,15 +95,21 @@ export function EntryNativeSheetScreen({
 
   const handleSaveEntry = useCallback(async () => {
     const wasEditingEntry = Boolean(state.editingEntryId);
-    if (!(await onSaveEntry())) {
+    const closeTransition = closeForPendingSave();
+    const didSaveEntry = await onSaveEntry();
+    await closeTransition;
+
+    if (!didSaveEntry) {
+      navigation.navigate("entry-sheet", { autoFocusContent });
       return;
     }
 
-    pendingSaveSuccessMessageRef.current = wasEditingEntry
-      ? EntryRegistrationCopy.saveUpdateSuccess
-      : EntryRegistrationCopy.saveCreateSuccess;
-    closeAfterCompletion();
-  }, [closeAfterCompletion, onSaveEntry, state.editingEntryId]);
+    showNativeToast(
+      wasEditingEntry
+        ? EntryRegistrationCopy.saveUpdateSuccess
+        : EntryRegistrationCopy.saveCreateSuccess,
+    );
+  }, [autoFocusContent, closeForPendingSave, navigation, onSaveEntry, state.editingEntryId]);
 
   const handlePrepayInstallmentEntry = useCallback(
     async (entry: LedgerEntry) => {
