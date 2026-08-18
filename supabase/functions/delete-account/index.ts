@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { handleDeleteAccountRequest } from "./deleteAccountHandler.ts";
 
 const env = {
-  serviceRoleKey: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+  serviceRoleKey: Deno.env.get("SUPABASE_SECRET_KEYS") ?? "",
   supabaseUrl: Deno.env.get("SUPABASE_URL") ?? "",
 };
 

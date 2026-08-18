@@ -6,6 +6,7 @@
   "build": {
     "base": {
       "env": {
+        "androidAppId": "ca-app-pub-3940256099942544~3347511713",
         "EXPO_PUBLIC_ADMOB_IOS_APP_ID": "ca-app-pub-3419255319347049~7436746316"
       }
     },
