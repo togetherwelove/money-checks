@@ -5,7 +5,7 @@ import { handleSyncRevenueCatSubscriptionRequest } from "./syncRevenueCatSubscri
 const env = {
   plusEntitlementId: Deno.env.get("REVENUECAT_PLUS_ENTITLEMENT_ID") ?? "plus",
   revenueCatSecretApiKey: Deno.env.get("REVENUECAT_SECRET_API_KEY") ?? "",
-  serviceRoleKey: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+  serviceRoleKey: Deno.env.get("SUPABASE_SECRET_KEYS") ?? "",
   supabaseUrl: Deno.env.get("SUPABASE_URL") ?? "",
 };
 

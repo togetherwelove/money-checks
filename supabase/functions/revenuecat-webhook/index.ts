@@ -4,7 +4,7 @@ import { handleRevenueCatWebhookRequest } from "./revenueCatWebhookHandler.ts";
 
 const env = {
   plusEntitlementId: Deno.env.get("REVENUECAT_PLUS_ENTITLEMENT_ID") ?? "plus",
-  serviceRoleKey: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+  serviceRoleKey: Deno.env.get("SUPABASE_SECRET_KEYS") ?? "",
   supabaseUrl: Deno.env.get("SUPABASE_URL") ?? "",
   webhookAuthorization: Deno.env.get("REVENUECAT_WEBHOOK_AUTHORIZATION") ?? "",
 };
