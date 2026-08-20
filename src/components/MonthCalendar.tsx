@@ -110,7 +110,7 @@ function buildCurrentMonthHeatmapLevels(days: CalendarDay[]): Map<string, number
 }
 
 function getCalendarDayTradeAmount(day: CalendarDay): number {
-  return day.income + day.expense;
+  return day.expense;
 }
 
 const DayCell = memo(function DayCell({
@@ -200,11 +200,11 @@ function buildHeatmapLevelByAmount(sortedAmounts: number[]): Map<number, number>
 }
 
 function getCalendarDayHeatmapTone(day: CalendarDay): CalendarDayHeatmapTone {
-  if (day.income === day.expense) {
+  if (day.expense <= 0) {
     return null;
   }
 
-  return day.income > day.expense ? "income" : "expense";
+  return "expense";
 }
 
 function getHeatmapStyle(level: number, tone: CalendarDayHeatmapTone) {
@@ -212,35 +212,7 @@ function getHeatmapStyle(level: number, tone: CalendarDayHeatmapTone) {
     return null;
   }
 
-  if (tone === "income") {
-    return getIncomeHeatmapStyle(level);
-  }
-
   return getExpenseHeatmapStyle(level);
-}
-
-function getIncomeHeatmapStyle(level: number) {
-  if (level === 1) {
-    return styles.incomeHeatmapLevel1;
-  }
-
-  if (level === 2) {
-    return styles.incomeHeatmapLevel2;
-  }
-
-  if (level === 3) {
-    return styles.incomeHeatmapLevel3;
-  }
-
-  if (level === 4) {
-    return styles.incomeHeatmapLevel4;
-  }
-
-  if (level === 5) {
-    return styles.incomeHeatmapLevel5;
-  }
-
-  return null;
 }
 
 function getExpenseHeatmapStyle(level: number) {
@@ -378,21 +350,6 @@ const styles = StyleSheet.create({
   },
   expenseHeatmapLevel5: {
     backgroundColor: CalendarDayUi.heatmapBackgroundColors.expense[4],
-  },
-  incomeHeatmapLevel1: {
-    backgroundColor: CalendarDayUi.heatmapBackgroundColors.income[0],
-  },
-  incomeHeatmapLevel2: {
-    backgroundColor: CalendarDayUi.heatmapBackgroundColors.income[1],
-  },
-  incomeHeatmapLevel3: {
-    backgroundColor: CalendarDayUi.heatmapBackgroundColors.income[2],
-  },
-  incomeHeatmapLevel4: {
-    backgroundColor: CalendarDayUi.heatmapBackgroundColors.income[3],
-  },
-  incomeHeatmapLevel5: {
-    backgroundColor: CalendarDayUi.heatmapBackgroundColors.income[4],
   },
   selectedDayCell: {
     borderColor: AppColors.primary,
