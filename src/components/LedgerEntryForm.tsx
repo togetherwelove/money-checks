@@ -35,6 +35,7 @@ type LedgerEntryFormProps = {
   autoFocusContent?: boolean;
   draft: LedgerEntryDraft;
   editingEntryId: string | null;
+  isSaving?: boolean;
   members: LedgerBookMember[];
   onChangeDraft: (field: keyof LedgerEntryDraft, value: string) => void;
   onChangeInstallmentMonths: (installmentMonths: number) => void;
@@ -51,6 +52,7 @@ export function LedgerEntryForm({
   autoFocusContent = false,
   draft,
   editingEntryId,
+  isSaving = false,
   members,
   onChangeDraft,
   onChangeInstallmentMonths,
@@ -263,6 +265,7 @@ export function LedgerEntryForm({
       <View style={styles.formActions}>
         <View style={styles.primaryActionRow}>
           <ActionButton
+            disabled={isSaving}
             fullWidth
             label={editingEntryId ? AppMessages.editorUpdate : AppMessages.editorNewEntry}
             onPress={handlePressSaveEntry}

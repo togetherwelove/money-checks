@@ -9,6 +9,7 @@ type LedgerEditorPanelProps = {
   autoFocusContent?: boolean;
   draft: LedgerEntryDraft;
   editingEntryId: string | null;
+  isSaving?: boolean;
   members: LedgerBookMember[];
   onChangeDraft: (field: keyof LedgerEntryDraft, value: string) => void;
   onChangeInstallmentMonths: (installmentMonths: number) => void;
@@ -28,6 +29,7 @@ export function LedgerEditorPanel(props: LedgerEditorPanelProps) {
         autoFocusContent={props.autoFocusContent}
         draft={props.draft}
         editingEntryId={props.editingEntryId}
+        isSaving={props.isSaving}
         members={props.members}
         onChangeDraft={props.onChangeDraft}
         onChangeInstallmentMonths={props.onChangeInstallmentMonths}

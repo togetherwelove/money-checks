@@ -6,6 +6,7 @@ import {
 } from "@react-navigation/native";
 import type { Session } from "@supabase/supabase-js";
 import * as Notifications from "expo-notifications";
+import * as SplashScreen from "expo-splash-screen";
 import {
   type Dispatch,
   type SetStateAction,
@@ -89,6 +90,11 @@ import { getAppScreenLabel } from "./lib/appScreenLabels";
 import { installAppTextDefaults } from "./lib/appTextDefaults";
 import { signOutFromApp } from "./lib/auth/signOut";
 import { resolveSessionAuthProvider, resolveSessionAuthProviderLabel } from "./lib/authProvider";
+
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync().catch(() => {
+  /* Ignore errors */
+});
 import {
   type CardSmsClipboardDraft,
   formatCardSmsClipboardDraftActionLabel,
@@ -138,6 +144,14 @@ export default function App() {
     }, []),
   });
   const { errorMessage, isLoading, session } = useSupabaseSession();
+
+  useEffect(() => {
+    if (!isLoading) {
+      SplashScreen.hideAsync().catch(() => {
+        /* Ignore errors */
+      });
+    }
+  }, [isLoading]);
 
   return (
     <SafeAreaProvider>

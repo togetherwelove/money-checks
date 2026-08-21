@@ -19,6 +19,7 @@ import type { InstallmentPrepaymentHandler } from "../types/installmentTransacti
 type EntryScreenProps = {
   autoFocusContent?: boolean;
   currentUserId: string;
+  isSaving?: boolean;
   onDraftChange: () => void;
   onSaveEntry: () => Promise<void>;
   onPrepayInstallmentEntry: InstallmentPrepaymentHandler;
@@ -28,6 +29,7 @@ type EntryScreenProps = {
 export function EntryScreen({
   autoFocusContent = false,
   currentUserId,
+  isSaving = false,
   onDraftChange,
   onSaveEntry,
   onPrepayInstallmentEntry,
@@ -204,6 +206,7 @@ export function EntryScreen({
         autoFocusContent={autoFocusContent}
         draft={draft}
         editingEntryId={editingEntryId}
+        isSaving={isSaving}
         members={members}
         onChangeDraft={handleChangeDraft}
         onChangeInstallmentMonths={handleChangeInstallmentMonths}
