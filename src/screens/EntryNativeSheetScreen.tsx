@@ -31,6 +31,7 @@ export function EntryNativeSheetScreen({
   const navigation =
     useNavigation<NativeStackNavigationProp<SignedInStackParamList, "entry-sheet">>();
   const [isDirty, setIsDirty] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const didCompleteRef = useRef(false);
   const onDiscardRef = useRef(onDiscard);
   onDiscardRef.current = onDiscard;
@@ -94,22 +95,24 @@ export function EntryNativeSheetScreen({
   }, []);
 
   const handleSaveEntry = useCallback(async () => {
-    const wasEditingEntry = Boolean(state.editingEntryId);
-    const closeTransition = closeForPendingSave();
-    const didSaveEntry = await onSaveEntry();
-    await closeTransition;
-
-    if (!didSaveEntry) {
-      navigation.navigate("entry-sheet", { autoFocusContent });
+    if (isSaving) {
       return;
     }
 
-    showNativeToast(
-      wasEditingEntry
-        ? EntryRegistrationCopy.saveUpdateSuccess
-        : EntryRegistrationCopy.saveCreateSuccess,
-    );
-  }, [autoFocusContent, closeForPendingSave, navigation, onSaveEntry, state.editingEntryId]);
+    const wasEditingEntry = Boolean(state.editingEntryId);
+    setIsSaving(true);
+    const didSaveEntry = await onSaveEntry();
+    setIsSaving(false);
+
+    if (didSaveEntry) {
+      closeAfterCompletion();
+      showNativeToast(
+        wasEditingEntry
+          ? EntryRegistrationCopy.saveUpdateSuccess
+          : EntryRegistrationCopy.saveCreateSuccess,
+      );
+    }
+  }, [closeAfterCompletion, isSaving, onSaveEntry, state.editingEntryId]);
 
   const handlePrepayInstallmentEntry = useCallback(
     async (entry: LedgerEntry) => {
@@ -126,6 +129,7 @@ export function EntryNativeSheetScreen({
     <EntryScreen
       autoFocusContent={autoFocusContent}
       currentUserId={currentUserId}
+      isSaving={isSaving}
       onDraftChange={handleDraftChange}
       onSaveEntry={handleSaveEntry}
       onPrepayInstallmentEntry={handlePrepayInstallmentEntry}
