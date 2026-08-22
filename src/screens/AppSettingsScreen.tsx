@@ -1,9 +1,10 @@
 import { Feather } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { Linking, Modal, Pressable, StyleSheet, Switch, Text, View } from "react-native";
 
 import { ActionButton } from "../components/ActionButton";
+import { AppFooterContentInset } from "../components/AppFooterContentInset";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { NotificationSettingsCard } from "../components/accountScreen/NotificationSettingsCard";
 import { ExpenseTextColorSelector } from "../components/appSettings/ExpenseTextColorSelector";
@@ -58,6 +59,7 @@ type AppSettingsScreenProps = {
     eventTypes: NotificationEventType | readonly NotificationEventType[],
     enabled: boolean,
   ) => void;
+  screenTitle: ReactNode;
   showNotificationSettings: boolean;
 };
 
@@ -78,6 +80,7 @@ export function AppSettingsScreen({
   onRequestNotificationPermission,
   onToggleCalendarHeatmap,
   onToggleNotificationPreference,
+  screenTitle,
   showNotificationSettings,
 }: AppSettingsScreenProps) {
   const expenseTextColor = useExpenseTextColor();
@@ -99,6 +102,7 @@ export function AppSettingsScreen({
 
   return (
     <KeyboardAwareScrollView contentContainerStyle={styles.content} style={styles.screen}>
+      {screenTitle}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{AppSettingsCopy.featureSectionTitle}</Text>
         <View style={styles.settingListGroup}>
@@ -207,6 +211,7 @@ export function AppSettingsScreen({
           </View>
         )}
       </View>
+      <AppFooterContentInset />
       <CalendarSummaryModePickerModal
         isOpen={isSummaryModePickerOpen}
         mode={calendarSummaryMode}

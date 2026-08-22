@@ -1,6 +1,8 @@
 import { Feather } from "@expo/vector-icons";
+import type { ReactNode } from "react";
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
+import { AppFooterContentInset } from "../components/AppFooterContentInset";
 import { AppLinks } from "../constants/appLinks";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
@@ -42,7 +44,11 @@ const HELP_LINK_ITEMS: HelpLinkItem[] = [
   },
 ];
 
-export function HelpScreen() {
+type HelpScreenProps = {
+  screenTitle: ReactNode;
+};
+
+export function HelpScreen({ screenTitle }: HelpScreenProps) {
   const handleOpenLink = async (url: string) => {
     try {
       await Linking.openURL(url);
@@ -53,6 +59,7 @@ export function HelpScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.content} style={styles.screen}>
+      {screenTitle}
       <Text {...ReadingTextProps} style={styles.description}>
         필요한 정책 문서를 브라우저에서 확인할 수 있어요.
       </Text>
@@ -76,6 +83,7 @@ export function HelpScreen() {
           </Pressable>
         ))}
       </View>
+      <AppFooterContentInset />
     </ScrollView>
   );
 }

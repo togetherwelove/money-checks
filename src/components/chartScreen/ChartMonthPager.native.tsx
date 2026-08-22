@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { StyleSheet } from "react-native";
 import PagerView from "react-native-pager-view";
 
@@ -13,6 +13,7 @@ type ChartMonthPagerProps = {
   nextMonth: ChartMonthData;
   onMoveMonth: (monthOffset: -1 | 1) => void;
   previousMonth: ChartMonthData;
+  renderScreenTitle: (titleLabel: string) => ReactNode;
   showsBannerAd: boolean;
 };
 
@@ -22,6 +23,7 @@ export function ChartMonthPager({
   nextMonth,
   onMoveMonth,
   previousMonth,
+  renderScreenTitle,
   showsBannerAd,
 }: ChartMonthPagerProps) {
   const currentMonthKey = currentMonth.key;
@@ -65,16 +67,19 @@ export function ChartMonthPager({
       <ChartMonthPageContent
         activeBookId={activeBookId}
         month={previousMonth}
+        screenTitle={renderScreenTitle(previousMonth.title)}
         showsBannerAd={showsBannerAd}
       />
       <ChartMonthPageContent
         activeBookId={activeBookId}
         month={currentMonth}
+        screenTitle={renderScreenTitle(currentMonth.title)}
         showsBannerAd={showsBannerAd}
       />
       <ChartMonthPageContent
         activeBookId={activeBookId}
         month={nextMonth}
+        screenTitle={renderScreenTitle(nextMonth.title)}
         showsBannerAd={showsBannerAd}
       />
     </PagerView>

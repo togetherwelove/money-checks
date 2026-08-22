@@ -1,4 +1,6 @@
 
+import { AuthRequirements } from "./authRequirements";
+
 export const EmailAuthCopy = {
     accountProviderValue: "이메일",
     legalConsentNotice: "로그인하면 이용약관 및 개인정보 처리방침에 동의한 것으로 간주됩니다.",
@@ -59,11 +61,11 @@ export const EmailAuthCopy = {
       requestOtpAction: "인증 코드 받기",
       requestOtpError: "이메일 인증을 시작하지 못했어요. 다시 시도해 주세요.",
       otpTitle: "이메일 인증 코드 입력",
-      otpSubtitle: "가입 메일에 도착한 6자리 코드를 입력해 가입을 마무리하세요.",
+      otpSubtitle: `가입 메일에 도착한 ${AuthRequirements.emailOtpLength}자리 코드를 ${AuthRequirements.emailOtpExpirationMinutes}분 안에 입력해 주세요.`,
       otpLabel: "인증 코드",
-      otpPlaceholder: "6자리 코드 입력",
+      otpPlaceholder: `${AuthRequirements.emailOtpLength}자리 코드 입력`,
       verifyOtpAction: "가입 완료",
-      resendOtpAction: "코드 다시 받기",
+      resendOtpAction: "코드 재전송",
       editCredentialsAction: "가입 정보 수정",
       otpRequestedStatus: "인증 코드를 보냈습니다. 메일함을 확인해 주세요.",
       otpResentStatus: "인증 코드를 다시 보냈습니다.",

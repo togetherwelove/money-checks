@@ -1,33 +1,27 @@
 import { useIsFocused } from "@react-navigation/native";
-import { useEffect, useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppBannerAd } from "../components/AppBannerAd";
-import { showLedgerEntryDeleteAlert } from "../components/ledgerEntryDeleteAlert";
-import { LedgerEntryList } from "../components/LedgerEntryList";
 import { MonthCalendarPager } from "../components/MonthCalendarPager";
 import { MonthlySummary } from "../components/MonthlySummary";
 import { WeekdayHeader } from "../components/WeekdayHeader";
+import { HomeTransactionList } from "../components/homeScreen/HomeTransactionList";
+import type { MonthOffset } from "../components/monthCalendarPager/monthCalendarPagerTypes";
 import {
   type CalendarSummaryMode,
   CalendarSummaryLabels,
   CalendarSummaryLoadingLabel,
   CalendarSummaryModes,
+  formatCalendarMonthlySummaryLabel,
 } from "../constants/calendarSummary";
 import { AppColors } from "../constants/colors";
+import { HomeScreenUi } from "../constants/home";
 import { AppLayout } from "../constants/layout";
+import { formatMonthLabel } from "../constants/ledgerDisplay";
 import { AppMessages } from "../constants/messages";
 import {
   FullBleedHorizontalStyle,
-  FullBleedPaddedHorizontalStyle,
 } from "../constants/uiStyles";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
 import type { LedgerEntry } from "../types/ledger";
@@ -47,6 +41,7 @@ type HomeScreenProps = {
   onEditSelectedEntry: (entry: LedgerEntry) => void;
   onPrepayInstallmentEntry: InstallmentPrepaymentHandler;
   onSelectCalendarDate: (isoDate: string) => void;
+  screenTitle: ReactNode;
   isCalendarHeatmapEnabled: boolean;
   showsBannerAd: boolean;
   state: LedgerScreenState;
@@ -66,6 +61,7 @@ export function HomeScreen({
   onEditSelectedEntry,
   onPrepayInstallmentEntry,
   onSelectCalendarDate,
+  screenTitle,
   isCalendarHeatmapEnabled,
   showsBannerAd,
   state,
@@ -106,6 +102,7 @@ export function HomeScreen({
         onPrepayInstallmentEntry={onPrepayInstallmentEntry}
         onRefreshLedger={refreshLedger}
         onSelectCalendarDate={onSelectCalendarDate}
+        screenTitle={screenTitle}
         selectedDate={selectedDate}
         selectedEntries={selectedEntries}
         showsBannerAd={showsBannerAd}
@@ -130,6 +127,7 @@ function KeyboardAwareContent({
   onPrepayInstallmentEntry,
   onRefreshLedger,
   onSelectCalendarDate,
+  screenTitle,
   selectedDate,
   selectedEntries,
   showsBannerAd,
@@ -149,6 +147,7 @@ function KeyboardAwareContent({
   onPrepayInstallmentEntry: InstallmentPrepaymentHandler;
   onRefreshLedger: () => Promise<void>;
   onSelectCalendarDate: (isoDate: string) => void;
+  screenTitle: ReactNode;
   selectedDate: string;
   selectedEntries: LedgerEntry[];
   showsBannerAd: boolean;
@@ -157,95 +156,90 @@ function KeyboardAwareContent({
   visibleMonth: Date;
 }) {
   const displayedSummary = resolveDisplayedSummary(state, calendarSummaryMode);
+  const [previewMonthOffset, setPreviewMonthOffset] = useState<MonthOffset>(0);
+  const displayedCalendarMonth =
+    previewMonthOffset === 0 ? visibleMonth : addMonths(visibleMonth, previewMonthOffset);
+  const handleMoveMonth = useCallback(
+    (monthOffset: MonthOffset) => {
+      setPreviewMonthOffset(0);
+      moveMonth(visibleMonth, monthOffset, state.handleSelectDate, todayIsoDate);
+    },
+    [state.handleSelectDate, todayIsoDate, visibleMonth],
+  );
+
+  useEffect(() => {
+    setPreviewMonthOffset(0);
+  }, [visibleMonth]);
 
   return (
     <View style={styles.screenContent}>
-      {errorMessage ? (
-        <Pressable
-          accessibilityRole="button"
-          disabled={isRefreshing}
-          onPress={() => {
-            if (isRefreshing) {
-              return;
-            }
+      <View>
+        {screenTitle}
+        {errorMessage ? (
+          <Pressable
+            accessibilityRole="button"
+            disabled={isRefreshing}
+            onPress={() => {
+              if (isRefreshing) {
+                return;
+              }
 
-            void onRefreshLedger();
-          }}
-          style={({ pressed }) => [
-            styles.errorRetry,
-            pressed && !isRefreshing ? styles.errorRetryPressed : null,
-            isRefreshing ? styles.errorRetryDisabled : null,
-          ]}
-        >
-          <Text style={styles.error}>{errorMessage}</Text>
-          <Text style={styles.errorRetryLabel}>재시도</Text>
-        </Pressable>
-      ) : null}
-      {showsBannerAd ? (
-        <View style={styles.adPanel}>
-          <AppBannerAd variant="embedded" />
+              void onRefreshLedger();
+            }}
+            style={({ pressed }) => [
+              styles.errorRetry,
+              pressed && !isRefreshing ? styles.errorRetryPressed : null,
+              isRefreshing ? styles.errorRetryDisabled : null,
+            ]}
+          >
+            <Text style={styles.error}>{errorMessage}</Text>
+            <Text style={styles.errorRetryLabel}>재시도</Text>
+          </Pressable>
+        ) : null}
+        {showsBannerAd ? (
+          <View style={styles.adPanel}>
+            <AppBannerAd variant="embedded" />
+          </View>
+        ) : null}
+        <View style={styles.calendarAdSection}>
+          <Text accessibilityRole="header" style={styles.monthTitle}>
+            {formatMonthLabel(displayedCalendarMonth)}
+          </Text>
+          <WeekdayHeader />
+          <MonthCalendarPager
+            key={calendarFocusRevision}
+            currentPage={state.currentMonthPage}
+            isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
+            isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
+            nextPage={state.nextMonthPage}
+            onMoveMonth={handleMoveMonth}
+            onPreviewMonthOffsetChange={setPreviewMonthOffset}
+            onSelectDate={onSelectCalendarDate}
+            previousPage={state.previousMonthPage}
+            selectedDate={selectedDate}
+          />
         </View>
-      ) : null}
-      <View style={styles.calendarAdSection}>
-        <View style={styles.summaryPanel}>
+      </View>
+      <View style={styles.transactionSection}>
+        <View style={styles.transactionSummaryPanel}>
           <MonthlySummary
             balanceAmount={displayedSummary.balanceAmount}
             balanceLabel={displayedSummary.balanceLabel}
             summaryLabel={displayedSummary.summaryLabel}
             totalExpense={displayedSummary.totalExpense}
             totalIncome={displayedSummary.totalIncome}
-            variant="embedded"
           />
         </View>
-        <WeekdayHeader />
-        <MonthCalendarPager
-          key={calendarFocusRevision}
-          currentPage={state.currentMonthPage}
-          isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
-          isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
-          nextPage={state.nextMonthPage}
-          onMoveMonth={(monthOffset) =>
-            moveMonth(visibleMonth, monthOffset, state.handleSelectDate, todayIsoDate)
-          }
-          onSelectDate={onSelectCalendarDate}
-          previousPage={state.previousMonthPage}
-          selectedDate={selectedDate}
+        <HomeTransactionList
+          activeBookId={state.activeBook?.id ?? null}
+          entries={selectedEntries}
+          isLoading={isLoadingSelectedDateEntries}
+          isRefreshing={isRefreshing}
+          onDeleteEntry={onDeleteSelectedEntry}
+          onEditEntry={onEditSelectedEntry}
+          onPrepayInstallmentEntry={onPrepayInstallmentEntry}
+          onRefresh={onRefreshLedger}
         />
-      </View>
-      <View style={styles.transactionSection}>
-        <ScrollView
-          alwaysBounceVertical
-          contentContainerStyle={styles.transactionScrollContent}
-          keyboardShouldPersistTaps="handled"
-          nestedScrollEnabled
-          refreshControl={
-            <RefreshControl
-              onRefresh={() => {
-                void onRefreshLedger();
-              }}
-              refreshing={isRefreshing}
-              tintColor={AppColors.primary}
-            />
-          }
-          showsVerticalScrollIndicator={false}
-          style={styles.transactionScroll}
-        >
-          {isLoadingSelectedDateEntries && selectedEntries.length === 0 ? (
-            <ActivityIndicatorContainer />
-          ) : (
-            <>
-              <LedgerEntryList
-                activeBookId={state.activeBook?.id ?? null}
-                entries={selectedEntries}
-                onDeleteEntry={(entry) => {
-                  showLedgerEntryDeleteAlert(entry, onDeleteSelectedEntry);
-                }}
-                onEditEntry={onEditSelectedEntry}
-                onPrepayInstallmentEntry={onPrepayInstallmentEntry}
-              />
-            </>
-          )}
-        </ScrollView>
       </View>
     </View>
   );
@@ -258,7 +252,7 @@ function resolveDisplayedSummary(
   if (calendarSummaryMode === CalendarSummaryModes.monthly) {
     return {
       balanceAmount: state.monthlyLedger.balance,
-      summaryLabel: CalendarSummaryLabels.monthly,
+      summaryLabel: formatCalendarMonthlySummaryLabel(formatMonthLabel(state.visibleMonth)),
       totalExpense: formatCurrency(state.monthlyLedger.totalExpense),
       totalIncome: formatCurrency(state.monthlyLedger.totalIncome),
     };
@@ -300,12 +294,6 @@ function resolveDisplayedSummary(
   };
 }
 
-function ActivityIndicatorContainer() {
-  return (
-    <ActivityIndicator color={AppColors.primary} size="small" style={styles.selectedDateLoading} />
-  );
-}
-
 function moveMonth(
   visibleMonth: Date,
   monthOffset: number,
@@ -334,25 +322,25 @@ const styles = StyleSheet.create({
   },
   screenContent: {
     flex: 1,
+    paddingTop: AppLayout.screenTopPadding,
   },
   calendarAdSection: {
     gap: AppLayout.calendarGap,
   },
+  monthTitle: {
+    color: AppColors.text,
+    fontSize: HomeScreenUi.monthTitleFontSize,
+    fontWeight: "800",
+    lineHeight: HomeScreenUi.monthTitleLineHeight,
+    marginBottom: AppLayout.compactGap,
+  },
   transactionSection: {
     ...FullBleedHorizontalStyle,
-    flex: 1,
-    minHeight: 0,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderColor: AppColors.border,
-    paddingTop: AppLayout.compactGap,
-  },
-  transactionScroll: {
     flex: 1,
-    minHeight: 0,
-  },
-  transactionScrollContent: {
-    flexGrow: 1,
-    gap: AppLayout.compactGap,
+    minHeight: HomeScreenUi.transactionMinimumHeight,
+    paddingTop: AppLayout.compactGap,
   },
   adPanel: {
     ...FullBleedHorizontalStyle,
@@ -361,11 +349,11 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.adBackground,
     marginBottom: AppLayout.compactGap,
   },
-  summaryPanel: {
-    ...FullBleedPaddedHorizontalStyle,
-    borderTopWidth: StyleSheet.hairlineWidth,
+  transactionSummaryPanel: {
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderColor: AppColors.border,
+    paddingBottom: AppLayout.compactGap,
+    paddingHorizontal: AppLayout.screenPadding,
   },
   error: {
     color: AppColors.expense,
@@ -385,8 +373,5 @@ const styles = StyleSheet.create({
     color: AppColors.primary,
     fontSize: 12,
     fontWeight: "700",
-  },
-  selectedDateLoading: {
-    minHeight: 160,
   },
 });
