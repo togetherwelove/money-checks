@@ -1,8 +1,14 @@
-const LETTER_PATTERN = /[A-Za-z]/;
-const NUMBER_PATTERN = /\d/;
-const PASSWORD_MINIMUM_LENGTH = 8;
+import { AuthRequirements } from "../../constants/authRequirements";
 
-export type PasswordRequirementKey = "containsLetter" | "containsNumber" | "minimumLength";
+const LOWERCASE_LETTER_PATTERN = /[a-z]/;
+const NUMBER_PATTERN = /\d/;
+const UPPERCASE_LETTER_PATTERN = /[A-Z]/;
+
+export type PasswordRequirementKey =
+  | "containsLowercaseLetter"
+  | "containsNumber"
+  | "containsUppercaseLetter"
+  | "minimumLength";
 
 export type PasswordRequirementState = {
   isMet: boolean;
@@ -13,14 +19,19 @@ export type PasswordRequirementState = {
 export function getPasswordRequirementStates(password: string): PasswordRequirementState[] {
   return [
     {
-      isMet: password.length >= PASSWORD_MINIMUM_LENGTH,
+      isMet: password.length >= AuthRequirements.passwordMinimumLength,
       key: "minimumLength",
-      label: `${PASSWORD_MINIMUM_LENGTH}자 이상 입력`,
+      label: `${AuthRequirements.passwordMinimumLength}자 이상 입력`,
     },
     {
-      isMet: LETTER_PATTERN.test(password),
-      key: "containsLetter",
-      label: "영문을 1자 이상 포함",
+      isMet: LOWERCASE_LETTER_PATTERN.test(password),
+      key: "containsLowercaseLetter",
+      label: "영문 소문자를 1자 이상 포함",
+    },
+    {
+      isMet: UPPERCASE_LETTER_PATTERN.test(password),
+      key: "containsUppercaseLetter",
+      label: "영문 대문자를 1자 이상 포함",
     },
     {
       isMet: NUMBER_PATTERN.test(password),

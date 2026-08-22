@@ -2,7 +2,6 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { CalendarDayUi } from "../constants/calendarDay";
 import { AppColors } from "../constants/colors";
-import { AppLayout } from "../constants/layout";
 import { AppMessages } from "../constants/messages";
 import { CompactTextProps } from "../constants/textLayout";
 import { FullBleedPaddedHorizontalStyle } from "../constants/uiStyles";
@@ -44,8 +43,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     borderBottomColor: AppColors.border,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    paddingTop: AppLayout.compactGap,
-    paddingBottom: 4,
+    paddingVertical: CalendarDayUi.weekdayPaddingVertical,
   },
   weekdayCell: {
     width: CELL_WIDTH,
@@ -53,7 +51,7 @@ const styles = StyleSheet.create({
   },
   weekdayText: {
     color: AppColors.mutedText,
-    fontSize: 11,
+    fontSize: CalendarDayUi.weekdayFontSize,
     fontWeight: "700",
   },
   sundayText: {

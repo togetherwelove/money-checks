@@ -1,35 +1,27 @@
-import { makeRedirectUri } from "expo-auth-session";
-
+import { AppLinks } from "../../constants/appLinks";
 import { EmailAuthCopy } from "../../constants/emailAuth";
 import { supabase } from "../supabase";
 import { normalizeEmail } from "./emailPasswordAuth";
-import { GOOGLE_AUTH_APP_SCHEME } from "./googleAuthConfig";
 import { resolveGoogleAuthSession } from "./googleAuthSession";
 
-const PASSWORD_RESET_CALLBACK_PATH = "password-reset";
 const PASSWORD_RESET_RECOVERY_TYPE = "recovery";
+const PASSWORD_RESET_REDIRECT_URLS = [
+  new URL(AppLinks.passwordResetUrl),
+  new URL(AppLinks.legacyPasswordResetUrl),
+] as const;
 
 let lastCompletedPasswordRecoveryUrl: string | null = null;
 
 export function resolvePasswordResetRedirectUri(): string {
-  return makeRedirectUri({
-    scheme: GOOGLE_AUTH_APP_SCHEME,
-    path: PASSWORD_RESET_CALLBACK_PATH,
-  });
+  return AppLinks.passwordResetUrl;
 }
 
 export function isPasswordRecoveryRedirectUrl(redirectUrl: string): boolean {
   try {
-    const resolvedRedirectUrl = new URL(resolvePasswordResetRedirectUri());
     const parsedRedirectUrl = new URL(redirectUrl);
     const urlType = readUrlParam(parsedRedirectUrl, "type");
 
-    return (
-      parsedRedirectUrl.protocol === resolvedRedirectUrl.protocol &&
-      parsedRedirectUrl.host === resolvedRedirectUrl.host &&
-      parsedRedirectUrl.pathname === resolvedRedirectUrl.pathname &&
-      urlType === PASSWORD_RESET_RECOVERY_TYPE
-    );
+    return urlType === PASSWORD_RESET_RECOVERY_TYPE && isKnownPasswordResetUrl(parsedRedirectUrl);
   } catch {
     return false;
   }
@@ -84,6 +76,16 @@ function readUrlParam(url: URL, key: string): string | null {
   }
 
   return new URLSearchParams(url.hash.replace(/^#/, "")).get(key);
+}
+
+function isKnownPasswordResetUrl(parsedRedirectUrl: URL): boolean {
+  return PASSWORD_RESET_REDIRECT_URLS.some((knownUrl) => {
+    return (
+      parsedRedirectUrl.protocol === knownUrl.protocol &&
+      parsedRedirectUrl.host === knownUrl.host &&
+      parsedRedirectUrl.pathname === knownUrl.pathname
+    );
+  });
 }
 
 export function resolvePasswordResetErrorMessage(error: unknown): string {

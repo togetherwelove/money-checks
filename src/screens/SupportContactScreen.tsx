@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { Image, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { ActionButton } from "../components/ActionButton";
+import { AppFooterContentInset } from "../components/AppFooterContentInset";
 import { IconActionButton } from "../components/IconActionButton";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { TextLinkButton } from "../components/TextLinkButton";
@@ -24,9 +25,10 @@ import {
 
 type SupportContactScreenProps = {
   email: string;
+  screenTitle: ReactNode;
 };
 
-export function SupportContactScreen({ email }: SupportContactScreenProps) {
+export function SupportContactScreen({ email, screenTitle }: SupportContactScreenProps) {
   const [attachments, setAttachments] = useState<SupportAttachment[]>([]);
   const [messageBody, setMessageBody] = useState("");
   const [subject, setSubject] = useState("");
@@ -67,6 +69,7 @@ export function SupportContactScreen({ email }: SupportContactScreenProps) {
 
   return (
     <KeyboardAwareScrollView contentContainerStyle={styles.content} style={styles.screen}>
+      {screenTitle}
       <View style={styles.card}>
         <View style={styles.fieldGroup}>
           <Text style={styles.label}>가입 이메일</Text>
@@ -139,6 +142,7 @@ export function SupportContactScreen({ email }: SupportContactScreenProps) {
           variant="primary"
         />
       </View>
+      <AppFooterContentInset />
     </KeyboardAwareScrollView>
   );
 }

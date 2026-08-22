@@ -2,10 +2,10 @@ import {
   createNativeStackNavigator,
   type NativeStackNavigationOptions,
 } from "@react-navigation/native-stack";
+import type { ReactNode } from "react";
 
 import type { CalendarSummaryMode } from "../constants/calendarSummary";
 import { AppColors } from "../constants/colors";
-import { EntryNativeSheetUi } from "../constants/entryRegistration";
 import type { SubscriptionTier } from "../constants/subscription";
 import type { SupportPackageIdentifier } from "../constants/support";
 import type { BusyTaskTracker } from "../hooks/ledgerScreenState/types";
@@ -36,7 +36,7 @@ import type { LedgerEntry } from "../types/ledger";
 import type { LedgerEntryDeleteHandler } from "../types/ledgerEntryDeletion";
 import type { InstallmentPrepaymentHandler } from "../types/installmentTransactions";
 import type { LedgerWidgetSummary } from "../types/widget";
-import type { SignedInStackParamList } from "./signedInNavigation";
+import type { SignedInStackParamList, SignedInStackScreen } from "./signedInNavigation";
 
 const Stack = createNativeStackNavigator<SignedInStackParamList>();
 const signedInStackScreenOptions: NativeStackNavigationOptions = {
@@ -47,14 +47,11 @@ const signedInStackScreenOptions: NativeStackNavigationOptions = {
   headerShown: false,
 };
 const entryNativeSheetOptions: NativeStackNavigationOptions = {
-  fullScreenGestureEnabled: false,
+  animation: "slide_from_bottom",
+  contentStyle: { backgroundColor: AppColors.transparent },
+  gestureEnabled: false,
   headerShown: false,
-  presentation: "formSheet",
-  sheetAllowedDetents: [EntryNativeSheetUi.detentRatio],
-  sheetExpandsWhenScrolledToEdge: false,
-  sheetGrabberVisible: true,
-  sheetInitialDetentIndex: EntryNativeSheetUi.initialDetentIndex,
-  sheetLargestUndimmedDetentIndex: "none",
+  presentation: "transparentModal",
 };
 
 type SignedInStackNavigatorProps = {
@@ -112,6 +109,7 @@ type SignedInStackNavigatorProps = {
     enabled: boolean,
   ) => void;
   plusPriceLabel: string | null;
+  renderScreenTitle: (screen: SignedInStackScreen, titleLabel?: string) => ReactNode;
   showAdTrackingPermissionCard: boolean;
   showNotificationSettings: boolean;
   showsBannerAd: boolean;
@@ -165,6 +163,7 @@ export function SignedInStackNavigator({
   onSendPushNotificationToUsers,
   onToggleNotificationPreference,
   plusPriceLabel,
+  renderScreenTitle,
   showAdTrackingPermissionCard,
   showNotificationSettings,
   showsBannerAd,
@@ -188,6 +187,7 @@ export function SignedInStackNavigator({
             onEditSelectedEntry={onEditSelectedEntryFromCalendar}
             onPrepayInstallmentEntry={onPrepayInstallmentEntry}
             onSelectCalendarDate={onSelectCalendarDate}
+            screenTitle={renderScreenTitle("calendar")}
             showsBannerAd={showsBannerAd}
             state={ledgerState}
           />
@@ -215,13 +215,21 @@ export function SignedInStackNavigator({
             onDeleteEntry={onDeleteSelectedEntry}
             onEditEntry={onEditSelectedEntryFromAllEntries}
             onPrepayInstallmentEntry={onPrepayInstallmentEntry}
+            screenTitle={renderScreenTitle("all-entries")}
             showsNativeAds={showsBannerAd}
             trackBlockingTask={trackBlockingTask}
           />
         )}
       </Stack.Screen>
       <Stack.Screen name="charts">
-        {() => <ChartScreen showsBannerAd={showsBannerAd} state={ledgerState} userId={userId} />}
+        {() => (
+          <ChartScreen
+            renderScreenTitle={(titleLabel) => renderScreenTitle("charts", titleLabel)}
+            showsBannerAd={showsBannerAd}
+            state={ledgerState}
+            userId={userId}
+          />
+        )}
       </Stack.Screen>
       <Stack.Screen
         listeners={{
@@ -254,6 +262,7 @@ export function SignedInStackNavigator({
             onTransferSharedLedgerOwnership={ledgerState.transferSharedLedgerOwnership}
             pendingJoinRequestCountsByBookId={ledgerState.pendingJoinRequestCountsByBookId}
             pendingJoinRequests={ledgerState.pendingJoinRequests}
+            screenTitle={renderScreenTitle("share")}
             subscriptionTier={subscriptionTier}
             userId={userId}
           />
@@ -270,6 +279,7 @@ export function SignedInStackNavigator({
             onOpenSubscriptionManagement={onOpenSubscriptionManagement}
             onRequestAdTrackingPermission={onRequestAdTrackingPermission}
             onRestorePurchases={onRestorePurchases}
+            screenTitle={renderScreenTitle("account")}
             showAdTrackingPermissionCard={showAdTrackingPermissionCard}
             subscriptionTier={subscriptionTier}
             trackBlockingTask={trackBlockingTask}
@@ -296,6 +306,7 @@ export function SignedInStackNavigator({
             onRequestNotificationPermission={onRequestNotificationPermission}
             onToggleCalendarHeatmap={onToggleCalendarHeatmap}
             onToggleNotificationPreference={onToggleNotificationPreference}
+            screenTitle={renderScreenTitle("app-settings")}
             showNotificationSettings={showNotificationSettings}
           />
         )}
@@ -313,6 +324,7 @@ export function SignedInStackNavigator({
               onChangeNotificationThreshold={onChangeNotificationThreshold}
               onRequestNotificationPermission={onRequestNotificationPermission}
               onToggleNotificationPreference={onToggleNotificationPreference}
+              screenTitle={renderScreenTitle("notification-settings")}
             />
           ) : (
             <AccountScreen
@@ -324,6 +336,7 @@ export function SignedInStackNavigator({
               onOpenSubscriptionManagement={onOpenSubscriptionManagement}
               onRequestAdTrackingPermission={onRequestAdTrackingPermission}
               onRestorePurchases={onRestorePurchases}
+              screenTitle={renderScreenTitle("account")}
               showAdTrackingPermissionCard={showAdTrackingPermissionCard}
               subscriptionTier={subscriptionTier}
               trackBlockingTask={trackBlockingTask}
@@ -339,6 +352,7 @@ export function SignedInStackNavigator({
             isPlusActive={isPlusActive}
             onPurchasePlus={onPurchasePlus}
             plusPriceLabel={plusPriceLabel}
+            screenTitle={renderScreenTitle("subscription")}
           />
         )}
       </Stack.Screen>
@@ -348,12 +362,20 @@ export function SignedInStackNavigator({
             isLoading={supportPackagesLoading}
             onPurchasePackage={onPurchaseSupportPackage}
             packages={supportPackages}
+            screenTitle={renderScreenTitle("support")}
           />
         )}
       </Stack.Screen>
-      <Stack.Screen name="help" component={HelpScreen} />
+      <Stack.Screen name="help">
+        {() => <HelpScreen screenTitle={renderScreenTitle("help")} />}
+      </Stack.Screen>
       <Stack.Screen name="contact-support">
-        {() => <SupportContactScreen email={email} />}
+        {() => (
+          <SupportContactScreen
+            email={email}
+            screenTitle={renderScreenTitle("contact-support")}
+          />
+        )}
       </Stack.Screen>
     </Stack.Navigator>
   );

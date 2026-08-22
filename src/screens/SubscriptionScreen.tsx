@@ -1,8 +1,9 @@
 import { Feather } from "@expo/vector-icons";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { ActionButton } from "../components/ActionButton";
+import { AppFooterContentInset } from "../components/AppFooterContentInset";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { TextLinkButton } from "../components/TextLinkButton";
 import { AppColors } from "../constants/colors";
@@ -27,6 +28,7 @@ type SubscriptionScreenProps = {
   isPlusActive: boolean;
   onPurchasePlus: () => Promise<void>;
   plusPriceLabel: string | null;
+  screenTitle: ReactNode;
 };
 
 export function SubscriptionScreen({
@@ -34,6 +36,7 @@ export function SubscriptionScreen({
   isPlusActive,
   onPurchasePlus,
   plusPriceLabel,
+  screenTitle,
 }: SubscriptionScreenProps) {
   const [isPurchaseInfoExpanded, setIsPurchaseInfoExpanded] = useState(false);
   const resolvedPlusPriceLabel = plusPriceLabel ?? SubscriptionMessages.heroPriceLabel;
@@ -48,6 +51,7 @@ export function SubscriptionScreen({
   return (
     <View style={styles.screen}>
       <KeyboardAwareScrollView contentContainerStyle={styles.content} style={styles.scrollView}>
+        {screenTitle}
         <View style={styles.salesContent}>
           <View style={styles.copySection}>
             <Text {...AppTextBreakProps} style={styles.description}>
@@ -144,6 +148,7 @@ export function SubscriptionScreen({
             ) : null}
           </View>
         </View>
+        <AppFooterContentInset />
       </KeyboardAwareScrollView>
     </View>
   );

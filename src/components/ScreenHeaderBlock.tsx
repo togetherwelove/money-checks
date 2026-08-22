@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
 import { AppTextBreakProps } from "../constants/textLayout";
+import { ScreenTitleTextStyle } from "../constants/uiStyles";
 
 type ScreenHeaderBlockProps = {
   action?: ReactNode;
@@ -53,10 +54,8 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   title: {
+    ...ScreenTitleTextStyle,
     flex: 1,
-    color: AppColors.text,
-    fontSize: 22,
-    fontWeight: "800",
   },
   action: {
     flexShrink: 0,

@@ -86,8 +86,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   indicatorMet: {
-    backgroundColor: AppColors.income,
-    borderColor: AppColors.income,
+    backgroundColor: AppColors.success,
+    borderColor: AppColors.success,
   },
   indicatorUnmet: {
     backgroundColor: AppColors.background,
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   itemTextMet: {
-    color: AppColors.income,
+    color: AppColors.success,
   },
   itemTextUnmet: {
     color: AppColors.mutedText,

@@ -33,6 +33,10 @@ type MonthCalendarProps = {
 
 type CalendarDayHeatmapTone = "expense" | "income" | null;
 
+const expenseHeatmapStyles = CalendarDayUi.heatmapBackgroundColors.expense.map(
+  (backgroundColor) => ({ backgroundColor }),
+);
+
 function MonthCalendarComponent({
   days,
   isHeatmapEnabled,
@@ -62,17 +66,13 @@ function MonthCalendarComponent({
           >
             {week.map((day) => (
               <View key={day.isoDate} style={styles.daySlot}>
-                {day.isCurrentMonth ? (
-                  <DayCell
-                    day={day}
-                    heatmapLevel={heatmapLevels.get(day.isoDate) ?? 0}
-                    isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
-                    isSelected={day.isoDate === selectedDate}
-                    onSelectDate={handleSelectDate}
-                  />
-                ) : (
-                  <View style={[styles.dayCell, styles.emptyDayCell]} />
-                )}
+                <DayCell
+                  day={day}
+                  heatmapLevel={heatmapLevels.get(day.isoDate) ?? 0}
+                  isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
+                  isSelected={day.isoDate === selectedDate}
+                  onSelectDate={handleSelectDate}
+                />
               </View>
             ))}
           </View>
@@ -126,13 +126,29 @@ const DayCell = memo(function DayCell({
   isSelected: boolean;
   onSelectDate: (isoDate: string) => void;
 }) {
+  const handlePress = useCallback(() => {
+    onSelectDate(day.isoDate);
+  }, [day.isoDate, onSelectDate]);
+
+  if (!day.isCurrentMonth) {
+    return (
+      <View
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        style={styles.dayCell}
+      >
+        <View style={styles.dayContent}>
+          <View style={styles.dayNumberWrap} />
+          <View style={styles.amounts} />
+        </View>
+      </View>
+    );
+  }
+
   const dayOfWeek = parseIsoDate(day.isoDate).getDay();
   const isSunday = dayOfWeek === 0;
   const isSaturday = dayOfWeek === 6;
   const shouldApplyWeekendTint = !isSelected && !day.isToday;
-  const handlePress = useCallback(() => {
-    onSelectDate(day.isoDate);
-  }, [day.isoDate, onSelectDate]);
   const heatmapTone = getCalendarDayHeatmapTone(day);
 
   return (
@@ -141,12 +157,9 @@ const DayCell = memo(function DayCell({
       style={[
         styles.dayCell,
         getHeatmapStyle(heatmapLevel, heatmapTone),
-        day.isToday && !isSelected ? styles.todayDayCell : null,
         isSelected ? styles.selectedDayCell : null,
         day.isToday && isSelected ? styles.selectedTodayDayCell : null,
         isReadOnlyDueToPlanLimit ? styles.readOnlyDayCell : null,
-        isReadOnlyDueToPlanLimit && day.isToday && !isSelected ? styles.readOnlyTodayDayCell : null,
-        isReadOnlyDueToPlanLimit && isSelected ? styles.readOnlySelectedDayCell : null,
       ]}
     >
       <View style={styles.dayContent}>
@@ -160,19 +173,13 @@ const DayCell = memo(function DayCell({
               day.isToday && !isSelected ? styles.todayNumber : null,
               isSelected ? styles.selectedDayNumber : null,
               day.isToday && isSelected ? styles.selectedTodayNumber : null,
-              isReadOnlyDueToPlanLimit ? styles.readOnlyDayNumber : null,
-              isReadOnlyDueToPlanLimit && day.isToday && !isSelected
-                ? styles.readOnlyTodayNumber
-                : null,
+              isReadOnlyDueToPlanLimit && !isSelected ? styles.readOnlyDayNumber : null,
             ]}
           >
             {day.dayNumber}
           </Text>
         </View>
-        <DayAmountLines
-          day={day}
-          isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
-        />
+        <DayAmountLines day={day} isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit} />
       </View>
     </Pressable>
   );
@@ -216,27 +223,7 @@ function getHeatmapStyle(level: number, tone: CalendarDayHeatmapTone) {
 }
 
 function getExpenseHeatmapStyle(level: number) {
-  if (level === 1) {
-    return styles.expenseHeatmapLevel1;
-  }
-
-  if (level === 2) {
-    return styles.expenseHeatmapLevel2;
-  }
-
-  if (level === 3) {
-    return styles.expenseHeatmapLevel3;
-  }
-
-  if (level === 4) {
-    return styles.expenseHeatmapLevel4;
-  }
-
-  if (level === 5) {
-    return styles.expenseHeatmapLevel5;
-  }
-
-  return null;
+  return expenseHeatmapStyles[level - 1] ?? null;
 }
 
 function DayAmountLines({
@@ -336,25 +323,8 @@ const styles = StyleSheet.create({
     borderWidth: CALENDAR_DAY_CELL_BORDER_WIDTH,
     borderColor: AppColors.transparent,
   },
-  expenseHeatmapLevel1: {
-    backgroundColor: CalendarDayUi.heatmapBackgroundColors.expense[0],
-  },
-  expenseHeatmapLevel2: {
-    backgroundColor: CalendarDayUi.heatmapBackgroundColors.expense[1],
-  },
-  expenseHeatmapLevel3: {
-    backgroundColor: CalendarDayUi.heatmapBackgroundColors.expense[2],
-  },
-  expenseHeatmapLevel4: {
-    backgroundColor: CalendarDayUi.heatmapBackgroundColors.expense[3],
-  },
-  expenseHeatmapLevel5: {
-    backgroundColor: CalendarDayUi.heatmapBackgroundColors.expense[4],
-  },
   selectedDayCell: {
     borderColor: AppColors.primary,
-  },
-  todayDayCell: {
   },
   selectedTodayDayCell: {
     borderColor: AppColors.accent,
@@ -362,14 +332,6 @@ const styles = StyleSheet.create({
   readOnlyDayCell: {
     opacity: CalendarDayUi.readOnlyDayOpacity,
   },
-  readOnlyTodayDayCell: {
-    borderColor: AppColors.border,
-  },
-  readOnlySelectedDayCell: {
-    borderColor: AppColors.border,
-    backgroundColor: AppColors.surfaceStrong,
-  },
-  emptyDayCell: {},
   weekDivider: {
     borderTopColor: AppColors.border,
     borderTopWidth: CALENDAR_WEEK_DIVIDER_WIDTH,
@@ -393,7 +355,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
     paddingVertical: CALENDAR_DAY_NUMBER_PADDING_VERTICAL,
     borderRadius: 999,
-    fontSize: 11,
+    fontSize: CalendarDayUi.dayNumberFontSize,
     lineHeight: CALENDAR_DAY_NUMBER_LINE_HEIGHT,
     includeFontPadding: false,
     textAlignVertical: "center",
@@ -410,9 +372,6 @@ const styles = StyleSheet.create({
     color: AppColors.accent,
   },
   readOnlyDayNumber: {
-    color: AppColors.mutedText,
-  },
-  readOnlyTodayNumber: {
     color: AppColors.mutedText,
   },
   sundayNumber: {

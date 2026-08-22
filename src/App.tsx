@@ -22,10 +22,15 @@ import { RootSiblingParent } from "react-native-root-siblings";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 import { SignedInStackNavigator } from "./app/SignedInStackNavigator";
-import { type SignedInStackParamList, isSignedInStackScreen } from "./app/signedInNavigation";
+import {
+  type SignedInStackParamList,
+  type SignedInStackScreen,
+  isSignedInStackScreen,
+} from "./app/signedInNavigation";
 import { AppFooterTabBar } from "./components/AppFooterTabBar";
-import { AppHeader } from "./components/AppHeader";
+import { AppFloatingMenuButton } from "./components/AppFloatingMenuButton";
 import { AppMenuDrawer } from "./components/AppMenuDrawer";
+import { AppScreenTitle } from "./components/AppScreenTitle";
 import { BlockingOverlay } from "./components/BlockingOverlay";
 import { DailyFirstEntryAdNoticeOverlay } from "./components/DailyFirstEntryAdNoticeOverlay";
 import { confirmInstallmentPrepayment } from "./components/installmentPrepaymentAlert";
@@ -41,8 +46,9 @@ import { EntryRegistrationCopy } from "./constants/entryRegistration";
 import { EXPENSE_CATEGORY_LABELS } from "./constants/expenseCategories";
 import { InitialPermissionTiming } from "./constants/initialPermissions";
 import { INCOME_CATEGORY_LABELS } from "./constants/incomeCategories";
-import { formatYearMonthLabel } from "./constants/ledgerDisplay";
+import { formatYearLabel } from "./constants/ledgerDisplay";
 import { LedgerBookManagementCopy } from "./constants/ledgerBookManagement";
+import { FooterTabBarUi } from "./constants/menu";
 import { AppMessages } from "./constants/messages";
 import { NotificationBadgeScopes } from "./constants/notificationBadges";
 import { SubscriptionMessages, SubscriptionTiers } from "./constants/subscription";
@@ -252,7 +258,7 @@ function SignedInApp({ session }: { session: Session }) {
     ledgerState.resetEditor(ledgerState.selectedDate);
   }, [ledgerState]);
   const notificationBadges = useNotificationBadges(session.user.id);
-  const canSwitchHeaderLedgerBook =
+  const canSwitchLedgerBook =
     currentScreen === "calendar" && ledgerState.accessibleBooks.length > 1;
   useLedgerWidgetSync(ledgerState.activeBook?.id ?? null, ledgerState.entries);
   useEffect(() => {
@@ -453,7 +459,7 @@ function SignedInApp({ session }: { session: Session }) {
     returnToCalendarRoot();
   }, [returnToCalendarRoot]);
 
-  const handleSelectHeaderLedgerBook = useCallback(
+  const handleSelectLedgerBook = useCallback(
     async (bookId: string) => {
       const didSwitch = await ledgerState.switchLedgerBook(bookId);
       showNativeToast(
@@ -1295,6 +1301,23 @@ function SignedInApp({ session }: { session: Session }) {
     notifications.requestNotifications,
   ]);
 
+  const renderScreenTitle = (screen: SignedInStackScreen, titleLabel?: string) => (
+    <AppScreenTitle
+      canSwitchTitle={screen === "calendar"}
+      isReadOnlyTitle={screen === "calendar" && ledgerState.isReadOnlyDueToPlanLimit}
+      onPressTitle={screen === "calendar" ? handleOpenYearPicker : undefined}
+      titleLabel={
+        titleLabel ??
+        (screen === "calendar"
+          ? formatYearLabel(ledgerState.visibleMonth)
+          : screen === "charts"
+            ? ledgerState.currentChartMonth.title
+            : getAppScreenLabel(screen))
+      }
+      variant={screen === "calendar" ? "calendar" : "default"}
+    />
+  );
+
   if (authOnboarding.isLoading) {
     return (
       <SignedOutAppShell>
@@ -1322,25 +1345,8 @@ function SignedInApp({ session }: { session: Session }) {
   return (
     <ExpenseTextColorProvider>
       <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={AppColors.surface} />
-      <SafeAreaView edges={["top"]} style={styles.headerSafeArea}>
-        <View style={styles.headerShell}>
-          <AppHeader
-            canSwitchTitle={currentScreen === "calendar"}
-            isMenuOpen={isMenuOpen}
-            isReadOnlyTitle={currentScreen === "calendar" && ledgerState.isReadOnlyDueToPlanLimit}
-            onPressTitle={currentScreen === "calendar" ? handleOpenYearPicker : undefined}
-            titleLabel={
-              currentScreen === "calendar"
-                ? formatYearMonthLabel(ledgerState.visibleMonth)
-                : currentScreen === "charts"
-                ? ledgerState.currentChartMonth.title
-                : getAppScreenLabel(currentScreen)
-            }
-            onOpenMenu={() => setIsMenuOpen((currentValue) => !currentValue)}
-          />
-        </View>
-      </SafeAreaView>
+      <StatusBar barStyle="dark-content" backgroundColor={AppColors.screenBackground} />
+      <SafeAreaView edges={["top"]} style={styles.topSafeArea} />
       <SafeAreaView edges={["left", "right"]} style={styles.bodySafeArea}>
         <View style={styles.body}>
           <View style={styles.navigationShell}>
@@ -1403,6 +1409,7 @@ function SignedInApp({ session }: { session: Session }) {
                 onToggleCalendarHeatmap={calendarHeatmapSetting.updateCalendarHeatmapEnabled}
                 onToggleNotificationPreference={notifications.updatePreference}
                 plusPriceLabel={subscription.plusPriceLabel}
+                renderScreenTitle={renderScreenTitle}
                 showAdTrackingPermissionCard={showAdTrackingPermissionCard}
                 showNotificationSettings={notifications.showNotificationSettings}
                 showsBannerAd={showsAdMobAds}
@@ -1415,7 +1422,11 @@ function SignedInApp({ session }: { session: Session }) {
             </NavigationContainer>
           </View>
           {showsFooterTabBar ? (
-            <SafeAreaView edges={["bottom"]} style={styles.footerSafeArea}>
+            <SafeAreaView
+              edges={["bottom"]}
+              pointerEvents="box-none"
+              style={styles.footerSafeArea}
+            >
               <AppFooterTabBar
                 activeScreen={activeFooterScreen}
                 badgedScreens={footerBadgedScreens}
@@ -1447,14 +1458,18 @@ function SignedInApp({ session }: { session: Session }) {
           }}
           sections={menuSections}
         />
+        <AppFloatingMenuButton
+          isOpen={isMenuOpen}
+          onPress={() => setIsMenuOpen((currentValue) => !currentValue)}
+        />
         <LedgerBookSwitcherModal
           activeBookId={ledgerState.activeBook?.id ?? null}
           badgedBookIds={badgedLedgerBookIds}
           books={ledgerState.accessibleBooks}
-          isOpen={canSwitchHeaderLedgerBook && isLedgerSwitcherOpen}
+          isOpen={canSwitchLedgerBook && isLedgerSwitcherOpen}
           onClose={() => setIsLedgerSwitcherOpen(false)}
           onSelectBook={(bookId) => {
-            void handleSelectHeaderLedgerBook(bookId);
+            void handleSelectLedgerBook(bookId);
           }}
           subscriptionTier={subscription.currentTier}
         />
@@ -1721,15 +1736,10 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: AppColors.surface,
+    backgroundColor: AppColors.screenBackground,
   },
-  headerSafeArea: {
-    backgroundColor: AppColors.surface,
-  },
-  headerShell: {
-    backgroundColor: AppColors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: AppColors.border,
+  topSafeArea: {
+    backgroundColor: AppColors.screenBackground,
   },
   bodySafeArea: {
     flex: 1,
@@ -1744,7 +1754,12 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.screenBackground,
   },
   footerSafeArea: {
-    backgroundColor: AppColors.surface,
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: FooterTabBarUi.barZIndex,
+    backgroundColor: AppColors.transparent,
   },
   signedOutSafeArea: {
     backgroundColor: AppColors.screenBackground,

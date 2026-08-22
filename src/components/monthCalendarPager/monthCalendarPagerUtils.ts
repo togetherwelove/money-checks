@@ -1,5 +1,3 @@
-import { Animated } from "react-native";
-
 import type { MonthlyLedgerSummary } from "../../types/ledger";
 import {
   CALENDAR_BOTTOM_BORDER_CLIP_PADDING,
@@ -14,11 +12,6 @@ export type MonthPage = {
   signature: string;
   summary: MonthlyLedgerSummary;
 };
-
-const HEIGHT_ANIMATION_CONFIG = {
-  duration: 180,
-  useNativeDriver: false,
-} as const;
 
 export function buildMonthPageFromSummary(
   monthKey: string,
@@ -53,19 +46,4 @@ function buildMonthPageSignature(summary: MonthlyLedgerSummary): string {
   return summary.days
     .map((day) => `${day.isoDate}:${day.income}:${day.expense}:${day.isToday ? 1 : 0}`)
     .join("|");
-}
-
-export function animateViewportHeight(
-  heightValue: Animated.Value,
-  nextHeight: number,
-  onComplete?: () => void,
-) {
-  Animated.timing(heightValue, {
-    ...HEIGHT_ANIMATION_CONFIG,
-    toValue: nextHeight,
-  }).start(({ finished }) => {
-    if (finished) {
-      onComplete?.();
-    }
-  });
 }

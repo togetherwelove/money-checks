@@ -10,7 +10,6 @@ const INSTALLMENT_NOTE_PATTERN = /\(\d+\/\d+\)$/;
 const InstallmentCopy = {
     oneTimeLabel: "일시불",
     progressLabel: "할부",
-    progressSuffix: "진행 중",
     prepaidLabel: "선결제 완료",
     monthsSuffix: "개월",
   } as const;
@@ -97,11 +96,7 @@ export function formatInstallmentProgressLabel(entry: LedgerEntry): string | nul
     return null;
   }
 
-  if (entry.installmentOrder < entry.installmentMonths) {
-    return `${InstallmentCopy.progressLabel} ${entry.installmentOrder}/${entry.installmentMonths} ${InstallmentCopy.progressSuffix}`;
-  }
-
-  return `${InstallmentCopy.progressLabel} ${entry.installmentOrder}/${entry.installmentMonths}`;
+  return `${InstallmentCopy.progressLabel} (${entry.installmentOrder}/${entry.installmentMonths})`;
 }
 
 export function stripInstallmentNoteSuffix(note: string): string {
