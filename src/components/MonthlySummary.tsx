@@ -1,7 +1,10 @@
 import { StyleSheet, Text, View } from "react-native";
 
+import { CalendarSummaryLabels } from "../constants/calendarSummary";
 import { AppColors } from "../constants/colors";
-import { CompactTextProps, OneLineTextFitProps } from "../constants/textLayout";
+import { MonthlySummaryUi } from "../constants/home";
+import { AppLayout } from "../constants/layout";
+import { OneLineTextFitProps } from "../constants/textLayout";
 import { useExpenseTextColor } from "../contexts/ExpenseTextColorContext";
 import { formatCurrency } from "../utils/calendar";
 
@@ -11,13 +14,7 @@ type MonthlySummaryProps = {
   summaryLabel: string;
   totalExpense: string;
   totalIncome: string;
-  variant?: "default" | "embedded";
 };
-
-const SUMMARY_HORIZONTAL_PADDING = 8;
-const SUMMARY_VERTICAL_PADDING = 6;
-const SUMMARY_OPERATOR_WIDTH = 16;
-const SUMMARY_VALUE_MINIMUM_FONT_SCALE = 0.85;
 
 export function MonthlySummary({
   balanceAmount,
@@ -25,24 +22,32 @@ export function MonthlySummary({
   summaryLabel,
   totalExpense,
   totalIncome,
-  variant = "default",
 }: MonthlySummaryProps) {
   const expenseTextColor = useExpenseTextColor().textColor;
+  const balanceValue = balanceLabel ?? formatSignedCurrency(balanceAmount);
+  const balanceValueColor = resolveBalanceValueColor(balanceAmount, expenseTextColor);
 
   return (
-    <View style={[styles.container, variant === "embedded" ? styles.embeddedContainer : null]}>
-      <Text {...OneLineTextFitProps} style={styles.summaryLabel}>
-        {summaryLabel}
-      </Text>
+    <View style={styles.container}>
+      <View style={styles.headlineRow}>
+        <Text {...OneLineTextFitProps} style={styles.summaryLabel}>
+          {summaryLabel}
+        </Text>
+        <Text {...OneLineTextFitProps} style={[styles.balanceValue, { color: balanceValueColor }]}>
+          {balanceValue}
+        </Text>
+      </View>
       <View style={styles.metricRow}>
-        <SummaryMetric value={totalIncome} valueColor={AppColors.income} />
-        <FormulaOperator value="-" />
-        <SummaryMetric value={totalExpense} valueColor={expenseTextColor} />
-        <FormulaOperator value="=" />
         <SummaryMetric
-          isResult
-          value={balanceLabel ?? formatSignedCurrency(balanceAmount)}
-          valueColor={resolveBalanceValueColor(balanceAmount, expenseTextColor)}
+          label={CalendarSummaryLabels.income}
+          value={totalIncome}
+          valueColor={AppColors.income}
+        />
+        <View style={styles.metricDivider} />
+        <SummaryMetric
+          label={CalendarSummaryLabels.expense}
+          value={totalExpense}
+          valueColor={expenseTextColor}
         />
       </View>
     </View>
@@ -50,25 +55,22 @@ export function MonthlySummary({
 }
 
 function SummaryMetric({
-  isResult = false,
+  label,
   value,
   valueColor,
 }: {
-  isResult?: boolean;
+  label: string;
   value: string;
   valueColor: string;
 }) {
   return (
-    <View style={[styles.metric, isResult ? styles.resultMetric : null]}>
+    <View style={styles.metric}>
+      <Text style={styles.metricLabel}>{label}</Text>
       <Text
-        {...CompactTextProps}
+        {...OneLineTextFitProps}
         adjustsFontSizeToFit
-        minimumFontScale={SUMMARY_VALUE_MINIMUM_FONT_SCALE}
-        numberOfLines={1}
-        style={[
-          styles.metricValue,
-          { color: valueColor },
-        ]}
+        minimumFontScale={MonthlySummaryUi.minimumFontScale}
+        style={[styles.metricValue, { color: valueColor }]}
       >
         {value}
       </Text>
@@ -76,21 +78,13 @@ function SummaryMetric({
   );
 }
 
-function FormulaOperator({ value }: { value: string }) {
-  return (
-    <View style={styles.operator}>
-      <Text {...CompactTextProps} style={styles.operatorText}>{value}</Text>
-    </View>
-  );
-}
-
 function formatSignedCurrency(amount: number): string {
   if (amount > 0) {
-    return `+ ${formatCurrency(amount)}`;
+    return `+${formatCurrency(amount)}`;
   }
 
   if (amount < 0) {
-    return `- ${formatCurrency(Math.abs(amount))}`;
+    return `-${formatCurrency(Math.abs(amount))}`;
   }
 
   return formatCurrency(amount);
@@ -110,48 +104,57 @@ function resolveBalanceValueColor(amount: number, expenseTextColor: string): str
 
 const styles = StyleSheet.create({
   container: {
-    borderTopColor: AppColors.border,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: AppColors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    backgroundColor: AppColors.screenBackground,
+    backgroundColor: AppColors.surfaceMuted,
+    borderColor: AppColors.border,
+    borderRadius: AppLayout.cardRadius,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: MonthlySummaryUi.contentGap,
+    paddingHorizontal: MonthlySummaryUi.horizontalPadding,
+    paddingVertical: MonthlySummaryUi.verticalPadding,
   },
-  embeddedContainer: {
-    borderTopWidth: 0,
-    borderBottomWidth: 0,
-    backgroundColor: "transparent",
+  headlineRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: MonthlySummaryUi.contentGap,
+    justifyContent: "space-between",
+  },
+  balanceValue: {
+    flexShrink: 1,
+    fontSize: MonthlySummaryUi.balanceFontSize,
+    fontWeight: "800",
+    lineHeight: MonthlySummaryUi.balanceLineHeight,
   },
   metric: {
+    alignItems: "baseline",
     flex: 1,
-    paddingHorizontal: SUMMARY_HORIZONTAL_PADDING,
-    paddingBottom: SUMMARY_VERTICAL_PADDING,
+    flexDirection: "row",
+    gap: MonthlySummaryUi.metricGap,
   },
   metricRow: {
-    alignItems: "baseline",
+    alignItems: "center",
     flexDirection: "row",
+    gap: MonthlySummaryUi.contentGap,
+  },
+  metricDivider: {
+    backgroundColor: AppColors.border,
+    height: 12,
+    width: StyleSheet.hairlineWidth,
+  },
+  metricLabel: {
+    color: AppColors.mutedStrongText,
+    fontSize: MonthlySummaryUi.labelFontSize,
+    fontWeight: "700",
   },
   metricValue: {
-    fontSize: 13,
+    flex: 1,
+    fontSize: MonthlySummaryUi.metricValueFontSize,
     fontWeight: "800",
-  },
-  operator: {
-    width: SUMMARY_OPERATOR_WIDTH,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  operatorText: {
-    color: AppColors.mutedText,
-    fontSize: 13,
-    fontWeight: "800",
-  },
-  resultMetric: {
-    flex: 1.15,
+    textAlign: "right",
   },
   summaryLabel: {
-    color: AppColors.mutedStrongText,
-    fontSize: 10,
+    color: AppColors.text,
+    flexShrink: 1,
+    fontSize: MonthlySummaryUi.titleFontSize,
     fontWeight: "700",
-    paddingHorizontal: SUMMARY_HORIZONTAL_PADDING,
-    paddingTop: SUMMARY_VERTICAL_PADDING,
   },
 });

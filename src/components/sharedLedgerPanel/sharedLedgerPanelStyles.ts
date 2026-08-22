@@ -149,7 +149,7 @@ export const sharedLedgerPanelStyles = StyleSheet.create({
     fontWeight: "600",
   },
   successText: {
-    color: AppColors.income,
+    color: AppColors.success,
   },
   errorText: {
     color: AppColors.expense,

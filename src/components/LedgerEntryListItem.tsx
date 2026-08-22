@@ -23,7 +23,6 @@ type LedgerEntryListItemProps = {
   onEditEntry: (entry: LedgerEntry) => void;
   onPrepayInstallmentEntry?: (entry: LedgerEntry) => unknown;
   showsDate?: boolean;
-  showsInstallmentStatusLine?: boolean;
 };
 
 const LedgerEntryMenuAction = {
@@ -70,7 +69,6 @@ export function LedgerEntryListItem({
   onEditEntry,
   onPrepayInstallmentEntry,
   showsDate = false,
-  showsInstallmentStatusLine = false,
 }: LedgerEntryListItemProps) {
   const expenseTextStyle = useExpenseTextColor().textStyle;
   const installmentProgressLabel = formatInstallmentProgressLabel(entry);
@@ -126,7 +124,7 @@ export function LedgerEntryListItem({
                 {resolveEntryContentLabel(entry, categoryLabel)}
               </Text>
               <View style={styles.entryMetaRow}>
-                <Text style={styles.entryMeta} numberOfLines={1}>
+                <Text ellipsizeMode="tail" numberOfLines={1} style={styles.entryMeta}>
                   {buildEntryMainMetaParts({
                     entry,
                     categoryLabel,
@@ -141,6 +139,9 @@ export function LedgerEntryListItem({
                       {part.value}
                     </Text>
                   ))}
+                  {!isPrepaidInstallment && installmentProgressLabel
+                    ? `${ENTRY_META_SEPARATOR}${installmentProgressLabel}`
+                    : ""}
                 </Text>
                 {entry.photoAttachments.length > 0 ? (
                   <Feather
@@ -149,20 +150,8 @@ export function LedgerEntryListItem({
                     size={ENTRY_ATTACHMENT_ICON_SIZE}
                   />
                 ) : null}
-                {!showsInstallmentStatusLine && isPrepaidInstallment ? (
-                  <InstallmentStatusBadge entry={entry} />
-                ) : !showsInstallmentStatusLine && installmentProgressLabel ? (
-                  <Text style={styles.entryMeta} numberOfLines={1}>
-                    {ENTRY_META_SEPARATOR}
-                    {installmentProgressLabel}
-                  </Text>
-                ) : null}
+                {isPrepaidInstallment ? <InstallmentStatusBadge entry={entry} /> : null}
               </View>
-              {showsInstallmentStatusLine && isPrepaidInstallment ? (
-                <InstallmentStatusBadge entry={entry} />
-              ) : showsInstallmentStatusLine && installmentProgressLabel ? (
-                <Text style={styles.entryStatus}>{installmentProgressLabel}</Text>
-              ) : null}
             </View>
             <Text
               style={[
@@ -307,10 +296,5 @@ const styles = StyleSheet.create({
   formerMemberName: {
     color: AppColors.expense,
     fontWeight: "700",
-  },
-  entryStatus: {
-    color: AppColors.mutedStrongText,
-    fontSize: 11,
-    fontWeight: "600",
   },
 });

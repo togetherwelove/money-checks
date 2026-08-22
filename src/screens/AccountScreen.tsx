@@ -10,6 +10,7 @@ import {
 } from "react-native";
 
 import { ActionButton } from "../components/ActionButton";
+import { AppFooterContentInset } from "../components/AppFooterContentInset";
 import { TextLinkButton } from "../components/TextLinkButton";
 import { AccountVersionFooter } from "../components/accountScreen/AccountVersionFooter";
 import { AdTrackingPermissionCard } from "../components/accountScreen/AdTrackingPermissionCard";
@@ -49,6 +50,7 @@ type AccountScreenProps = {
   onOpenSubscriptionManagement: () => Promise<void>;
   onRequestAdTrackingPermission: () => void;
   onRestorePurchases: () => Promise<void>;
+  screenTitle: ReactNode;
   showAdTrackingPermissionCard: boolean;
   subscriptionTier: SubscriptionTier;
   trackBlockingTask: BusyTaskTracker;
@@ -64,6 +66,7 @@ export function AccountScreen({
   onOpenSubscriptionManagement,
   onRequestAdTrackingPermission,
   onRestorePurchases,
+  screenTitle,
   showAdTrackingPermissionCard,
   subscriptionTier,
   trackBlockingTask,
@@ -179,6 +182,7 @@ export function AccountScreen({
         keyboardShouldPersistTaps={KeyboardLayout.persistTaps}
         style={styles.screen}
       >
+        {screenTitle}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>{AppMessages.accountSessionTitle}</Text>
           <InfoRow label={AppMessages.accountEmail} value={<AccountEmailValue email={email} />} />
@@ -256,6 +260,7 @@ export function AccountScreen({
           </View>
         </View>
         <AccountVersionFooter />
+        <AppFooterContentInset />
       </ScrollView>
       <DeleteAccountSubscriptionWarningModal
         isOpen={isDeleteSubscriptionWarningOpen}

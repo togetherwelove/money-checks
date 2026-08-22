@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { type ReactNode, useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 import Animated, {
   ReduceMotion,
@@ -16,12 +16,18 @@ import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
 import { hasSeenChartSwipeTutorial, markChartSwipeTutorialSeen } from "../lib/chartTutorialStorage";
 
 type ChartScreenProps = {
+  renderScreenTitle: (titleLabel: string) => ReactNode;
   showsBannerAd: boolean;
   state: LedgerScreenState;
   userId: string;
 };
 
-export function ChartScreen({ showsBannerAd, state, userId }: ChartScreenProps) {
+export function ChartScreen({
+  renderScreenTitle,
+  showsBannerAd,
+  state,
+  userId,
+}: ChartScreenProps) {
   const translateX = useSharedValue(0);
 
   useEffect(() => {
@@ -71,6 +77,7 @@ export function ChartScreen({ showsBannerAd, state, userId }: ChartScreenProps) 
         <ChartMonthPageContent
           activeBookId={state.activeBook?.id ?? null}
           month={state.currentChartMonth}
+          screenTitle={renderScreenTitle(state.currentChartMonth.title)}
           showsBannerAd={showsBannerAd}
         />
       ) : (
@@ -89,6 +96,7 @@ export function ChartScreen({ showsBannerAd, state, userId }: ChartScreenProps) 
               )
             }
             previousMonth={state.previousChartMonth}
+            renderScreenTitle={renderScreenTitle}
             showsBannerAd={showsBannerAd}
           />
         </Animated.View>

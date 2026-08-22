@@ -75,6 +75,12 @@ export const CardTitleTextStyle: TextStyle = {
   fontWeight: "800",
 };
 
+export const ScreenTitleTextStyle: TextStyle = {
+  color: AppColors.text,
+  fontSize: 22,
+  fontWeight: "800",
+};
+
 export const SettingValueActionStyle: ViewStyle = {
   alignItems: "center",
   flexDirection: "row",

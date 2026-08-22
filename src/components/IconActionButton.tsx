@@ -27,6 +27,7 @@ export function IconActionButton({
   return (
     <Pressable
       accessibilityLabel={accessibilityLabel}
+      accessibilityRole="button"
       disabled={disabled}
       onPress={onPress}
       style={[

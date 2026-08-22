@@ -15,6 +15,7 @@ export const EntryRegistrationCopy = {
   dailyFirstEntryAdNoticeTitle: "저장 전 광고가 표시됩니다",
   dailyFirstEntryAdUnavailableError: "광고를 불러오지 못했어요. 잠시 후 다시 등록해 주세요.",
   dailyFirstEntryRewardRequiredError: "광고 시청을 완료해 주세요. (매일 최초 1회)",
+  dismissAccessibilityLabel: "등록 화면 닫기",
   discardChangesCancelAction: "계속 작성",
   discardChangesConfirmAction: "폐기",
   discardChangesMessage: "입력한 내용은 저장되지 않아요.",
@@ -55,7 +56,10 @@ export const EntryInstallmentSelectorUi = {
 
 export const EntryNativeSheetUi = {
   detentRatio: 0.92,
-  initialDetentIndex: 0,
+  grabberHeight: 4,
+  grabberTopMargin: 10,
+  grabberWidth: 36,
+  topRadius: 20,
 } as const;
 
 export const EntryTypeToggleUi = {

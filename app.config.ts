@@ -5,6 +5,7 @@ import { loadProjectEnv } from "@expo/env";
 import type { ExpoConfig } from "expo/config";
 
 import appBrand from "./app-brand.json";
+import easProject from "./eas-project.json";
 
 loadProjectEnv(__dirname, { silent: true });
 
@@ -75,7 +76,7 @@ const config: ExpoConfig = {
   userInterfaceStyle: "light",
   extra: {
     eas: {
-      projectId: "36c2b019-99be-4045-b4ce-ed1a031c4aa8",
+      projectId: easProject.projectId,
     },
   },
   splash: splashScreenConfig,
