@@ -1,8 +1,9 @@
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { StyleSheet } from "react-native";
 
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
+import { AppFooterContentInset } from "../components/AppFooterContentInset";
 import { SharedLedgerPanel } from "../components/SharedLedgerPanel";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
@@ -71,6 +72,7 @@ type ShareLedgerScreenProps = {
   onTransferSharedLedgerOwnership: (targetUserId: string) => Promise<boolean>;
   pendingJoinRequestCountsByBookId: LedgerBookJoinRequestCountByBookId;
   pendingJoinRequests: LedgerBookJoinRequest[];
+  screenTitle: ReactNode;
   subscriptionTier: SubscriptionTier;
   userId: string;
 };
@@ -97,6 +99,7 @@ export function ShareLedgerScreen({
   onTransferSharedLedgerOwnership,
   pendingJoinRequestCountsByBookId,
   pendingJoinRequests,
+  screenTitle,
   subscriptionTier,
   userId,
 }: ShareLedgerScreenProps) {
@@ -207,6 +210,7 @@ export function ShareLedgerScreen({
 
   return (
     <KeyboardAwareScrollView contentContainerStyle={styles.content} style={styles.screen}>
+      {screenTitle}
       <SharedLedgerPanel
         accessibleBooks={accessibleBooks}
         activeBook={activeBook}
@@ -234,6 +238,7 @@ export function ShareLedgerScreen({
         pendingJoinRequests={pendingJoinRequests}
         subscriptionTier={subscriptionTier}
       />
+      <AppFooterContentInset />
     </KeyboardAwareScrollView>
   );
 

@@ -30,6 +30,11 @@ export const CalendarSummaryLoadingLabel = "...";
 
 export const CalendarSummaryLabels = {
   all: "전체 내역 요약",
-  monthly: "월별 요약",
+  expense: "지출",
+  income: "수입",
   selectedMonthPrompt: "기준일을 선택해 주세요",
 } as const;
+
+export function formatCalendarMonthlySummaryLabel(monthLabel: string): string {
+  return `${monthLabel} 요약`;
+}

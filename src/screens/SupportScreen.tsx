@@ -1,6 +1,8 @@
 import { Feather } from "@expo/vector-icons";
+import type { ReactNode } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
+import { AppFooterContentInset } from "../components/AppFooterContentInset";
 import { SupportPackageIcon } from "../components/SupportPackageIcon";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
@@ -24,11 +26,18 @@ type SupportScreenProps = {
   isLoading: boolean;
   onPurchasePackage: (identifier: SupportPackageIdentifier) => Promise<void>;
   packages: SupportPackageSnapshot[];
+  screenTitle: ReactNode;
 };
 
-export function SupportScreen({ isLoading, onPurchasePackage, packages }: SupportScreenProps) {
+export function SupportScreen({
+  isLoading,
+  onPurchasePackage,
+  packages,
+  screenTitle,
+}: SupportScreenProps) {
   return (
     <ScrollView contentContainerStyle={styles.content} style={styles.screen}>
+      {screenTitle}
       <View style={styles.packageList}>
         {SupportPackageCatalog.map((item, index) => {
           const matchingPackage = packages.find(
@@ -77,6 +86,7 @@ export function SupportScreen({ isLoading, onPurchasePackage, packages }: Suppor
       {packages.length === 0 && !isLoading ? (
         <Text style={styles.unavailableDescription}>{SupportMessages.unavailableDescription}</Text>
       ) : null}
+      <AppFooterContentInset />
     </ScrollView>
   );
 }

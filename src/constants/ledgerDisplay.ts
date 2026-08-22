@@ -14,6 +14,9 @@ const yearMonthLabelFormatter = new Intl.DateTimeFormat(LEDGER_DISPLAY_LOCALE, {
   month: "long",
   year: "numeric",
 });
+const yearLabelFormatter = new Intl.DateTimeFormat(LEDGER_DISPLAY_LOCALE, {
+  year: "numeric",
+});
 const compactMonthLabelFormatter = new Intl.DateTimeFormat(LEDGER_DISPLAY_LOCALE, {
   month: "short",
 });
@@ -24,6 +27,10 @@ export function formatMonthLabel(date: Date): string {
 
 export function formatYearMonthLabel(date: Date): string {
   return yearMonthLabelFormatter.format(date);
+}
+
+export function formatYearLabel(date: Date): string {
+  return yearLabelFormatter.format(date);
 }
 
 export function formatCompactMonthLabel(date: Date): string {

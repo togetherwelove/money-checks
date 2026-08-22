@@ -1,6 +1,8 @@
+import type { ReactNode } from "react";
 import { Linking, StyleSheet } from "react-native";
 
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
+import { AppFooterContentInset } from "../components/AppFooterContentInset";
 import { NotificationSettingsCard } from "../components/accountScreen/NotificationSettingsCard";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
@@ -26,6 +28,7 @@ type NotificationSettingsScreenProps = {
     eventTypes: NotificationEventType | readonly NotificationEventType[],
     enabled: boolean,
   ) => void;
+  screenTitle: ReactNode;
 };
 
 export function NotificationSettingsScreen({
@@ -38,6 +41,7 @@ export function NotificationSettingsScreen({
   onChangeNotificationThreshold,
   onRequestNotificationPermission,
   onToggleNotificationPreference,
+  screenTitle,
 }: NotificationSettingsScreenProps) {
   const handleOpenNotificationPermission = () => {
     if (notificationPermissionState === "default") {
@@ -50,6 +54,7 @@ export function NotificationSettingsScreen({
 
   return (
     <KeyboardAwareScrollView contentContainerStyle={styles.content} style={styles.screen}>
+      {screenTitle}
       <NotificationSettingsCard
         onChangeThresholdEnabled={onChangeNotificationThresholdEnabled}
         onChangeThresholdPeriod={onChangeNotificationThresholdPeriod}
@@ -61,6 +66,7 @@ export function NotificationSettingsScreen({
         preferenceGroups={notificationPreferenceGroups}
         statusMessage={notificationStatusMessage}
       />
+      <AppFooterContentInset />
     </KeyboardAwareScrollView>
   );
 }

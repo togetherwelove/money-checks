@@ -46,7 +46,10 @@ export function AppFooterTabBar({
         <FooterActionPopover
           actions={primaryActionMenuActions}
           bottomOffset={
-            safeAreaInsets.bottom + footerTabBarHeight + FooterActionPopoverUi.bottomOffset
+            safeAreaInsets.bottom +
+            FooterTabBarUi.barBottomInset +
+            footerTabBarHeight +
+            FooterActionPopoverUi.bottomOffset
           }
           onDismiss={shouldShowPrimaryActionMenu}
           visible={isPrimaryActionMenuOpen}
@@ -64,7 +67,11 @@ export function AppFooterTabBar({
               accessibilityState={{ selected: isActive }}
               key={tab.targetScreen}
               onPress={() => onSelectTab(tab.targetScreen)}
-              style={styles.tab}
+              style={({ pressed }) => [
+                styles.tab,
+                isActive && !tab.isPrimary ? styles.activeTab : null,
+                pressed ? styles.pressedTab : null,
+              ]}
             >
               <View
                 style={[
@@ -120,7 +127,7 @@ function resolveIconColor(
     return AppColors.inverseText;
   }
 
-  return isActive ? AppColors.primary : AppColors.mutedText;
+  return isActive ? AppColors.primary : AppColors.text;
 }
 
 const styles = StyleSheet.create({
@@ -129,10 +136,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: FooterTabBarUi.tabGap,
+    minHeight: FooterTabBarUi.barMinHeight,
+    marginHorizontal: FooterTabBarUi.barHorizontalInset,
+    marginBottom: FooterTabBarUi.barBottomInset,
     paddingHorizontal: FooterTabBarUi.barPaddingHorizontal,
-    borderTopWidth: FooterTabBarUi.borderTopWidth,
-    borderTopColor: AppColors.border,
-    backgroundColor: AppColors.surface,
+    borderWidth: FooterTabBarUi.barBorderWidth,
+    borderColor: AppColors.border,
+    borderRadius: FooterTabBarUi.barBorderRadius,
+    backgroundColor: AppColors.capsuleSurface,
+    shadowColor: AppColors.text,
+    shadowOffset: {
+      width: FooterTabBarUi.barShadowOffsetX,
+      height: FooterTabBarUi.barShadowOffsetY,
+    },
+    shadowOpacity: FooterTabBarUi.barShadowOpacity,
+    shadowRadius: FooterTabBarUi.barShadowRadius,
+    elevation: FooterTabBarUi.barElevation,
   },
   tab: {
     flex: 1,
@@ -140,7 +159,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: FooterTabBarUi.labelGap,
+    paddingHorizontal: FooterTabBarUi.tabPaddingHorizontal,
     paddingVertical: FooterTabBarUi.tabPaddingVertical,
+    borderRadius: FooterTabBarUi.activeTabBorderRadius,
+  },
+  activeTab: {
+    backgroundColor: AppColors.surfaceStrong,
+  },
+  pressedTab: {
+    opacity: FooterTabBarUi.pressedTabOpacity,
   },
   iconButton: {
     width: FooterTabBarUi.iconButtonSize,
@@ -169,7 +196,7 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.expense,
   },
   tabLabel: {
-    color: AppColors.mutedText,
+    color: AppColors.text,
     fontSize: FooterTabBarUi.labelFontSize,
     fontWeight: "700",
     lineHeight: FooterTabBarUi.labelLineHeight,

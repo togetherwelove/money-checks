@@ -1,22 +1,39 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Animated, StyleSheet } from "react-native";
-import PagerView from "react-native-pager-view";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Animated,
+  Easing,
+  FlatList,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+  StyleSheet,
+  View,
+} from "react-native";
 
 import { FullBleedHorizontalStyle } from "../constants/uiStyles";
-import { MonthCalendarPageView } from "./monthCalendarPager/MonthCalendarPageView";
 import {
-  CALENDAR_BOTTOM_BORDER_CLIP_PADDING,
   CALENDAR_MAX_HEIGHT,
+  CALENDAR_MONTH_SNAP_FULL_DISTANCE_DURATION_MS,
+  CALENDAR_MONTH_SNAP_MIN_DURATION_MS,
+  CALENDAR_MONTH_TRANSITION_HEADER_HEIGHT,
 } from "./monthCalendarPager/calendarLayout";
-import type { MonthCalendarPagerProps } from "./monthCalendarPager/monthCalendarPagerTypes";
-import {
-  type MonthPage,
-  animateViewportHeight,
-} from "./monthCalendarPager/monthCalendarPagerUtils";
+import { MonthCalendarSection } from "./monthCalendarPager/MonthCalendarSection";
 import {
   CURRENT_PAGE_INDEX,
-  resolveMonthOffsetFromPageIndex,
+  buildMonthSectionLayouts,
+  resolveMonthOffsetFromScrollOffset,
+  resolveMonthScrollTransition,
 } from "./monthCalendarPager/monthCalendarScrollSnap";
+import type {
+  MonthCalendarPagerProps,
+  MonthOffset,
+} from "./monthCalendarPager/monthCalendarPagerTypes";
+import type { MonthPage } from "./monthCalendarPager/monthCalendarPagerUtils";
+
+const SCROLL_DECELERATION_RATE = 0;
+const SCROLL_EVENT_THROTTLE_MS = 16;
+const SCROLL_ALIGNMENT_TOLERANCE = 0.5;
+const MONTH_FLICK_VELOCITY_THRESHOLD = 0.2;
+const MAINTAIN_VISIBLE_CONTENT_POSITION = { minIndexForVisible: 0 } as const;
 
 export function MonthCalendarPager({
   currentPage,
@@ -24,26 +41,52 @@ export function MonthCalendarPager({
   isReadOnlyDueToPlanLimit = false,
   nextPage,
   onMoveMonth,
+  onPreviewMonthOffsetChange,
   onSelectDate,
   previousPage,
   selectedDate,
 }: MonthCalendarPagerProps) {
-  const isReadyRef = useRef(false);
-  const heightAnimationRevisionRef = useRef(0);
-  const pendingMonthOffsetRef = useRef<-1 | 0 | 1>(0);
-  const currentPageKeyRef = useRef<string | null>(null);
-  const currentPageHeightRef = useRef(currentPage.height);
+  const listRef = useRef<FlatList<MonthPage>>(null);
+  const hasInitializedScrollRef = useRef(false);
+  const pendingMonthOffsetRef = useRef<MonthOffset>(0);
+  const previewMonthOffsetRef = useRef<MonthOffset>(0);
+  const currentPageKeyRef = useRef(currentPage.key);
   const viewportHeight = useRef(new Animated.Value(currentPage.height)).current;
   const [isInteractionLocked, setIsInteractionLocked] = useState(false);
   const [measuredPageHeights, setMeasuredPageHeights] = useState<Record<string, number>>({});
-  const currentPageKey = currentPage.key;
-  const currentPageHeight = resolvePageHeight(currentPage);
-  const handleContentHeightChange = useCallback((pageKey: string, contentHeight: number) => {
+  const sourcePages = useMemo(
+    () => [previousPage, currentPage, nextPage],
+    [currentPage, nextPage, previousPage],
+  );
+  const pages = useMemo(
+    () =>
+      sourcePages.map((page) => {
+        const measuredHeight = measuredPageHeights[page.key];
+        return measuredHeight === undefined || measuredHeight === page.height
+          ? page
+          : { ...page, height: measuredHeight };
+      }),
+    [measuredPageHeights, sourcePages],
+  );
+  const sectionLayouts = useMemo(
+    () => buildMonthSectionLayouts(pages, CALENDAR_MONTH_TRANSITION_HEADER_HEIGHT),
+    [pages],
+  );
+  const currentMonthScrollOffset = sectionLayouts[CURRENT_PAGE_INDEX].snapOffset;
+  const initialContentOffset = useRef({ x: 0, y: currentMonthScrollOffset }).current;
+  const snapScrollOffset = useRef(new Animated.Value(currentMonthScrollOffset)).current;
+  const snapAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
+  const resolvedCurrentPage = pages[CURRENT_PAGE_INDEX];
+  const hasMeasuredAllPages = sourcePages.every(
+    (page) => measuredPageHeights[page.key] !== undefined,
+  );
+
+  const handleCalendarHeightChange = useCallback((pageKey: string, contentHeight: number) => {
     if (!Number.isFinite(contentHeight) || contentHeight <= 0) {
       return;
     }
 
-    const measuredHeight = Math.ceil(contentHeight + CALENDAR_BOTTOM_BORDER_CLIP_PADDING);
+    const measuredHeight = contentHeight;
     setMeasuredPageHeights((currentHeights) =>
       currentHeights[pageKey] === measuredHeight
         ? currentHeights
@@ -51,22 +94,70 @@ export function MonthCalendarPager({
     );
   }, []);
 
+  const updatePreviewMonthOffset = useCallback(
+    (monthOffset: MonthOffset) => {
+      if (previewMonthOffsetRef.current === monthOffset) {
+        return;
+      }
+
+      previewMonthOffsetRef.current = monthOffset;
+      onPreviewMonthOffsetChange?.(monthOffset);
+    },
+    [onPreviewMonthOffsetChange],
+  );
+
+  const finishMonthSnap = useCallback(
+    (monthOffset: MonthOffset) => {
+      snapAnimationRef.current = null;
+      viewportHeight.setValue(pages[CURRENT_PAGE_INDEX + monthOffset].height);
+      updatePreviewMonthOffset(monthOffset);
+
+      if (monthOffset === 0) {
+        pendingMonthOffsetRef.current = 0;
+        setIsInteractionLocked(false);
+        return;
+      }
+
+      pendingMonthOffsetRef.current = monthOffset;
+      onMoveMonth(monthOffset);
+    },
+    [onMoveMonth, pages, updatePreviewMonthOffset, viewportHeight],
+  );
+
   useEffect(() => {
-    if (!isReadyRef.current) {
-      initializeCurrentPage(currentPageKey, currentPageHeight);
+    const listenerId = snapScrollOffset.addListener(({ value }) => {
+      listRef.current?.scrollToOffset({
+        animated: false,
+        offset: value,
+      });
+    });
+
+    return () => {
+      snapAnimationRef.current?.stop();
+      snapScrollOffset.removeListener(listenerId);
+    };
+  }, [snapScrollOffset]);
+
+  useEffect(() => {
+    viewportHeight.setValue(resolvedCurrentPage.height);
+    if (currentPageKeyRef.current === resolvedCurrentPage.key) {
       return;
     }
 
-    if (currentPageKeyRef.current === currentPageKey) {
-      updateCurrentPageHeight(currentPageHeight);
-      return;
-    }
-
-    finishMonthTransition(currentPageKey, currentPageHeight);
-  }, [currentPageHeight, currentPageKey]);
+    currentPageKeyRef.current = resolvedCurrentPage.key;
+    pendingMonthOffsetRef.current = 0;
+    previewMonthOffsetRef.current = 0;
+    setIsInteractionLocked(false);
+    onPreviewMonthOffsetChange?.(0);
+  }, [
+    onPreviewMonthOffsetChange,
+    resolvedCurrentPage.height,
+    resolvedCurrentPage.key,
+    viewportHeight,
+  ]);
 
   useEffect(() => {
-    const visiblePageKeys = new Set([previousPage.key, currentPage.key, nextPage.key]);
+    const visiblePageKeys = new Set(sourcePages.map((page) => page.key));
     setMeasuredPageHeights((currentHeights) => {
       const nextHeights = Object.fromEntries(
         Object.entries(currentHeights).filter(([pageKey]) => visiblePageKeys.has(pageKey)),
@@ -76,142 +167,204 @@ export function MonthCalendarPager({
         ? currentHeights
         : nextHeights;
     });
-  }, [currentPage.key, nextPage.key, previousPage.key]);
+  }, [sourcePages]);
 
-  function initializeCurrentPage(pageKey: string, pageHeight: number) {
-    isReadyRef.current = true;
-    currentPageKeyRef.current = pageKey;
-    currentPageHeightRef.current = pageHeight;
-    viewportHeight.setValue(pageHeight);
-  }
-
-  function updateCurrentPageHeight(pageHeight: number) {
-    animateCurrentPageHeight(pageHeight, isInteractionLocked ? completeMonthTransition : undefined);
-  }
-
-  function animateCurrentPageHeight(pageHeight: number, onComplete?: () => void) {
-    const animationRevision = heightAnimationRevisionRef.current + 1;
-    heightAnimationRevisionRef.current = animationRevision;
-
-    if (currentPageHeightRef.current === pageHeight) {
-      onComplete?.();
+  useEffect(() => {
+    if (hasInitializedScrollRef.current || !hasMeasuredAllPages) {
       return;
     }
 
-    currentPageHeightRef.current = pageHeight;
-    animateViewportHeight(viewportHeight, pageHeight, () => {
-      if (heightAnimationRevisionRef.current === animationRevision) {
-        onComplete?.();
-      }
+    const animationFrame = requestAnimationFrame(() => {
+      listRef.current?.scrollToOffset({
+        animated: false,
+        offset: currentMonthScrollOffset,
+      });
+      hasInitializedScrollRef.current = true;
     });
-  }
 
-  function finishMonthTransition(pageKey: string, pageHeight: number) {
-    currentPageKeyRef.current = pageKey;
-    animateCurrentPageHeight(pageHeight, completeMonthTransition);
-  }
+    return () => cancelAnimationFrame(animationFrame);
+  }, [currentMonthScrollOffset, hasMeasuredAllPages]);
 
-  function completeMonthTransition() {
-    pendingMonthOffsetRef.current = 0;
-    setIsInteractionLocked(false);
-  }
+  const getItemLayout = useCallback(
+    (_data: ArrayLike<MonthPage> | null | undefined, index: number) => sectionLayouts[index],
+    [sectionLayouts],
+  );
 
-  function handlePageSelected(pageIndex: number) {
-    const monthOffset = resolveMonthOffsetFromPageIndex(pageIndex);
-    if (monthOffset === 0 || pendingMonthOffsetRef.current !== 0) {
+  const handleScrollEndDrag = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      if (pendingMonthOffsetRef.current !== 0) {
+        return;
+      }
+
+      const monthOffset = resolveMonthOffsetFromScrollOffset(
+        event.nativeEvent.contentOffset.y,
+        sectionLayouts,
+      );
+      const scrollOffset = event.nativeEvent.contentOffset.y;
+      const resolvedMonthOffset = resolveReleasedMonthOffset(
+        monthOffset,
+        event.nativeEvent.velocity?.y ?? 0,
+      );
+      const targetScrollOffset =
+        sectionLayouts[CURRENT_PAGE_INDEX + resolvedMonthOffset].snapOffset;
+      const remainingDistance = Math.abs(targetScrollOffset - scrollOffset);
+
+      setIsInteractionLocked(true);
+      snapAnimationRef.current?.stop();
+      snapScrollOffset.setValue(scrollOffset);
+
+      if (remainingDistance <= SCROLL_ALIGNMENT_TOLERANCE) {
+        finishMonthSnap(resolvedMonthOffset);
+        return;
+      }
+
+      const snapDuration = resolveMonthSnapDuration(
+        remainingDistance,
+        sectionLayouts,
+        resolvedMonthOffset,
+      );
+      const animation = Animated.parallel([
+        Animated.timing(snapScrollOffset, {
+          duration: snapDuration,
+          easing: Easing.linear,
+          toValue: targetScrollOffset,
+          useNativeDriver: false,
+        }),
+        Animated.timing(viewportHeight, {
+          duration: snapDuration,
+          easing: Easing.linear,
+          toValue: pages[CURRENT_PAGE_INDEX + resolvedMonthOffset].height,
+          useNativeDriver: false,
+        }),
+      ]);
+      snapAnimationRef.current = animation;
+      animation.start(({ finished }) => {
+        if (finished) {
+          finishMonthSnap(resolvedMonthOffset);
+        }
+      });
+    },
+    [finishMonthSnap, pages, sectionLayouts, snapScrollOffset, viewportHeight],
+  );
+
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const transition = resolveMonthScrollTransition(
+        event.nativeEvent.contentOffset.y,
+        pages,
+        sectionLayouts,
+      );
+      updatePreviewMonthOffset(transition.monthOffset);
+    },
+    [pages, sectionLayouts, updatePreviewMonthOffset],
+  );
+
+  const handleContentSizeChange = useCallback(() => {
+    if (hasInitializedScrollRef.current) {
       return;
     }
 
-    pendingMonthOffsetRef.current = monthOffset;
-    setIsInteractionLocked(true);
-    onMoveMonth(monthOffset);
-  }
+    listRef.current?.scrollToOffset({
+      animated: false,
+      offset: currentMonthScrollOffset,
+    });
+  }, [currentMonthScrollOffset]);
 
-  function resolvePageHeight(page: MonthPage): number {
-    return measuredPageHeights[page.key] ?? page.height;
-  }
+  const renderMonthSection = useCallback(
+    ({ item }: { item: MonthPage }) => (
+      <MonthCalendarSection
+        isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
+        isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
+        onCalendarHeightChange={handleCalendarHeightChange}
+        onSelectDate={onSelectDate}
+        page={item}
+        selectedDate={selectedDate}
+      />
+    ),
+    [
+      isCalendarHeatmapEnabled,
+      isReadOnlyDueToPlanLimit,
+      handleCalendarHeightChange,
+      onSelectDate,
+      selectedDate,
+    ],
+  );
 
   return (
     <Animated.View style={[styles.viewport, { height: viewportHeight }]}>
-      <PagerView
-        key={currentPageKey}
-        initialPage={CURRENT_PAGE_INDEX}
-        orientation="horizontal"
-        overdrag={false}
+      <FlatList
+        bounces={false}
+        contentInsetAdjustmentBehavior="never"
+        contentOffset={initialContentOffset}
+        data={pages}
+        decelerationRate={SCROLL_DECELERATION_RATE}
+        directionalLockEnabled
+        getItemLayout={getItemLayout}
+        initialNumToRender={pages.length}
+        keyExtractor={(page) => page.key}
+        ListFooterComponent={CalendarScrollFooter}
+        maintainVisibleContentPosition={MAINTAIN_VISIBLE_CONTENT_POSITION}
+        nestedScrollEnabled
+        onContentSizeChange={handleContentSizeChange}
+        onScroll={handleScroll}
+        onScrollEndDrag={handleScrollEndDrag}
+        overScrollMode="never"
+        ref={listRef}
+        removeClippedSubviews={false}
+        renderItem={renderMonthSection}
         scrollEnabled={!isInteractionLocked}
-        style={styles.pager}
-        onPageSelected={(event) => {
-          handlePageSelected(event.nativeEvent.position);
-        }}
-      >
-        <MonthPageSlot
-          isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
-          isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
-          onContentHeightChange={handleContentHeightChange}
-          page={previousPage}
-          pageHeight={resolvePageHeight(previousPage)}
-          {...{ onSelectDate, selectedDate }}
-        />
-        <MonthPageSlot
-          isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
-          isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
-          onContentHeightChange={handleContentHeightChange}
-          page={currentPage}
-          pageHeight={resolvePageHeight(currentPage)}
-          {...{ onSelectDate, selectedDate }}
-        />
-        <MonthPageSlot
-          isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
-          isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
-          onContentHeightChange={handleContentHeightChange}
-          page={nextPage}
-          pageHeight={resolvePageHeight(nextPage)}
-          {...{ onSelectDate, selectedDate }}
-        />
-      </PagerView>
+        scrollEventThrottle={SCROLL_EVENT_THROTTLE_MS}
+        showsVerticalScrollIndicator={false}
+        style={styles.list}
+        windowSize={pages.length}
+      />
     </Animated.View>
   );
 }
 
-function MonthPageSlot({
-  isCalendarHeatmapEnabled,
-  isReadOnlyDueToPlanLimit,
-  onContentHeightChange,
-  onSelectDate,
-  page,
-  pageHeight,
-  selectedDate,
-}: {
-  isCalendarHeatmapEnabled: boolean;
-  isReadOnlyDueToPlanLimit: boolean;
-  onContentHeightChange: (pageKey: string, contentHeight: number) => void;
-  onSelectDate: (isoDate: string) => void;
-  page: MonthPage;
-  pageHeight: number;
-  selectedDate: string;
-}) {
-  return (
-    <MonthCalendarPageView
-      days={page.summary.days}
-      isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
-      isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
-      onContentHeightChange={onContentHeightChange}
-      onSelectDate={onSelectDate}
-      pageHeight={pageHeight}
-      pageKey={page.key}
-      selectedDate={selectedDate}
-    />
+function resolveMonthSnapDuration(
+  remainingDistance: number,
+  sectionLayouts: ReturnType<typeof buildMonthSectionLayouts>,
+  monthOffset: MonthOffset,
+): number {
+  const fullTransitionDistance = Math.abs(
+    sectionLayouts[CURRENT_PAGE_INDEX + monthOffset].snapOffset -
+      sectionLayouts[CURRENT_PAGE_INDEX].snapOffset,
+  );
+  const distanceRatio =
+    fullTransitionDistance > 0 ? remainingDistance / fullTransitionDistance : 0;
+
+  return Math.max(
+    CALENDAR_MONTH_SNAP_MIN_DURATION_MS,
+    Math.round(CALENDAR_MONTH_SNAP_FULL_DISTANCE_DURATION_MS * distanceRatio),
   );
 }
 
+function resolveReleasedMonthOffset(
+  distanceBasedMonthOffset: MonthOffset,
+  verticalVelocity: number,
+): MonthOffset {
+  if (Math.abs(verticalVelocity) < MONTH_FLICK_VELOCITY_THRESHOLD) {
+    return distanceBasedMonthOffset;
+  }
+
+  return verticalVelocity > 0 ? 1 : -1;
+}
+
+function CalendarScrollFooter() {
+  return <View style={styles.scrollFooter} />;
+}
+
 const styles = StyleSheet.create({
-  pager: {
+  list: {
     flex: 1,
     width: "100%",
   },
+  scrollFooter: {
+    height: CALENDAR_MAX_HEIGHT,
+  },
   viewport: {
     ...FullBleedHorizontalStyle,
-    height: CALENDAR_MAX_HEIGHT,
     overflow: "hidden",
   },
 });

@@ -42,12 +42,15 @@ export function AppMenuDrawer({
   onSelectItem,
   sections,
 }: AppMenuDrawerProps) {
-  const { width: windowWidth } = useWindowDimensions();
+  const { height: windowHeight, width: windowWidth } = useWindowDimensions();
   const drawerWidth = Math.min(
-    MenuUi.drawerWidth,
-    windowWidth - MenuUi.drawerHorizontalMargin * 2,
+    MenuUi.drawerMaxWidth,
+    windowWidth * MenuUi.drawerWidthRatio,
+    windowWidth - MenuUi.drawerInset * 2,
   );
-  const closedTranslateX = drawerWidth;
+  const drawerMaxHeight =
+    windowHeight - MenuUi.drawerTopInset - MenuUi.drawerBottomInset;
+  const closedTranslateX = drawerWidth + MenuUi.drawerInset;
   const drawerTranslateX = useSharedValue(
     isOpen ? OPEN_TRANSLATE_X : closedTranslateX,
   );
@@ -146,18 +149,31 @@ export function AppMenuDrawer({
       <GestureDetector gesture={dragDrawerGesture}>
         <Animated.View
           pointerEvents={isOpen ? "auto" : "none"}
-          style={[styles.drawer, { width: drawerWidth }, drawerStyle]}
+          style={[
+            styles.drawer,
+            { maxHeight: drawerMaxHeight, width: drawerWidth },
+            drawerStyle,
+          ]}
         >
-          <ScrollView contentContainerStyle={styles.sections}>
+          <ScrollView
+            alwaysBounceVertical={false}
+            contentContainerStyle={styles.sections}
+            showsVerticalScrollIndicator={false}
+            style={styles.sectionsScroll}
+          >
             {sections.map((section, index) => (
-              <View key={section.label} style={styles.section}>
-                <View style={index === 0 ? styles.firstSectionHeader : null}>
-                  <Text {...OneLineTextFitProps} style={styles.sectionLabel}>
-                    {section.label}
-                  </Text>
-                </View>
+              <View
+                key={section.label}
+                style={[
+                  styles.section,
+                  index > 0 ? styles.separatedSection : null,
+                ]}
+              >
+                <Text {...OneLineTextFitProps} style={styles.sectionLabel}>
+                  {section.label}
+                </Text>
                 <View style={styles.items}>
-                  {section.items.map((item, index) => (
+                  {section.items.map((item) => (
                     <Pressable
                       key={resolveMenuItemKey(item)}
                       onPress={() => {
@@ -168,12 +184,16 @@ export function AppMenuDrawer({
 
                         onSelectAction(item.action);
                       }}
-                      style={[
+                      style={({ pressed }) => [
                         styles.item,
-                        index === section.items.length - 1 ? styles.lastItem : null,
+                        pressed ? styles.pressedItem : null,
                       ]}
                     >
-                      <Feather color={AppColors.mutedStrongText} name={item.icon} size={18} />
+                      <Feather
+                        color={AppColors.mutedStrongText}
+                        name={item.icon}
+                        size={MenuUi.itemIconSize}
+                      />
                       {isNavigationMenuItem(item) && item.targetScreen === "subscription" ? (
                         <Text {...OneLineTextFitProps} style={styles.itemLabel}>
                           알뜰 <Text style={styles.itemPlusLabel}>plus</Text>
@@ -217,7 +237,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: AppColors.overlay,
+    backgroundColor: AppColors.menuOverlay,
   },
   edgeHitArea: {
     position: "absolute",
@@ -228,25 +248,37 @@ const styles = StyleSheet.create({
   },
   drawer: {
     position: "absolute",
-    top: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: AppColors.surface,
-    paddingHorizontal: AppLayout.screenPadding * 2,
-    gap: MenuUi.drawerGap,
-    borderLeftWidth: 1,
-    borderLeftColor: AppColors.border,
+    top: MenuUi.drawerTopInset,
+    right: MenuUi.drawerInset,
+    elevation: MenuUi.drawerElevation,
+    borderWidth: AppLayout.dividerWidth,
+    borderColor: AppColors.border,
+    borderRadius: MenuUi.drawerBorderRadius,
+    backgroundColor: AppColors.floatingPanelSurface,
+    shadowColor: AppColors.text,
+    shadowOffset: {
+      width: MenuUi.drawerShadowOffsetX,
+      height: MenuUi.drawerShadowOffsetY,
+    },
+    shadowOpacity: MenuUi.drawerShadowOpacity,
+    shadowRadius: MenuUi.drawerShadowRadius,
+  },
+  sectionsScroll: {
+    flexShrink: 1,
   },
   sections: {
     gap: MenuUi.drawerGap,
-    paddingTop: MenuUi.titlePaddingTop,
+    paddingHorizontal: MenuUi.drawerContentPadding,
+    paddingBottom: MenuUi.drawerContentPadding,
+    paddingTop: MenuUi.drawerContentTopPadding,
   },
   section: {
     gap: MenuUi.sectionGap,
   },
-  firstSectionHeader: {
-    alignItems: "stretch",
-    justifyContent: "center",
+  separatedSection: {
+    borderTopWidth: AppLayout.dividerWidth,
+    borderTopColor: AppColors.border,
+    paddingTop: MenuUi.sectionPaddingTop,
   },
   sectionLabel: {
     color: AppColors.mutedStrongText,
@@ -260,12 +292,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: MenuUi.itemIconGap,
+    minHeight: MenuUi.floatingButtonSize,
+    paddingHorizontal: MenuUi.itemPaddingHorizontal,
     paddingVertical: MenuUi.itemPaddingVertical,
-    borderBottomWidth: 1,
-    borderBottomColor: AppColors.border,
+    borderRadius: MenuUi.itemBorderRadius,
   },
-  lastItem: {
-    borderBottomWidth: 0,
+  pressedItem: {
+    backgroundColor: AppColors.surfaceStrong,
   },
   itemLabel: {
     flex: 1,

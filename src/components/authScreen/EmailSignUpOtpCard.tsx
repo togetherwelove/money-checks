@@ -1,5 +1,6 @@
 import { StyleSheet, Text, TextInput, View } from "react-native";
 
+import { AuthRequirements } from "../../constants/authRequirements";
 import { AppColors } from "../../constants/colors";
 import { EmailAuthCopy, EmailSignUpOtpUi } from "../../constants/emailAuth";
 import {
@@ -39,7 +40,9 @@ export function EmailSignUpOtpCard({
   submitting = false,
   token,
 }: EmailSignUpOtpCardProps) {
-  const canSubmit = Boolean(token.trim());
+  const normalizedToken = token.trim();
+  const canSubmit =
+    normalizedToken.length === AuthRequirements.emailOtpLength && /^\d+$/.test(normalizedToken);
 
   return (
     <View style={styles.card}>
@@ -59,7 +62,7 @@ export function EmailSignUpOtpCard({
           importantForAutofill="yes"
           editable={!submitting}
           keyboardType="number-pad"
-          maxLength={6}
+          maxLength={AuthRequirements.emailOtpLength}
           onChangeText={onChangeToken}
           placeholder={EmailAuthCopy.signUp.otpPlaceholder}
           style={styles.input}

@@ -1,5 +1,6 @@
 import type { Session } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
+import { AppState, type AppStateStatus, Platform } from "react-native";
 
 import { supabase } from "../lib/supabase";
 import { type SessionState, createResolvedSessionState, loadInitialSession } from "./sessionState";
@@ -13,6 +14,22 @@ export function useSupabaseSession(): SessionState {
 
   useEffect(() => {
     let isMounted = true;
+
+    const syncAutoRefresh = (appState: AppStateStatus) => {
+      if (appState === "active") {
+        void supabase.auth.startAutoRefresh();
+        return;
+      }
+
+      void supabase.auth.stopAutoRefresh();
+    };
+
+    const appStateSubscription =
+      Platform.OS === "web" ? null : AppState.addEventListener("change", syncAutoRefresh);
+
+    if (Platform.OS !== "web") {
+      syncAutoRefresh(AppState.currentState);
+    }
 
     void loadInitialSession(() => supabase.auth.getSession()).then((nextState) => {
       if (!isMounted) {
@@ -32,6 +49,10 @@ export function useSupabaseSession(): SessionState {
 
     return () => {
       isMounted = false;
+      appStateSubscription?.remove();
+      if (Platform.OS !== "web") {
+        void supabase.auth.stopAutoRefresh();
+      }
       subscription.unsubscribe();
     };
   }, []);
