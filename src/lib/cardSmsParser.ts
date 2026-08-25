@@ -1,5 +1,3 @@
-import { recommendCategory } from "./categoryRecommendation";
-
 const ISO_DATE_MONTH_OFFSET = 1;
 const BROADCAST_PREFIX_PATTERN = /^\[[^\]]+\]\s*/;
 const DATE_TIME_PATTERN = /(\d{1,2})\/(\d{2})\s+\d{1,2}:\d{2}/;
@@ -15,10 +13,10 @@ const MERCHANT_BLOCKLIST_PATTERN =
 const FOREIGN_AMOUNT_PATTERN = /\d+(?:\.\d+)?\s*\(\s*[a-z]{2,3}\$\s*\)/i;
 const CARD_SMS_KEYWORD_PATTERN =
   /(?:web발신|체크\.승인|카드|승인|일시불|누적|잔액|체크카드출금|결제금액)/i;
+const POST_DATE_MERCHANT_PRIORITY = 60;
 
 export type ParsedCardSms = {
   amount: number | null;
-  category: string | null;
   day: number | null;
   isCancel: boolean;
   merchantName: string | null;
@@ -37,14 +35,9 @@ export function parseCardSms(message: string): ParsedCardSms {
   const amount = parseCardSmsAmount(lines);
   const merchantName = parseCardSmsMerchantName(lines);
   const isCancel = normalizedMessage.includes("취소");
-  const category = merchantName
-    ? (recommendCategory({ content: merchantName, entryType: isCancel ? "income" : "expense" })
-        ?.category ?? null)
-    : null;
 
   return {
     amount,
-    category,
     day: parsedDate?.day ?? null,
     isCancel,
     merchantName,
@@ -170,6 +163,10 @@ function resolveBlockedAmountIndex(line: string): number | null {
 
 function buildMerchantCandidates(lines: readonly string[]): MerchantCandidate[] {
   const candidates: MerchantCandidate[] = [];
+  const transactionDateLineIndex = lines.findIndex((line) => DATE_TIME_PATTERN.test(line));
+  const dateLineMerchantName =
+    transactionDateLineIndex >= 0 ? cleanMerchantName(lines[transactionDateLineIndex]) : "";
+  const shouldPrioritizePostDateLine = !isValidMerchantCandidate(dateLineMerchantName);
 
   lines.forEach((line, index) => {
     const withoutBroadcastPrefix = line.replace(BROADCAST_PREFIX_PATTERN, "");
@@ -192,7 +189,14 @@ function buildMerchantCandidates(lines: readonly string[]): MerchantCandidate[] 
       pushCandidate(candidates, beforeAmount, 35 - index);
     }
 
-    pushCandidate(candidates, withoutBroadcastPrefix, 20 - index);
+    const followsTransactionDate =
+      shouldPrioritizePostDateLine &&
+      transactionDateLineIndex >= 0 &&
+      index > transactionDateLineIndex;
+    const standalonePriority = followsTransactionDate
+      ? POST_DATE_MERCHANT_PRIORITY - (index - transactionDateLineIndex)
+      : 20 - index;
+    pushCandidate(candidates, withoutBroadcastPrefix, standalonePriority);
   });
 
   return candidates;
