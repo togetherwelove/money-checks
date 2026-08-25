@@ -16,7 +16,6 @@ const MILLISECONDS_PER_DAY =
 
 export type CardSmsClipboardDraft = {
   amount: string;
-  category: string | null;
   content: string;
   date: string | null;
   type: LedgerEntryType;
@@ -44,7 +43,6 @@ export async function readCardSmsClipboardDraft({
 
     const nextDraft: CardSmsClipboardDraft = {
       amount: String(parsedSms.amount),
-      category: parsedSms.category,
       content: parsedSms.merchantName,
       date: resolveParsedCardSmsIsoDate(parsedSms, baseDate),
       type: parsedSms.isCancel ? "income" : "expense",

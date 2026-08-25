@@ -43,9 +43,7 @@ import { AdInterstitialPlacement, RewardedInterstitialNoticeConfig } from "./con
 import { CardSmsClipboardCopy } from "./constants/cardSmsClipboard";
 import { AppColors } from "./constants/colors";
 import { EntryRegistrationCopy } from "./constants/entryRegistration";
-import { EXPENSE_CATEGORY_LABELS } from "./constants/expenseCategories";
 import { InitialPermissionTiming } from "./constants/initialPermissions";
-import { INCOME_CATEGORY_LABELS } from "./constants/incomeCategories";
 import { formatYearLabel } from "./constants/ledgerDisplay";
 import { LedgerBookManagementCopy } from "./constants/ledgerBookManagement";
 import { FooterTabBarUi } from "./constants/menu";
@@ -59,7 +57,6 @@ import { useAuthOnboarding } from "./hooks/useAuthOnboarding";
 import { useCalendarHeatmapSetting } from "./hooks/useCalendarHeatmapSetting";
 import { useCalendarSummaryModeSetting } from "./hooks/useCalendarSummaryModeSetting";
 import { useGoogleAuthRedirectCompletion } from "./hooks/useGoogleAuthRedirectCompletion";
-import { useLedgerCategories } from "./hooks/useLedgerCategories";
 import { useLedgerNotifications } from "./hooks/useLedgerNotifications";
 import { useLedgerScreenState } from "./hooks/useLedgerScreenState";
 import { useLedgerWidgetDeepLinks } from "./hooks/useLedgerWidgetDeepLinks";
@@ -132,7 +129,6 @@ import { AuthScreen } from "./screens/AuthScreen";
 import { NicknameSetupScreen } from "./screens/NicknameSetupScreen";
 import { PasswordResetScreen } from "./screens/PasswordResetScreen";
 import type { LedgerAppScreen } from "./types/app";
-import type { CategoryDefinition } from "./types/category";
 import type { LedgerEntry, LedgerEntryDraft } from "./types/ledger";
 import type { LedgerEntryDeleteScope } from "./types/ledgerEntryDeletion";
 import { getMonthKey, toIsoDate } from "./utils/calendar";
@@ -278,11 +274,6 @@ function SignedInApp({ session }: { session: Session }) {
       removeListener?.();
     };
   }, []);
-  const visibleCategories = useLedgerCategories();
-  const visibleCategoryLabels = useMemo(
-    () => visibleCategories.map((category) => category.label),
-    [visibleCategories],
-  );
   const annualReport = useAnnualLedgerReportAction({
     activeBook: ledgerState.activeBook,
     onBeforeDownloadReport: async () => {
@@ -572,18 +563,11 @@ function SignedInApp({ session }: { session: Session }) {
         clipboardDraft,
         fallbackDate: ledgerState.selectedDate,
         userId: session.user.id,
-        visibleCategories,
       });
       ledgerState.prepareDraftEntry(draftToEdit);
       openEntrySheet(true);
     },
-    [
-      handleReadOnlyEditBlocked,
-      ledgerState,
-      openEntrySheet,
-      session.user.id,
-      visibleCategories,
-    ],
+    [handleReadOnlyEditBlocked, ledgerState, openEntrySheet, session.user.id],
   );
 
   const handleImportCardSmsClipboardDraft = useCallback(async () => {
@@ -1601,59 +1585,19 @@ function buildCardSmsClipboardLedgerEntryDraft({
   clipboardDraft,
   fallbackDate,
   userId,
-  visibleCategories,
 }: {
   clipboardDraft: CardSmsClipboardDraft;
   fallbackDate: string;
   userId: string;
-  visibleCategories: readonly CategoryDefinition[];
 }): LedgerEntryDraft {
   const draftDate = clipboardDraft.date ?? fallbackDate;
-  const draftCategory =
-    resolveCardSmsClipboardCategory(clipboardDraft, visibleCategories) ??
-    resolveCardSmsClipboardFallbackCategory(clipboardDraft.type, visibleCategories);
 
   return {
     ...createDraft(draftDate, userId),
     amount: clipboardDraft.amount,
-    category: draftCategory.label,
-    categoryId: draftCategory.id,
     content: clipboardDraft.content,
     type: clipboardDraft.type,
   };
-}
-
-function resolveCardSmsClipboardCategory(
-  clipboardDraft: CardSmsClipboardDraft,
-  visibleCategories: readonly CategoryDefinition[],
-): CategoryDefinition | null {
-  if (!clipboardDraft.category) {
-    return null;
-  }
-
-  return (
-    visibleCategories.find(
-      (category) =>
-        category.type === clipboardDraft.type && category.label === clipboardDraft.category,
-    ) ?? null
-  );
-}
-
-function resolveCardSmsClipboardFallbackCategory(
-  entryType: CardSmsClipboardDraft["type"],
-  visibleCategories: readonly CategoryDefinition[],
-): CategoryDefinition {
-  const fallbackLabel =
-    entryType === "income" ? INCOME_CATEGORY_LABELS.other : EXPENSE_CATEGORY_LABELS.other;
-  const typedCategories = visibleCategories.filter((category) => category.type === entryType);
-  const fallbackCategory =
-    typedCategories.find((category) => category.label === fallbackLabel) ?? typedCategories[0];
-
-  if (!fallbackCategory) {
-    throw new Error("Missing card SMS fallback category.");
-  }
-
-  return fallbackCategory;
 }
 
 function navigateToSingleInstanceStackScreen(
