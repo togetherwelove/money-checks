@@ -1,6 +1,6 @@
 const ISO_DATE_MONTH_OFFSET = 1;
 const BROADCAST_PREFIX_PATTERN = /^\[[^\]]+\]\s*/;
-const DATE_TIME_PATTERN = /(\d{1,2})\/(\d{2})\s+\d{1,2}:\d{2}/;
+const TRANSACTION_DATE_PATTERN = /(\d{1,2})\/(\d{2})(?:\s+\d{1,2}:\d{2})?/;
 const KRW_AMOUNT_PATTERN = /(\d[\d,]*)\s*원/;
 const KRW_AMOUNT_GLOBAL_PATTERN = /(\d[\d,]*)\s*원/g;
 const PLAIN_AMOUNT_LINE_PATTERN = /^\d[\d,]*$/;
@@ -11,6 +11,7 @@ const MERCHANT_SUFFIX_PATTERN = /\s*(?:사용|취소|승인|\(￦\))\s*$/;
 const MERCHANT_BLOCKLIST_PATTERN =
   /(?:web발신|카드|누적|잔액|일시불|체크카드출금|결제금액|상품명|승인내역|님|\bus\$)/i;
 const FOREIGN_AMOUNT_PATTERN = /\d+(?:\.\d+)?\s*\(\s*[a-z]{2,3}\$\s*\)/i;
+const TRANSACTION_METADATA_PATTERN = /^(?:자동결제(?:\s*접수)?|접수)$/;
 const CARD_SMS_KEYWORD_PATTERN =
   /(?:web발신|체크\.승인|카드|승인|일시불|누적|잔액|체크카드출금|결제금액)/i;
 const POST_DATE_MERCHANT_PRIORITY = 60;
@@ -94,7 +95,7 @@ function normalizeSmsText(message: string): string {
 }
 
 function parseCardSmsDate(message: string): { day: number; month: number } | null {
-  const match = message.match(DATE_TIME_PATTERN);
+  const match = message.match(TRANSACTION_DATE_PATTERN);
   if (!match) {
     return null;
   }
@@ -163,14 +164,16 @@ function resolveBlockedAmountIndex(line: string): number | null {
 
 function buildMerchantCandidates(lines: readonly string[]): MerchantCandidate[] {
   const candidates: MerchantCandidate[] = [];
-  const transactionDateLineIndex = lines.findIndex((line) => DATE_TIME_PATTERN.test(line));
+  const transactionDateLineIndex = lines.findIndex((line) =>
+    TRANSACTION_DATE_PATTERN.test(line),
+  );
   const dateLineMerchantName =
     transactionDateLineIndex >= 0 ? cleanMerchantName(lines[transactionDateLineIndex]) : "";
   const shouldPrioritizePostDateLine = !isValidMerchantCandidate(dateLineMerchantName);
 
   lines.forEach((line, index) => {
     const withoutBroadcastPrefix = line.replace(BROADCAST_PREFIX_PATTERN, "");
-    const dateMatch = withoutBroadcastPrefix.match(DATE_TIME_PATTERN);
+    const dateMatch = withoutBroadcastPrefix.match(TRANSACTION_DATE_PATTERN);
     const amountMatch = withoutBroadcastPrefix.match(KRW_AMOUNT_PATTERN);
 
     if (dateMatch) {
@@ -229,7 +232,7 @@ function cleanMerchantName(value: string): string {
   return value
     .replace(BROADCAST_PREFIX_PATTERN, "")
     .replace(/\[[^\]]+\]/g, "")
-    .replace(DATE_TIME_PATTERN, "")
+    .replace(TRANSACTION_DATE_PATTERN, "")
     .replace(KRW_AMOUNT_PATTERN, "")
     .replace(/\(\s*일시불\s*\)/g, "")
     .replace(/일시불\/?/g, "")
@@ -244,7 +247,7 @@ function cleanMerchantName(value: string): string {
     .replace(CORPORATE_PREFIX_PATTERN, "")
     .replace(MERCHANT_SUFFIX_PATTERN, "")
     .replace(/[.。]+$/g, "")
-    .replace(/[()]+$/g, "")
+    .replace(/\(\s*\)$/g, "")
     .replace(/\s+/g, " ")
     .trim()
     .replace(CORPORATE_PREFIX_PATTERN, "")
@@ -258,6 +261,10 @@ function isValidMerchantCandidate(value: string): boolean {
   }
 
   if (MERCHANT_BLOCKLIST_PATTERN.test(value)) {
+    return false;
+  }
+
+  if (TRANSACTION_METADATA_PATTERN.test(value)) {
     return false;
   }
 
