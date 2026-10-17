@@ -63,7 +63,6 @@ export function MonthlyInsightsSection({
 }: MonthlyInsightsSectionProps) {
   const categoryIconByKey = useLedgerCategoryIconMap(activeBookId);
   const [breakdownMode, setBreakdownMode] = useState<BreakdownMode>("category");
-  const [incomeBreakdownMode, setIncomeBreakdownMode] = useState<BreakdownMode>("category");
   const [disabledItemKeysByChart, setDisabledItemKeysByChart] = useState<
     Record<BreakdownFilterKey, readonly string[]>
   >(InitialDisabledBreakdownItemKeys);
@@ -71,7 +70,7 @@ export function MonthlyInsightsSection({
     InitialBreakdownItemSignatures,
   );
   const isCategoryMode = breakdownMode === "category";
-  const isIncomeCategoryMode = incomeBreakdownMode === "category";
+  const isIncomeCategoryMode = isCategoryMode;
   const breakdownFilterKey = isCategoryMode
     ? BreakdownFilterKeys.expenseCategory
     : BreakdownFilterKeys.expenseMember;
@@ -155,15 +154,15 @@ export function MonthlyInsightsSection({
     incomeBreakdownItems,
     activeIncomeBreakdownItems,
   );
-  const separatesFirstBreakdown = scope === "periodic" || showsBannerAd;
+  const separatesFirstBreakdown = scope === "periodic";
+  const bannerAd = showsBannerAd ? (
+    <View style={styles.adPanel}>
+      <AppBannerAd variant="embedded" />
+    </View>
+  ) : null;
 
   return (
     <View style={styles.section}>
-      {showsBannerAd ? (
-        <View style={styles.adPanel}>
-          <AppBannerAd variant="embedded" />
-        </View>
-      ) : null}
       {scope === "periodic" ? (
         <View style={styles.chartContent}>
           <MonthlyTrendBarChart
@@ -176,6 +175,7 @@ export function MonthlyInsightsSection({
           />
         </View>
       ) : null}
+      {scope === "periodic" ? bannerAd : null}
       {/* {scope === "periodic" ? <MonthlyComparisonSection insights={insights} /> : null} */}
       <View
         style={[
@@ -218,18 +218,6 @@ export function MonthlyInsightsSection({
         </View>
       </View>
       <View style={[styles.breakdownSection, styles.separatedBreakdownSection]}>
-        <View style={styles.segmentedControl}>
-          <SegmentButton
-            isSelected={isIncomeCategoryMode}
-            label={MonthlyInsightChartCopy.breakdownCategoryLabel}
-            onPress={() => setIncomeBreakdownMode("category")}
-          />
-          <SegmentButton
-            isSelected={!isIncomeCategoryMode}
-            label={MonthlyInsightChartCopy.breakdownMemberLabel}
-            onPress={() => setIncomeBreakdownMode("member")}
-          />
-        </View>
         <View style={styles.chartContent}>
           <MonthlyBreakdownDonutChart
             centerLabel={MonthlyInsightChartCopy.totalIncomeLabel}
@@ -252,6 +240,7 @@ export function MonthlyInsightsSection({
           />
         </View>
       </View>
+      {scope === "all" ? bannerAd : null}
     </View>
   );
 
@@ -431,7 +420,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: AppLayout.screenPadding,
   },
   section: {
-    paddingTop: AppLayout.screenTopPadding,
     gap: AppLayout.cardGap,
   },
 });

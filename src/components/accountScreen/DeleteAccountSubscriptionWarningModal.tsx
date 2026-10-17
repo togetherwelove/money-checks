@@ -4,6 +4,7 @@ import { AppColors } from "../../constants/colors";
 import { AppLayout } from "../../constants/layout";
 import { ModalActionRowStyle, NoteTextStyle } from "../../constants/uiStyles";
 import { ActionButton } from "../ActionButton";
+import { ModalCloseButton } from "../ModalCloseButton";
 
 type DeleteAccountSubscriptionWarningModalProps = {
   isOpen: boolean;
@@ -30,9 +31,7 @@ export function DeleteAccountSubscriptionWarningModal({
           <View style={styles.sheetContent}>
             <View style={styles.header}>
               <Text style={styles.title}>현재 plus 구독 중이에요.</Text>
-              <Pressable onPress={onClose}>
-                <Text style={styles.closeText}>닫기</Text>
-              </Pressable>
+              <ModalCloseButton onPress={onClose} />
             </View>
             <Text style={styles.description}>
               구독 상품은 자동으로 취소되지 않으므로 계정을 삭제해도 요금이 계속 청구될 수 있어요.
@@ -89,11 +88,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "800",
     lineHeight: 22,
-  },
-  closeText: {
-    color: AppColors.mutedText,
-    fontSize: 13,
-    fontWeight: "700",
   },
   description: {
     color: AppColors.expense,

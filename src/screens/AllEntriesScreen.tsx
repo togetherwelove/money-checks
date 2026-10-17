@@ -21,6 +21,7 @@ import {
 } from "../constants/allEntries";
 import { CATEGORY_OPTIONS } from "../constants/categories";
 import { AppColors } from "../constants/colors";
+import { RefreshableScrollBehavior } from "../constants/scroll";
 import { AppLayout } from "../constants/layout";
 import type { BusyTaskTracker } from "../hooks/ledgerScreenState/types";
 import { useAllLedgerEntries } from "../hooks/useAllLedgerEntries";
@@ -118,61 +119,62 @@ export function AllEntriesScreen({
 
   return (
     <View style={styles.screen}>
+      <View style={styles.header}>
+        <View style={styles.title}>{screenTitle}</View>
+        <View style={styles.controls}>
+          <AllEntriesFilterBar
+            categories={categories}
+            entryTypeFilter={entryTypeFilter}
+            onChangeSearchQuery={setSearchQuery}
+            onOpenFilter={() => setIsFilterSheetOpen(true)}
+            onRemoveCategory={(categoryId) => {
+              setSelectedCategoryIds((currentCategoryIds) =>
+                currentCategoryIds.filter(
+                  (currentCategoryId) => currentCategoryId !== categoryId,
+                ),
+              );
+            }}
+            onRemoveEntryType={() => {
+              setEntryTypeFilter(AllEntriesEntryTypeFilters.all);
+            }}
+            onReset={() => {
+              setSearchQuery("");
+              setEntryTypeFilter(AllEntriesEntryTypeFilters.all);
+              setSelectedCategoryIds([]);
+            }}
+            searchQuery={searchQuery}
+            selectedCategoryIds={selectedCategoryIds}
+          />
+        </View>
+      </View>
       <FlatList
+        {...RefreshableScrollBehavior}
         contentContainerStyle={entries.length === 0 ? styles.emptyContent : styles.listContent}
         data={feedItems}
         keyExtractor={(item) => item.key}
-        ListHeaderComponent={
-          <View style={styles.listHeader}>
-            <View style={styles.title}>{screenTitle}</View>
-            <View style={styles.controls}>
-              {errorMessage ? (
-                <Pressable
-                  accessibilityRole="button"
-                  disabled={isRefreshing}
-                  onPress={() => {
-                    if (isRefreshing) {
-                      return;
-                    }
+        ListHeaderComponent={errorMessage ? (
+          <View style={styles.controls}>
+            <Pressable
+              accessibilityRole="button"
+              disabled={isRefreshing}
+              onPress={() => {
+                if (isRefreshing) {
+                  return;
+                }
 
-                    void refreshEntries();
-                  }}
-                  style={({ pressed }) => [
-                    styles.errorRetry,
-                    pressed && !isRefreshing ? styles.errorRetryPressed : null,
-                    isRefreshing ? styles.errorRetryDisabled : null,
-                  ]}
-                >
-                  <Text style={styles.error}>{errorMessage}</Text>
-                  <Text style={styles.errorRetryLabel}>재시도</Text>
-                </Pressable>
-              ) : null}
-              <AllEntriesFilterBar
-                categories={categories}
-                entryTypeFilter={entryTypeFilter}
-                onChangeSearchQuery={setSearchQuery}
-                onOpenFilter={() => setIsFilterSheetOpen(true)}
-                onRemoveCategory={(categoryId) => {
-                  setSelectedCategoryIds((currentCategoryIds) =>
-                    currentCategoryIds.filter(
-                      (currentCategoryId) => currentCategoryId !== categoryId,
-                    ),
-                  );
-                }}
-                onRemoveEntryType={() => {
-                  setEntryTypeFilter(AllEntriesEntryTypeFilters.all);
-                }}
-                onReset={() => {
-                  setSearchQuery("");
-                  setEntryTypeFilter(AllEntriesEntryTypeFilters.all);
-                  setSelectedCategoryIds([]);
-                }}
-                searchQuery={searchQuery}
-                selectedCategoryIds={selectedCategoryIds}
-              />
-            </View>
+                void refreshEntries();
+              }}
+              style={({ pressed }) => [
+                styles.errorRetry,
+                pressed && !isRefreshing ? styles.errorRetryPressed : null,
+                isRefreshing ? styles.errorRetryDisabled : null,
+              ]}
+            >
+              <Text style={styles.error}>{errorMessage}</Text>
+              <Text style={styles.errorRetryLabel}>재시도</Text>
+            </Pressable>
           </View>
-        }
+        ) : null}
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Text style={styles.emptyTitle}>
@@ -278,10 +280,9 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: AppColors.screenBackground,
-    paddingTop: AppLayout.screenTopPadding,
+    paddingTop: AppLayout.compactGap,
   },
-  listHeader: {
-    gap: AppLayout.cardGap,
+  header: {
     paddingBottom: AppLayout.cardGap,
   },
   title: {

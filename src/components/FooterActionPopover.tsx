@@ -1,6 +1,7 @@
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
+import { AppLayout } from "../constants/layout";
 import { FooterActionPopoverUi } from "../constants/menu";
 import { OneLineTextFitProps } from "../constants/textLayout";
 
@@ -14,6 +15,7 @@ type FooterActionPopoverProps = {
   bottomOffset: number;
   onDismiss: () => void;
   visible: boolean;
+  inline?: boolean;
 };
 
 export function FooterActionPopover({
@@ -21,13 +23,13 @@ export function FooterActionPopover({
   bottomOffset,
   onDismiss,
   visible,
+  inline = false,
 }: FooterActionPopoverProps) {
   if (!visible) {
     return null;
   }
 
-  return (
-    <Modal animationType="none" transparent visible={visible} onRequestClose={onDismiss}>
+  const content = (
       <View style={styles.overlay}>
         <Pressable accessible={false} onPress={onDismiss} style={StyleSheet.absoluteFill} />
         <View pointerEvents="box-none" style={[styles.positioner, { bottom: bottomOffset }]}>
@@ -50,7 +52,9 @@ export function FooterActionPopover({
           </View>
         </View>
       </View>
-    </Modal>
+  );
+  return inline ? <View style={StyleSheet.absoluteFill} pointerEvents="box-none">{content}</View> : (
+    <Modal animationType="none" transparent visible={visible} onRequestClose={onDismiss}>{content}</Modal>
   );
 }
 
@@ -67,8 +71,8 @@ const styles = StyleSheet.create({
   menu: {
     maxWidth: FooterActionPopoverUi.maxWidth,
     overflow: "hidden",
-    borderWidth: 1,
-    borderColor: AppColors.border,
+    borderWidth: AppLayout.dividerWidth,
+    borderColor: AppColors.primary,
     borderRadius: FooterActionPopoverUi.borderRadius,
     backgroundColor: AppColors.surface,
   },

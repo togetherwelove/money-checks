@@ -1,3 +1,4 @@
+import { AppScrollBehavior } from "../constants/scroll";
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
 
@@ -172,7 +173,7 @@ export function EntryScreen({
   );
 
   return (
-    <ScrollView
+    <ScrollView {...AppScrollBehavior}
       automaticallyAdjustKeyboardInsets
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={styles.content}

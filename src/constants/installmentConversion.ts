@@ -1,0 +1,18 @@
+export const InstallmentConversionCopy = {
+  action: "일시불로 전환",
+  title: "할부 전환 확인",
+  instructions: "이미 납부한 내역만 선택해 주세요. 선택한 내역은 그대로 두고 나머지를 합칩니다. 납부 전이라면 아무것도 선택하지 마세요.",
+  savedOnly: "저장된 내역을 기준으로 전환합니다. 편집 중인 변경사항은 반영하지 않고 편집창을 닫습니다.",
+  paid: "납부 완료 · 유지",
+  unpaid: "합칠 내역",
+  total: "전환 금액",
+  date: "실제 청구·납부 날짜",
+  partial: "잔여 할부 일괄 납부",
+  full: "전체 일시불 전환",
+  confirm: "확인 후 전환",
+  cancel: "취소",
+  error: "전환하지 못했어요. 다른 구성원이 변경했을 수 있으니 닫았다가 다시 확인해 주세요.",
+  loading: "할부 내역을 불러오는 중이에요.",
+  empty: "전환할 미납 내역이 없어요.",
+  success: "할부 내역을 전환했어요.",
+} as const;

@@ -3,15 +3,14 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { useEffect, useMemo, useState } from "react";
 import { Keyboard, Pressable, StyleSheet, Text, View } from "react-native";
 
-import { AuthControls } from "../constants/authControls";
+import { EntryDetailLabelStyle, EntryDetailValueStyle, EntryDetailRowStyle, EntryDetailDividerStyle } from "../constants/entryDetailStyles";
 import { AppColors } from "../constants/colors";
 import {
   EntryDateSelectorUi,
   EntryRegistrationCopy,
 } from "../constants/entryRegistration";
-import { AppLayout } from "../constants/layout";
 import { CompactTextProps } from "../constants/textLayout";
-import { CardTitleTextStyle, ModalActionRowStyle } from "../constants/uiStyles";
+import { SettingValueActionStyle, ModalActionRowStyle } from "../constants/uiStyles";
 import {
   formatSelectedDateWithYear,
   parseIsoDate,
@@ -57,11 +56,8 @@ export function EntryDateSelector({
           pressed ? styles.pressedTrigger : null,
         ]}
       >
-        <Feather
-          color={AppColors.mutedStrongText}
-          name="calendar"
-          size={EntryDateSelectorUi.iconSize}
-        />
+        <Text style={styles.label}>{EntryRegistrationCopy.dateLabel}</Text>
+        <View style={styles.valueAction}>
         <Text {...CompactTextProps} numberOfLines={1} style={styles.dateLabel}>
           {formatSelectedDateWithYear(selectedDate)}
         </Text>
@@ -70,6 +66,7 @@ export function EntryDateSelector({
           name="chevron-down"
           size={EntryDateSelectorUi.iconSize}
         />
+        </View>
       </Pressable>
       <CalendarPickerModalShell
         isOpen={isPickerOpen}
@@ -106,20 +103,17 @@ export function EntryDateSelector({
 
 const styles = StyleSheet.create({
   actionRow: ModalActionRowStyle,
+  label: EntryDetailLabelStyle,
+  valueAction: { ...SettingValueActionStyle, flexShrink: 1 },
   dateLabel: {
-    ...CardTitleTextStyle,
-    flex: 1,
+    ...EntryDetailValueStyle,
+    flexShrink: 1,
   },
   pressedTrigger: {
     opacity: EntryDateSelectorUi.pressedOpacity,
   },
   trigger: {
-    alignItems: "center",
-    alignSelf: "stretch",
-    borderBottomColor: AppColors.border,
-    borderBottomWidth: AppLayout.dividerWidth,
-    flexDirection: "row",
-    gap: AppLayout.screenPadding,
-    minHeight: AuthControls.controlHeight,
+    ...EntryDetailRowStyle,
+    ...EntryDetailDividerStyle,
   },
 });

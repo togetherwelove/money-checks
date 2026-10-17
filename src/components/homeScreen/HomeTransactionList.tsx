@@ -1,6 +1,7 @@
 import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 
 import { AppColors } from "../../constants/colors";
+import { RefreshableScrollBehavior } from "../../constants/scroll";
 import { HomeScreenUi } from "../../constants/home";
 import type { LedgerEntry } from "../../types/ledger";
 import type { LedgerEntryDeleteHandler } from "../../types/ledgerEntryDeletion";
@@ -32,7 +33,7 @@ export function HomeTransactionList({
 }: HomeTransactionListProps) {
   return (
     <ScrollView
-      alwaysBounceVertical
+      {...RefreshableScrollBehavior}
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
       refreshControl={

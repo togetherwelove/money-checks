@@ -1,4 +1,5 @@
 import { AnnualReportCopy } from "../../constants/annualReport";
+import { InstallmentStatuses } from "../../constants/installments";
 import { parseIsoDate } from "../../utils/calendar";
 import type {
   AnnualReportCategoryRow,
@@ -8,11 +9,13 @@ import type {
 } from "./annualReportData";
 import { addAnnualReportXlsxCharts } from "./annualReportXlsxCharts";
 import { type XlsxZipEntry, encodeZipText, writeStoredZipEntries } from "./xlsxZip";
+import { buildReportStylesXml, ReportSheetStyle } from "./annualReportStyles";
 
 type SheetCellValue = Date | number | string;
 type SheetFormat = "currency" | "percent";
 
 type WorkbookSheet = {
+  table: boolean;
   autoFilterRef: string | null;
   columnWidths: number[];
   formattedColumns: Map<number, SheetFormat>;
@@ -39,14 +42,12 @@ const WorksheetContentType =
 const StylesContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml";
 const CurrencyStyleIndex = 1;
 const PercentStyleIndex = 2;
-const BuiltInCurrencyFormatId = 3;
-const BuiltInPercentFormatId = 9;
 
-const LedgerSheetColumnWidths = [12, 10, 8, 22, 14, 14, 14, 14, 12, 12, 24, 8, 12, 18, 18, 22];
+const LedgerSheetColumnWidths = [12, 10, 8, 22, 14, 14, 14, 14, 18, 12, 24, 8, 12, 26, 26, 38, 14];
 const MonthlySummaryColumnWidths = [14, 14, 14, 14, 10];
 const CategorySummaryColumnWidths = [16, 14, 12, 10];
 const MemberSummaryColumnWidths = [16, 14, 14, 14, 10];
-const SummaryColumnWidths = [18, 18, 18];
+const SummaryColumnWidths = [24, 90];
 const ChartSheetColumnWidths = Array.from({ length: 16 }, () => 12);
 
 export function writeAnnualReportWorkbook(report: AnnualReportData): Uint8Array {
@@ -73,7 +74,7 @@ function buildAnnualReportWorkbookEntries(report: AnnualReportData): XlsxZipEntr
     createTextEntry("_rels/.rels", buildRootRelationshipsXml()),
     createTextEntry("xl/workbook.xml", buildWorkbookXml(sheets)),
     createTextEntry("xl/_rels/workbook.xml.rels", buildWorkbookRelationshipsXml(sheets.length)),
-    createTextEntry("xl/styles.xml", buildStylesXml()),
+    createTextEntry("xl/styles.xml", buildReportStylesXml()),
     ...sheets.map((sheet, index) =>
       createTextEntry(`xl/worksheets/sheet${index + 1}.xml`, buildWorksheetXml(sheet)),
     ),
@@ -82,6 +83,9 @@ function buildAnnualReportWorkbookEntries(report: AnnualReportData): XlsxZipEntr
 
 function buildWorkbookSheets(report: AnnualReportData): WorkbookSheet[] {
   return [
+    createSheet(AnnualReportCopy.summarySheetName, buildSummaryRows(report), SummaryColumnWidths, {
+      currencyColumns: [1], table: false,
+    }),
     createSheet(AnnualReportCopy.ledgerSheetName, buildLedgerRows(report), LedgerSheetColumnWidths, {
       currencyColumns: [5, 6, 7],
     }),
@@ -92,8 +96,14 @@ function buildWorkbookSheets(report: AnnualReportData): WorkbookSheet[] {
       { currencyColumns: [1, 2, 3] },
     ),
     createSheet(
-      AnnualReportCopy.categorySummarySheetName,
-      buildCategorySummaryRows(report),
+      AnnualReportCopy.expenseCategorySheetName,
+      [[...AnnualReportCopy.expenseCategoryHeaders], ...buildCategoryRows(report.expenseCategories, "expense")],
+      CategorySummaryColumnWidths,
+      { currencyColumns: [1], percentColumns: [2] },
+    ),
+    createSheet(
+      AnnualReportCopy.incomeCategorySheetName,
+      [[...AnnualReportCopy.incomeCategoryHeaders], ...buildCategoryRows(report.incomeCategories, "income")],
       CategorySummaryColumnWidths,
       { currencyColumns: [1], percentColumns: [2] },
     ),
@@ -103,13 +113,11 @@ function buildWorkbookSheets(report: AnnualReportData): WorkbookSheet[] {
       MemberSummaryColumnWidths,
       { currencyColumns: [1, 2, 3] },
     ),
-    createSheet(AnnualReportCopy.summarySheetName, buildSummaryRows(report), SummaryColumnWidths, {
-      currencyColumns: [1],
-    }),
     createSheet(
       AnnualReportCopy.chartSheetName,
       [[`${report.bookName} ${AnnualReportCopy.chartTitleSuffix}`]],
       ChartSheetColumnWidths,
+      { table: false },
     ),
   ];
 }
@@ -119,12 +127,14 @@ function createSheet(
   rows: SheetCellValue[][],
   columnWidths: number[],
   options: {
+    table?: boolean;
     currencyColumns?: number[];
     percentColumns?: number[];
   } = {},
 ): WorkbookSheet {
   return {
-    autoFilterRef: resolveAutoFilterRef(rows),
+    table: options.table !== false,
+    autoFilterRef: options.table === false ? null : resolveAutoFilterRef(rows),
     columnWidths,
     formattedColumns: createFormattedColumnMap(options),
     name,
@@ -182,6 +192,11 @@ function buildLedgerRows(report: AnnualReportData): SheetCellValue[][] {
       entry.createdAt ?? "-",
       entry.updatedAt ?? "-",
       entry.id,
+      entry.installmentStatus === InstallmentStatuses.prepaid
+        ? AnnualReportCopy.installmentStatuses.prepaid
+        : entry.installmentStatus === InstallmentStatuses.proceeding
+          ? AnnualReportCopy.installmentStatuses.proceeding
+          : AnnualReportCopy.installmentStatuses.none,
     ]),
   ];
 }
@@ -190,16 +205,6 @@ function buildMonthlySummaryRows(monthlyRows: AnnualReportMonthRow[]): SheetCell
   return [
     [...AnnualReportCopy.monthlySummaryHeaders],
     ...monthlyRows.map((row) => [row.monthLabel, row.income, row.expense, row.balance, row.count]),
-  ];
-}
-
-function buildCategorySummaryRows(report: AnnualReportData): SheetCellValue[][] {
-  return [
-    [...AnnualReportCopy.expenseCategoryHeaders],
-    ...buildCategoryRows(report.expenseCategories, "expense"),
-    [],
-    [...AnnualReportCopy.incomeCategoryHeaders],
-    ...buildCategoryRows(report.incomeCategories, "income"),
   ];
 }
 
@@ -296,28 +301,23 @@ function buildWorkbookXml(sheets: WorkbookSheet[]) {
     .join("")}</sheets></workbook>`;
 }
 
-function buildStylesXml() {
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<styleSheet xmlns="${SpreadsheetNamespace}"><fonts count="1"><font><sz val="11"/><color theme="1"/><name val="Calibri"/><family val="2"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="3"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="${BuiltInCurrencyFormatId}" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="${BuiltInPercentFormatId}" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
-}
-
 function buildWorksheetXml(sheet: WorkbookSheet) {
   const dimensionRef = resolveSheetDimension(sheet.rows);
   const columnXml = buildColumnXml(sheet.columnWidths);
   const rowXml = sheet.rows
-    .map((row, rowIndex) => buildRowXml(row, rowIndex, sheet.formattedColumns))
+    .map((row, rowIndex) => buildRowXml(row, rowIndex, sheet.formattedColumns, sheet.table))
     .join("");
   const autoFilterXml = sheet.autoFilterRef
     ? `<autoFilter ref="${escapeXmlAttribute(sheet.autoFilterRef)}"/>`
     : "";
 
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<worksheet xmlns="${SpreadsheetNamespace}" xmlns:r="${OfficeRelationshipNamespace}"><dimension ref="${dimensionRef}"/>${columnXml}<sheetData>${rowXml}</sheetData>${autoFilterXml}</worksheet>`;
+<worksheet xmlns="${SpreadsheetNamespace}" xmlns:r="${OfficeRelationshipNamespace}"><dimension ref="${dimensionRef}"/><sheetViews><sheetView workbookViewId="0">${sheet.table ? '<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/>' : ""}</sheetView></sheetViews><sheetFormatPr defaultRowHeight="24"/>${columnXml}<sheetData>${rowXml}</sheetData>${autoFilterXml}</worksheet>`;
 }
 
 function resolveSheetDimension(rows: SheetCellValue[][]) {
   const rowCount = Math.max(rows.length, 1);
-  const columnCount = Math.max(1, ...rows.map((row) => row.length));
+  const columnCount = rows.reduce((maximum, row) => Math.max(maximum, row.length), 1);
   return `A1:${encodeColumnName(columnCount - 1)}${rowCount}`;
 }
 
@@ -338,27 +338,36 @@ function buildRowXml(
   row: SheetCellValue[],
   rowIndex: number,
   formattedColumns: Map<number, SheetFormat>,
+  table: boolean,
 ) {
   const rowNumber = rowIndex + 1;
   const cells = row
     .map((value, columnIndex) =>
-      buildCellXml(value, encodeCellReference(columnIndex, rowNumber), formattedColumns),
+      buildCellXml(value, encodeCellReference(columnIndex, rowNumber), formattedColumns,
+        table && rowIndex === 0 ? ReportSheetStyle.header : !table && columnIndex === 0 ? ReportSheetStyle.label : undefined),
     )
     .join("");
-  return `<row r="${rowNumber}">${cells}</row>`;
+  const isNote = row[0] === AnnualReportCopy.summaryRows.note;
+  return `<row r="${rowNumber}"${isNote ? ' ht="90" customHeight="1"' : ""}>${cells}</row>`;
 }
 
 function buildCellXml(
   value: SheetCellValue,
   cellReference: string,
   formattedColumns: Map<number, SheetFormat>,
+  style?: number,
 ) {
+  if (value instanceof Date) {
+    const millisecondsPerDay = 86_400_000;
+    const excelEpoch = Date.UTC(1899, 11, 30);
+    const serial = (Date.UTC(value.getFullYear(), value.getMonth(), value.getDate()) - excelEpoch) / millisecondsPerDay;
+    return `<c r="${cellReference}" s="${ReportSheetStyle.date}"><v>${serial}</v></c>`;
+  }
   if (typeof value === "number") {
     return `<c r="${cellReference}"${resolveStyleAttribute(cellReference, formattedColumns)}><v>${value}</v></c>`;
   }
 
-  const text = value instanceof Date ? formatDateCellValue(value) : value;
-  return `<c r="${cellReference}" t="inlineStr"><is><t>${escapeXmlText(text)}</t></is></c>`;
+  return `<c r="${cellReference}" s="${style ?? ReportSheetStyle.text}" t="inlineStr"><is><t xml:space="preserve">${escapeXmlText(value)}</t></is></c>`;
 }
 
 function resolveStyleAttribute(cellReference: string, formattedColumns: Map<number, SheetFormat>) {
@@ -371,13 +380,6 @@ function resolveStyleAttribute(cellReference: string, formattedColumns: Map<numb
     return ` s="${PercentStyleIndex}"`;
   }
   return "";
-}
-
-function formatDateCellValue(value: Date) {
-  const year = value.getFullYear();
-  const month = String(value.getMonth() + 1).padStart(2, "0");
-  const day = String(value.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
 }
 
 function encodeCellReference(columnIndex: number, rowNumber: number) {

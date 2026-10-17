@@ -1,5 +1,5 @@
 import { Feather } from "@expo/vector-icons";
-import { Pressable, StyleSheet } from "react-native";
+import { Pressable, type PressableProps, StyleSheet } from "react-native";
 
 import { AuthControls } from "../constants/authControls";
 import { AppColors } from "../constants/colors";
@@ -10,6 +10,7 @@ export const ICON_ACTION_BUTTON_COMPACT_SIZE = 28;
 type IconActionButtonProps = {
   accessibilityLabel?: string;
   disabled?: boolean;
+  hitSlop?: PressableProps["hitSlop"];
   icon: keyof typeof Feather.glyphMap;
   isActive?: boolean;
   onPress: () => void;
@@ -19,6 +20,7 @@ type IconActionButtonProps = {
 export function IconActionButton({
   accessibilityLabel,
   disabled = false,
+  hitSlop,
   icon,
   isActive = false,
   onPress,
@@ -29,6 +31,7 @@ export function IconActionButton({
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
       disabled={disabled}
+      hitSlop={hitSlop}
       onPress={onPress}
       style={[
         styles.button,

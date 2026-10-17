@@ -1,3 +1,4 @@
+import { AppScrollBehavior } from "../../constants/scroll";
 import { Feather } from "@expo/vector-icons";
 import { useMemo } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
@@ -77,7 +78,7 @@ export function AllEntriesFilterBar({
       {hasActiveFilters ? (
         <View style={styles.activeFilterRow}>
           {filterCount > 0 ? (
-            <ScrollView
+            <ScrollView {...AppScrollBehavior}
               contentContainerStyle={styles.activeFilterContent}
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -157,20 +158,23 @@ const styles = StyleSheet.create({
   },
   filterButton: {
     alignItems: "center",
-    backgroundColor: AppColors.capsuleSurface,
-    borderColor: AppColors.border,
-    borderRadius: AllEntriesFilterUi.categoryChipRadius,
-    borderWidth: 1,
+    alignSelf: "stretch",
+    backgroundColor: FormInputTextStyle.backgroundColor,
+    borderColor: FormInputTextStyle.borderColor,
+    borderRadius: FormInputTextStyle.borderRadius,
+    borderWidth: FormInputTextStyle.borderWidth,
     flexDirection: "row",
     gap: AppLayout.compactGap,
     justifyContent: "center",
-    minHeight: AllEntriesFilterUi.filterButtonMinimumHeight,
-    paddingHorizontal: AllEntriesFilterUi.filterButtonHorizontalPadding,
+    minHeight: FormInputTextStyle.minHeight,
+    paddingHorizontal: FormInputTextStyle.paddingHorizontal,
+    paddingVertical: FormInputTextStyle.paddingVertical,
   },
   filterButtonLabel: {
     color: AppColors.primary,
-    fontSize: AllEntriesFilterUi.filterButtonLabelFontSize,
-    fontWeight: "700",
+    fontSize: FormInputTextStyle.fontSize,
+    fontWeight: FormInputTextStyle.fontWeight,
+    lineHeight: FormInputTextStyle.lineHeight,
   },
   filterBadge: {
     alignItems: "center",

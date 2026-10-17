@@ -1,3 +1,4 @@
+import { AppScrollBehavior } from "../constants/scroll";
 import { type ReactNode, useEffect, useState } from "react";
 import {
   Alert,
@@ -176,91 +177,94 @@ export function AccountScreen({
 
   return (
     <>
-      <ScrollView
+      <ScrollView {...AppScrollBehavior}
         contentContainerStyle={styles.content}
         keyboardDismissMode={KeyboardLayout.dismissMode}
         keyboardShouldPersistTaps={KeyboardLayout.persistTaps}
         style={styles.screen}
       >
         {screenTitle}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>{AppMessages.accountSessionTitle}</Text>
-          <InfoRow label={AppMessages.accountEmail} value={<AccountEmailValue email={email} />} />
-          <InfoRow label={AppMessages.accountProvider} value={accountProviderLabel} />
-          <InfoRow
-            action={
-              subscriptionTier === SubscriptionTiers.free ? (
-                <TextLinkButton
-                  label={SubscriptionMessages.restoreAction}
-                  onPress={handleRestorePurchases}
-                />
-              ) : subscriptionTier === SubscriptionTiers.plus ? (
-                <TextLinkButton
-                  label="구독 관리"
-                  onPress={handleOpenSubscriptionManagement}
-                />
-              ) : null
-            }
-            label={SubscriptionMessages.statusLabel}
-            value={
-              subscriptionTier === SubscriptionTiers.plus ? (
-                <Text style={styles.value}>
-                  <Text style={styles.plusLabelText}>plus</Text> 활성화
-                </Text>
-              ) : (
-                SubscriptionMessages.freePlanLabel
-              )
-            }
-          />
-        </View>
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>{AppMessages.accountNicknameTitle}</Text>
-          <TextInput
-            autoCapitalize="words"
-            autoComplete="nickname"
-            autoCorrect={false}
-            editable={!isSavingDisplayName}
-            importantForAutofill="no"
-            onChangeText={(value) => {
-              setDisplayName(value);
-            }}
-            onSubmitEditing={handlePressSaveDisplayName}
-            placeholder={fallbackDisplayName || AppMessages.accountNicknamePlaceholder}
-            placeholderTextColor={AppColors.mutedText}
-            returnKeyType="done"
-            style={styles.inlineInput}
-            submitBehavior="blurAndSubmit"
-            textContentType="none"
-            value={displayName}
-          />
-        </View>
-        {showAdTrackingPermissionCard ? (
-          <AdTrackingPermissionCard
-            onOpenSettings={onOpenAdTrackingSettings}
-            onRequestPermission={onRequestAdTrackingPermission}
-            permissionState={adTrackingPermissionState}
-          />
-        ) : null}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>{AppMessages.accountActionTitle}</Text>
-          <View style={styles.actionRow}>
-            <ActionButton
-              label={AppMessages.authSignOut}
-              onPress={handleConfirmSignOut}
-              size="inline"
-              variant="secondary"
+        <View style={styles.sections}>
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>{AppMessages.accountSessionTitle}</Text>
+            <InfoRow label={AppMessages.accountEmail} value={<AccountEmailValue email={email} />} />
+            <InfoRow label={AppMessages.accountProvider} value={accountProviderLabel} />
+            <InfoRow
+              action={
+                <>
+                  {subscriptionTier === SubscriptionTiers.plus ? (
+                    <TextLinkButton
+                      label={SubscriptionMessages.manageAction}
+                      onPress={handleOpenSubscriptionManagement}
+                    />
+                  ) : null}
+                  <TextLinkButton
+                    label={SubscriptionMessages.restoreAction}
+                    onPress={handleRestorePurchases}
+                  />
+                </>
+              }
+              label={SubscriptionMessages.statusLabel}
+              value={
+                subscriptionTier === SubscriptionTiers.plus ? (
+                  <Text style={styles.value}>
+                    <Text style={styles.plusLabelText}>plus</Text> 활성화
+                  </Text>
+                ) : (
+                  SubscriptionMessages.freePlanLabel
+                )
+              }
             />
           </View>
-          <View style={styles.deleteActionRow}>
-            <TextLinkButton
-              label="계정 삭제"
-              onPress={handleOpenDeleteFlow}
-              tone="destructive"
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>{AppMessages.accountNicknameTitle}</Text>
+            <TextInput
+              autoCapitalize="words"
+              autoComplete="nickname"
+              autoCorrect={false}
+              editable={!isSavingDisplayName}
+              importantForAutofill="no"
+              onChangeText={(value) => {
+                setDisplayName(value);
+              }}
+              onSubmitEditing={handlePressSaveDisplayName}
+              placeholder={fallbackDisplayName || AppMessages.accountNicknamePlaceholder}
+              placeholderTextColor={AppColors.mutedText}
+              returnKeyType="done"
+              style={styles.inlineInput}
+              submitBehavior="blurAndSubmit"
+              textContentType="none"
+              value={displayName}
             />
           </View>
+          {showAdTrackingPermissionCard ? (
+            <AdTrackingPermissionCard
+              onOpenSettings={onOpenAdTrackingSettings}
+              onRequestPermission={onRequestAdTrackingPermission}
+              permissionState={adTrackingPermissionState}
+            />
+          ) : null}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>{AppMessages.accountActionTitle}</Text>
+            <View style={styles.actionRow}>
+              <ActionButton
+                label={AppMessages.authSignOut}
+                onPress={handleConfirmSignOut}
+                size="inline"
+                variant="secondary"
+              />
+            </View>
+            <View style={styles.deleteActionRow}>
+              <TextLinkButton
+                label="계정 삭제"
+                onPress={handleOpenDeleteFlow}
+                tone="destructive"
+              />
+            </View>
+          </View>
+          <AccountVersionFooter />
+          <AppFooterContentInset />
         </View>
-        <AccountVersionFooter />
-        <AppFooterContentInset />
       </ScrollView>
       <DeleteAccountSubscriptionWarningModal
         isOpen={isDeleteSubscriptionWarningOpen}
@@ -311,6 +315,9 @@ function InfoRow({
 }
 
 const styles = StyleSheet.create({
+  sections: {
+    gap: AppLayout.cardGap,
+  },
   screen: {
     flex: 1,
     backgroundColor: AppColors.screenBackground,
@@ -319,7 +326,6 @@ const styles = StyleSheet.create({
     ...ResponsivePageContentStyle,
     paddingHorizontal: AppLayout.screenPadding,
     paddingTop: AppLayout.screenTopPadding,
-    gap: AppLayout.cardGap,
   },
   card: {
     ...GroupedSectionStyle,

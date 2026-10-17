@@ -1,3 +1,4 @@
+import { AppScrollBehavior } from "../constants/scroll";
 import { Feather } from "@expo/vector-icons";
 import type { ReactNode } from "react";
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -58,37 +59,42 @@ export function HelpScreen({ screenTitle }: HelpScreenProps) {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.content} style={styles.screen}>
+    <ScrollView {...AppScrollBehavior} contentContainerStyle={styles.content} style={styles.screen}>
       {screenTitle}
-      <Text {...ReadingTextProps} style={styles.description}>
-        필요한 정책 문서를 브라우저에서 확인할 수 있어요.
-      </Text>
-      <View style={styles.linkList}>
-        {HELP_LINK_ITEMS.map((item, index) => (
-          <Pressable
-            key={item.url}
-            onPress={() => void handleOpenLink(item.url)}
-            style={[
-              styles.linkRow,
-              index === HELP_LINK_ITEMS.length - 1 ? styles.lastLinkRow : null,
-            ]}
-          >
-            <View style={styles.linkTextBlock}>
-              <Text style={styles.linkLabel}>{item.label}</Text>
-              <Text {...ReadingTextProps} style={styles.linkDescription}>
-                {item.description}
-              </Text>
-            </View>
-            <Feather color={AppColors.mutedStrongText} name="external-link" size={18} />
-          </Pressable>
-        ))}
+      <View style={styles.sections}>
+        <Text {...ReadingTextProps} style={styles.description}>
+          필요한 정책 문서를 브라우저에서 확인할 수 있어요.
+        </Text>
+        <View style={styles.linkList}>
+          {HELP_LINK_ITEMS.map((item, index) => (
+            <Pressable
+              key={item.url}
+              onPress={() => void handleOpenLink(item.url)}
+              style={[
+                styles.linkRow,
+                index === HELP_LINK_ITEMS.length - 1 ? styles.lastLinkRow : null,
+              ]}
+            >
+              <View style={styles.linkTextBlock}>
+                <Text style={styles.linkLabel}>{item.label}</Text>
+                <Text {...ReadingTextProps} style={styles.linkDescription}>
+                  {item.description}
+                </Text>
+              </View>
+              <Feather color={AppColors.mutedStrongText} name="external-link" size={18} />
+            </Pressable>
+          ))}
+        </View>
+        <AppFooterContentInset />
       </View>
-      <AppFooterContentInset />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  sections: {
+    gap: AppLayout.cardGap,
+  },
   screen: {
     flex: 1,
     backgroundColor: AppColors.screenBackground,
@@ -97,7 +103,6 @@ const styles = StyleSheet.create({
     ...ResponsivePageContentStyle,
     paddingHorizontal: AppLayout.screenPadding,
     paddingTop: AppLayout.screenTopPadding,
-    gap: AppLayout.cardGap,
   },
   description: {
     ...SupportingTextStyle,

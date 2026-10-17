@@ -34,7 +34,10 @@ export const MonthlyInsightChartLayout = {
   minVisibleBarHeight: 3,
   segmentIndicatorHeight: 2,
   trendBarHeight: 104,
-  trendYAxisGap: 6,
+  trendGridLineWidth: 1,
+  trendYAxisLabelLineHeight: 12,
+  trendYAxisLabelFontSize: 10,
+  trendYAxisGap: 4,
   trendYAxisLabelCount: 3,
 } as const;
 

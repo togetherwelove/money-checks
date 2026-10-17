@@ -2,7 +2,7 @@ import { Feather } from "@expo/vector-icons";
 import { Pressable, StyleSheet } from "react-native";
 
 import { AppColors } from "../constants/colors";
-import { FooterTabBarUi, MenuCopy, MenuUi } from "../constants/menu";
+import { MenuCopy, MenuUi } from "../constants/menu";
 
 type AppFloatingMenuButtonProps = {
   isOpen: boolean;
@@ -24,7 +24,7 @@ export function AppFloatingMenuButton({ isOpen, onPress }: AppFloatingMenuButton
       ]}
     >
       <Feather
-        color={isOpen ? AppColors.primary : AppColors.mutedStrongText}
+        color={isOpen ? AppColors.primary : AppColors.mutedText}
         name={isOpen ? "x" : "menu"}
         size={MenuUi.floatingButtonIconSize}
       />
@@ -35,25 +35,13 @@ export function AppFloatingMenuButton({ isOpen, onPress }: AppFloatingMenuButton
 const styles = StyleSheet.create({
   button: {
     position: "absolute",
-    top: MenuUi.floatingButtonInset,
+    top: MenuUi.floatingButtonVerticalInset,
     right: MenuUi.floatingButtonInset,
     zIndex: MenuUi.floatingButtonZIndex,
-    elevation: FooterTabBarUi.barElevation,
     width: MenuUi.floatingButtonSize,
     height: MenuUi.floatingButtonSize,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: FooterTabBarUi.barBorderWidth,
-    borderColor: AppColors.border,
-    borderRadius: MenuUi.floatingButtonBorderRadius,
-    backgroundColor: AppColors.capsuleSurface,
-    shadowColor: AppColors.text,
-    shadowOffset: {
-      width: FooterTabBarUi.barShadowOffsetX,
-      height: FooterTabBarUi.barShadowOffsetY,
-    },
-    shadowOpacity: FooterTabBarUi.barShadowOpacity,
-    shadowRadius: FooterTabBarUi.barShadowRadius,
   },
   pressedButton: {
     opacity: MenuUi.floatingButtonPressedOpacity,

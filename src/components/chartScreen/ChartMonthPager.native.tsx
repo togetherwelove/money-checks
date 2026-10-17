@@ -1,4 +1,6 @@
+import { AppPagerScrollBehavior } from "../../constants/scroll";
 import { type ReactNode, useEffect, useRef, useState } from "react";
+import { useIsFocused } from "@react-navigation/native";
 import { StyleSheet } from "react-native";
 import PagerView from "react-native-pager-view";
 
@@ -27,6 +29,8 @@ export function ChartMonthPager({
   showsBannerAd,
 }: ChartMonthPagerProps) {
   const currentMonthKey = currentMonth.key;
+  const isFocused = useIsFocused();
+  const hasUserDraggedRef = useRef(false);
   const currentMonthKeyRef = useRef(currentMonthKey);
   const pendingMonthOffsetRef = useRef<-1 | 0 | 1>(0);
   const [isInteractionLocked, setIsInteractionLocked] = useState(false);
@@ -37,17 +41,24 @@ export function ChartMonthPager({
     }
 
     currentMonthKeyRef.current = currentMonthKey;
+    hasUserDraggedRef.current = false;
     pendingMonthOffsetRef.current = 0;
     setIsInteractionLocked(false);
   }, [currentMonthKey]);
 
+  useEffect(() => {
+    if (!isFocused) hasUserDraggedRef.current = false;
+  }, [isFocused]);
+
   function handlePageSelected(pageIndex: number) {
+    if (!isFocused || !hasUserDraggedRef.current) return;
     const monthOffset = resolveMonthOffsetFromPageIndex(pageIndex);
     if (monthOffset === 0 || pendingMonthOffsetRef.current !== 0) {
       return;
     }
 
     pendingMonthOffsetRef.current = monthOffset;
+    hasUserDraggedRef.current = false;
     setIsInteractionLocked(true);
     onMoveMonth(monthOffset);
   }
@@ -55,10 +66,17 @@ export function ChartMonthPager({
   return (
     <PagerView
       key={currentMonthKey}
+      {...AppPagerScrollBehavior}
       initialPage={CURRENT_PAGE_INDEX}
       orientation="horizontal"
-      overdrag={false}
-      scrollEnabled={!isInteractionLocked}
+      scrollEnabled={isFocused && !isInteractionLocked}
+      onPageScrollStateChanged={(event) => {
+        if (event.nativeEvent.pageScrollState === "dragging") {
+          hasUserDraggedRef.current = isFocused;
+        } else if (event.nativeEvent.pageScrollState === "idle") {
+          hasUserDraggedRef.current = false;
+        }
+      }}
       style={styles.pager}
       onPageSelected={(event) => {
         handlePageSelected(event.nativeEvent.position);

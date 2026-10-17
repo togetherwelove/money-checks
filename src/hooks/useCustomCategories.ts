@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { CategorySaveSession } from "../lib/categorySaveSession";
 
 import {
-  CATEGORY_ORDER_SAVE_DEBOUNCE_MS,
   CATEGORY_SHARED_REFRESH_DEBOUNCE_MS,
 } from "../constants/categorySelector";
 import {
@@ -33,8 +33,10 @@ type UseCustomCategoriesResult = {
   hiddenSystemCategoryIds: string[];
   systemCategoryIconOverrides: Record<string, CategoryIconName>;
   systemCategoryLabelOverrides: Record<string, string>;
-  saveCategoryOrderIds: (nextCategoryOrderIds: string[]) => void;
-  saveCustomCategories: (nextCategories: CategoryDefinition[]) => void;
+  saveCategoryOrderIds: (nextCategoryOrderIds: string[]) => Promise<boolean>;
+  isLoadingCategories: boolean;
+  isSavingCategories: boolean;
+  saveCustomCategories: (nextCategories: CategoryDefinition[]) => Promise<boolean>;
   saveHiddenSystemCategoryIds: (nextHiddenSystemCategoryIds: string[]) => void;
   saveSystemCategoryCustomizations: (nextCustomization: {
     hiddenSystemCategoryIds: string[];
@@ -48,6 +50,10 @@ export function useCustomCategories(
   bookId?: string | null,
 ): UseCustomCategoriesResult {
   const storageScope = bookId ? `book.${bookId}` : null;
+  const session = useMemo(() => new CategorySaveSession(), [storageScope, type]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(Boolean(bookId));
+  const [isSavingCategories, setIsSavingCategories] = useState(false);
+  const [reloadRevision, setReloadRevision] = useState(0);
   const [categoryOrderIds, setCategoryOrderIds] = useState(() =>
     loadStoredCategoryOrderIds(type, storageScope),
   );
@@ -63,7 +69,6 @@ export function useCustomCategories(
   const [systemCategoryLabelOverrides, setSystemCategoryLabelOverrides] = useState(() =>
     loadStoredSystemCategoryLabelOverrides(type, storageScope),
   );
-  const categoryOrderSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestCategoryOrderIdsRef = useRef(categoryOrderIds);
   const latestCustomCategoriesRef = useRef(customCategories);
   const latestHiddenSystemCategoryIdsRef = useRef(hiddenSystemCategoryIds);
@@ -71,6 +76,10 @@ export function useCustomCategories(
   const latestSystemCategoryLabelOverridesRef = useRef(systemCategoryLabelOverrides);
 
   useEffect(() => {
+    session.active = true;
+    session.ready = !bookId;
+    setIsLoadingCategories(Boolean(bookId));
+    setIsSavingCategories(false);
     setCustomCategories(
       mapStoredCustomCategories(type, loadStoredCustomCategories(type, storageScope)),
     );
@@ -78,7 +87,8 @@ export function useCustomCategories(
     setHiddenSystemCategoryIds(loadStoredHiddenSystemCategoryIds(type, storageScope));
     setSystemCategoryIconOverrides(loadStoredSystemCategoryIconOverrides(type, storageScope));
     setSystemCategoryLabelOverrides(loadStoredSystemCategoryLabelOverrides(type, storageScope));
-  }, [storageScope, type]);
+    return () => { session.active = false; };
+  }, [storageScope, type, session]);
 
   useEffect(() => {
     latestCategoryOrderIdsRef.current = categoryOrderIds;
@@ -101,12 +111,6 @@ export function useCustomCategories(
   }, [systemCategoryLabelOverrides]);
 
   useEffect(() => {
-    return () => {
-      clearCategoryOrderSaveTimer();
-    };
-  }, []);
-
-  useEffect(() => {
     let isMounted = true;
     let sharedRefreshTimer: ReturnType<typeof setTimeout> | null = null;
     if (!bookId) {
@@ -116,9 +120,11 @@ export function useCustomCategories(
     }
 
     const loadSharedCategories = async () => {
+      if (session.pending > 0) return;
+      const revision = session.revision;
       try {
         const nextCustomization = await fetchLedgerBookCategoryCustomization(bookId, type);
-        if (!isMounted) {
+        if (!isMounted || !session.canApplyRead(revision)) {
           return;
         }
 
@@ -148,7 +154,10 @@ export function useCustomCategories(
           nextCustomization.systemCategoryLabelOverrides,
           storageScope,
         );
+        session.ready = true;
+        setIsLoadingCategories(false);
       } catch (error) {
+        if (isMounted) setIsLoadingCategories(false);
         logLedgerBookCategorySyncError(error, {
           bookId,
           step: "load_shared_categories",
@@ -186,42 +195,43 @@ export function useCustomCategories(
       clearSharedRefreshTimer();
       unsubscribe();
     };
-  }, [bookId, storageScope, type]);
+  }, [bookId, storageScope, type, session, reloadRevision]);
 
   return {
+    isLoadingCategories,
+    isSavingCategories,
     categoryOrderIds,
     customCategories,
     hiddenSystemCategoryIds,
     systemCategoryIconOverrides,
     systemCategoryLabelOverrides,
-    saveCategoryOrderIds: (nextCategoryOrderIds) => {
-      setCategoryOrderIds(nextCategoryOrderIds);
-      saveStoredCategoryOrderIds(type, nextCategoryOrderIds, storageScope);
-      latestCategoryOrderIdsRef.current = nextCategoryOrderIds;
-      if (!bookId) {
-        return;
+    saveCategoryOrderIds: saveSharedCategoryOrder,
+    saveCustomCategories: async (nextCategories) => {
+      if (!session.active || session.pending > 0) return false;
+      if (!session.ready) {
+        setIsLoadingCategories(true);
+        setReloadRevision((revision) => revision + 1);
+        return false;
       }
-
-      scheduleCategoryOrderSave();
-    },
-    saveCustomCategories: (nextCategories) => {
-      setCustomCategories(nextCategories);
-      latestCustomCategoriesRef.current = nextCategories;
+      setIsSavingCategories(true);
       const nextStoredCategories = toStoredCustomCategories(nextCategories);
-      saveStoredCustomCategories(type, nextStoredCategories, storageScope);
-      if (bookId) {
-        void replaceLedgerBookCustomCategories(
-          bookId,
-          type,
-          nextStoredCategories,
-          categoryOrderIds,
-        ).catch((error) => {
-          logLedgerBookCategorySyncError(error, {
-            bookId,
-            step: "save_shared_custom_categories",
-            type,
-          });
+      try {
+        await session.write(async () => {
+          if (bookId) {
+            await replaceLedgerBookCustomCategories(bookId, type, nextStoredCategories, latestCategoryOrderIdsRef.current);
+          }
+          saveStoredCustomCategories(type, nextStoredCategories, storageScope);
+          if (session.active) {
+            latestCustomCategoriesRef.current = nextCategories;
+            setCustomCategories(nextCategories);
+          }
         });
+        return session.active;
+      } catch (error) {
+        logLedgerBookCategorySyncError(error, { bookId, step: "save_shared_custom_categories", type });
+        return false;
+      } finally {
+        if (session.active) setIsSavingCategories(false);
       }
     },
     saveHiddenSystemCategoryIds: (nextHiddenSystemCategoryIds) => {
@@ -300,51 +310,35 @@ export function useCustomCategories(
     }
   }
 
-  function scheduleCategoryOrderSave() {
-    clearCategoryOrderSaveTimer();
-    categoryOrderSaveTimerRef.current = setTimeout(() => {
-      categoryOrderSaveTimerRef.current = null;
-      void saveSharedCategoryOrder();
-    }, CATEGORY_ORDER_SAVE_DEBOUNCE_MS);
-  }
-
-  function clearCategoryOrderSaveTimer() {
-    if (!categoryOrderSaveTimerRef.current) {
-      return;
+  async function saveSharedCategoryOrder(nextCategoryOrderIds: string[]): Promise<boolean> {
+    if (!session.active) return false;
+    if (!session.ready) {
+      setIsLoadingCategories(true);
+      setReloadRevision((revision) => revision + 1);
+      return false;
     }
-
-    clearTimeout(categoryOrderSaveTimerRef.current);
-    categoryOrderSaveTimerRef.current = null;
-  }
-
-  async function saveSharedCategoryOrder() {
-    if (!bookId) {
-      return;
-    }
-
-    const nextCategoryOrderIds = latestCategoryOrderIdsRef.current;
-    const nextStoredCategories = toStoredCustomCategories(latestCustomCategoriesRef.current);
     try {
-      await replaceLedgerBookCustomCategories(
-        bookId,
-        type,
-        nextStoredCategories,
-        nextCategoryOrderIds,
-      );
-    } catch (error) {
-      logLedgerBookCategorySyncError(error, {
-        bookId,
-        step: "save_shared_custom_category_order",
-        type,
+      return await session.write(async () => {
+        if (!session.active) return false;
+        if (bookId) {
+          await replaceLedgerBookCustomCategories(bookId, type,
+            toStoredCustomCategories(latestCustomCategoriesRef.current), nextCategoryOrderIds);
+          await replaceLedgerBookSystemCategoryCustomizations(bookId, type, {
+            categoryOrderIds: nextCategoryOrderIds,
+            hiddenSystemCategoryIds: latestHiddenSystemCategoryIdsRef.current,
+            systemCategoryIconOverrides: latestSystemCategoryIconOverridesRef.current,
+            systemCategoryLabelOverrides: latestSystemCategoryLabelOverridesRef.current,
+          });
+        }
+        saveStoredCategoryOrderIds(type, nextCategoryOrderIds, storageScope);
+        if (!session.active) return false;
+        latestCategoryOrderIdsRef.current = nextCategoryOrderIds;
+        setCategoryOrderIds(nextCategoryOrderIds);
+        return true;
       });
+    } catch (error) {
+      logLedgerBookCategorySyncError(error, { bookId, type, step: "save_shared_category_order" });
+      return false;
     }
-
-    await saveSharedSystemCategoryCustomizations({
-      nextCategoryOrderIds,
-      nextHiddenSystemCategoryIds: latestHiddenSystemCategoryIdsRef.current,
-      nextSystemCategoryIconOverrides: latestSystemCategoryIconOverridesRef.current,
-      nextSystemCategoryLabelOverrides: latestSystemCategoryLabelOverridesRef.current,
-      step: "save_shared_system_category_order",
-    });
   }
 }

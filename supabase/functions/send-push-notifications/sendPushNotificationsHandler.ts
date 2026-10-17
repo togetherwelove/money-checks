@@ -1,4 +1,5 @@
 import { translate } from "../_shared/i18n/translate.ts";
+import { summarizeExpoPushTickets } from "./expoPushTickets.ts";
 
 const EXPO_PUSH_API_URL = "https://exp.host/--/api/v2/push/send";
 const DEFAULT_NOTIFICATION_ENABLED = true;
@@ -287,11 +288,27 @@ export async function handleSendPushNotificationsRequest(
       });
     }
 
-    const responsePayload = await expoResponse.json();
-    return createJsonResponse(200, {
-      responsePayload,
-      sentCount: pushMessages.length,
-      success: true,
+    const result = summarizeExpoPushTickets(
+      await expoResponse.json(),
+      pushMessages.map((message) => message.to),
+    );
+    if (result.invalidTokens.length > 0) {
+      const tokensQuery = adminClient.from("push_device_tokens") as {
+        delete: () => { in: (column: string, values: string[]) => Promise<{ error: Error | null }> };
+      };
+      const { error } = await tokensQuery.delete().in("expo_push_token", result.invalidTokens);
+      if (error) console.error("[send-push-notifications] invalid token cleanup failed", error);
+    }
+    if (result.failedCount > 0) {
+      console.error("[send-push-notifications] Expo rejected notifications", result.failures);
+    }
+    return createJsonResponse(result.failedCount > 0 ? 502 : 200, {
+      acceptedCount: result.acceptedCount,
+      failedCount: result.failedCount,
+      failures: result.failures,
+      ...(result.failedCount > 0 ? { error: "Expo rejected push notifications." } : {}),
+      sentCount: result.acceptedCount,
+      success: result.failedCount === 0,
     });
   } catch (error) {
     console.error("[send-push-notifications] unexpected error", error);
@@ -336,6 +353,9 @@ function buildPushNotificationLockName(
     bookKey,
     payload.event.type,
     targetKey,
+    ...(payload.event.type === "other_member_created_entry" && payload.event.entryId
+      ? [payload.event.entryId]
+      : []),
   ].join(":");
 }
 
@@ -660,9 +680,8 @@ async function resolveExpoPushMessages(
     .select("expo_push_token")
     .in("user_id", targetUserIds);
 
-  if (error || !Array.isArray(data)) {
-    return [];
-  }
+  if (error) throw error;
+  if (!Array.isArray(data)) throw new Error("Invalid push device token query result.");
 
   return (data as PushDeviceTokenRow[])
     .filter((row) => EXPO_PUSH_TOKEN_PATTERN.test(row.expo_push_token))

@@ -17,7 +17,6 @@ import {
   resolveCategoryGridPosition,
 } from "../lib/categoryGrid";
 import {
-  createCustomCategory,
   mergeCustomCategories,
   normalizeCustomCategoryLabel,
   resolveCustomCategoryError,
@@ -25,10 +24,8 @@ import {
 } from "../lib/customCategories";
 import type { CategoryDefinition, CategoryIconName } from "../types/category";
 import type { LedgerEntryType } from "../types/ledger";
-import { CategoryAddGridItem } from "./categorySelector/CategoryAddGridItem";
 import { CategoryCreateModal } from "./categorySelector/CategoryCreateModal";
 import { CategoryGridItem } from "./categorySelector/CategoryGridItem";
-import { CategoryManageModal } from "./categorySelector/CategoryManageModal";
 
 const CategoryMenuAction = {
   delete: "delete-category",
@@ -40,7 +37,7 @@ type CategorySelectorProps = {
   categories: readonly CategoryDefinition[];
   entryType: LedgerEntryType;
   selectedCategoryId: string;
-  title: string;
+  title?: string;
   onSelectCategory: (category: CategoryDefinition | null) => void;
 };
 
@@ -54,7 +51,6 @@ export function CategorySelector({
 }: CategorySelectorProps) {
   const [gridWidth, setGridWidth] = useState(0);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isManageModalOpen, setIsManageModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<CategoryDefinition | null>(null);
   const [newCategoryLabel, setNewCategoryLabel] = useState("");
   const [newCategoryIconName, setNewCategoryIconName] = useState<CategoryIconName>(
@@ -67,7 +63,8 @@ export function CategorySelector({
     hiddenSystemCategoryIds,
     systemCategoryIconOverrides,
     systemCategoryLabelOverrides,
-    saveCategoryOrderIds,
+    isLoadingCategories,
+    isSavingCategories,
     saveCustomCategories,
     saveHiddenSystemCategoryIds,
     saveSystemCategoryCustomizations,
@@ -95,12 +92,9 @@ export function CategorySelector({
     [categoryOrderIds, customCategories, visibleBaseCategories],
   );
   const { cellSize, columns } = resolveCategoryGridMetrics(gridWidth);
-  const addButtonPosition = resolveCategoryGridPosition(
-    displayedCategories.length,
-    cellSize,
-    columns,
+  const gridHeight = resolveCategoryGridHeight(
+    displayedCategories.length, cellSize, columns,
   );
-  const gridHeight = resolveCategoryGridHeight(displayedCategories.length + 1, cellSize, columns);
   const categoryMenuActions = useMemo<MenuAction[]>(
     () => [
       {
@@ -120,14 +114,28 @@ export function CategorySelector({
     [],
   );
 
+  const categoryCreateModal = (
+    <CategoryCreateModal
+        actionLabel={editingCategory ? "저장" : undefined}
+        errorMessage={isLoadingCategories ? CategoryCustomizerCopy.loadingCategories : newCategoryError}
+        isBusy={isLoadingCategories || isSavingCategories}
+        iconName={newCategoryIconName}
+        isOpen={isCreateModalOpen}
+        label={newCategoryLabel}
+        title={editingCategory ? CategoryContextMenuCopy.editModalTitle : undefined}
+        onCancel={cancelCategoryCreation}
+        onChangeIcon={setNewCategoryIconName}
+        onChangeLabel={(label) => {
+          setNewCategoryLabel(label);
+          setNewCategoryError(null);
+        }}
+        onSubmit={submitCategoryForm}
+      />
+  );
+
   return (
     <View style={styles.container}>
-      <View style={styles.headerRow}>
-        <Text style={styles.title}>{title}</Text>
-        <Pressable onPress={openCategoryManageModal}>
-          <Text style={styles.manageAction}>{CategoryCustomizerCopy.manageAction}</Text>
-        </Pressable>
-      </View>
+      {title ? <Text style={styles.title}>{title}</Text> : null}
       <View
         onLayout={(event) => {
           setGridWidth(event.nativeEvent.layout.width);
@@ -171,66 +179,18 @@ export function CategorySelector({
             </Pressable>
           );
         })}
-        {cellSize > 0 ? (
-          <CategoryAddGridItem
-            cellSize={cellSize}
-            left={addButtonPosition.x}
-            onPress={startCategoryCreation}
-            top={addButtonPosition.y}
-          />
-        ) : null}
       </View>
-      <CategoryCreateModal
-        actionLabel={editingCategory ? "저장" : undefined}
-        errorMessage={newCategoryError}
-        iconName={newCategoryIconName}
-        isOpen={isCreateModalOpen}
-        label={newCategoryLabel}
-        title={editingCategory ? CategoryContextMenuCopy.editModalTitle : undefined}
-        onCancel={cancelCategoryCreation}
-        onChangeIcon={setNewCategoryIconName}
-        onChangeLabel={(label) => {
-          setNewCategoryLabel(label);
-          setNewCategoryError(null);
-        }}
-        onSubmit={submitCategoryForm}
-      />
-      <CategoryManageModal
-        categories={displayedCategories}
-        isOpen={isManageModalOpen}
-        onChangeOrder={saveCategoryOrder}
-        onClose={() => setIsManageModalOpen(false)}
-      />
+      {categoryCreateModal}
     </View>
   );
 
-  function submitCategoryForm() {
+  async function submitCategoryForm() {
+    if (isLoadingCategories || isSavingCategories) return;
     if (editingCategory) {
-      updateCategory();
+      await updateCategory();
       return;
     }
 
-    createCategory();
-  }
-
-  function createCategory() {
-    const nextLabel = normalizeCustomCategoryLabel(newCategoryLabel);
-    const nextCategory: CategoryDefinition = {
-      ...createCustomCategory(entryType, customCategories.length + 1),
-      iconName: newCategoryIconName,
-      label: nextLabel,
-    };
-    const nextCustomCategories = [...customCategories, nextCategory];
-    const errorMessage = resolveCustomCategoryError(overriddenBaseCategories, nextCustomCategories);
-
-    if (errorMessage) {
-      setNewCategoryError(errorMessage);
-      return;
-    }
-
-    saveCustomCategories(nextCustomCategories);
-    onSelectCategory(nextCategory);
-    resetCategoryCreationState();
   }
 
   function updateSystemCategory(category: CategoryDefinition) {
@@ -272,7 +232,7 @@ export function CategorySelector({
     onSelectCategory(nextCategory);
   }
 
-  function updateCategory() {
+  async function updateCategory() {
     if (!editingCategory) {
       return;
     }
@@ -302,20 +262,14 @@ export function CategorySelector({
     const nextCategory = nextCustomCategories.find(
       (category) => category.id === editingCategory.id,
     );
-    saveCustomCategories(nextCustomCategories);
+    if (!await saveCustomCategories(nextCustomCategories)) {
+      setNewCategoryError(CategoryCustomizerCopy.saveError);
+      return;
+    }
     if (selectedCategoryId === editingCategory.id && nextCategory) {
       onSelectCategory(nextCategory);
     }
     resetCategoryCreationState();
-  }
-
-  function openCategoryManageModal() {
-    setIsCreateModalOpen(false);
-    setIsManageModalOpen(true);
-  }
-
-  function saveCategoryOrder(nextCategories: CategoryDefinition[]) {
-    saveCategoryOrderIds([...new Set(nextCategories.map((category) => category.id))]);
   }
 
   function handleCategoryMenuAction(event: NativeActionEvent, category: CategoryDefinition) {
@@ -355,11 +309,15 @@ export function CategorySelector({
     );
   }
 
-  function deleteCategory(category: CategoryDefinition) {
+  async function deleteCategory(category: CategoryDefinition) {
     if (category.source === "custom") {
-      saveCustomCategories(
+      const saved = await saveCustomCategories(
         customCategories.filter((customCategory) => customCategory.id !== category.id),
       );
+      if (!saved) {
+        Alert.alert(CategoryCustomizerCopy.saveError);
+        return;
+      }
     } else {
       saveHiddenSystemCategoryIds([...new Set([...hiddenSystemCategoryIds, category.id])]);
     }
@@ -367,11 +325,6 @@ export function CategorySelector({
     if (selectedCategoryId === category.id) {
       onSelectCategory(null);
     }
-  }
-
-  function startCategoryCreation() {
-    resetCategoryCreationState();
-    setIsCreateModalOpen(true);
   }
 
   function cancelCategoryCreation() {
@@ -392,17 +345,6 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   title: FormLabelTextStyle,
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-  },
-  manageAction: {
-    color: AppColors.primary,
-    fontSize: 13,
-    fontWeight: "800",
-  },
   options: {
     position: "relative",
     width: "100%",

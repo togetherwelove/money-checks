@@ -10,15 +10,12 @@ import { HomeTransactionList } from "../components/homeScreen/HomeTransactionLis
 import type { MonthOffset } from "../components/monthCalendarPager/monthCalendarPagerTypes";
 import {
   type CalendarSummaryMode,
-  CalendarSummaryLabels,
-  CalendarSummaryLoadingLabel,
-  CalendarSummaryModes,
-  formatCalendarMonthlySummaryLabel,
+  formatSelectedDateEntryCount,
 } from "../constants/calendarSummary";
 import { AppColors } from "../constants/colors";
-import { HomeScreenUi } from "../constants/home";
+import { HomeScreenUi, MonthlySummaryUi } from "../constants/home";
 import { AppLayout } from "../constants/layout";
-import { formatMonthLabel } from "../constants/ledgerDisplay";
+import { formatMonthLabel, formatYearLabel } from "../constants/ledgerDisplay";
 import { AppMessages } from "../constants/messages";
 import {
   FullBleedHorizontalStyle,
@@ -29,11 +26,12 @@ import type { LedgerEntryDeleteHandler } from "../types/ledgerEntryDeletion";
 import type { InstallmentPrepaymentHandler } from "../types/installmentTransactions";
 import {
   addMonths,
-  formatCurrency,
   parseIsoDate,
   startOfMonth,
   toIsoDate,
 } from "../utils/calendar";
+
+import { formatSummarySelectedDate, resolveDisplayedSummary } from "../utils/homeSummary";
 
 type HomeScreenProps = {
   calendarSummaryMode: CalendarSummaryMode;
@@ -41,18 +39,10 @@ type HomeScreenProps = {
   onEditSelectedEntry: (entry: LedgerEntry) => void;
   onPrepayInstallmentEntry: InstallmentPrepaymentHandler;
   onSelectCalendarDate: (isoDate: string) => void;
-  screenTitle: ReactNode;
+  screenTitle: (label: string) => ReactNode;
   isCalendarHeatmapEnabled: boolean;
   showsBannerAd: boolean;
   state: LedgerScreenState;
-};
-
-type DisplayedSummary = {
-  balanceAmount: number;
-  balanceLabel?: string;
-  summaryLabel: string;
-  totalExpense: string;
-  totalIncome: string;
 };
 
 export function HomeScreen({
@@ -147,7 +137,7 @@ function KeyboardAwareContent({
   onPrepayInstallmentEntry: InstallmentPrepaymentHandler;
   onRefreshLedger: () => Promise<void>;
   onSelectCalendarDate: (isoDate: string) => void;
-  screenTitle: ReactNode;
+  screenTitle: (label: string) => ReactNode;
   selectedDate: string;
   selectedEntries: LedgerEntry[];
   showsBannerAd: boolean;
@@ -174,7 +164,7 @@ function KeyboardAwareContent({
   return (
     <View style={styles.screenContent}>
       <View>
-        {screenTitle}
+        {screenTitle(`${formatYearLabel(displayedCalendarMonth)} ${formatMonthLabel(displayedCalendarMonth)}`)}
         {errorMessage ? (
           <Pressable
             accessibilityRole="button"
@@ -196,15 +186,7 @@ function KeyboardAwareContent({
             <Text style={styles.errorRetryLabel}>재시도</Text>
           </Pressable>
         ) : null}
-        {showsBannerAd ? (
-          <View style={styles.adPanel}>
-            <AppBannerAd variant="embedded" />
-          </View>
-        ) : null}
         <View style={styles.calendarAdSection}>
-          <Text accessibilityRole="header" style={styles.monthTitle}>
-            {formatMonthLabel(displayedCalendarMonth)}
-          </Text>
           <WeekdayHeader />
           <MonthCalendarPager
             key={calendarFocusRevision}
@@ -219,6 +201,11 @@ function KeyboardAwareContent({
             selectedDate={selectedDate}
           />
         </View>
+        {showsBannerAd ? (
+          <View style={styles.adPanel}>
+            <AppBannerAd variant="embedded" />
+          </View>
+        ) : null}
       </View>
       <View style={styles.transactionSection}>
         <View style={styles.transactionSummaryPanel}>
@@ -229,6 +216,18 @@ function KeyboardAwareContent({
             totalExpense={displayedSummary.totalExpense}
             totalIncome={displayedSummary.totalIncome}
           />
+        </View>
+        <View style={styles.selectedDateHeader}>
+          <Text accessibilityRole="header" style={styles.selectedDateLabel}>
+            {formatSummarySelectedDate(selectedDate)}
+          </Text>
+          {!errorMessage ? (
+            <Text style={styles.selectedDateCount}>
+              {formatSelectedDateEntryCount(
+                isLoadingSelectedDateEntries || state.isLoading ? null : selectedEntries.length,
+              )}
+            </Text>
+          ) : null}
         </View>
         <HomeTransactionList
           activeBookId={state.activeBook?.id ?? null}
@@ -243,55 +242,6 @@ function KeyboardAwareContent({
       </View>
     </View>
   );
-}
-
-function resolveDisplayedSummary(
-  state: LedgerScreenState,
-  calendarSummaryMode: CalendarSummaryMode,
-): DisplayedSummary {
-  if (calendarSummaryMode === CalendarSummaryModes.monthly) {
-    return {
-      balanceAmount: state.monthlyLedger.balance,
-      summaryLabel: formatCalendarMonthlySummaryLabel(formatMonthLabel(state.visibleMonth)),
-      totalExpense: formatCurrency(state.monthlyLedger.totalExpense),
-      totalIncome: formatCurrency(state.monthlyLedger.totalIncome),
-    };
-  }
-
-  if (
-    calendarSummaryMode === CalendarSummaryModes.selectedMonth &&
-    !state.selectedMonthSummaryDate
-  ) {
-    return {
-      balanceAmount: 0,
-      balanceLabel: CalendarSummaryLoadingLabel,
-      summaryLabel: CalendarSummaryLabels.selectedMonthPrompt,
-      totalExpense: CalendarSummaryLoadingLabel,
-      totalIncome: CalendarSummaryLoadingLabel,
-    };
-  }
-
-  const summaryLabel =
-    calendarSummaryMode === CalendarSummaryModes.selectedMonth
-      ? state.selectedMonthSummaryLabel ?? CalendarSummaryLabels.selectedMonthPrompt
-      : CalendarSummaryLabels.all;
-
-  if (!state.totalLedgerSummary) {
-    return {
-      balanceAmount: 0,
-      balanceLabel: CalendarSummaryLoadingLabel,
-      summaryLabel,
-      totalExpense: CalendarSummaryLoadingLabel,
-      totalIncome: CalendarSummaryLoadingLabel,
-    };
-  }
-
-  return {
-    balanceAmount: state.totalLedgerSummary.balance,
-    summaryLabel,
-    totalExpense: formatCurrency(state.totalLedgerSummary.totalExpense),
-    totalIncome: formatCurrency(state.totalLedgerSummary.totalIncome),
-  };
 }
 
 function moveMonth(
@@ -322,17 +272,10 @@ const styles = StyleSheet.create({
   },
   screenContent: {
     flex: 1,
-    paddingTop: AppLayout.screenTopPadding,
+    paddingTop: AppLayout.compactGap,
   },
   calendarAdSection: {
     gap: AppLayout.calendarGap,
-  },
-  monthTitle: {
-    color: AppColors.text,
-    fontSize: HomeScreenUi.monthTitleFontSize,
-    fontWeight: "800",
-    lineHeight: HomeScreenUi.monthTitleLineHeight,
-    marginBottom: AppLayout.compactGap,
   },
   transactionSection: {
     ...FullBleedHorizontalStyle,
@@ -340,19 +283,20 @@ const styles = StyleSheet.create({
     borderColor: AppColors.border,
     flex: 1,
     minHeight: HomeScreenUi.transactionMinimumHeight,
-    paddingTop: AppLayout.compactGap,
   },
   adPanel: {
     ...FullBleedHorizontalStyle,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderTopWidth: StyleSheet.hairlineWidth,
     borderColor: AppColors.border,
     backgroundColor: AppColors.adBackground,
-    marginBottom: AppLayout.compactGap,
   },
+  selectedDateHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: AppLayout.cardContentPadding, paddingVertical: AppLayout.cardGap, gap: AppLayout.compactGap },
+  selectedDateLabel: { flexShrink: 1, color: AppColors.text, fontSize: MonthlySummaryUi.dateLabelFontSize, fontWeight: "700" },
+  selectedDateCount: { color: AppColors.mutedText, fontSize: MonthlySummaryUi.dateLabelFontSize },
   transactionSummaryPanel: {
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderColor: AppColors.border,
-    paddingBottom: AppLayout.compactGap,
+    paddingVertical: AppLayout.compactGap,
     paddingHorizontal: AppLayout.screenPadding,
   },
   error: {

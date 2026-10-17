@@ -9,15 +9,11 @@ import { CompactTextProps, OneLineTextFitProps } from "../../constants/textLayou
 import { useExpenseTextColor } from "../../contexts/ExpenseTextColorContext";
 import type { MonthlyTrendPoint } from "../../types/ledger";
 import { formatChartAxisCurrency } from "../../utils/currency";
+import { buildChartAxis } from "../../utils/chartAxis";
 
 type MonthlyTrendBarChartProps = {
   title?: string;
   trendMonths: MonthlyTrendPoint[];
-};
-
-type YAxisTick = {
-  amount: number;
-  key: string;
 };
 
 export function MonthlyTrendBarChart({
@@ -25,11 +21,11 @@ export function MonthlyTrendBarChart({
   trendMonths,
 }: MonthlyTrendBarChartProps) {
   const expenseTextStyle = useExpenseTextColor().textStyle;
-  const maxAmount = Math.max(
+  const dataMaximum = Math.max(
     ...trendMonths.flatMap((point) => [point.incomeAmount, point.expenseAmount]),
     0,
   );
-  const yAxisTicks = buildYAxisTicks(maxAmount);
+  const { maximum: maxAmount, ticks: yAxisTicks } = buildChartAxis(dataMaximum, MonthlyInsightChartLayout.trendYAxisLabelCount);
 
   return (
     <View style={styles.section}>
@@ -47,8 +43,11 @@ export function MonthlyTrendBarChart({
       <View style={styles.chartFrame}>
         <View style={styles.plotRow}>
           <View style={styles.yAxis}>
+            <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.axisMeasurement}>
+              {yAxisTicks.map((tick) => <Text key={tick.key} {...OneLineTextFitProps} style={styles.axisText}>{formatChartAxisCurrency(tick.amount)}</Text>)}
+            </View>
             {yAxisTicks.map((tick) => (
-              <Text key={tick.key} {...OneLineTextFitProps} style={styles.yAxisLabel}>
+              <Text key={tick.key} {...OneLineTextFitProps} style={[styles.axisText, styles.yAxisLabel, { bottom: maxAmount > 0 ? (tick.amount / maxAmount) * MonthlyInsightChartLayout.trendBarHeight : 0 }]}>
                 {formatChartAxisCurrency(tick.amount)}
               </Text>
             ))}
@@ -57,7 +56,7 @@ export function MonthlyTrendBarChart({
             <View style={styles.chartBody}>
               <View pointerEvents="none" style={styles.gridLayer}>
                 {yAxisTicks.map((tick) => (
-                  <View key={tick.key} style={styles.gridLine} />
+                  <View key={tick.key} style={[styles.gridLine, { bottom: maxAmount > 0 ? (tick.amount / maxAmount) * MonthlyInsightChartLayout.trendBarHeight : 0 }]} />
                 ))}
               </View>
               <View style={styles.chartRow}>
@@ -134,21 +133,6 @@ function LegendItem({
   );
 }
 
-function buildYAxisTicks(maxAmount: number): YAxisTick[] {
-  if (maxAmount <= 0) {
-    return [{ amount: 0, key: "zero" }];
-  }
-
-  const labelCount = MonthlyInsightChartLayout.trendYAxisLabelCount;
-  return Array.from({ length: labelCount }, (_, tickNumber) => {
-    const reverseTickNumber = labelCount - tickNumber - 1;
-    return {
-      amount: Math.round((maxAmount * reverseTickNumber) / (labelCount - 1)),
-      key: `tick-${reverseTickNumber}`,
-    };
-  });
-}
-
 const styles = StyleSheet.create({
   activeMonth: {
     color: AppColors.text,
@@ -186,10 +170,12 @@ const styles = StyleSheet.create({
   },
   gridLayer: {
     ...StyleSheet.absoluteFillObject,
-    justifyContent: "space-between",
   },
   gridLine: {
-    height: StyleSheet.hairlineWidth,
+    position: "absolute",
+    left: 0,
+    right: 0,
+    height: MonthlyInsightChartLayout.trendGridLineWidth,
     backgroundColor: AppColors.border,
   },
   headerRow: {
@@ -240,6 +226,7 @@ const styles = StyleSheet.create({
   plotRow: {
     flexDirection: "row",
     gap: MonthlyInsightChartLayout.trendYAxisGap,
+    paddingTop: MonthlyInsightChartLayout.trendYAxisLabelLineHeight / 2,
   },
   section: {
     gap: 8,
@@ -252,12 +239,17 @@ const styles = StyleSheet.create({
   yAxis: {
     alignItems: "flex-end",
     height: MonthlyInsightChartLayout.trendBarHeight,
-    justifyContent: "space-between",
   },
   yAxisLabel: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    transform: [{ translateY: MonthlyInsightChartLayout.trendYAxisLabelLineHeight / 2 }],
+    height: MonthlyInsightChartLayout.trendYAxisLabelLineHeight,
+    lineHeight: MonthlyInsightChartLayout.trendYAxisLabelLineHeight,
     color: AppColors.mutedText,
-    fontSize: 10,
-    fontWeight: "600",
     textAlign: "right",
   },
+  axisMeasurement: { opacity: 0 },
+  axisText: { fontSize: MonthlyInsightChartLayout.trendYAxisLabelFontSize, fontWeight: "600", lineHeight: MonthlyInsightChartLayout.trendYAxisLabelLineHeight },
 });

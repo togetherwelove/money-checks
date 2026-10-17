@@ -1,3 +1,8 @@
+import {
+  ONNURI_MESSAGE_HEADER_PATTERN,
+  ONNURI_PAYMENT_PATTERN,
+} from "../constants/onnuriPayment";
+
 const ISO_DATE_MONTH_OFFSET = 1;
 const BROADCAST_PREFIX_PATTERN = /^\[[^\]]+\]\s*/;
 const TRANSACTION_DATE_PATTERN = /(\d{1,2})\/(\d{2})(?:\s+\d{1,2}:\d{2})?/;
@@ -31,6 +36,19 @@ type MerchantCandidate = {
 
 export function parseCardSms(message: string): ParsedCardSms {
   const normalizedMessage = normalizeSmsText(message);
+  const onnuriPayment = ONNURI_MESSAGE_HEADER_PATTERN.test(normalizedMessage)
+    ? normalizedMessage.match(ONNURI_PAYMENT_PATTERN)
+    : null;
+  if (onnuriPayment) {
+    return {
+      amount: Number(onnuriPayment[2].replace(/,/g, "")),
+      day: null,
+      isCancel: false,
+      merchantName: onnuriPayment[1].trim(),
+      month: null,
+    };
+  }
+
   const lines = normalizedMessage.split("\n").filter(Boolean);
   const parsedDate = parseCardSmsDate(normalizedMessage);
   const amount = parseCardSmsAmount(lines);
@@ -53,7 +71,9 @@ export function isLikelyCardSms(message: string): boolean {
   }
 
   return (
-    CARD_SMS_KEYWORD_PATTERN.test(normalizedMessage) &&
+    (CARD_SMS_KEYWORD_PATTERN.test(normalizedMessage) ||
+      (ONNURI_MESSAGE_HEADER_PATTERN.test(normalizedMessage) &&
+        ONNURI_PAYMENT_PATTERN.test(normalizedMessage))) &&
     (KRW_AMOUNT_PATTERN.test(normalizedMessage) ||
       PLAIN_AMOUNT_LINE_PATTERN.test(normalizedMessage))
   );

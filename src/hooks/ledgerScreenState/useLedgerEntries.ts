@@ -41,8 +41,8 @@ type LedgerEntriesState = {
   entriesError: string | null;
   isLoadingEntries: boolean;
   isRefreshing: boolean;
-  preloadChartEntries: () => Promise<void>;
-  refreshLedger: () => Promise<void>;
+  preloadChartEntries: (chartMonth?: Date) => Promise<void>;
+  refreshLedger: (invalidateCachedMonths?: boolean) => Promise<void>;
   removeEntriesFromCache: (entryIds: readonly string[]) => void;
   replaceInstallmentGroupInCache: (
     installmentGroupId: string,
@@ -67,6 +67,8 @@ export function useLedgerEntries(
   const [isLoadingEntries, setIsLoadingEntries] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const cachedBookIdRef = useRef<string | null>(activeBookId);
+  const refreshLedgerRef = useRef<LedgerEntriesState["refreshLedger"] | null>(null);
+  const cacheRevisionRef = useRef(0);
   const scheduledBackgroundPreloadKeysRef = useRef<Set<string>>(new Set());
   const entryCache = activeBookId ? (entryCacheByBookId[activeBookId] ?? {}) : {};
   const refreshMonths = useMemo(() => getVisibleWindowMonths(visibleMonth), [visibleMonth]);
@@ -128,7 +130,9 @@ export function useLedgerEntries(
         monthCount: months.length,
         step,
       });
+      const revision = cacheRevisionRef.current;
       const nextEntriesByMonth = await loadLedgerMonthsEntries(activeBookId, months);
+      if (revision !== cacheRevisionRef.current) return;
       trace("loaded_month_group", { entryCount: countLedgerEntriesByMonth(nextEntriesByMonth) });
       setEntryCacheByBookId((currentCacheByBookId) =>
         updateBookEntryCache(currentCacheByBookId, activeBookId, (currentCache) =>
@@ -141,12 +145,12 @@ export function useLedgerEntries(
     },
     [activeBookId],
   );
-  const preloadChartEntries = useCallback(async () => {
+  const preloadChartEntries = useCallback(async (chartMonth = visibleMonth) => {
     if (!activeBookId) {
       return;
     }
 
-    const missingChartMonths = getChartTrendPreloadMonths(visibleMonth).filter(
+    const missingChartMonths = getChartTrendPreloadMonths(chartMonth).filter(
       (month) => !hasCachedMonth(entryCache, month),
     );
     if (missingChartMonths.length === 0) {
@@ -159,7 +163,7 @@ export function useLedgerEntries(
       logAppError("LedgerEntries", error, {
         activeBookId,
         step: "preload_chart_entries",
-        visibleMonth: visibleMonth.toISOString(),
+        visibleMonth: chartMonth.toISOString(),
       });
       setEntriesError(AppMessages.ledgerError);
     }
@@ -178,6 +182,7 @@ export function useLedgerEntries(
 
   useEffect(() => {
     let isMounted = true;
+    const revision = cacheRevisionRef.current;
     if (!activeBookId) {
       setIsLoadingEntries(false);
       return () => {
@@ -214,7 +219,7 @@ export function useLedgerEntries(
       });
       const nextEntriesByMonth = await loadLedgerMonthsEntries(activeBookId, months);
       trace("loaded_month_group", { entryCount: countLedgerEntriesByMonth(nextEntriesByMonth) });
-      if (!isMounted) {
+      if (!isMounted || revision !== cacheRevisionRef.current) {
         return;
       }
 
@@ -384,6 +389,9 @@ export function useLedgerEntries(
     return subscribeToLedgerEntryChanges({
       bookId: activeBookId,
       channelScope: LedgerRealtimeConfig.calendarChannelScope,
+      onResync: () => {
+        void refreshLedgerRef.current?.(true);
+      },
       onChange: (payload) => {
         void handleLedgerEntryChange(payload);
       },
@@ -415,13 +423,14 @@ export function useLedgerEntries(
     }
   }
 
-  const refreshLedger = async () => {
+  const refreshLedger = async (invalidateCachedMonths = false) => {
     if (!activeBookId) {
       return;
     }
 
     setIsRefreshing(true);
     setEntriesError(null);
+    const revision = ++cacheRevisionRef.current;
 
     try {
       const trace = createPerformanceTrace("LedgerEntries", {
@@ -429,15 +438,14 @@ export function useLedgerEntries(
         step: "refresh_visible_window_entries",
       });
       const nextEntriesByMonth = await loadLedgerMonthsEntries(activeBookId, refreshMonths);
+      if (revision !== cacheRevisionRef.current) return;
       trace("refreshed_visible_window_entries", {
         entryCount: countLedgerEntriesByMonth(nextEntriesByMonth),
       });
       setEntryCacheByBookId((currentCacheByBookId) =>
         updateBookEntryCache(currentCacheByBookId, activeBookId, (currentCache) => {
-          const nextCache = { ...currentCache };
-          for (const month of refreshMonths) {
-            delete nextCache[getMonthKey(month)];
-          }
+          // Resume/reconnect and conversions may change months outside this window.
+          const nextCache: LedgerEntryCache = invalidateCachedMonths ? {} : { ...currentCache };
           return refreshMonths.reduce((updatedCache, month) => {
             const monthKey = getMonthKey(month);
             return setMonthEntriesInCache(updatedCache, month, nextEntriesByMonth[monthKey] ?? []);
@@ -445,6 +453,7 @@ export function useLedgerEntries(
         }),
       );
     } catch (error) {
+      if (revision !== cacheRevisionRef.current) return;
       logAppError("LedgerEntries", error, {
         activeBookId,
         step: "refresh_entries",
@@ -452,9 +461,11 @@ export function useLedgerEntries(
       });
       setEntriesError(AppMessages.ledgerError);
     } finally {
-      setIsRefreshing(false);
+      if (revision === cacheRevisionRef.current) setIsRefreshing(false);
     }
   };
+
+  refreshLedgerRef.current = refreshLedger;
 
   return {
     entryCache,

@@ -2,22 +2,25 @@ import { Feather } from "@expo/vector-icons";
 import { Pressable, StyleSheet } from "react-native";
 
 import { AuthControls } from "../../constants/authControls";
-import { CategoryCustomizerCopy } from "../../constants/categoryCustomizer";
+import { CATEGORY_GRID_ACTION_ICON_SIZE } from "../../constants/categorySelector";
 import { AppColors } from "../../constants/colors";
 
-type CategoryAddGridItemProps = {
+type CategoryActionGridItemProps = {
+  icon: "edit-2";
+  accessibilityLabel: string;
   cellSize: number;
   left: number;
   top: number;
   onPress: () => void;
 };
 
-export function CategoryAddGridItem({ cellSize, left, top, onPress }: CategoryAddGridItemProps) {
+export function CategoryActionGridItem({ icon, accessibilityLabel, cellSize, left, top, onPress }: CategoryActionGridItemProps) {
   return (
     <Pressable
-      accessibilityLabel={CategoryCustomizerCopy.addAccessibilityLabel}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
       onPress={onPress}
-      style={[
+      style={({ pressed }) => [
         styles.button,
         {
           height: cellSize,
@@ -25,14 +28,16 @@ export function CategoryAddGridItem({ cellSize, left, top, onPress }: CategoryAd
           top,
           width: cellSize,
         },
+        pressed && styles.pressedButton,
       ]}
     >
-      <Feather color={AppColors.primary} name="plus" size={20} />
+      <Feather color={AppColors.primary} name={icon} size={CATEGORY_GRID_ACTION_ICON_SIZE} />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
+  pressedButton: { backgroundColor: AppColors.surfaceMuted },
   button: {
     position: "absolute",
     borderWidth: 1,

@@ -18,3 +18,6 @@ export const CATEGORY_MANAGE_MOVE_BUTTON_ICON_SIZE = 18;
 export const CATEGORY_MANAGE_SCROLL_SETTLE_DELAY_MS = 180;
 export const CATEGORY_ORDER_SAVE_DEBOUNCE_MS = 350;
 export const CATEGORY_SHARED_REFRESH_DEBOUNCE_MS = 500;
+
+export const CATEGORY_GRID_ACTION_ICON_SIZE = 20;
+export const CategoryGridActionOffset = { manage: 0, count: 1 } as const;

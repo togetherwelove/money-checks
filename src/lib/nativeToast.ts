@@ -1,36 +1,29 @@
+import { Dimensions, Keyboard } from "react-native";
+import type { ToastOptions } from "react-native-root-toast";
+
 import { ToastUi } from "../constants/toast";
 
 export function showNativeToast(message: string) {
   const RootToast = require("react-native-root-toast").default as {
     durations: { SHORT: number };
-    positions: { BOTTOM: number };
-    show: (
-      message: string,
-      options: {
-        animation: boolean;
-        backgroundColor: string;
-        bottomOffset: number;
-        duration: number;
-        hideOnPress: boolean;
-        opacity: number;
-        position: number;
-        shadow: boolean;
-        textColor: string;
-        textSize: number;
-      },
-    ) => unknown;
+    show: (message: string, options: ToastOptions) => unknown;
   };
+  const keyboard = Keyboard.metrics();
+  // Android may already resize the window above the keyboard.
+  const keyboardOverlap = keyboard
+    ? Math.max(0, Math.min(keyboard.height, Dimensions.get("window").height - keyboard.screenY))
+    : 0;
 
   RootToast.show(message, {
     animation: true,
     backgroundColor: ToastUi.backgroundColor,
-    bottomOffset: ToastUi.bottomOffset,
     duration: RootToast.durations.SHORT,
     hideOnPress: true,
+    keyboardAvoiding: false,
     opacity: ToastUi.opacity,
-    position: RootToast.positions.BOTTOM,
+    position: -(keyboardOverlap + ToastUi.bottomOffset),
     shadow: false,
     textColor: ToastUi.textColor,
-    textSize: ToastUi.textSize,
+    textStyle: { fontSize: ToastUi.textSize },
   });
 }

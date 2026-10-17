@@ -1,5 +1,6 @@
 
 const PushNotificationLocalizedCopy = {
+    registrationFailed: "알림 등록에 실패했어요. 네트워크 연결을 확인하고 다시 시도해 주세요.",
     joinRequestNotificationBody: "{requesterName}님이 {bookName} 참여를 요청했어요.",
     joinRequestNotificationTitle: "새 참여 요청",
     permissionBlocked: "기기 알림 권한이 차단되어 있어요. 휴대폰 설정에서 알림을 허용해 주세요.",

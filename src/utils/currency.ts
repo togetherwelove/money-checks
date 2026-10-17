@@ -11,15 +11,15 @@ const CurrencyNumberFormatters = Object.fromEntries(
   ]),
 ) as Record<AppCurrency, Intl.NumberFormat>;
 
-const KRW_AXIS_UNIT_ROLLOVER_COUNT = 10;
-
 const KrwAxisUnits = [
-  { divisor: 10_000_000, label: "천만" },
-  { divisor: 1_000_000, label: "백만" },
-  { divisor: 100_000, label: "십만" },
+  { divisor: 100_000_000, label: "억" },
   { divisor: 10_000, label: "만" },
   { divisor: 1_000, label: "천" },
 ] as const;
+const KRW_AXIS_MAX_FRACTION_DIGITS = 2;
+const KrwAxisNumberFormatter = new Intl.NumberFormat(CurrencyFormatConfig.KRW.locale, {
+  maximumFractionDigits: KRW_AXIS_MAX_FRACTION_DIGITS,
+});
 
 export function formatCurrency(amount: number, currency = resolveDisplayCurrency()): string {
   const config = CurrencyFormatConfig[currency];
@@ -47,13 +47,7 @@ function formatKrwChartAxisCurrency(amount: number): string {
       continue;
     }
 
-    const roundedUnitCount = Math.round(amount / unit.divisor);
-    const nextUnit = KrwAxisUnits[unitIndex - 1];
-    if (nextUnit && roundedUnitCount >= KRW_AXIS_UNIT_ROLLOVER_COUNT) {
-      return `${Math.round(amount / nextUnit.divisor)}${nextUnit.label}`;
-    }
-
-    return `${roundedUnitCount}${unit.label}`;
+    return `${KrwAxisNumberFormatter.format(amount / unit.divisor)}${unit.label}`;
   }
 
   return formatCurrencyNumber(amount, "KRW");

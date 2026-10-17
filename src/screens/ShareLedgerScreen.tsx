@@ -1,6 +1,6 @@
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import { type ReactNode, useEffect, useState } from "react";
-import { StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { AppFooterContentInset } from "../components/AppFooterContentInset";
@@ -211,34 +211,36 @@ export function ShareLedgerScreen({
   return (
     <KeyboardAwareScrollView contentContainerStyle={styles.content} style={styles.screen}>
       {screenTitle}
-      <SharedLedgerPanel
-        accessibleBooks={accessibleBooks}
-        activeBook={activeBook}
-        currentUserId={userId}
-        isReadOnlyDueToPlanLimit={isActiveBookReadOnlyDueToPlanLimit}
-        members={members}
-        onCreateLedgerBook={onCreateLedgerBook}
-        onDeleteActiveLedgerBook={onDeleteActiveLedgerBook}
-        onOpenSubscription={onOpenSubscription}
-        onApproveJoinRequest={onApproveJoinRequest}
-        onBeforeCopyShareCode={onBeforeCopyShareCode}
-        onBeforeSendJoinRequest={onBeforeSendJoinRequest}
-        onKickMember={handleKickMember}
-        onLeaveSharedLedgerBook={onLeaveSharedLedgerBook}
-        onJoinSharedLedgerBook={onJoinSharedLedgerBook}
-        onPreviewJoinSharedLedgerBook={onPreviewJoinSharedLedgerBook}
-        onRejectJoinRequest={onRejectJoinRequest}
-        onRenameActiveLedgerBook={onRenameActiveLedgerBook}
-        onSwitchLedgerBook={onSwitchLedgerBook}
-        onTransferOwnership={handleTransferOwnership}
-        onSendPendingJoinRequestNotification={onSendPendingJoinRequestNotification}
-        onSendPushNotificationToBookMembers={onSendPushNotificationToBookMembers}
-        onSendPushNotificationToUsers={onSendPushNotificationToUsers}
-        pendingJoinRequestCountsByBookId={pendingJoinRequestCountsByBookId}
-        pendingJoinRequests={pendingJoinRequests}
-        subscriptionTier={subscriptionTier}
-      />
-      <AppFooterContentInset />
+      <View style={styles.sections}>
+        <SharedLedgerPanel
+          accessibleBooks={accessibleBooks}
+          activeBook={activeBook}
+          currentUserId={userId}
+          isReadOnlyDueToPlanLimit={isActiveBookReadOnlyDueToPlanLimit}
+          members={members}
+          onCreateLedgerBook={onCreateLedgerBook}
+          onDeleteActiveLedgerBook={onDeleteActiveLedgerBook}
+          onOpenSubscription={onOpenSubscription}
+          onApproveJoinRequest={onApproveJoinRequest}
+          onBeforeCopyShareCode={onBeforeCopyShareCode}
+          onBeforeSendJoinRequest={onBeforeSendJoinRequest}
+          onKickMember={handleKickMember}
+          onLeaveSharedLedgerBook={onLeaveSharedLedgerBook}
+          onJoinSharedLedgerBook={onJoinSharedLedgerBook}
+          onPreviewJoinSharedLedgerBook={onPreviewJoinSharedLedgerBook}
+          onRejectJoinRequest={onRejectJoinRequest}
+          onRenameActiveLedgerBook={onRenameActiveLedgerBook}
+          onSwitchLedgerBook={onSwitchLedgerBook}
+          onTransferOwnership={handleTransferOwnership}
+          onSendPendingJoinRequestNotification={onSendPendingJoinRequestNotification}
+          onSendPushNotificationToBookMembers={onSendPushNotificationToBookMembers}
+          onSendPushNotificationToUsers={onSendPushNotificationToUsers}
+          pendingJoinRequestCountsByBookId={pendingJoinRequestCountsByBookId}
+          pendingJoinRequests={pendingJoinRequests}
+          subscriptionTier={subscriptionTier}
+        />
+        <AppFooterContentInset />
+      </View>
     </KeyboardAwareScrollView>
   );
 
@@ -302,6 +304,9 @@ function sortLedgerBookMembers(members: LedgerBookMember[]): LedgerBookMember[] 
 }
 
 const styles = StyleSheet.create({
+  sections: {
+    gap: AppLayout.cardGap,
+  },
   screen: {
     flex: 1,
     backgroundColor: AppColors.screenBackground,
@@ -310,6 +315,5 @@ const styles = StyleSheet.create({
     ...ResponsivePageContentStyle,
     paddingHorizontal: AppLayout.screenPadding,
     paddingTop: AppLayout.screenTopPadding,
-    gap: AppLayout.cardGap,
   },
 });

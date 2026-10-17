@@ -1,3 +1,4 @@
+import { AppScrollBehavior } from "../constants/scroll";
 import { Feather } from "@expo/vector-icons";
 import { useRef, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -136,7 +137,7 @@ export function LedgerBookMembers({
     <View style={styles.section}>
       <Text style={styles.memberTitle}>{AppMessages.accountMembersTitle}</Text>
       {shouldScrollMembers ? (
-        <ScrollView
+        <ScrollView {...AppScrollBehavior}
           nestedScrollEnabled
           showsVerticalScrollIndicator
           style={styles.memberListScroll}

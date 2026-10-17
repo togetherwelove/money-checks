@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text } from "react-native";
 
+import { ActionButtonLabelTextStyle } from "../constants/uiStyles";
 import { AuthControls } from "../constants/authControls";
 import { AppColors } from "../constants/colors";
 import { OneLineTextFitProps } from "../constants/textLayout";
@@ -125,15 +126,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
   },
-  compactText: {
-    fontSize: 15,
-  },
+  compactText: ActionButtonLabelTextStyle,
   inlineText: {
     fontSize: 13,
   },
-  largeText: {
-    fontSize: 15,
-  },
+  largeText: ActionButtonLabelTextStyle,
   primaryText: {
     color: AppColors.inverseText,
   },

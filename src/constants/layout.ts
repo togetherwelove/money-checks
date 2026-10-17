@@ -1,11 +1,12 @@
 const SCREEN_PADDING = 8;
+const COMPACT_GAP = 4;
 
 export const AppLayout = {
-  compactGap: 4,
+  compactGap: COMPACT_GAP,
   dividerWidth: 1,
   groupRadius: 8,
   screenPadding: SCREEN_PADDING,
-  screenTopPadding: SCREEN_PADDING,
+  screenTopPadding: COMPACT_GAP,
   cardRadius: 12,
   cardGap: 10,
   cardContentPadding: 14,
@@ -18,8 +19,10 @@ export const AppLayout = {
 } as const;
 
 export const AppScreenTitleUi = {
+  height: 40,
+  lineHeight: 28,
   calendarSelectorBorderRadius: 999,
-  calendarSelectorHeight: 44,
+  calendarSelectorHeight: 40,
   calendarSelectorHorizontalPadding: 14,
   calendarSelectorIconSize: 18,
   calendarSelectorTitleFontSize: 20,

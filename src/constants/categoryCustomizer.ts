@@ -6,6 +6,12 @@ export const CUSTOM_CATEGORY_DEFAULT_ICON: CategoryIconName = "circle";
 export const CUSTOM_CATEGORY_MAX_NAME_LENGTH = 12;
 
 export const CategoryCustomizerCopy = {
+    discardOrderTitle: "순서 변경 취소",
+    discardOrderMessage: "저장하지 않은 순서 변경을 취소하고 다른 탭으로 이동할까요?",
+    keepEditingAction: "계속 편집",
+    switchTabAction: "이동",
+    saveError: "분류를 저장하지 못했어요. 연결과 편집 권한을 확인한 뒤 다시 시도해 주세요.",
+    loadingCategories: "기존 분류를 불러오는 중이에요.",
     addAccessibilityLabel: "분류 추가",
     createAction: "등록",
     createIconLabel: "아이콘",

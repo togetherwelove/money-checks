@@ -162,6 +162,7 @@ export function resolveSnapshotAfterReadingScope(
 export async function dismissPresentedNotificationBadges(
   bookId: string,
   scope: NotificationBadgeScope,
+  entryIds?: readonly string[],
 ): Promise<void> {
   const badgeKind =
     scope === NotificationBadgeScopes.ledgerEntries
@@ -171,7 +172,11 @@ export async function dismissPresentedNotificationBadges(
   const matchingNotificationIds = presentedNotifications
     .filter((notification) => {
       const data = notification.request.content.data;
-      return data?.badgeKind === badgeKind && data.badgeBookId === bookId;
+      return (
+        data?.badgeKind === badgeKind &&
+        data.badgeBookId === bookId &&
+        (!entryIds || entryIds.includes(data.badgeEntryId as string))
+      );
     })
     .map((notification) => notification.request.identifier);
 

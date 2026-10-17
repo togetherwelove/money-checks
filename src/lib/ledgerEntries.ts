@@ -42,6 +42,9 @@ export async function fetchLedgerEntries(
   options?: {
     ascending?: boolean;
     orderBy?: LedgerEntryOrderBy;
+    cursor?: LedgerEntriesPageCursor | null;
+    limit?: number;
+    includePhotoSignedUrls?: boolean;
   },
 ): Promise<LedgerEntry[]> {
   const trace = createPerformanceTrace("LedgerEntriesQuery", {
@@ -55,10 +58,15 @@ export async function fetchLedgerEntries(
     dateFrom,
     dateTo,
     orderBy: options?.orderBy ?? "occurred_on",
+    cursor: options?.cursor,
+    limit: options?.limit,
   });
   trace("fetched_ledger_entries_rows", { rowCount: rows.length });
 
-  const entries = await mapEnrichedLedgerEntries(rows, { includePhotoAttachments: true });
+  const entries = await mapEnrichedLedgerEntries(rows, {
+    includePhotoAttachments: true,
+    includePhotoSignedUrls: options?.includePhotoSignedUrls,
+  });
   trace("mapped_ledger_entries", { entryCount: entries.length });
   return entries;
 }
@@ -435,12 +443,14 @@ function mapSavedLedgerEntry(
 
 async function mapEnrichedLedgerEntries(
   rows: EnrichedLedgerEntryRow[],
-  options: { includePhotoAttachments: boolean },
+  options: { includePhotoAttachments: boolean; includePhotoSignedUrls?: boolean },
 ): Promise<LedgerEntry[]> {
   const receiptFileRows = options.includePhotoAttachments
     ? rows.flatMap((row) => normalizeEnrichedPhotoAttachmentRows(row.photo_attachments))
     : [];
-  const signedUrlMap = await createLedgerEntryPhotoSignedUrlMap(receiptFileRows);
+  const signedUrlMap = options.includePhotoSignedUrls === false
+    ? new Map<string, string>()
+    : await createLedgerEntryPhotoSignedUrlMap(receiptFileRows);
 
   return rows.map((row) => ({
     ...mapLedgerEntryRow(row, resolveAuthorDisplayName(row)),
