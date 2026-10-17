@@ -12,6 +12,7 @@ import type { SubscriptionTier } from "../constants/subscription";
 import { isLedgerBookEditableWithinPlanLimit } from "../lib/ledgerEditability";
 import type { AccessibleLedgerBook } from "../types/ledgerBook";
 import { IconActionButton } from "./IconActionButton";
+import { ModalCloseButton } from "./ModalCloseButton";
 
 type LedgerBookSwitcherModalProps = {
   activeBookId: string | null;
@@ -41,9 +42,7 @@ export function LedgerBookSwitcherModal({
         <View style={styles.sheet}>
           <View style={styles.header}>
             <Text style={styles.title}>{LedgerBookManagementCopy.listTitle}</Text>
-            <Pressable onPress={onClose}>
-              <Text style={styles.closeText}>취소</Text>
-            </Pressable>
+            <ModalCloseButton onPress={onClose} />
           </View>
           <View style={styles.list}>
             {books.map((book) => {
@@ -145,11 +144,6 @@ const styles = StyleSheet.create({
     color: AppColors.text,
     fontSize: 16,
     fontWeight: "800",
-  },
-  closeText: {
-    color: AppColors.mutedText,
-    fontSize: 13,
-    fontWeight: "700",
   },
   list: {
     gap: 6,

@@ -1,7 +1,12 @@
+import { AppScrollBehavior } from "../constants/scroll";
 import { useState } from "react";
 import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppColors } from "../constants/colors";
+import { AppLayout } from "../constants/layout";
+import { ModalCloseButtonUi } from "../constants/modal";
+import { EntryDetailFieldStyle, EntryDetailLabelStyle, EntryDetailValueStyle, EntryDetailRowStyle } from "../constants/entryDetailStyles";
 import {
   ENTRY_PHOTO_CARD_GAP,
   ENTRY_PHOTO_CARD_MARGIN,
@@ -12,11 +17,10 @@ import {
 } from "../constants/entryPhotos";
 import {
   CompactLabelTextStyle,
-  FormLabelTextStyle,
-  SupportingTextStyle,
 } from "../constants/uiStyles";
 import type { LedgerEntryPhotoAttachment } from "../types/ledger";
 import { IconActionButton } from "./IconActionButton";
+import { ModalCloseButton } from "./ModalCloseButton";
 import { TextLinkButton } from "./TextLinkButton";
 
 type EntryPhotoAttachmentFieldProps = {
@@ -31,6 +35,7 @@ export function EntryPhotoAttachmentField({
   onRemoveAttachment,
 }: EntryPhotoAttachmentFieldProps) {
   const [previewAttachmentUri, setPreviewAttachmentUri] = useState<string | null>(null);
+  const insets = useSafeAreaInsets();
 
   return (
     <>
@@ -50,7 +55,7 @@ export function EntryPhotoAttachmentField({
           </Text>
         </View>
         {attachments.length > 0 ? (
-          <ScrollView
+          <ScrollView {...AppScrollBehavior}
             horizontal
             showsHorizontalScrollIndicator={false}
             style={styles.attachmentList}
@@ -81,34 +86,35 @@ export function EntryPhotoAttachmentField({
         transparent
         visible={Boolean(previewAttachmentUri)}
       >
-        <Pressable onPress={() => setPreviewAttachmentUri(null)} style={styles.previewBackdrop}>
-          {previewAttachmentUri ? (
-            <Image source={{ uri: previewAttachmentUri }} style={styles.previewImage} />
-          ) : null}
-        </Pressable>
+        <View style={styles.previewContainer}>
+          <Pressable onPress={() => setPreviewAttachmentUri(null)} style={styles.previewBackdrop}>
+            {previewAttachmentUri ? (
+              <Image source={{ uri: previewAttachmentUri }} style={styles.previewImage} />
+            ) : null}
+          </Pressable>
+          <View style={[styles.previewClose, {
+            top: insets.top + AppLayout.screenPadding,
+            right: insets.right + AppLayout.screenPadding,
+          }]}>
+            <ModalCloseButton onPress={() => setPreviewAttachmentUri(null)} />
+          </View>
+        </View>
       </Modal>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  fieldGroup: {
-    gap: 6,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-  },
+  fieldGroup: EntryDetailFieldStyle,
+  header: EntryDetailRowStyle,
   headerInfo: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: AppLayout.screenPadding,
   },
-  label: FormLabelTextStyle,
+  label: EntryDetailLabelStyle,
   attachmentCount: {
-    ...SupportingTextStyle,
+    ...EntryDetailValueStyle,
     flexShrink: 1,
   },
   attachmentList: {
@@ -128,6 +134,14 @@ const styles = StyleSheet.create({
   attachmentName: {
     ...CompactLabelTextStyle,
     color: AppColors.text,
+  },
+  previewContainer: {
+    flex: 1,
+  },
+  previewClose: {
+    position: "absolute",
+    backgroundColor: AppColors.surface,
+    borderRadius: ModalCloseButtonUi.touchSize / 2,
   },
   previewBackdrop: {
     flex: 1,

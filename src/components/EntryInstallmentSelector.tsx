@@ -1,17 +1,14 @@
 import { Feather } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { AuthControls } from "../constants/authControls";
+import { EntryDetailLabelStyle, EntryDetailValueStyle, EntryDetailRowStyle, EntryDetailDividerStyle } from "../constants/entryDetailStyles";
 import { AppColors } from "../constants/colors";
 import {
   EntryInstallmentSelectorUi,
   EntryRegistrationCopy,
 } from "../constants/entryRegistration";
-import { AppLayout } from "../constants/layout";
 import {
-  FormLabelTextStyle,
   SettingValueActionStyle,
-  SettingValueTextStyle,
 } from "../constants/uiStyles";
 import { formatInstallmentLabel } from "../lib/installments";
 
@@ -48,19 +45,14 @@ export function EntryInstallmentSelector({
 }
 
 const styles = StyleSheet.create({
-  label: FormLabelTextStyle,
+  label: EntryDetailLabelStyle,
   pressedRow: {
     opacity: EntryInstallmentSelectorUi.pressedOpacity,
   },
   row: {
-    alignItems: "center",
-    alignSelf: "stretch",
-    borderBottomColor: AppColors.border,
-    borderBottomWidth: AppLayout.dividerWidth,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    minHeight: AuthControls.controlHeight,
+    ...EntryDetailRowStyle,
+    ...EntryDetailDividerStyle,
   },
-  value: SettingValueTextStyle,
+  value: EntryDetailValueStyle,
   valueAction: SettingValueActionStyle,
 });

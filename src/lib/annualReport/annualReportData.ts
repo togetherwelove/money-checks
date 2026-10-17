@@ -48,6 +48,7 @@ export function buildAnnualReportData(
   dateFrom: string,
   dateTo: string,
 ): AnnualReportData {
+  entries = entries.filter((entry) => entry.date >= dateFrom && entry.date <= dateTo);
   const periodLabel = `${dateFrom} ~ ${dateTo}`;
   const monthlyRows = buildMonthRows(entries, dateFrom, dateTo);
   const totalIncome = monthlyRows.reduce((sum, row) => sum + row.income, 0);
@@ -74,16 +75,22 @@ function buildMonthRows(entries: LedgerEntry[], dateFrom: string, dateTo: string
   const endMonth = startOfMonth(parseIsoDate(dateTo));
   const rows: AnnualReportMonthRow[] = [];
   const cursor = new Date(startMonth);
+  const totals = new Map<string, { income: number; expense: number; count: number }>();
+  for (const entry of entries) {
+    const key = entry.date.slice(0, 7);
+    const total = totals.get(key) ?? { income: 0, expense: 0, count: 0 };
+    total[entry.type] += entry.amount;
+    total.count++;
+    totals.set(key, total);
+  }
 
   while (cursor.getTime() <= endMonth.getTime()) {
     const monthKey = getMonthKey(cursor);
-    const monthEntries = entries.filter((entry) => entry.date.startsWith(`${monthKey}-`));
-    const income = sumAmountByType(monthEntries, "income");
-    const expense = sumAmountByType(monthEntries, "expense");
+    const { income = 0, expense = 0, count = 0 } = totals.get(monthKey) ?? {};
 
     rows.push({
       balance: income - expense,
-      count: monthEntries.length,
+      count,
       expense,
       income,
       monthKey,
@@ -104,53 +111,67 @@ function buildCategoryRows(
   const totalAmount = filteredEntries.reduce((sum, entry) => sum + entry.amount, 0);
   const amountByCategory = new Map<string, number>();
   const countByCategory = new Map<string, number>();
+  const labels = new Map<string, string>();
 
   for (const entry of filteredEntries) {
+    const key = entry.categoryId ? `id:${entry.categoryId}` : `legacy:${entry.category}`;
+    labels.set(key, entry.category);
     amountByCategory.set(
-      entry.category,
-      (amountByCategory.get(entry.category) ?? 0) + entry.amount,
+      key,
+      (amountByCategory.get(key) ?? 0) + entry.amount,
     );
-    countByCategory.set(entry.category, (countByCategory.get(entry.category) ?? 0) + 1);
+    countByCategory.set(key, (countByCategory.get(key) ?? 0) + 1);
   }
+  const displayLabels = distinguishDuplicateNames(labels);
 
   return [...amountByCategory.entries()]
     .sort((left, right) => right[1] - left[1])
-    .map(([category, amount]) => ({
+    .map(([key, amount]) => ({
       amount,
-      category,
-      count: countByCategory.get(category) ?? 0,
+      category: displayLabels.get(key)!,
+      count: countByCategory.get(key) ?? 0,
       share: totalAmount ? amount / totalAmount : 0,
       type,
     }));
 }
 
-function sumAmountByType(entries: LedgerEntry[], type: LedgerEntryType) {
-  return entries
-    .filter((entry) => entry.type === type)
-    .reduce((sum, entry) => sum + entry.amount, 0);
-}
-
 function buildMemberRows(entries: LedgerEntry[]): AnnualReportMemberRow[] {
   const amountByMember = new Map<string, { count: number; income: number; expense: number }>();
+  const labels = new Map<string, string>();
 
   for (const entry of entries) {
     const memberName = entry.targetMemberName || entry.authorName || DEFAULT_MEMBER_DISPLAY_NAME;
-    const currentAmount = amountByMember.get(memberName) ?? { count: 0, income: 0, expense: 0 };
-    amountByMember.set(memberName, {
+    const id = entry.targetMemberId || entry.authorId;
+    const key = id ? `id:${id}` : `legacy:${memberName}`;
+    labels.set(key, memberName);
+    const currentAmount = amountByMember.get(key) ?? { count: 0, income: 0, expense: 0 };
+    amountByMember.set(key, {
       count: currentAmount.count + 1,
       income: entry.type === "income" ? currentAmount.income + entry.amount : currentAmount.income,
       expense:
         entry.type === "expense" ? currentAmount.expense + entry.amount : currentAmount.expense,
     });
   }
+  const displayLabels = distinguishDuplicateNames(labels);
 
   return [...amountByMember.entries()]
-    .map(([memberName, amount]) => ({
+    .map(([key, amount]) => ({
       balance: amount.income - amount.expense,
       count: amount.count,
       expense: amount.expense,
       income: amount.income,
-      memberName,
+      memberName: displayLabels.get(key)!,
     }))
     .sort((left, right) => right.income + right.expense - (left.income + left.expense));
+}
+
+function distinguishDuplicateNames(labels: Map<string, string>) {
+  const counts = new Map<string, number>();
+  const ordinals = new Map<string, number>();
+  for (const label of labels.values()) counts.set(label, (counts.get(label) ?? 0) + 1);
+  return new Map([...labels].map(([key, label]) => {
+    const ordinal = (ordinals.get(label) ?? 0) + 1;
+    ordinals.set(label, ordinal);
+    return [key, counts.get(label)! > 1 ? `${label} (${ordinal})` : label];
+  }));
 }

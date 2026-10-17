@@ -3,7 +3,6 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
 import { AppLayout, AppScreenTitleUi } from "../constants/layout";
-import { MenuUi } from "../constants/menu";
 import { SubscriptionMessages } from "../constants/subscription";
 import { CompactTextProps } from "../constants/textLayout";
 import { BrandPlusTextStyle, ScreenTitleTextStyle } from "../constants/uiStyles";
@@ -13,7 +12,7 @@ type AppScreenTitleProps = {
   isReadOnlyTitle?: boolean;
   onPressTitle?: () => void;
   titleLabel?: string | null;
-  variant?: "calendar" | "default";
+  variant?: "calendar" | "chart" | "default";
 };
 
 export function AppScreenTitle({
@@ -40,7 +39,7 @@ export function AppScreenTitle({
             {...CompactTextProps}
             accessibilityRole="header"
             numberOfLines={1}
-            style={[styles.titleText, isCalendarVariant ? styles.calendarTitleText : null]}
+            style={styles.titleText}
           >
             {titleLabel}
           </Text>
@@ -67,8 +66,8 @@ export function AppScreenTitle({
     </View>
   ) : null;
   return (
-    <View style={[styles.container, isCalendarVariant ? styles.calendarContainer : null]}>
-      <View style={[styles.titleSlot, isCalendarVariant ? styles.calendarTitleSlot : null]}>
+    <View style={[styles.container, isCalendarVariant ? styles.calendarContainer : null, variant === "chart" ? styles.chartContainer : null]}>
+      <View style={styles.titleSlot}>
         {canPressTitle ? (
           <Pressable
             accessibilityRole="button"
@@ -89,54 +88,46 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    height: MenuUi.floatingButtonSize,
-    marginBottom: AppLayout.screenPadding,
-    paddingHorizontal: MenuUi.floatingButtonReservedWidth,
+    height: AppScreenTitleUi.height,
+    marginBottom: AppLayout.compactGap,
     width: "100%",
   },
   titleSlot: {
     flex: 1,
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "center",
     minWidth: 0,
   },
   titleButton: {
-    alignItems: "center",
+    alignItems: "flex-start",
     minWidth: 0,
     maxWidth: "100%",
   },
   calendarContainer: {
     height: AppScreenTitleUi.calendarSelectorHeight,
-    marginBottom: AppLayout.cardGap,
+    marginBottom: AppLayout.compactGap,
     paddingHorizontal: 0,
   },
-  calendarTitleSlot: {
-    alignItems: "flex-start",
+  chartContainer: {
+    marginBottom: AppLayout.compactGap,
   },
   calendarTitleButton: {
     height: AppScreenTitleUi.calendarSelectorHeight,
     justifyContent: "center",
-    paddingHorizontal: AppScreenTitleUi.calendarSelectorHorizontalPadding,
-    borderWidth: AppLayout.dividerWidth,
-    borderColor: AppColors.border,
-    borderRadius: AppScreenTitleUi.calendarSelectorBorderRadius,
-    backgroundColor: AppColors.capsuleSurface,
   },
   titleRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "flex-start",
     gap: AppLayout.compactGap,
     minWidth: 0,
     maxWidth: "100%",
   },
   titleText: {
     ...ScreenTitleTextStyle,
+    textAlign: "left",
+    lineHeight: AppScreenTitleUi.lineHeight,
     flexShrink: 1,
-  },
-  calendarTitleText: {
-    fontSize: AppScreenTitleUi.calendarSelectorTitleFontSize,
-    lineHeight: AppScreenTitleUi.calendarSelectorTitleLineHeight,
   },
   titleBrandText: {
     fontSize: ScreenTitleTextStyle.fontSize,

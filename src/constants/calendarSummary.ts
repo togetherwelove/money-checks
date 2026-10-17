@@ -29,12 +29,16 @@ export const CalendarSummaryModeOptions: { label: string; value: CalendarSummary
 export const CalendarSummaryLoadingLabel = "...";
 
 export const CalendarSummaryLabels = {
-  all: "전체 내역 요약",
+  all: "전체 기간",
+  balance: "잔액",
+  changePeriod: "집계 기간 변경",
+  loadingCount: "불러오는 중",
   expense: "지출",
   income: "수입",
-  selectedMonthPrompt: "기준일을 선택해 주세요",
+  monthly: "월간 요약",
+  selectedMonthPrompt: "기준일을 선택하지 않았습니다",
 } as const;
 
-export function formatCalendarMonthlySummaryLabel(monthLabel: string): string {
-  return `${monthLabel} 요약`;
+export function formatSelectedDateEntryCount(count: number | null): string {
+  return count === null ? CalendarSummaryLabels.loadingCount : `${count}건`;
 }

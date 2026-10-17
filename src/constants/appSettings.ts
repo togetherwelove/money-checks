@@ -1,4 +1,13 @@
 export const AppSettingsCopy = {
+  categorySectionTitle: "분류",
+  categoryMenuTitle: "분류 추가·순서 변경",
+  categoryModalTitle: "분류 관리",
+  orderExpenseCategories: "지출 분류 순서",
+  orderIncomeCategories: "수입 분류 순서",
+  addExpenseCategory: "지출 분류 추가",
+  addIncomeCategory: "수입 분류 추가",
+  categoryBookPrefix: "적용 가계부: ",
+  categoryBookUnavailable: "편집 가능한 가계부를 선택해 주세요.",
   expenseTextColorDescription: "앱 전체의 지출 텍스트 색상을 선택할 수 있어요.",
   expenseTextColorTitle: "지출 텍스트 색상",
   featureSectionTitle: "기능",
@@ -17,9 +26,10 @@ export const AppSettingsCopy = {
 } as const;
 
 export const AppSettingsUi = {
+  rowTitleFontSize: 14,
+  disabledRowOpacity: 0.64,
   contentBottomPadding: 24,
   contentHorizontalPadding: 16,
-  contentTopPadding: 16,
   rowMinHeight: 64,
   sectionGap: 12,
   sectionSpacing: 24,

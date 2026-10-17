@@ -87,10 +87,10 @@ export function ChartScreen({
             currentMonth={state.currentChartMonth}
             nextMonth={state.nextChartMonth}
             onMoveMonth={(monthOffset) =>
-              state.setVisibleMonth(
+              state.setVisibleChartMonth(
                 new Date(
-                  state.visibleMonth.getFullYear(),
-                  state.visibleMonth.getMonth() + monthOffset,
+                  state.visibleChartMonth.getFullYear(),
+                  state.visibleChartMonth.getMonth() + monthOffset,
                   1,
                 ),
               )

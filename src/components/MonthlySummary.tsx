@@ -1,10 +1,9 @@
-import { StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { StyleSheet, Text, useWindowDimensions, View } from "react-native";
 
 import { CalendarSummaryLabels } from "../constants/calendarSummary";
 import { AppColors } from "../constants/colors";
-import { MonthlySummaryUi } from "../constants/home";
-import { AppLayout } from "../constants/layout";
-import { OneLineTextFitProps } from "../constants/textLayout";
+import { MonthlySummaryUi as Ui } from "../constants/home";
 import { useExpenseTextColor } from "../contexts/ExpenseTextColorContext";
 import { formatCurrency } from "../utils/calendar";
 
@@ -16,145 +15,46 @@ type MonthlySummaryProps = {
   totalIncome: string;
 };
 
-export function MonthlySummary({
-  balanceAmount,
-  balanceLabel,
-  summaryLabel,
-  totalExpense,
-  totalIncome,
-}: MonthlySummaryProps) {
+export function MonthlySummary({ balanceAmount, balanceLabel, summaryLabel, totalExpense, totalIncome }: MonthlySummaryProps) {
   const expenseTextColor = useExpenseTextColor().textColor;
-  const balanceValue = balanceLabel ?? formatSignedCurrency(balanceAmount);
-  const balanceValueColor = resolveBalanceValueColor(balanceAmount, expenseTextColor);
+  const { fontScale } = useWindowDimensions();
+  const [contentWidth, setContentWidth] = useState(0);
+  const balanceValue = balanceLabel ?? `${balanceAmount > 0 ? "+" : balanceAmount < 0 ? "-" : ""}${formatCurrency(Math.abs(balanceAmount))}`;
+  const stacked = (contentWidth > 0 && contentWidth < Ui.minimumRowWidth * fontScale) ||
+    Math.max(totalExpense.length, totalIncome.length, balanceValue.length) > Ui.maximumInlineAmountLength;
 
   return (
     <View style={styles.container}>
-      <View style={styles.headlineRow}>
-        <Text {...OneLineTextFitProps} style={styles.summaryLabel}>
-          {summaryLabel}
-        </Text>
-        <Text {...OneLineTextFitProps} style={[styles.balanceValue, { color: balanceValueColor }]}>
-          {balanceValue}
-        </Text>
-      </View>
-      <View style={styles.metricRow}>
-        <SummaryMetric
-          label={CalendarSummaryLabels.income}
-          value={totalIncome}
-          valueColor={AppColors.income}
-        />
-        <View style={styles.metricDivider} />
-        <SummaryMetric
-          label={CalendarSummaryLabels.expense}
-          value={totalExpense}
-          valueColor={expenseTextColor}
-        />
+      <Text accessibilityRole="header" style={styles.summaryLabel}>{summaryLabel}</Text>
+      <View onLayout={(event) => setContentWidth(event.nativeEvent.layout.width)} style={[styles.metrics, stacked && styles.stackedMetrics]}>
+        <SummaryMetric label={CalendarSummaryLabels.expense} value={totalExpense} color={expenseTextColor} stacked={stacked} emphasized />
+        <SummaryMetric label={CalendarSummaryLabels.income} value={totalIncome} color={AppColors.income} stacked={stacked} />
+        <SummaryMetric label={CalendarSummaryLabels.balance} value={balanceValue} color={!balanceLabel && balanceAmount > 0 ? AppColors.income : AppColors.text} stacked={stacked} />
       </View>
     </View>
   );
 }
 
-function SummaryMetric({
-  label,
-  value,
-  valueColor,
-}: {
-  label: string;
-  value: string;
-  valueColor: string;
+function SummaryMetric({ label, value, color, stacked, emphasized = false }: {
+  label: string; value: string; color: string; stacked: boolean; emphasized?: boolean;
 }) {
   return (
-    <View style={styles.metric}>
+    <View style={[styles.metric, stacked && styles.stackedMetric]}>
       <Text style={styles.metricLabel}>{label}</Text>
-      <Text
-        {...OneLineTextFitProps}
-        adjustsFontSizeToFit
-        minimumFontScale={MonthlySummaryUi.minimumFontScale}
-        style={[styles.metricValue, { color: valueColor }]}
-      >
-        {value}
-      </Text>
+      <Text style={[styles.metricValue, { color }, emphasized && styles.emphasizedValue, stacked && styles.stackedValue]}>{value}</Text>
     </View>
   );
-}
-
-function formatSignedCurrency(amount: number): string {
-  if (amount > 0) {
-    return `+${formatCurrency(amount)}`;
-  }
-
-  if (amount < 0) {
-    return `-${formatCurrency(Math.abs(amount))}`;
-  }
-
-  return formatCurrency(amount);
-}
-
-function resolveBalanceValueColor(amount: number, expenseTextColor: string): string {
-  if (amount > 0) {
-    return AppColors.income;
-  }
-
-  if (amount < 0) {
-    return expenseTextColor;
-  }
-
-  return AppColors.primary;
 }
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: AppColors.surfaceMuted,
-    borderColor: AppColors.border,
-    borderRadius: AppLayout.cardRadius,
-    borderWidth: StyleSheet.hairlineWidth,
-    gap: MonthlySummaryUi.contentGap,
-    paddingHorizontal: MonthlySummaryUi.horizontalPadding,
-    paddingVertical: MonthlySummaryUi.verticalPadding,
-  },
-  headlineRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: MonthlySummaryUi.contentGap,
-    justifyContent: "space-between",
-  },
-  balanceValue: {
-    flexShrink: 1,
-    fontSize: MonthlySummaryUi.balanceFontSize,
-    fontWeight: "800",
-    lineHeight: MonthlySummaryUi.balanceLineHeight,
-  },
-  metric: {
-    alignItems: "baseline",
-    flex: 1,
-    flexDirection: "row",
-    gap: MonthlySummaryUi.metricGap,
-  },
-  metricRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: MonthlySummaryUi.contentGap,
-  },
-  metricDivider: {
-    backgroundColor: AppColors.border,
-    height: 12,
-    width: StyleSheet.hairlineWidth,
-  },
-  metricLabel: {
-    color: AppColors.mutedStrongText,
-    fontSize: MonthlySummaryUi.labelFontSize,
-    fontWeight: "700",
-  },
-  metricValue: {
-    flex: 1,
-    fontSize: MonthlySummaryUi.metricValueFontSize,
-    fontWeight: "800",
-    textAlign: "right",
-  },
-  summaryLabel: {
-    color: AppColors.text,
-    flexShrink: 1,
-    fontSize: MonthlySummaryUi.titleFontSize,
-    fontWeight: "700",
-  },
+  container: { gap: Ui.contentGap, paddingVertical: Ui.verticalPadding },
+  summaryLabel: { flexShrink: 1, color: AppColors.text, fontSize: Ui.titleFontSize, fontWeight: "700" },
+  metrics: { flexDirection: "row", gap: Ui.contentGap },
+  stackedMetrics: { flexDirection: "column" },
+  metric: { flex: 1, minWidth: 0, gap: Ui.metricGap },
+  stackedMetric: { flex: 0, flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" },
+  metricLabel: { flexShrink: 1, color: AppColors.mutedStrongText, fontSize: Ui.labelFontSize, fontWeight: "500" },
+  metricValue: { fontSize: Ui.metricValueFontSize, fontWeight: "600", fontVariant: ["tabular-nums"] },
+  emphasizedValue: { fontWeight: "800" },
+  stackedValue: { flexShrink: 1, textAlign: "right" },
 });

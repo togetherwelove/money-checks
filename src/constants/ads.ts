@@ -1,6 +1,11 @@
 
 import { AppLayout } from "./layout";
 
+export const BannerAdLayout = {
+  // BannerAdSize.BANNER is 320 x 50 density-independent pixels.
+  height: 50,
+} as const;
+
 export const AdMobBannerConfig = {
   androidAdUnitId: process.env.EXPO_PUBLIC_ADMOB_ANDROID_BANNER_AD_UNIT_ID ?? "",
   iosAdUnitId: process.env.EXPO_PUBLIC_ADMOB_IOS_BANNER_AD_UNIT_ID ?? "",

@@ -20,7 +20,7 @@ export const AppColors = {
   inverseText: "#ffffff",
   border: "#d9dfdc",
   capsuleSurface: "#fafbfa",
-  floatingPanelSurface: "rgba(250, 251, 250, 0.97)",
+  floatingPanelSurface: "#fafbfa",
   menuOverlay: "rgba(31, 42, 40, 0.08)",
   transparent: "transparent",
   overlay: "rgba(31, 42, 40, 0.18)",

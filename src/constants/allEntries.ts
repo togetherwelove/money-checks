@@ -22,11 +22,9 @@ export const AllEntriesEntryTypeFilterOptions: readonly {
 export const AllEntriesFilterCopy = {
   applyLabel: "필터 적용",
   cancelLabel: "취소",
-  categorySectionLabel: "분류",
   closeAccessibilityLabel: "필터 닫기",
   emptyFilterHint: "필터를 변경하거나 초기화해 주세요.",
   emptyFilterTitle: "조건에 맞는 기록이 없어요.",
-  entryTypeSectionLabel: "거래 유형",
   expenseCategorySectionLabel: "지출",
   filterAccessibilityLabel: "전체 내역 필터 열기",
   filterLabel: "필터",
@@ -35,7 +33,6 @@ export const AllEntriesFilterCopy = {
   resetAccessibilityLabel: "검색어와 전체 내역 필터 초기화",
   resetLabel: "초기화",
   searchPlaceholder: "내용과 메모 검색",
-  sheetTitle: "필터",
 } as const;
 
 export const AllEntriesFilterUi = {
@@ -54,12 +51,17 @@ export const AllEntriesFilterUi = {
   filterButtonLabelFontSize: 13,
   filterButtonMinimumHeight: 44,
   filterSheetMaximumHeightRatio: 0.82,
+  filterSheetOpenDurationMs: 240,
+  filterSheetCloseDurationMs: 180,
+  filterSheetDragActivationDistance: 8,
+  filterSheetDragCloseDistance: 100,
+  filterSheetDragCloseVelocity: 800,
   filterSheetTopRadius: 20,
-  headerTitleFontSize: 18,
   iconSize: 15,
   resetLabelFontSize: 12,
   sectionLabelFontSize: 12,
   sheetHandleHeight: 4,
+  sheetHandleTouchHeight: 36,
   sheetHandleWidth: 36,
   typeOptionFontSize: 13,
   typeOptionMinimumHeight: 40,

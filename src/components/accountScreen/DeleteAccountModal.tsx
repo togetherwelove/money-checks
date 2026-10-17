@@ -10,6 +10,7 @@ import {
 } from "../../constants/uiStyles";
 import { deleteOwnAccount } from "../../lib/auth/deleteAccount";
 import { ActionButton } from "../ActionButton";
+import { ModalCloseButton } from "../ModalCloseButton";
 
 type DeleteAccountModalProps = {
   isOpen: boolean;
@@ -61,9 +62,7 @@ export function DeleteAccountModal({ isOpen, onClose }: DeleteAccountModalProps)
           <View style={styles.sheetContent}>
             <View style={styles.header}>
               <Text style={styles.title}>계정을 삭제할까요?</Text>
-              <Pressable disabled={isDeleting} onPress={handleClose}>
-                <Text style={styles.closeText}>닫기</Text>
-              </Pressable>
+              <ModalCloseButton disabled={isDeleting} onPress={handleClose} />
             </View>
             <Text style={styles.warning}>
               계정 삭제 시 프로필, 가계부 기록, 참여 정보가 완전히 삭제돼요. 이 작업은 되돌릴 수
@@ -137,11 +136,6 @@ const styles = StyleSheet.create({
     color: AppColors.text,
     fontSize: 16,
     fontWeight: "800",
-  },
-  closeText: {
-    color: AppColors.mutedText,
-    fontSize: 13,
-    fontWeight: "700",
   },
   warning: {
     color: AppColors.expense,

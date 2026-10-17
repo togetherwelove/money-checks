@@ -4,11 +4,14 @@ import { type ReactNode, useEffect, useState } from "react";
 import { Linking, Modal, Pressable, StyleSheet, Switch, Text, View } from "react-native";
 
 import { ActionButton } from "../components/ActionButton";
+import { ModalCloseButton } from "../components/ModalCloseButton";
 import { AppFooterContentInset } from "../components/AppFooterContentInset";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { NotificationSettingsCard } from "../components/accountScreen/NotificationSettingsCard";
 import { ExpenseTextColorSelector } from "../components/appSettings/ExpenseTextColorSelector";
+import { CategoryAdditionSettings } from "../components/appSettings/CategoryAdditionSettings";
 import { AppSettingsCopy, AppSettingsUi } from "../constants/appSettings";
+import { AppSettingsRowStyles } from "../constants/appSettingsStyles";
 import {
   CalendarSummaryBaseDay,
   CalendarSummaryBaseDayOptions,
@@ -22,7 +25,6 @@ import {
   BrandPlusTextStyle,
   CardTitleTextStyle,
   GroupedSectionStyle,
-  ListGroupRowStyle,
   ListGroupStyle,
   ResponsivePageContentStyle,
   SettingValueActionStyle,
@@ -40,6 +42,9 @@ import type {
 import type { NotificationPreferenceGroup } from "../notifications/preferences/notificationPreferences";
 
 type AppSettingsScreenProps = {
+  activeBookId: string | null;
+  activeBookName: string;
+  canAddCategory: boolean;
   notificationPermissionLabel: string;
   notificationPermissionState: NotificationPermissionState;
   notificationPreferenceGroups: NotificationPreferenceGroup[];
@@ -64,6 +69,9 @@ type AppSettingsScreenProps = {
 };
 
 export function AppSettingsScreen({
+  activeBookId,
+  activeBookName,
+  canAddCategory,
   notificationPermissionLabel,
   notificationPermissionState,
   notificationPreferenceGroups,
@@ -103,48 +111,25 @@ export function AppSettingsScreen({
   return (
     <KeyboardAwareScrollView contentContainerStyle={styles.content} style={styles.screen}>
       {screenTitle}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{AppSettingsCopy.featureSectionTitle}</Text>
-        <View style={styles.settingListGroup}>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => setIsSummaryModePickerOpen(true)}
-            style={({ pressed }) => [
-              styles.settingCard,
-              pressed ? styles.pressedSettingCard : null,
-            ]}
-          >
-            <View style={styles.settingTextBlock}>
-              <Text style={styles.settingTitle}>{AppSettingsCopy.summaryModeTitle}</Text>
-              <Text style={styles.settingDescription}>{AppSettingsCopy.summaryModeDescription}</Text>
-            </View>
-            <View style={SettingValueActionStyle}>
-              <Text style={SettingValueTextStyle}>{selectedSummaryModeOption.label}</Text>
-              <Feather
-                color={AppColors.mutedStrongText}
-                name="chevron-down"
-                size={AppSettingsUi.selectionChevronIconSize}
-              />
-            </View>
-          </Pressable>
-          {isSelectedMonthSummaryMode ? (
+      <View style={styles.sections}>
+        <CategoryAdditionSettings key={activeBookId} bookId={activeBookId} bookName={activeBookName} canAdd={canAddCategory} />
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{AppSettingsCopy.featureSectionTitle}</Text>
+          <View style={styles.settingListGroup}>
             <Pressable
               accessibilityRole="button"
-              onPress={() => setIsSummaryBaseDayPickerOpen(true)}
+              onPress={() => setIsSummaryModePickerOpen(true)}
               style={({ pressed }) => [
                 styles.settingCard,
                 pressed ? styles.pressedSettingCard : null,
               ]}
             >
               <View style={styles.settingTextBlock}>
-                <Text style={styles.settingTitle}>{AppSettingsCopy.summaryBaseDayTitle}</Text>
+                <Text style={styles.settingTitle}>{AppSettingsCopy.summaryModeTitle}</Text>
+                <Text style={styles.settingDescription}>{AppSettingsCopy.summaryModeDescription}</Text>
               </View>
               <View style={SettingValueActionStyle}>
-                <Text style={SettingValueTextStyle}>
-                  {calendarSummaryBaseDay
-                    ? `${calendarSummaryBaseDay}일`
-                    : AppSettingsCopy.summaryBaseDayPlaceholder}
-                </Text>
+                <Text style={SettingValueTextStyle}>{selectedSummaryModeOption.label}</Text>
                 <Feather
                   color={AppColors.mutedStrongText}
                   name="chevron-down"
@@ -152,66 +137,92 @@ export function AppSettingsScreen({
                 />
               </View>
             </Pressable>
-          ) : null}
-          <View style={styles.settingCard}>
-            <View style={styles.settingTextBlock}>
-              <Text style={styles.settingTitle}>{AppSettingsCopy.expenseTextColorTitle}</Text>
-              <Text style={styles.settingDescription}>
-                {AppSettingsCopy.expenseTextColorDescription}
-              </Text>
-            </View>
-            <ExpenseTextColorSelector
-              mode={expenseTextColor.mode}
-              onChange={expenseTextColor.updateMode}
-            />
-          </View>
-          <View
-            style={[
-              styles.settingCard,
-              styles.lastSettingCard,
-              !isPlusActive ? styles.disabledSettingCard : null,
-            ]}
-          >
-            <View style={styles.settingTextBlock}>
-              <View style={styles.settingTitleRow}>
-                <Text style={styles.settingTitle}>{AppSettingsCopy.heatmapTitle}</Text>
-                <Text style={styles.plusLabel}>{AppSettingsCopy.plusBadge}</Text>
+            {isSelectedMonthSummaryMode ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => setIsSummaryBaseDayPickerOpen(true)}
+                style={({ pressed }) => [
+                  styles.settingCard,
+                  pressed ? styles.pressedSettingCard : null,
+                ]}
+              >
+                <View style={styles.settingTextBlock}>
+                  <Text style={styles.settingTitle}>{AppSettingsCopy.summaryBaseDayTitle}</Text>
+                </View>
+                <View style={SettingValueActionStyle}>
+                  <Text style={SettingValueTextStyle}>
+                    {calendarSummaryBaseDay
+                      ? `${calendarSummaryBaseDay}일`
+                      : AppSettingsCopy.summaryBaseDayPlaceholder}
+                  </Text>
+                  <Feather
+                    color={AppColors.mutedStrongText}
+                    name="chevron-down"
+                    size={AppSettingsUi.selectionChevronIconSize}
+                  />
+                </View>
+              </Pressable>
+            ) : null}
+            <View style={styles.settingCard}>
+              <View style={styles.settingTextBlock}>
+                <Text style={styles.settingTitle}>{AppSettingsCopy.expenseTextColorTitle}</Text>
+                <Text style={styles.settingDescription}>
+                  {AppSettingsCopy.expenseTextColorDescription}
+                </Text>
               </View>
-              <Text style={styles.settingDescription}>{AppSettingsCopy.heatmapDescription}</Text>
+              <ExpenseTextColorSelector
+                mode={expenseTextColor.mode}
+                onChange={expenseTextColor.updateMode}
+              />
             </View>
-            <Switch
-              disabled={!isPlusActive}
-              onValueChange={onToggleCalendarHeatmap}
-              thumbColor={isHeatmapSwitchEnabled ? AppColors.inverseText : AppColors.surface}
-              trackColor={{ false: AppColors.border, true: AppColors.primary }}
-              value={isHeatmapSwitchEnabled}
-            />
+            <View
+              style={[
+                styles.settingCard,
+                styles.lastSettingCard,
+                !isPlusActive ? styles.disabledSettingCard : null,
+              ]}
+            >
+              <View style={styles.settingTextBlock}>
+                <View style={styles.settingTitleRow}>
+                  <Text style={styles.settingTitle}>{AppSettingsCopy.heatmapTitle}</Text>
+                  <Text style={styles.plusLabel}>{AppSettingsCopy.plusBadge}</Text>
+                </View>
+                <Text style={styles.settingDescription}>{AppSettingsCopy.heatmapDescription}</Text>
+              </View>
+              <Switch
+                disabled={!isPlusActive}
+                onValueChange={onToggleCalendarHeatmap}
+                thumbColor={isHeatmapSwitchEnabled ? AppColors.inverseText : AppColors.surface}
+                trackColor={{ false: AppColors.border, true: AppColors.primary }}
+                value={isHeatmapSwitchEnabled}
+              />
+            </View>
           </View>
         </View>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{AppSettingsCopy.pushNotificationSectionTitle}</Text>
+          {showNotificationSettings ? (
+            <NotificationSettingsCard
+              onChangeThresholdEnabled={onChangeNotificationThresholdEnabled}
+              onChangeThresholdPeriod={onChangeNotificationThresholdPeriod}
+              onChangeThresholdValue={onChangeNotificationThreshold}
+              onOpenDeviceNotificationSettings={handleOpenNotificationPermission}
+              onTogglePreference={onToggleNotificationPreference}
+              permissionLabel={notificationPermissionLabel}
+              permissionState={notificationPermissionState}
+              preferenceGroups={notificationPreferenceGroups}
+              statusMessage={notificationStatusMessage}
+            />
+          ) : (
+            <View style={styles.unsupportedCard}>
+              <Text style={styles.unsupportedText}>
+                {PushNotificationCopy.permissionUnsupported}
+              </Text>
+            </View>
+          )}
+        </View>
+        <AppFooterContentInset />
       </View>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{AppSettingsCopy.pushNotificationSectionTitle}</Text>
-        {showNotificationSettings ? (
-          <NotificationSettingsCard
-            onChangeThresholdEnabled={onChangeNotificationThresholdEnabled}
-            onChangeThresholdPeriod={onChangeNotificationThresholdPeriod}
-            onChangeThresholdValue={onChangeNotificationThreshold}
-            onOpenDeviceNotificationSettings={handleOpenNotificationPermission}
-            onTogglePreference={onToggleNotificationPreference}
-            permissionLabel={notificationPermissionLabel}
-            permissionState={notificationPermissionState}
-            preferenceGroups={notificationPreferenceGroups}
-            statusMessage={notificationStatusMessage}
-          />
-        ) : (
-          <View style={styles.unsupportedCard}>
-            <Text style={styles.unsupportedText}>
-              {PushNotificationCopy.permissionUnsupported}
-            </Text>
-          </View>
-        )}
-      </View>
-      <AppFooterContentInset />
       <CalendarSummaryModePickerModal
         isOpen={isSummaryModePickerOpen}
         mode={calendarSummaryMode}
@@ -260,11 +271,7 @@ function CalendarSummaryBaseDayPickerModal({
         <View style={styles.modalSheet}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{AppSettingsCopy.summaryBaseDayPickerTitle}</Text>
-            <Pressable onPress={onClose}>
-              <Text style={styles.modalCloseText}>
-                {AppSettingsCopy.summaryModePickerCloseLabel}
-              </Text>
-            </Pressable>
+            <ModalCloseButton onPress={onClose} />
           </View>
           <Picker
             itemStyle={styles.pickerItem}
@@ -319,11 +326,7 @@ function CalendarSummaryModePickerModal({
         <View style={styles.modalSheet}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{AppSettingsCopy.summaryModePickerTitle}</Text>
-            <Pressable onPress={onClose}>
-              <Text style={styles.modalCloseText}>
-                {AppSettingsCopy.summaryModePickerCloseLabel}
-              </Text>
-            </Pressable>
+            <ModalCloseButton onPress={onClose} />
           </View>
           <Picker
             itemStyle={styles.pickerItem}
@@ -349,12 +352,14 @@ function CalendarSummaryModePickerModal({
 }
 
 const styles = StyleSheet.create({
+  sections: {
+    gap: AppSettingsUi.sectionSpacing,
+  },
   content: {
     ...ResponsivePageContentStyle,
-    gap: AppSettingsUi.sectionSpacing,
     paddingBottom: AppSettingsUi.contentBottomPadding,
     paddingHorizontal: AppSettingsUi.contentHorizontalPadding,
-    paddingTop: AppSettingsUi.contentTopPadding,
+    paddingTop: AppLayout.screenTopPadding,
   },
   screen: {
     flex: 1,
@@ -369,16 +374,9 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     gap: 8,
   },
-  disabledSettingCard: {
-    opacity: 0.64,
-  },
+  disabledSettingCard: AppSettingsRowStyles.disabled,
   modalBackdrop: {
     ...StyleSheet.absoluteFillObject,
-  },
-  modalCloseText: {
-    color: AppColors.mutedText,
-    fontSize: 13,
-    fontWeight: "700",
   },
   modalHeader: {
     alignItems: "center",
@@ -411,34 +409,15 @@ const styles = StyleSheet.create({
     ...BrandPlusTextStyle,
     fontSize: 13,
   },
-  pressedSettingCard: {
-    backgroundColor: AppColors.surfaceMuted,
-  },
-  settingCard: {
-    ...ListGroupRowStyle,
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 12,
-    justifyContent: "space-between",
-    minHeight: AppSettingsUi.rowMinHeight,
-  },
+  pressedSettingCard: AppSettingsRowStyles.pressed,
+  settingCard: AppSettingsRowStyles.row,
   settingListGroup: ListGroupStyle,
-  lastSettingCard: {
-    borderBottomWidth: 0,
-  },
+  lastSettingCard: AppSettingsRowStyles.lastRow,
   settingDescription: {
     ...SupportingTextStyle,
   },
-  settingTextBlock: {
-    flex: 1,
-    gap: 4,
-    minWidth: 0,
-  },
-  settingTitle: {
-    color: AppColors.text,
-    fontSize: 14,
-    fontWeight: "800",
-  },
+  settingTextBlock: AppSettingsRowStyles.textBlock,
+  settingTitle: AppSettingsRowStyles.title,
   settingTitleRow: {
     alignItems: "center",
     flexDirection: "row",

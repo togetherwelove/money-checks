@@ -121,6 +121,18 @@ export function useNotificationBadges(userId: string): NotificationBadgesState {
       .on(
         "postgres_changes",
         {
+          event: "INSERT",
+          filter: `user_id=eq.${userId}`,
+          schema: "public",
+          table: NotificationBadgeDatabase.entryReadStatesTable,
+        },
+        () => {
+          void refresh();
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
           event: "*",
           schema: "public",
           table: NotificationBadgeDatabase.ledgerEntriesTable,

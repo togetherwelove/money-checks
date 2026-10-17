@@ -1,5 +1,6 @@
 import { AnnualReportCopy } from "../../constants/annualReport";
 import type { AnnualReportData } from "./annualReportData";
+import { buildChartStringCache, buildChartNumberCache } from "./annualReportChartCache";
 import {
   type XlsxZipEntry,
   decodeZipText,
@@ -15,7 +16,7 @@ const DrawingRelationshipType =
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart";
 const DrawingContentType = "application/vnd.openxmlformats-officedocument.drawing+xml";
 const ChartContentType = "application/vnd.openxmlformats-officedocument.drawingml.chart+xml";
-const ChartSheetIndex = 6;
+const ChartSheetIndex = 7;
 const MonthlyDataFirstRow = 2;
 const CategoryExpenseHeaderRow = 1;
 const CategoryDataFirstRow = 2;
@@ -40,6 +41,8 @@ type ChartPlacement = {
 };
 
 type SeriesReference = {
+  title: string;
+  values: number[];
   titleCell: string;
   valueRange: string;
 };
@@ -65,10 +68,10 @@ export function addAnnualReportXlsxCharts(bytes: Uint8Array, report: AnnualRepor
     entryMap,
     "xl/drawings/drawing1.xml",
     buildDrawingXml([
-      createPlacement(0, 0, 8, 18, AnnualReportCopy.chartTitles.monthly, "rId1"),
-      createPlacement(8, 0, 16, 18, AnnualReportCopy.chartTitles.expenseCategory, "rId2"),
-      createPlacement(0, 18, 8, 36, AnnualReportCopy.chartTitles.incomeCategory, "rId3"),
-      createPlacement(8, 18, 16, 36, AnnualReportCopy.chartTitles.member, "rId4"),
+      createPlacement(0, 2, 8, 20, AnnualReportCopy.chartTitles.monthly, "rId1"),
+      createPlacement(8, 2, 16, 20, AnnualReportCopy.chartTitles.expenseCategory, "rId2"),
+      createPlacement(0, 21, 8, 39, AnnualReportCopy.chartTitles.incomeCategory, "rId3"),
+      createPlacement(8, 21, 16, 39, AnnualReportCopy.chartTitles.member, "rId4"),
     ]),
   );
   upsertTextEntry(
@@ -84,8 +87,8 @@ export function addAnnualReportXlsxCharts(bytes: Uint8Array, report: AnnualRepor
 
   const categoryLayout = getCategorySummaryLayout(report);
   upsertTextEntry(entryMap, "xl/charts/chart1.xml", buildMonthlyChartXml(report));
-  upsertTextEntry(entryMap, "xl/charts/chart2.xml", buildExpenseCategoryChartXml(categoryLayout));
-  upsertTextEntry(entryMap, "xl/charts/chart3.xml", buildIncomeCategoryChartXml(categoryLayout));
+  upsertTextEntry(entryMap, "xl/charts/chart2.xml", buildExpenseCategoryChartXml(categoryLayout, report));
+  upsertTextEntry(entryMap, "xl/charts/chart3.xml", buildIncomeCategoryChartXml(categoryLayout, report));
   upsertTextEntry(entryMap, "xl/charts/chart4.xml", buildMemberChartXml(report));
 
   return writeStoredZipEntries([...entryMap.values()]);
@@ -96,15 +99,20 @@ function buildMonthlyChartXml(report: AnnualReportData) {
   const sheetName = AnnualReportCopy.monthlySummarySheetName;
 
   return buildBarChartXml({
+    categories: report.monthlyRows.map((row) => row.monthLabel),
     axisIds: [MonthlyChartCategoryAxisId, MonthlyChartValueAxisId],
     barDirection: "col",
     categoriesRange: buildSheetRange(sheetName, "A", MonthlyDataFirstRow, "A", lastRow),
     series: [
       {
+        title: AnnualReportCopy.typeLabels.income,
+        values: report.monthlyRows.map((row) => row.income),
         titleCell: buildSheetRange(sheetName, "B", 1, "B", 1),
         valueRange: buildSheetRange(sheetName, "B", MonthlyDataFirstRow, "B", lastRow),
       },
       {
+        title: AnnualReportCopy.typeLabels.expense,
+        values: report.monthlyRows.map((row) => row.expense),
         titleCell: buildSheetRange(sheetName, "C", 1, "C", 1),
         valueRange: buildSheetRange(sheetName, "C", MonthlyDataFirstRow, "C", lastRow),
       },
@@ -113,10 +121,11 @@ function buildMonthlyChartXml(report: AnnualReportData) {
   });
 }
 
-function buildExpenseCategoryChartXml(layout: ReturnType<typeof getCategorySummaryLayout>) {
-  const sheetName = AnnualReportCopy.categorySummarySheetName;
+function buildExpenseCategoryChartXml(layout: ReturnType<typeof getCategorySummaryLayout>, report: AnnualReportData) {
+  const sheetName = AnnualReportCopy.expenseCategorySheetName;
 
   return buildBarChartXml({
+    categories: report.expenseCategories.length ? report.expenseCategories.map((row) => row.category) : [AnnualReportCopy.emptyCategoryLabels.expense],
     axisIds: [ExpenseCategoryChartCategoryAxisId, ExpenseCategoryChartValueAxisId],
     barDirection: "bar",
     categoriesRange: buildSheetRange(
@@ -128,6 +137,8 @@ function buildExpenseCategoryChartXml(layout: ReturnType<typeof getCategorySumma
     ),
     series: [
       {
+        title: AnnualReportCopy.typeLabels.expense,
+        values: report.expenseCategories.length ? report.expenseCategories.map((row) => row.amount) : [0],
         titleCell: buildSheetRange(
           sheetName,
           "B",
@@ -148,10 +159,11 @@ function buildExpenseCategoryChartXml(layout: ReturnType<typeof getCategorySumma
   });
 }
 
-function buildIncomeCategoryChartXml(layout: ReturnType<typeof getCategorySummaryLayout>) {
-  const sheetName = AnnualReportCopy.categorySummarySheetName;
+function buildIncomeCategoryChartXml(layout: ReturnType<typeof getCategorySummaryLayout>, report: AnnualReportData) {
+  const sheetName = AnnualReportCopy.incomeCategorySheetName;
 
   return buildBarChartXml({
+    categories: report.incomeCategories.length ? report.incomeCategories.map((row) => row.category) : [AnnualReportCopy.emptyCategoryLabels.income],
     axisIds: [IncomeCategoryChartCategoryAxisId, IncomeCategoryChartValueAxisId],
     barDirection: "bar",
     categoriesRange: buildSheetRange(
@@ -163,6 +175,8 @@ function buildIncomeCategoryChartXml(layout: ReturnType<typeof getCategorySummar
     ),
     series: [
       {
+        title: AnnualReportCopy.typeLabels.income,
+        values: report.incomeCategories.length ? report.incomeCategories.map((row) => row.amount) : [0],
         titleCell: buildSheetRange(
           sheetName,
           "B",
@@ -188,15 +202,20 @@ function buildMemberChartXml(report: AnnualReportData) {
   const sheetName = AnnualReportCopy.authorSummarySheetName;
 
   return buildBarChartXml({
+    categories: report.memberRows.map((row) => row.memberName),
     axisIds: [MemberChartCategoryAxisId, MemberChartValueAxisId],
     barDirection: "bar",
     categoriesRange: buildSheetRange(sheetName, "A", MemberDataFirstRow, "A", lastRow),
     series: [
       {
+        title: AnnualReportCopy.typeLabels.income,
+        values: report.memberRows.map((row) => row.income),
         titleCell: buildSheetRange(sheetName, "B", 1, "B", 1),
         valueRange: buildSheetRange(sheetName, "B", MemberDataFirstRow, "B", lastRow),
       },
       {
+        title: AnnualReportCopy.typeLabels.expense,
+        values: report.memberRows.map((row) => row.expense),
         titleCell: buildSheetRange(sheetName, "C", 1, "C", 1),
         valueRange: buildSheetRange(sheetName, "C", MemberDataFirstRow, "C", lastRow),
       },
@@ -210,7 +229,7 @@ function getCategorySummaryLayout(report: AnnualReportData) {
   const incomeRowCount = Math.max(report.incomeCategories.length, 1);
   const expenseFirstRow = CategoryDataFirstRow;
   const expenseLastRow = expenseFirstRow + expenseRowCount - 1;
-  const incomeHeaderRow = expenseLastRow + 2;
+  const incomeHeaderRow = CategoryExpenseHeaderRow;
   const incomeFirstRow = incomeHeaderRow + 1;
   const incomeLastRow = incomeFirstRow + incomeRowCount - 1;
 
@@ -299,12 +318,14 @@ function buildChartAnchorXml(placement: ChartPlacement) {
 }
 
 function buildBarChartXml({
+  categories,
   axisIds,
   barDirection,
   categoriesRange,
   series,
   title,
 }: {
+  categories: string[];
   axisIds: [number, number];
   barDirection: "bar" | "col";
   categoriesRange: string;
@@ -315,14 +336,14 @@ function buildBarChartXml({
 
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><c:chart><c:title><c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>${escapeXml(title)}</a:t></a:r></a:p></c:rich></c:tx><c:layout/></c:title><c:plotArea><c:layout/><c:barChart><c:barDir val="${barDirection}"/><c:grouping val="clustered"/>${series
-    .map((item, index) => buildSeriesXml(index, item, categoriesRange))
+    .map((item, index) => buildSeriesXml(index, item, categoriesRange, categories))
     .join(
       "",
     )}<c:axId val="${categoryAxisId}"/><c:axId val="${valueAxisId}"/></c:barChart><c:catAx><c:axId val="${categoryAxisId}"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:axPos val="${barDirection === "col" ? "b" : "l"}"/><c:tickLblPos val="nextTo"/><c:crossAx val="${valueAxisId}"/><c:crosses val="autoZero"/><c:auto val="1"/><c:lblAlgn val="ctr"/><c:lblOffset val="100"/></c:catAx><c:valAx><c:axId val="${valueAxisId}"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:axPos val="${barDirection === "col" ? "l" : "b"}"/><c:majorGridlines/><c:numFmt formatCode="#,##0" sourceLinked="0"/><c:tickLblPos val="nextTo"/><c:crossAx val="${categoryAxisId}"/><c:crosses val="autoZero"/><c:crossBetween val="between"/></c:valAx></c:plotArea><c:legend><c:legendPos val="b"/><c:layout/></c:legend><c:plotVisOnly val="1"/></c:chart></c:chartSpace>`;
 }
 
-function buildSeriesXml(index: number, series: SeriesReference, categoriesRange: string) {
-  return `<c:ser><c:idx val="${index}"/><c:order val="${index}"/><c:tx><c:strRef><c:f>${escapeXml(series.titleCell)}</c:f></c:strRef></c:tx><c:cat><c:strRef><c:f>${escapeXml(categoriesRange)}</c:f></c:strRef></c:cat><c:val><c:numRef><c:f>${escapeXml(series.valueRange)}</c:f></c:numRef></c:val></c:ser>`;
+function buildSeriesXml(index: number, series: SeriesReference, categoriesRange: string, categories: string[]) {
+  return `<c:ser><c:idx val="${index}"/><c:order val="${index}"/><c:tx><c:strRef><c:f>${escapeXml(series.titleCell)}</c:f>${buildChartStringCache([series.title])}</c:strRef></c:tx><c:cat><c:strRef><c:f>${escapeXml(categoriesRange)}</c:f>${buildChartStringCache(categories)}</c:strRef></c:cat><c:val><c:numRef><c:f>${escapeXml(series.valueRange)}</c:f>${buildChartNumberCache(series.values)}</c:numRef></c:val></c:ser>`;
 }
 
 function buildSheetRange(

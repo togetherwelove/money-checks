@@ -9,6 +9,7 @@ export const EntryRegistrationCopy = {
   contentPlaceholder: "내용 입력",
   contentRequiredError: "내용을 입력해 주세요.",
   datePickerAccessibilityLabel: "내역 날짜 선택",
+  dateLabel: "날짜",
   datePickerConfirmAction: "확인",
   datePickerTitle: "날짜 선택",
   dailyFirstEntryAdNoticeMessage: "매일 첫 등록 시 한 번만 진행됩니다.",
@@ -45,7 +46,7 @@ export function buildInstallmentPrepaymentConfirmMessage(
 }
 
 export const EntryDateSelectorUi = {
-  iconSize: 18,
+  iconSize: 16,
   pressedOpacity: 0.7,
 } as const;
 
@@ -63,10 +64,10 @@ export const EntryNativeSheetUi = {
 } as const;
 
 export const EntryTypeToggleUi = {
-  containerHeight: 32,
+  containerHeight: 26,
   indicatorHeight: 2,
   labelFontSize: 14,
-  labelLineHeight: 20,
+  labelLineHeight: 18,
   labelMarginHorizontal: 4,
   optionMinWidth: 48,
   optionPaddingHorizontal: 10,

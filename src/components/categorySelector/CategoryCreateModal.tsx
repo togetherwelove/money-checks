@@ -1,3 +1,4 @@
+import { AppScrollBehavior } from "../../constants/scroll";
 import { Feather } from "@expo/vector-icons";
 import { useEffect, useRef } from "react";
 import {
@@ -32,12 +33,14 @@ import {
 } from "../../constants/uiStyles";
 import type { CategoryIconName } from "../../types/category";
 import { ActionButton } from "../ActionButton";
+import { ModalCloseButton } from "../ModalCloseButton";
 
 type CategoryCreateModalProps = {
   actionLabel?: string;
   errorMessage: string | null;
   iconName: CategoryIconName;
   isOpen: boolean;
+  isBusy?: boolean;
   label: string;
   title?: string;
   onCancel: () => void;
@@ -51,6 +54,7 @@ export function CategoryCreateModal({
   errorMessage,
   iconName,
   isOpen,
+  isBusy = false,
   label,
   title = CategoryCustomizerCopy.createModalTitle,
   onCancel,
@@ -85,14 +89,12 @@ export function CategoryCreateModal({
         <View style={styles.sheet}>
           <View style={styles.header}>
             <Text style={styles.title}>{title}</Text>
-            <Pressable onPress={handleCancel}>
-              <Text style={styles.closeText}>닫기</Text>
-            </Pressable>
+            <ModalCloseButton disabled={isBusy} onPress={handleCancel} />
           </View>
 
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>{CategoryCustomizerCopy.createIconLabel}</Text>
-            <ScrollView
+            <ScrollView {...AppScrollBehavior}
               contentContainerStyle={styles.iconGrid}
               horizontal
               keyboardShouldPersistTaps="handled"
@@ -102,6 +104,7 @@ export function CategoryCreateModal({
               {CATEGORY_ICON_PICKER_OPTIONS.map((nextIconName) => (
                 <Pressable
                   key={nextIconName}
+                  disabled={isBusy}
                   onPress={() => onChangeIcon(nextIconName)}
                   style={[
                     styles.iconButton,
@@ -121,6 +124,7 @@ export function CategoryCreateModal({
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>{CategoryCustomizerCopy.createNameLabel}</Text>
             <TextInput
+              editable={!isBusy}
               blurOnSubmit
               maxLength={CUSTOM_CATEGORY_MAX_NAME_LENGTH}
               onChangeText={onChangeLabel}
@@ -137,6 +141,7 @@ export function CategoryCreateModal({
 
           <View style={styles.actionRow}>
             <ActionButton
+              disabled={isBusy}
               label={actionLabel}
               onPress={handleSubmit}
               size="inline"
@@ -149,11 +154,13 @@ export function CategoryCreateModal({
   );
 
   function handleCancel() {
+    if (isBusy) return;
     Keyboard.dismiss();
     onCancel();
   }
 
   function handleSubmit() {
+    if (isBusy) return;
     Keyboard.dismiss();
     onSubmit();
   }
@@ -186,11 +193,6 @@ const styles = StyleSheet.create({
     color: AppColors.text,
     fontSize: 16,
     fontWeight: "800",
-  },
-  closeText: {
-    color: AppColors.mutedText,
-    fontSize: 13,
-    fontWeight: "700",
   },
   fieldGroup: {
     gap: 8,

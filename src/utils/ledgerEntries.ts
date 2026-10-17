@@ -21,6 +21,17 @@ export function createDraft(isoDate: string, targetMemberId: string): LedgerEntr
   };
 }
 
+export function createDraftFromEntry(entry: LedgerEntry, userId: string): LedgerEntryDraft {
+  return {
+    date: entry.date, type: entry.type, amount: String(entry.amount),
+    targetMemberId: entry.targetMemberId ?? entry.authorId ?? userId,
+    targetMemberName: entry.targetMemberName ?? entry.authorName,
+    content: entry.content, category: entry.category, categoryId: entry.categoryId,
+    installmentMonths: entry.installmentMonths ?? ONE_TIME_INSTALLMENT_MONTHS,
+    note: entry.note, photoAttachments: [...entry.photoAttachments],
+  };
+}
+
 export function mergeEntries(
   currentEntries: LedgerEntry[],
   nextEntries: LedgerEntry[],

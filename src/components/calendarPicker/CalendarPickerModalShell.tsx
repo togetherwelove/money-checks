@@ -4,6 +4,7 @@ import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { AppColors } from "../../constants/colors";
 import { AppLayout } from "../../constants/layout";
 import { KeyboardAwareScrollView } from "../KeyboardAwareScrollView";
+import { ModalCloseButton } from "../ModalCloseButton";
 
 type CalendarPickerModalShellProps = {
   children: ReactNode;
@@ -38,9 +39,7 @@ export function CalendarPickerModalShell({
           >
             <View style={styles.header}>
               <Text style={styles.title}>{title}</Text>
-              <Pressable onPress={onClose}>
-                <Text style={styles.closeText}>닫기</Text>
-              </Pressable>
+              <ModalCloseButton onPress={onClose} />
             </View>
             {children}
           </KeyboardAwareScrollView>
@@ -79,10 +78,5 @@ const styles = StyleSheet.create({
     color: AppColors.text,
     fontSize: 16,
     fontWeight: "800",
-  },
-  closeText: {
-    color: AppColors.mutedText,
-    fontSize: 13,
-    fontWeight: "700",
   },
 });

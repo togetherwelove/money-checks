@@ -70,7 +70,7 @@ export type LedgerScreenState = {
   removeSharedLedgerMember: (targetUserId: string) => Promise<boolean>;
   renameActiveLedgerBook: (nextName: string) => Promise<boolean>;
   preloadChartEntries: () => Promise<void>;
-  refreshLedger: () => Promise<void>;
+  refreshLedger: (invalidateCachedMonths?: boolean) => Promise<void>;
   refreshSharedLedgerBook: () => Promise<void>;
   transferSharedLedgerOwnership: (targetUserId: string) => Promise<boolean>;
   totalLedgerSummary: LedgerTotalSummary | null;
@@ -79,6 +79,8 @@ export type LedgerScreenState = {
   selectedMonthSummaryDate: string | null;
   selectedMonthSummaryLabel: string | null;
   setVisibleMonth: (nextMonth: Date) => void;
+  setVisibleChartMonth: (nextMonth: Date) => void;
+  visibleChartMonth: Date;
   switchLedgerBook: (bookId: string) => Promise<boolean>;
   visibleMonth: Date;
   handleDeleteEntry: (
@@ -86,7 +88,7 @@ export type LedgerScreenState = {
     scope: LedgerEntryDeleteScope,
   ) => Promise<LedgerEntry[]>;
   handleEditEntry: (entry: LedgerEntry) => void;
-  handleSaveEntry: () => Promise<LedgerEntry[]>;
+  handleSaveEntry: (newDraft?: LedgerEntryDraft, sourceEntry?: LedgerEntry) => Promise<LedgerEntry[]>;
   prepayInstallmentEntry: (
     entry: LedgerEntry,
     prepaymentDate: string,

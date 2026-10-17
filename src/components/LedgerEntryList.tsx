@@ -57,10 +57,8 @@ const styles = StyleSheet.create({
     gap: AppLayout.listItemGap,
   },
   emptyState: {
-    flex: 1,
-    minHeight: 160,
+    paddingVertical: AppLayout.cardContentPadding,
     alignItems: "center",
-    justifyContent: "center",
   },
   emptyText: {
     color: AppColors.mutedText,

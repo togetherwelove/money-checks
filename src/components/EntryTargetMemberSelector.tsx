@@ -4,7 +4,9 @@ import { AuthControls } from "../constants/authControls";
 import { AppColors } from "../constants/colors";
 import { EntryRegistrationCopy } from "../constants/entryRegistration";
 import { CompactTextProps } from "../constants/textLayout";
-import { FormLabelTextStyle } from "../constants/uiStyles";
+import { AppLayout } from "../constants/layout";
+import { EntryComposerUi } from "../constants/entryComposer";
+import { EntryDetailFieldStyle, EntryDetailLabelStyle, EntryDetailValueStyle, EntryDetailRowStyle } from "../constants/entryDetailStyles";
 import type { LedgerBookMember } from "../types/ledgerBookMember";
 
 type EntryTargetMemberSelectorProps = {
@@ -24,7 +26,7 @@ export function EntryTargetMemberSelector({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>{EntryRegistrationCopy.targetMemberLabel}</Text>
+      <View style={styles.header}><Text style={styles.label}>{EntryRegistrationCopy.targetMemberLabel}</Text></View>
       <View style={styles.optionList}>
         {members.map((member) => {
           const isSelected = member.userId === selectedMemberId;
@@ -49,31 +51,28 @@ export function EntryTargetMemberSelector({
 }
 
 const styles = StyleSheet.create({
-  container: {
-    gap: 6,
-  },
-  label: FormLabelTextStyle,
+  container: EntryDetailFieldStyle,
+  header: EntryDetailRowStyle,
+  label: EntryDetailLabelStyle,
   optionList: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    gap: AppLayout.screenPadding,
   },
   option: {
-    borderWidth: 1,
+    borderWidth: AppLayout.dividerWidth,
     borderColor: AppColors.border,
     borderRadius: AuthControls.borderRadius,
     backgroundColor: AppColors.background,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: EntryComposerUi.detailsPadding,
+    paddingVertical: AppLayout.compactGap,
   },
   optionSelected: {
     borderColor: AppColors.primary,
     backgroundColor: AppColors.screenBackground,
   },
   optionLabel: {
-    color: AppColors.text,
-    fontSize: 13,
-    fontWeight: "600",
+    ...EntryDetailValueStyle,
   },
   optionLabelSelected: {
     color: AppColors.primary,

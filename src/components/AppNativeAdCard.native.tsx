@@ -12,7 +12,6 @@ import {
 
 import { AdMobNativeConfig, NativeAdCardUi, NativeAdListConfig } from "../constants/ads";
 import { AppColors } from "../constants/colors";
-import { AppLayout } from "../constants/layout";
 import { AppTextBreakProps, OneLineTextFitProps } from "../constants/textLayout";
 import { resolveAdMobAdUnitId } from "../lib/ads/adUnitId";
 import { getAdRequestOptions } from "../lib/ads/adRequestOptions";
@@ -69,57 +68,58 @@ export function AppNativeAdCard({ slotIndex }: AppNativeAdCardProps) {
   }
 
   return (
-    <NativeAdView nativeAd={nativeAd} style={styles.nativeAdView}>
-      <View style={styles.content}>
-        <View style={styles.detailsRow}>
-          {nativeAd.icon ? (
-            <NativeAsset assetType={NativeAssetType.ICON}>
-              <View style={styles.iconFrame}>
-                <Image source={{ uri: nativeAd.icon.url }} style={styles.icon} />
+    <View style={styles.card}>
+      <NativeAdView nativeAd={nativeAd} style={styles.nativeAdView}>
+        <View style={styles.content}>
+          <View style={styles.detailsRow}>
+            {nativeAd.icon ? (
+              <NativeAsset assetType={NativeAssetType.ICON}>
+                <View style={styles.iconFrame}>
+                  <Image source={{ uri: nativeAd.icon.url }} style={styles.icon} />
+                </View>
+              </NativeAsset>
+            ) : null}
+            <View style={styles.copyColumn}>
+              <View style={styles.mainCopy}>
+                <View style={styles.headlineBlock}>
+                  <Text style={styles.sponsoredLabel}>{NativeAdListConfig.sponsoredLabel}</Text>
+                  <NativeAsset assetType={NativeAssetType.HEADLINE}>
+                    <Text {...AppTextBreakProps} numberOfLines={1} style={styles.headline}>
+                      {nativeAd.headline}
+                    </Text>
+                  </NativeAsset>
+                </View>
+                {nativeAd.body ? (
+                  <NativeAsset assetType={NativeAssetType.BODY}>
+                    <Text {...AppTextBreakProps} numberOfLines={2} style={styles.body}>
+                      {nativeAd.body}
+                    </Text>
+                  </NativeAsset>
+                ) : null}
               </View>
-            </NativeAsset>
-          ) : null}
-          <View style={styles.copyColumn}>
-            <View style={styles.mainCopy}>
-              <View style={styles.headlineBlock}>
-                <Text style={styles.sponsoredLabel}>{NativeAdListConfig.sponsoredLabel}</Text>
-                <NativeAsset assetType={NativeAssetType.HEADLINE}>
-                  <Text {...AppTextBreakProps} numberOfLines={1} style={styles.headline}>
-                    {nativeAd.headline}
-                  </Text>
-                </NativeAsset>
-              </View>
-              {nativeAd.body ? (
-                <NativeAsset assetType={NativeAssetType.BODY}>
-                  <Text {...AppTextBreakProps} numberOfLines={2} style={styles.body}>
-                    {nativeAd.body}
-                  </Text>
-                </NativeAsset>
-              ) : null}
             </View>
+            {nativeAd.callToAction ? (
+              <NativeAsset assetType={NativeAssetType.CALL_TO_ACTION}>
+                <View
+                  accessibilityLabel={nativeAd.callToAction}
+                  accessibilityRole="button"
+                  style={styles.callToAction}
+                >
+                  <Feather
+                    color={AppColors.inverseText}
+                    name="download"
+                    size={NativeAdCardUi.callToActionIconSize}
+                  />
+                  <Text {...OneLineTextFitProps} style={styles.callToActionText}>
+                    {nativeAd.callToAction}
+                  </Text>
+                </View>
+              </NativeAsset>
+            ) : null}
           </View>
-          {nativeAd.callToAction ? (
-            <NativeAsset assetType={NativeAssetType.CALL_TO_ACTION}>
-              <View
-                accessibilityLabel={nativeAd.callToAction}
-                accessibilityRole="button"
-                style={styles.callToAction}
-              >
-                <Feather
-                  color={AppColors.inverseText}
-                  name="download"
-                  size={NativeAdCardUi.callToActionIconSize}
-                />
-                <Text {...OneLineTextFitProps} style={styles.callToActionText}>
-                  {nativeAd.callToAction}
-                </Text>
-              </View>
-            </NativeAsset>
-          ) : null}
         </View>
-      </View>
-      <View style={styles.bottomDivider} />
-    </NativeAdView>
+      </NativeAdView>
+    </View>
   );
 }
 
@@ -132,10 +132,9 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.adBackground,
     minHeight: NativeAdCardUi.minHeight,
   },
-  bottomDivider: {
-    borderTopWidth: AppLayout.dividerWidth,
-    borderColor: AppColors.border,
-    marginHorizontal: NativeAdCardUi.contentPaddingHorizontal,
+  card: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: AppColors.border,
   },
   content: {
     paddingHorizontal: NativeAdCardUi.contentPaddingHorizontal,

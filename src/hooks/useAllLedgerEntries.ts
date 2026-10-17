@@ -118,6 +118,7 @@ export function useAllLedgerEntries({
       bookId: activeBookId,
       channelScope: LedgerRealtimeConfig.allEntriesChannelScope,
       onChange: scheduleRealtimeRefresh,
+      onResync: scheduleRealtimeRefresh,
     });
 
     return () => {

@@ -1,5 +1,5 @@
 import { Feather } from "@expo/vector-icons";
-import { type ReactNode, useState } from "react";
+import { useState } from "react";
 import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { ActionButton } from "../components/ActionButton";
@@ -9,7 +9,7 @@ import { TextLinkButton } from "../components/TextLinkButton";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import { LegalLinks } from "../constants/legal";
-import { SubscriptionMessages } from "../constants/subscription";
+import { SubscriptionHeroUi, SubscriptionMessages } from "../constants/subscription";
 import {
   AppTextBreakProps,
   CompactTextProps,
@@ -20,6 +20,7 @@ import {
   CompactLabelTextStyle,
   ListGroupStyle,
   ResponsivePageContentStyle,
+  ScreenTitleTextStyle,
 } from "../constants/uiStyles";
 import { showNativeToast } from "../lib/nativeToast";
 
@@ -28,7 +29,6 @@ type SubscriptionScreenProps = {
   isPlusActive: boolean;
   onPurchasePlus: () => Promise<void>;
   plusPriceLabel: string | null;
-  screenTitle: ReactNode;
 };
 
 export function SubscriptionScreen({
@@ -36,7 +36,6 @@ export function SubscriptionScreen({
   isPlusActive,
   onPurchasePlus,
   plusPriceLabel,
-  screenTitle,
 }: SubscriptionScreenProps) {
   const [isPurchaseInfoExpanded, setIsPurchaseInfoExpanded] = useState(false);
   const resolvedPlusPriceLabel = plusPriceLabel ?? SubscriptionMessages.heroPriceLabel;
@@ -51,9 +50,12 @@ export function SubscriptionScreen({
   return (
     <View style={styles.screen}>
       <KeyboardAwareScrollView contentContainerStyle={styles.content} style={styles.scrollView}>
-        {screenTitle}
         <View style={styles.salesContent}>
           <View style={styles.copySection}>
+            <Text {...CompactTextProps} accessibilityRole="header" style={styles.brandTitle}>
+              {SubscriptionMessages.heroBrandName}{" "}
+              <Text style={styles.brandPlus}>{SubscriptionMessages.heroBrandPlus}</Text>
+            </Text>
             <Text {...AppTextBreakProps} style={styles.description}>
               {SubscriptionMessages.heroDescription}
             </Text>
@@ -179,9 +181,21 @@ const styles = StyleSheet.create({
   copySection: {
     width: "100%",
     alignItems: "center",
+    gap: SubscriptionHeroUi.brandDescriptionGap,
+  },
+  brandTitle: {
+    ...ScreenTitleTextStyle,
+    fontSize: SubscriptionHeroUi.brandFontSize,
+    lineHeight: SubscriptionHeroUi.brandLineHeight,
+    textAlign: "center",
+  },
+  brandPlus: {
+    ...BrandPlusTextStyle,
+    fontSize: SubscriptionHeroUi.brandFontSize,
   },
   benefitSection: {
     width: "100%",
+    alignItems: "center",
   },
   detailSection: {
     width: "100%",
@@ -249,7 +263,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   benefitList: {
-    width: "100%",
+    maxWidth: "100%",
     gap: 8,
   },
   benefitItem: {
@@ -257,7 +271,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
     fontWeight: "600",
-    textAlign: "center",
+    textAlign: "left",
   },
   activeChip: {
     borderRadius: 999,

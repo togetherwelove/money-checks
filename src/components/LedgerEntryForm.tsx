@@ -146,6 +146,7 @@ export function LedgerEntryForm({
         <EntryTypeToggleButton onSelectType={onSelectType} selectedType={draft.type} />
         <View style={styles.clearableInputRow}>
           <TextInput
+            autoFocus={!autoFocusContent && !editingEntryId}
             ref={amountInputRef}
             submitBehavior="blurAndSubmit"
             keyboardType="number-pad"

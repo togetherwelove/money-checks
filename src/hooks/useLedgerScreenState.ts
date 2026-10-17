@@ -1,6 +1,6 @@
 import type { Session } from "@supabase/supabase-js";
 import type { Dispatch, SetStateAction } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useWindowDimensions } from "react-native";
 
 import type { MonthPage } from "../components/monthCalendarPager/monthCalendarPagerUtils";
@@ -77,6 +77,7 @@ export function useLedgerScreenState(
   const actualToday = startOfMonth(new Date());
   const initialBootstrapMonth = useRef(actualToday).current;
   const [visibleMonth, setVisibleMonth] = useState(actualToday);
+  const [visibleChartMonth, setVisibleChartMonth] = useState(actualToday);
   const [selectedDate, setSelectedDate] = useState(() => toIsoDate(new Date()));
   const [allChartEntries, setAllChartEntries] = useState<LedgerEntry[] | null>(null);
   const [ledgerMutationRevision, setLedgerMutationRevision] = useState(0);
@@ -214,16 +215,20 @@ export function useLedgerScreenState(
     [calendarFontScale, entryCache, visibleMonth],
   );
   const previousChartMonth = useMemo(
-    () => getChartMonthDataFromCache(entryCache, addMonths(visibleMonth, -1), chartDataOptions),
-    [chartDataOptions, entryCache, visibleMonth],
+    () => getChartMonthDataFromCache(entryCache, addMonths(visibleChartMonth, -1), chartDataOptions),
+    [chartDataOptions, entryCache, visibleChartMonth],
   );
   const currentChartMonth = useMemo(
-    () => getChartMonthDataFromCache(entryCache, visibleMonth, chartDataOptions),
-    [chartDataOptions, entryCache, visibleMonth],
+    () => getChartMonthDataFromCache(entryCache, visibleChartMonth, chartDataOptions),
+    [chartDataOptions, entryCache, visibleChartMonth],
   );
   const nextChartMonth = useMemo(
-    () => getChartMonthDataFromCache(entryCache, addMonths(visibleMonth, 1), chartDataOptions),
-    [chartDataOptions, entryCache, visibleMonth],
+    () => getChartMonthDataFromCache(entryCache, addMonths(visibleChartMonth, 1), chartDataOptions),
+    [chartDataOptions, entryCache, visibleChartMonth],
+  );
+  const preloadVisibleChartEntries = useCallback(
+    () => preloadChartEntries(visibleChartMonth),
+    [preloadChartEntries, visibleChartMonth],
   );
 
   useEffect(() => {
@@ -289,19 +294,27 @@ export function useLedgerScreenState(
     resetEditor(isoDate);
   };
 
-  const handleSaveEntry = async () => {
-    const savedEntries = await persistDraftEntry(draft, editingEntryId);
+  const handleSaveEntry = async (newDraft?: LedgerEntryDraft, sourceEntry?: LedgerEntry) => {
+    const savedDraft = newDraft ?? draft;
+    const savedEntries = await persistDraftEntry(savedDraft, sourceEntry?.id ?? (newDraft ? null : editingEntryId), sourceEntry);
     if (savedEntries.length === 0) {
       return [];
     }
 
-    resetEditor(draft.date);
+    if (sourceEntry) {
+      return savedEntries;
+    } else if (newDraft) {
+      handleSelectDate(savedDraft.date);
+    } else {
+      resetEditor(savedDraft.date);
+    }
     return savedEntries;
   };
 
   const persistDraftEntry = async (
     draftToSave: LedgerEntryDraft,
     targetEditingEntryId: string | null,
+    originalEntry?: LedgerEntry,
   ): Promise<LedgerEntry[]> => {
     if (blockReadOnlyEditIfNeeded()) {
       return [];
@@ -317,9 +330,9 @@ export function useLedgerScreenState(
 
     if (targetEditingEntryId) {
       const sourceEntry =
-        editingEntrySnapshot?.id === targetEditingEntryId
+        originalEntry ?? (editingEntrySnapshot?.id === targetEditingEntryId
           ? editingEntrySnapshot
-          : entries.find((entry) => entry.id === targetEditingEntryId);
+          : entries.find((entry) => entry.id === targetEditingEntryId));
       const authorName =
         sourceEntry?.authorName ?? resolveCurrentUserDisplayName(session, entries);
       const nextEntry: LedgerEntry = {
@@ -528,8 +541,9 @@ export function useLedgerScreenState(
   };
 
   const errorMessage = activeBookError ?? entriesError ?? selectedEntriesError;
-  const handleRefreshLedger = async () => {
-    await Promise.all([refreshLedger(), refreshSelectedDateEntries()]);
+  const handleRefreshLedger = async (invalidateCachedMonths = false) => {
+    if (invalidateCachedMonths) setLedgerMutationRevision((currentRevision) => currentRevision + 1);
+    await Promise.all([refreshLedger(invalidateCachedMonths), refreshSelectedDateEntries()]);
   };
 
   return {
@@ -559,7 +573,7 @@ export function useLedgerScreenState(
     pendingJoinRequests,
     previousMonthPage,
     previousChartMonth,
-    preloadChartEntries,
+    preloadChartEntries: preloadVisibleChartEntries,
     previewSharedLedgerBookJoinByCode,
     refreshExpiredShareCode,
     approveLedgerJoinRequest,
@@ -573,6 +587,8 @@ export function useLedgerScreenState(
     selectedMonthSummaryDate: selectedMonthSummaryRange?.startDate ?? null,
     selectedMonthSummaryLabel: selectedMonthSummaryRange?.label ?? null,
     setVisibleMonth,
+    setVisibleChartMonth,
+    visibleChartMonth,
     switchLedgerBook,
     transferSharedLedgerOwnership,
     totalLedgerSummary,

@@ -187,7 +187,7 @@ export function SignedInStackNavigator({
             onEditSelectedEntry={onEditSelectedEntryFromCalendar}
             onPrepayInstallmentEntry={onPrepayInstallmentEntry}
             onSelectCalendarDate={onSelectCalendarDate}
-            screenTitle={renderScreenTitle("calendar")}
+            screenTitle={(label) => renderScreenTitle("calendar", label)}
             showsBannerAd={showsBannerAd}
             state={ledgerState}
           />
@@ -290,6 +290,9 @@ export function SignedInStackNavigator({
       <Stack.Screen name="app-settings">
         {() => (
           <AppSettingsScreen
+            activeBookId={ledgerState.activeBook?.id ?? null}
+            activeBookName={ledgerState.activeBook?.name ?? ""}
+            canAddCategory={Boolean(ledgerState.activeBook) && !ledgerState.isReadOnlyDueToPlanLimit}
             notificationPermissionLabel={notificationPermissionLabel}
             notificationPermissionState={notificationPermissionState}
             notificationPreferenceGroups={notificationPreferenceGroups}
@@ -352,7 +355,6 @@ export function SignedInStackNavigator({
             isPlusActive={isPlusActive}
             onPurchasePlus={onPurchasePlus}
             plusPriceLabel={plusPriceLabel}
-            screenTitle={renderScreenTitle("subscription")}
           />
         )}
       </Stack.Screen>

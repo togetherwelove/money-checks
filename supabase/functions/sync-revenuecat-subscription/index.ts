@@ -2,10 +2,12 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 import { handleSyncRevenueCatSubscriptionRequest } from "./syncRevenueCatSubscriptionHandler.ts";
 
+import { resolveSupabaseAdminKey } from "../_shared/supabaseAdminKey.ts";
+
 const env = {
   plusEntitlementId: Deno.env.get("REVENUECAT_PLUS_ENTITLEMENT_ID") ?? "plus",
   revenueCatSecretApiKey: Deno.env.get("REVENUECAT_SECRET_API_KEY") ?? "",
-  serviceRoleKey: Deno.env.get("SUPABASE_SECRET_KEYS") ?? "",
+  serviceRoleKey: resolveSupabaseAdminKey((name) => Deno.env.get(name)),
   supabaseUrl: Deno.env.get("SUPABASE_URL") ?? "",
 };
 

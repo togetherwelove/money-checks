@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
     gap: ENTRY_ROW_GAP,
     paddingHorizontal: AppLayout.screenPadding,
     paddingVertical: 6,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: AppColors.border,
   },
   entryPressable: {

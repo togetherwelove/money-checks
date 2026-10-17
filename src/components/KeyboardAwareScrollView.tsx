@@ -1,3 +1,4 @@
+import { AppScrollBehavior } from "../constants/scroll";
 import { forwardRef } from "react";
 import type { ComponentRef, PropsWithChildren, ReactElement } from "react";
 import { StyleSheet } from "react-native";
@@ -36,7 +37,7 @@ export const KeyboardAwareScrollView = forwardRef<
   ref,
 ) {
   return (
-    <NativeKeyboardAwareScrollView
+    <NativeKeyboardAwareScrollView {...AppScrollBehavior}
       ref={ref}
       enableAutomaticScroll
       contentContainerStyle={[centerContent && styles.centerContent, contentContainerStyle]}

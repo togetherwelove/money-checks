@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Modal, Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 
 import { ActionButton } from "../ActionButton";
+import { ModalCloseButton } from "../ModalCloseButton";
 import { AppSettingsUi } from "../../constants/appSettings";
 import { AppColors } from "../../constants/colors";
 import { CurrencyUnitLabels } from "../../constants/currency";
@@ -149,9 +150,7 @@ function ThresholdPeriodPickerModal({
         <View style={styles.modalSheet}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{NotificationUiCopy.thresholdPeriodPickerTitle}</Text>
-            <Pressable onPress={onClose}>
-              <Text style={styles.modalCloseText}>닫기</Text>
-            </Pressable>
+            <ModalCloseButton onPress={onClose} />
           </View>
           <Picker
             itemStyle={styles.pickerItem}
@@ -231,11 +230,6 @@ const styles = StyleSheet.create({
   },
   modalBackdrop: {
     ...StyleSheet.absoluteFillObject,
-  },
-  modalCloseText: {
-    color: AppColors.mutedText,
-    fontSize: 13,
-    fontWeight: "700",
   },
   modalHeader: {
     alignItems: "center",

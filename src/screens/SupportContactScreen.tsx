@@ -1,3 +1,4 @@
+import { AppScrollBehavior } from "../constants/scroll";
 import { type ReactNode, useState } from "react";
 import { Image, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
@@ -110,7 +111,7 @@ export function SupportContactScreen({ email, screenTitle }: SupportContactScree
             </Text>
           </View>
           {attachments.length > 0 ? (
-            <ScrollView
+            <ScrollView {...AppScrollBehavior}
               horizontal
               showsHorizontalScrollIndicator={false}
               style={styles.attachmentList}

@@ -1,3 +1,4 @@
+import { AppScrollBehavior } from "../../constants/scroll";
 import type { ReactNode } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
@@ -22,7 +23,7 @@ export function ChartMonthPageContent({
 }: ChartMonthPageContentProps) {
   return (
     <View style={styles.page}>
-      <ScrollView
+      <ScrollView {...AppScrollBehavior}
         contentContainerStyle={styles.content}
         nestedScrollEnabled
         showsVerticalScrollIndicator={false}
@@ -51,11 +52,10 @@ const styles = StyleSheet.create({
     minHeight: 0,
   },
   content: {
-    gap: AppLayout.cardGap,
     paddingBottom: AppLayout.chartPageBottomPadding,
   },
   title: {
     paddingHorizontal: AppLayout.screenPadding,
-    paddingTop: AppLayout.screenTopPadding,
+    paddingTop: AppLayout.compactGap,
   },
 });

@@ -1,6 +1,11 @@
+import { AppScrollBehavior } from "../../constants/scroll";
 import { Feather } from "@expo/vector-icons";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import type { LedgerEntryType } from "../../types/ledger";
+import { CategoryTypeTabs } from "./CategoryTypeTabs";
+import { ActionButton } from "../ActionButton";
+import { ModalCloseButton } from "../ModalCloseButton";
 
 import { CategoryCustomizerCopy } from "../../constants/categoryCustomizer";
 import {
@@ -14,21 +19,37 @@ import {
 } from "../../constants/categorySelector";
 import { AppColors } from "../../constants/colors";
 import { AppLayout } from "../../constants/layout";
+import { SupportingTextStyle } from "../../constants/uiStyles";
 import type { CategoryDefinition } from "../../types/category";
 
 type CategoryManageModalProps = {
+  entryType: LedgerEntryType;
+  onChangeEntryType: (type: LedgerEntryType) => void;
+  onAdd: () => void;
+  creationModal: ReactNode;
+  title?: string;
+  isLoading?: boolean;
   categories: readonly CategoryDefinition[];
   isOpen: boolean;
   onClose: () => void;
-  onChangeOrder: (categories: CategoryDefinition[]) => void;
+  onChangeOrder: (categories: CategoryDefinition[]) => Promise<boolean>;
 };
 
 export function CategoryManageModal({
+  entryType,
+  onChangeEntryType,
+  onAdd,
+  creationModal,
+  title = CategoryCustomizerCopy.manageModalTitle,
+  isLoading = false,
   categories,
   isOpen,
   onClose,
   onChangeOrder,
 }: CategoryManageModalProps) {
+  const savingRef = useRef(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
   const [orderedCategories, setOrderedCategories] = useState<CategoryDefinition[]>(() => [
     ...categories,
   ]);
@@ -64,12 +85,25 @@ export function CategoryManageModal({
   );
 
   useEffect(() => {
-    if (!isOpen) {
+    wasOpenRef.current = false;
+    setSaveError(false);
+  }, [entryType]);
+
+  useEffect(() => {
+    if (!isOpen || isLoading) {
       wasOpenRef.current = false;
       clearPendingCategoryScroll();
       return;
     }
     if (wasOpenRef.current) {
+      setOrderedCategories((current) => {
+        const categoriesById = new Map(categories.map((category) => [category.id, category]));
+        const currentIds = new Set(current.map((category) => category.id));
+        return [
+          ...current.flatMap((category) => categoriesById.get(category.id) ?? []),
+          ...categories.filter((category) => !currentIds.has(category.id)),
+        ];
+      });
       return;
     }
     wasOpenRef.current = true;
@@ -82,7 +116,7 @@ export function CategoryManageModal({
         ? currentCategoryId
         : (nextCategories[0]?.id ?? null),
     );
-  }, [categories, clearPendingCategoryScroll, isOpen]);
+  }, [categories, clearPendingCategoryScroll, isOpen, isLoading, entryType]);
 
   useEffect(() => clearPendingCategoryScroll, [clearPendingCategoryScroll]);
 
@@ -91,10 +125,19 @@ export function CategoryManageModal({
   );
   const canMoveUp = selectedIndex > 0;
   const canMoveDown = selectedIndex >= 0 && selectedIndex < orderedCategories.length - 1;
-  const canSave = !areCategoryOrdersEqual(categories, orderedCategories);
+  const canSave = !isLoading && !saving && !areCategoryOrdersEqual(categories, orderedCategories);
+  function changeEntryType(nextType: LedgerEntryType) {
+    if (nextType === entryType || savingRef.current || isLoading) return;
+    if (!canSave) { onChangeEntryType(nextType); return; }
+    Alert.alert(CategoryCustomizerCopy.discardOrderTitle, CategoryCustomizerCopy.discardOrderMessage, [
+      { text: CategoryCustomizerCopy.keepEditingAction, style: "cancel" },
+      { text: CategoryCustomizerCopy.switchTabAction, onPress: () => onChangeEntryType(nextType) },
+    ]);
+  }
 
   const moveSelectedCategory = useCallback(
     (direction: -1 | 1) => {
+      if (savingRef.current || isLoading) return;
       if (selectedIndex < 0) {
         return;
       }
@@ -110,15 +153,27 @@ export function CategoryManageModal({
       setOrderedCategories(nextCategories);
       scheduleCategoryScroll(nextIndex, direction);
     },
-    [orderedCategories, scheduleCategoryScroll, selectedIndex],
+    [isLoading, orderedCategories, scheduleCategoryScroll, selectedIndex],
   );
 
-  const saveCategoryOrder = useCallback(() => {
-    onChangeOrder(orderedCategories);
-    onClose();
+  const saveCategoryOrder = useCallback(async () => {
+    if (savingRef.current) return;
+    savingRef.current = true;
+    setSaving(true);
+    setSaveError(false);
+    try {
+      if (await onChangeOrder(orderedCategories)) onClose();
+      else setSaveError(true);
+    } catch {
+      setSaveError(true);
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
+    }
   }, [onChangeOrder, onClose, orderedCategories]);
 
   const closeWithoutSaving = useCallback(() => {
+    if (savingRef.current) return;
     clearPendingCategoryScroll();
     onClose();
   }, [clearPendingCategoryScroll, onClose]);
@@ -165,12 +220,12 @@ export function CategoryManageModal({
         <Pressable onPress={handlePressBackdrop} style={styles.backdrop} />
         <View style={styles.sheet}>
           <View style={styles.header}>
-            <Text style={styles.title}>{CategoryCustomizerCopy.manageModalTitle}</Text>
-            <Pressable onPress={handlePressClose}>
-              <Text style={styles.closeText}>닫기</Text>
-            </Pressable>
+            <Text style={styles.title}>{title}</Text>
+            <ModalCloseButton disabled={saving} onPress={handlePressClose} />
           </View>
-          <ScrollView
+          <CategoryTypeTabs value={entryType} disabled={saving || isLoading} onChange={changeEntryType} />
+          <ActionButton label={CategoryCustomizerCopy.addAccessibilityLabel} onPress={onAdd} disabled={saving || isLoading} size="inline" />
+          <ScrollView {...AppScrollBehavior}
             contentContainerStyle={styles.listContent}
             onLayout={(event) => {
               listViewportHeightRef.current = event.nativeEvent.layout.height;
@@ -178,7 +233,7 @@ export function CategoryManageModal({
             ref={listScrollRef}
             showsVerticalScrollIndicator
           >
-            {orderedCategories.map((category) => (
+            {!isLoading && orderedCategories.map((category) => (
               <CategoryManageRow
                 category={category}
                 isSelected={category.id === selectedCategoryId}
@@ -189,18 +244,20 @@ export function CategoryManageModal({
           </ScrollView>
           <View style={styles.moveActionRow}>
             <CategoryMoveButton
-              disabled={!canMoveUp}
+              disabled={saving || !canMoveUp}
               iconName="arrow-up"
               label={CategoryCustomizerCopy.moveUpAction}
               onPress={handlePressMoveUp}
             />
             <CategoryMoveButton
-              disabled={!canMoveDown}
+              disabled={saving || !canMoveDown}
               iconName="arrow-down"
               label={CategoryCustomizerCopy.moveDownAction}
               onPress={handlePressMoveDown}
             />
           </View>
+          {isLoading ? <Text style={SupportingTextStyle}>{CategoryCustomizerCopy.loadingCategories}</Text> : null}
+          {saveError ? <Text style={styles.saveError}>{CategoryCustomizerCopy.saveError}</Text> : null}
           <Pressable
             disabled={!canSave}
             onPress={handlePressSave}
@@ -212,6 +269,7 @@ export function CategoryManageModal({
           </Pressable>
         </View>
       </View>
+      {creationModal}
     </Modal>
   );
 }
@@ -299,6 +357,7 @@ function CategoryMoveButton({
 }
 
 const styles = StyleSheet.create({
+  saveError: { ...SupportingTextStyle, color: AppColors.expense },
   overlay: {
     flex: 1,
     justifyContent: "center",
@@ -325,11 +384,6 @@ const styles = StyleSheet.create({
     color: AppColors.text,
     fontSize: 16,
     fontWeight: "800",
-  },
-  closeText: {
-    color: AppColors.mutedText,
-    fontSize: 13,
-    fontWeight: "700",
   },
   listContent: {
     gap: CATEGORY_MANAGE_ROW_GAP,

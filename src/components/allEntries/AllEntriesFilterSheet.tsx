@@ -1,6 +1,8 @@
+import { AppScrollBehavior } from "../../constants/scroll";
 import { Feather } from "@expo/vector-icons";
-import { type ReactNode, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
+  Animated,
   Modal,
   Pressable,
   ScrollView,
@@ -10,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
 
 import {
   type AllEntriesEntryTypeFilter,
@@ -21,6 +24,7 @@ import {
 } from "../../constants/allEntries";
 import { AppColors } from "../../constants/colors";
 import { AppLayout } from "../../constants/layout";
+import { useFilterSheetAnimation } from "../../hooks/useFilterSheetAnimation";
 import {
   countAllEntriesFilters,
   filterCategoriesByEntryType,
@@ -50,6 +54,7 @@ export function AllEntriesFilterSheet({
 }: AllEntriesFilterSheetProps) {
   const safeAreaInsets = useSafeAreaInsets();
   const { height: windowHeight } = useWindowDimensions();
+  const sheetAnimation = useFilterSheetAnimation(onClose, windowHeight);
   const [draftEntryTypeFilter, setDraftEntryTypeFilter] =
     useState<AllEntriesEntryTypeFilter>(entryTypeFilter);
   const [draftCategoryIds, setDraftCategoryIds] = useState<string[]>([
@@ -95,44 +100,49 @@ export function AllEntriesFilterSheet({
 
   return (
     <Modal
-      animationType="slide"
-      onRequestClose={onClose}
+      animationType="none"
+      onShow={sheetAnimation.open}
+      onRequestClose={() => sheetAnimation.close()}
       statusBarTranslucent
       transparent
       visible
     >
-      <View style={styles.overlay}>
+      <GestureHandlerRootView style={styles.overlay}>
         <Pressable
           accessibilityLabel={AllEntriesFilterCopy.closeAccessibilityLabel}
           accessibilityRole="button"
-          onPress={onClose}
-          style={styles.backdrop}
-        />
-        <View
+          disabled={sheetAnimation.isClosing}
+          onPress={() => sheetAnimation.close()}
+          style={StyleSheet.absoluteFill}
+        >
+          <Animated.View
+            pointerEvents="none"
+            style={[styles.backdrop, sheetAnimation.backdropStyle]}
+          />
+        </Pressable>
+        <Animated.View
+          pointerEvents={sheetAnimation.isClosing ? "none" : "auto"}
           style={[
             styles.sheet,
+            sheetAnimation.sheetStyle,
             { maxHeight: windowHeight * AllEntriesFilterUi.filterSheetMaximumHeightRatio },
           ]}
         >
-          <View style={styles.handle} />
-          <View style={styles.header}>
-            <Text accessibilityRole="header" style={styles.headerTitle}>
-              {AllEntriesFilterCopy.sheetTitle}
-            </Text>
-            <Pressable
+          <GestureDetector gesture={sheetAnimation.handleGesture}>
+            <View
+              accessible
               accessibilityRole="button"
-              onPress={resetDraftFilters}
-              style={({ pressed }) => [styles.resetButton, pressed ? styles.pressed : null]}
+              accessibilityLabel={AllEntriesFilterCopy.closeAccessibilityLabel}
+              onAccessibilityTap={() => sheetAnimation.close()}
+              style={styles.handleTouchArea}
             >
-              <Text style={styles.resetLabel}>{AllEntriesFilterCopy.resetLabel}</Text>
-            </Pressable>
-          </View>
-
-          <ScrollView
-            contentContainerStyle={styles.scrollContent}
+              <View style={styles.handle} />
+            </View>
+          </GestureDetector>
+          <ScrollView {...AppScrollBehavior}            contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
-            <FilterSection title={AllEntriesFilterCopy.entryTypeSectionLabel}>
+            <View style={styles.typeFilterRow}>
               <View style={styles.typeOptions}>
                 {AllEntriesEntryTypeFilterOptions.map((option) => (
                   <Pressable
@@ -158,9 +168,16 @@ export function AllEntriesFilterSheet({
                   </Pressable>
                 ))}
               </View>
-            </FilterSection>
+              <Pressable
+                accessibilityRole="button"
+                onPress={resetDraftFilters}
+                style={({ pressed }) => [styles.resetButton, pressed ? styles.pressed : null]}
+              >
+                <Text style={styles.resetLabel}>{AllEntriesFilterCopy.resetLabel}</Text>
+              </Pressable>
+            </View>
 
-            <FilterSection title={AllEntriesFilterCopy.categorySectionLabel}>
+            <View style={styles.section}>
               {expenseCategories.length > 0 ? (
                 <CategoryGroup
                   categories={expenseCategories}
@@ -179,7 +196,7 @@ export function AllEntriesFilterSheet({
                   type="income"
                 />
               ) : null}
-            </FilterSection>
+            </View>
           </ScrollView>
 
           <View
@@ -191,38 +208,22 @@ export function AllEntriesFilterSheet({
             <ActionButton
               fullWidth
               label={AllEntriesFilterCopy.cancelLabel}
-              onPress={onClose}
+              onPress={() => sheetAnimation.close()}
               size="large"
             />
             <ActionButton
               fullWidth
               label={formatAllEntriesApplyLabel(filterCount)}
               onPress={() => {
-                onApply(draftEntryTypeFilter, draftCategoryIds);
-                onClose();
+                sheetAnimation.close(() => onApply(draftEntryTypeFilter, draftCategoryIds));
               }}
               size="large"
               variant="primary"
             />
           </View>
-        </View>
-      </View>
+        </Animated.View>
+      </GestureHandlerRootView>
     </Modal>
-  );
-}
-
-function FilterSection({
-  children,
-  title,
-}: {
-  children: ReactNode;
-  title: string;
-}) {
-  return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      {children}
-    </View>
   );
 }
 
@@ -241,7 +242,7 @@ function CategoryGroup({
 }) {
   return (
     <View style={styles.categoryGroup}>
-      <Text style={styles.categoryGroupTitle}>{title}</Text>
+      <Text accessibilityRole="header" style={styles.categoryGroupTitle}>{title}</Text>
       <View style={styles.categoryGrid}>
         {categories.map((category) => {
           const selected = selectedCategoryIdSet.has(category.id);
@@ -281,12 +282,12 @@ function resolveCategoryColor(type: LedgerEntryType): string {
 
 const styles = StyleSheet.create({
   overlay: {
-    backgroundColor: AppColors.overlay,
     flex: 1,
     justifyContent: "flex-end",
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
+    backgroundColor: AppColors.overlay,
   },
   sheet: {
     backgroundColor: AppColors.surface,
@@ -294,25 +295,22 @@ const styles = StyleSheet.create({
     borderTopRightRadius: AllEntriesFilterUi.filterSheetTopRadius,
     overflow: "hidden",
   },
+  handleTouchArea: {
+    alignItems: "center",
+    justifyContent: "center",
+    height: AllEntriesFilterUi.sheetHandleTouchHeight,
+  },
   handle: {
     alignSelf: "center",
     backgroundColor: AppColors.border,
     borderRadius: AllEntriesFilterUi.sheetHandleHeight / 2,
     height: AllEntriesFilterUi.sheetHandleHeight,
-    marginTop: AppLayout.cardGap,
     width: AllEntriesFilterUi.sheetHandleWidth,
   },
-  header: {
+  typeFilterRow: {
     alignItems: "center",
     flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: AppLayout.cardContentPadding,
-    paddingVertical: AppLayout.cardGap,
-  },
-  headerTitle: {
-    color: AppColors.text,
-    fontSize: AllEntriesFilterUi.headerTitleFontSize,
-    fontWeight: "800",
+    gap: AppLayout.cardGap,
   },
   resetButton: {
     justifyContent: "center",
@@ -325,21 +323,19 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     gap: AppLayout.cardContentPadding,
+    paddingTop: AppLayout.cardGap,
     paddingBottom: AppLayout.cardContentPadding,
     paddingHorizontal: AppLayout.cardContentPadding,
   },
   section: {
     gap: AppLayout.cardGap,
   },
-  sectionTitle: {
-    color: AppColors.text,
-    fontSize: AllEntriesFilterUi.sectionLabelFontSize,
-    fontWeight: "800",
-  },
   typeOptions: {
     backgroundColor: AppColors.surfaceStrong,
     borderRadius: AllEntriesFilterUi.categoryChipRadius,
     flexDirection: "row",
+    flex: 1,
+    minWidth: 0,
     padding: AppLayout.compactGap,
   },
   typeOption: {

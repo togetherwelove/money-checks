@@ -13,6 +13,7 @@ export const NotificationBadgeStorage = {
 } as const;
 
 export const NotificationBadgeDatabase = {
+  entryReadStatesTable: "entry_notification_reads",
   joinRequestsTable: "ledger_book_join_requests",
   ledgerEntriesTable: "ledger_entries",
   readStatesTable: "notification_badge_read_states",

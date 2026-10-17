@@ -11,11 +11,11 @@ export const ExpenseTextColorOptions: readonly {
   value: ExpenseTextColorMode;
 }[] = [
   {
-    label: "검은색",
+    label: "기본색",
     value: ExpenseTextColorModes.defaultText,
   },
   {
-    label: "빨간색",
+    label: "강조색",
     value: ExpenseTextColorModes.expense,
   },
 ];

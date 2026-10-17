@@ -1,5 +1,6 @@
+import { AppScrollBehavior } from "../constants/scroll";
 import { Feather } from "@expo/vector-icons";
-import { useEffect } from "react";
+import { type ReactNode, useEffect } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
@@ -24,6 +25,7 @@ import type {
 } from "../lib/menuItems";
 
 type AppMenuDrawerProps = {
+  children: ReactNode;
   isOpen: boolean;
   onClose: () => void;
   onOpen: () => void;
@@ -35,6 +37,7 @@ type AppMenuDrawerProps = {
 const OPEN_TRANSLATE_X = 0;
 
 export function AppMenuDrawer({
+  children,
   isOpen,
   onClose,
   onOpen,
@@ -78,6 +81,8 @@ export function AppMenuDrawer({
   };
 
   const openGesture = Gesture.Pan()
+    .enabled(!isOpen)
+    .hitSlop({ right: 0, width: MenuUi.drawerSwipeEdgeWidth })
     .activeOffsetX(-MenuUi.drawerSwipeActiveOffsetX)
     .failOffsetY([-MenuUi.drawerSwipeFailOffsetY, MenuUi.drawerSwipeFailOffsetY])
     .onBegin(() => {
@@ -134,18 +139,15 @@ export function AppMenuDrawer({
   }));
 
   return (
-    <View pointerEvents="box-none" style={styles.root}>
+    <GestureDetector gesture={openGesture}>
+    <View collapsable={false} style={styles.root}>
+      {children}
       <Animated.View
         pointerEvents={isOpen ? "auto" : "none"}
         style={[styles.overlay, overlayStyle]}
       >
         <Pressable onPress={onClose} style={StyleSheet.absoluteFillObject} />
       </Animated.View>
-      {!isOpen ? (
-        <GestureDetector gesture={openGesture}>
-          <View style={styles.edgeHitArea} />
-        </GestureDetector>
-      ) : null}
       <GestureDetector gesture={dragDrawerGesture}>
         <Animated.View
           pointerEvents={isOpen ? "auto" : "none"}
@@ -155,9 +157,7 @@ export function AppMenuDrawer({
             drawerStyle,
           ]}
         >
-          <ScrollView
-            alwaysBounceVertical={false}
-            contentContainerStyle={styles.sections}
+          <ScrollView {...AppScrollBehavior}            contentContainerStyle={styles.sections}
             showsVerticalScrollIndicator={false}
             style={styles.sectionsScroll}
           >
@@ -212,6 +212,7 @@ export function AppMenuDrawer({
         </Animated.View>
       </GestureDetector>
     </View>
+    </GestureDetector>
   );
 }
 
@@ -232,19 +233,11 @@ function resolveMenuItemKey(item: AppMenuItem): string {
 
 const styles = StyleSheet.create({
   root: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 20,
+    flex: 1,
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: AppColors.menuOverlay,
-  },
-  edgeHitArea: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    bottom: 0,
-    width: MenuUi.drawerSwipeEdgeWidth,
   },
   drawer: {
     position: "absolute",
@@ -276,8 +269,6 @@ const styles = StyleSheet.create({
     gap: MenuUi.sectionGap,
   },
   separatedSection: {
-    borderTopWidth: AppLayout.dividerWidth,
-    borderTopColor: AppColors.border,
     paddingTop: MenuUi.sectionPaddingTop,
   },
   sectionLabel: {

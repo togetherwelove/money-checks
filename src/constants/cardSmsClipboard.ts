@@ -13,11 +13,18 @@ const CardSmsClipboardLocalizedCopy = {
   } as const;
 
 export const CardSmsClipboardCopy = {
+  suggestionLabel: "복사한 내역",
+  showSuggestion: "클립보드 내역 확인",
+  noAvailableEntry: "불러올 수 있는 복사한 내역이 없어요.",
+  dismissSuggestion: "복사한 내역 제안 닫기",
+  replaceTitle: "작성 중인 내역을 바꿀까요?",
+  replaceMessage: "현재 입력한 정보 대신 클립보드에서 불러온 내역을 넣습니다.",
+  keepAction: "기존 입력 유지",
+  replaceAction: "바꾸기",
   ...CardSmsClipboardLocalizedCopy,
   actionPreviewContentMaxLength: 12,
   dateDisplaySeparator: "/",
   actionPreviewSuffix: "",
-  modalDismissBeforeEditorDelayMs: 320,
   previewOmissionIndicator: "...",
   previewSeparator: " · ",
 } as const;

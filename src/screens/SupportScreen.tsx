@@ -1,3 +1,4 @@
+import { AppScrollBehavior } from "../constants/scroll";
 import { Feather } from "@expo/vector-icons";
 import type { ReactNode } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -36,62 +37,67 @@ export function SupportScreen({
   screenTitle,
 }: SupportScreenProps) {
   return (
-    <ScrollView contentContainerStyle={styles.content} style={styles.screen}>
+    <ScrollView {...AppScrollBehavior} contentContainerStyle={styles.content} style={styles.screen}>
       {screenTitle}
-      <View style={styles.packageList}>
-        {SupportPackageCatalog.map((item, index) => {
-          const matchingPackage = packages.find(
-            (currentPackage) => currentPackage.identifier === item.identifier,
-          );
-          const priceLabel = matchingPackage?.priceLabel ?? SupportMessages.pricePendingLabel;
-          const isDisabled = isLoading || !matchingPackage;
+      <View style={styles.sections}>
+        <View style={styles.packageList}>
+          {SupportPackageCatalog.map((item, index) => {
+            const matchingPackage = packages.find(
+              (currentPackage) => currentPackage.identifier === item.identifier,
+            );
+            const priceLabel = matchingPackage?.priceLabel ?? SupportMessages.pricePendingLabel;
+            const isDisabled = isLoading || !matchingPackage;
 
-          return (
-            <Pressable
-              key={item.identifier}
-              disabled={isDisabled}
-              onPress={() => onPurchasePackage(item.identifier)}
-              style={({ pressed }) => [
-                styles.packageCard,
-                index === SupportPackageCatalog.length - 1 ? styles.lastPackageCard : null,
-                pressed && !isDisabled ? styles.pressedCard : null,
-                isDisabled ? styles.disabledCard : null,
-              ]}
-            >
-              <SupportPackageIcon identifier={item.identifier} />
-              <View style={styles.packageContent}>
-                <Text {...OneLineTextFitProps} style={styles.packageTitle}>
-                  {item.title}
-                </Text>
-                <Text {...OneLineTextFitProps} style={styles.supportLabel}>
-                  {item.description}
-                </Text>
-              </View>
-              <View style={styles.trailingBlock}>
-                <View style={styles.actionHintRow}>
-                  <Text {...OneLineTextFitProps} style={styles.priceLabel}>
-                    {priceLabel}
+            return (
+              <Pressable
+                key={item.identifier}
+                disabled={isDisabled}
+                onPress={() => onPurchasePackage(item.identifier)}
+                style={({ pressed }) => [
+                  styles.packageCard,
+                  index === SupportPackageCatalog.length - 1 ? styles.lastPackageCard : null,
+                  pressed && !isDisabled ? styles.pressedCard : null,
+                  isDisabled ? styles.disabledCard : null,
+                ]}
+              >
+                <SupportPackageIcon identifier={item.identifier} />
+                <View style={styles.packageContent}>
+                  <Text {...OneLineTextFitProps} style={styles.packageTitle}>
+                    {item.title}
                   </Text>
-                  <Feather
-                    color={AppColors.mutedStrongText}
-                    name="chevron-right"
-                    size={SupportUi.actionIconSize}
-                  />
+                  <Text {...OneLineTextFitProps} style={styles.supportLabel}>
+                    {item.description}
+                  </Text>
                 </View>
-              </View>
-            </Pressable>
-          );
-        })}
+                <View style={styles.trailingBlock}>
+                  <View style={styles.actionHintRow}>
+                    <Text {...OneLineTextFitProps} style={styles.priceLabel}>
+                      {priceLabel}
+                    </Text>
+                    <Feather
+                      color={AppColors.mutedStrongText}
+                      name="chevron-right"
+                      size={SupportUi.actionIconSize}
+                    />
+                  </View>
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+        {packages.length === 0 && !isLoading ? (
+          <Text style={styles.unavailableDescription}>{SupportMessages.unavailableDescription}</Text>
+        ) : null}
+        <AppFooterContentInset />
       </View>
-      {packages.length === 0 && !isLoading ? (
-        <Text style={styles.unavailableDescription}>{SupportMessages.unavailableDescription}</Text>
-      ) : null}
-      <AppFooterContentInset />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  sections: {
+    gap: SupportUi.contentGap,
+  },
   screen: {
     flex: 1,
     backgroundColor: AppColors.screenBackground,
@@ -100,7 +106,6 @@ const styles = StyleSheet.create({
     ...ResponsivePageContentStyle,
     paddingHorizontal: AppLayout.screenPadding,
     paddingTop: AppLayout.screenTopPadding,
-    gap: SupportUi.contentGap,
   },
   packageList: {
     ...ListGroupStyle,

@@ -182,3 +182,8 @@ export const ModalActionRowStyle: ViewStyle = {
   justifyContent: "flex-end",
   gap: 8,
 };
+
+export const ActionButtonLabelTextStyle: TextStyle = {
+  fontSize: 15,
+  fontWeight: "700",
+};

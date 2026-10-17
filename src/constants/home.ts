@@ -1,18 +1,17 @@
 export const HomeScreenUi = {
-  monthTitleFontSize: 34,
-  monthTitleLineHeight: 40,
+  monthTitleFontSize: 24,
+  monthTitleLineHeight: 30,
   transactionMinimumHeight: 160,
 } as const;
 
 export const MonthlySummaryUi = {
-  balanceFontSize: 18,
-  balanceLineHeight: 22,
   contentGap: 6,
-  horizontalPadding: 12,
   labelFontSize: 11,
   metricGap: 4,
-  metricValueFontSize: 12,
-  minimumFontScale: 0.75,
+  metricValueFontSize: 14,
+  minimumRowWidth: 324,
+  maximumInlineAmountLength: 13,
+  dateLabelFontSize: 12,
   titleFontSize: 12,
-  verticalPadding: 10,
+  verticalPadding: 4,
 } as const;

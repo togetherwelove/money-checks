@@ -1,3 +1,4 @@
+import { AppScrollBehavior } from "../../constants/scroll";
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import Svg, { Circle, G } from "react-native-svg";
 
@@ -123,7 +124,7 @@ export function MonthlyBreakdownDonutChart({
                 </Text>
               </View>
             </View>
-            <ScrollView
+            <ScrollView {...AppScrollBehavior}
               contentContainerStyle={styles.selectedSummary}
               nestedScrollEnabled
               showsVerticalScrollIndicator={false}

@@ -7,20 +7,23 @@ import { useExpenseTextColor } from "../contexts/ExpenseTextColorContext";
 import type { LedgerEntryType } from "../types/ledger";
 
 type EntryTypeToggleButtonProps = {
+  disabled?: boolean;
   onSelectType: (type: LedgerEntryType) => void;
   selectedType: LedgerEntryType;
 };
 
 const ENTRY_DIRECTION_ORDER: LedgerEntryType[] = ["expense", "income"];
 
-export function EntryTypeToggleButton({ onSelectType, selectedType }: EntryTypeToggleButtonProps) {
+export function EntryTypeToggleButton({ disabled = false, onSelectType, selectedType }: EntryTypeToggleButtonProps) {
   const expenseTextStyle = useExpenseTextColor().textStyle;
 
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityState={{ disabled }}
+      disabled={disabled}
       onPress={() => onSelectType(selectedType === "expense" ? "income" : "expense")}
-      style={styles.container}
+      style={[styles.container, disabled && styles.disabledContainer]}
     >
       {ENTRY_DIRECTION_ORDER.map((type) => {
         const isActive = type === selectedType;
@@ -52,6 +55,7 @@ export function EntryTypeToggleButton({ onSelectType, selectedType }: EntryTypeT
 }
 
 const styles = StyleSheet.create({
+  disabledContainer: { backgroundColor: AppColors.surfaceStrong },
   container: {
     alignItems: "center",
     alignSelf: "stretch",

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { AppState } from "react-native";
 
 import { logAppError } from "../lib/logAppError";
 import {
@@ -66,6 +67,7 @@ type LedgerNotificationsState = {
 
 export function useLedgerNotifications(userId: string): LedgerNotificationsState {
   const [permission, setPermission] = useState<NotificationPermissionState>("unsupported");
+  const [registrationError, setRegistrationError] = useState<string | null>(null);
   const {
     preferenceGroups,
     preferences,
@@ -78,35 +80,45 @@ export function useLedgerNotifications(userId: string): LedgerNotificationsState
   useEffect(() => {
     let isMounted = true;
 
-    void readPushNotificationPermission()
-      .then((nextPermission) => {
-        if (isMounted) {
-          setPermission(nextPermission);
+    let isSyncing = false;
+    const refreshRegistration = async () => {
+      if (isSyncing || !isMounted) {
+        return;
+      }
+      isSyncing = true;
+      try {
+        const nextPermission = await readPushNotificationPermission();
+        if (!isMounted) {
+          return;
         }
-      })
-      .catch(() => {
-        if (isMounted) {
-          setPermission("unsupported");
+        setPermission(nextPermission);
+        if (nextPermission === "granted") {
+          await syncPushRegistration(userId);
         }
-      });
+        if (isMounted) {
+          setRegistrationError(null);
+        }
+      } catch (error) {
+        logAppError("LedgerNotifications", error, { step: "sync_push_registration", userId });
+        if (isMounted) {
+          setRegistrationError(PushNotificationCopy.registrationFailed);
+        }
+      } finally {
+        isSyncing = false;
+      }
+    };
+    void refreshRegistration();
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        void refreshRegistration();
+      }
+    });
 
     return () => {
       isMounted = false;
+      subscription.remove();
     };
-  }, []);
-
-  useEffect(() => {
-    if (permission !== "granted") {
-      return;
-    }
-
-    void syncPushRegistration(userId).catch((error) => {
-      logAppError("LedgerNotifications", error, {
-        step: "sync_push_registration",
-        userId,
-      });
-    });
-  }, [permission, userId]);
+  }, [userId]);
 
   const isSupported = permission !== "unsupported";
 
@@ -114,14 +126,19 @@ export function useLedgerNotifications(userId: string): LedgerNotificationsState
     try {
       const nextPermission = await requestPushNotificationPermission(userId);
       setPermission(nextPermission);
+      setRegistrationError(null);
       return nextPermission === "granted";
     } catch (error) {
       logAppError("LedgerNotifications", error, {
         step: "request_push_notification_permission",
         userId,
       });
-      setPermission("granted");
-      return true;
+      const actualPermission = await readPushNotificationPermission().catch(() => null);
+      if (actualPermission) {
+        setPermission(actualPermission);
+      }
+      setRegistrationError(PushNotificationCopy.registrationFailed);
+      return false;
     }
   }, [userId]);
 
@@ -228,7 +245,7 @@ export function useLedgerNotifications(userId: string): LedgerNotificationsState
     sendPushNotificationToBookMembers: sendPushNotificationToBookMembersInternal,
     sendPushNotificationToUsers: sendPushNotificationToUsersInternal,
     showNotificationSettings: permission !== "unsupported",
-    statusMessage: getStatusMessage(permission),
+    statusMessage: registrationError ?? getStatusMessage(permission),
     updateThresholdEnabled,
     updatePreference: updateEventPreference,
     updateThresholdPeriod,

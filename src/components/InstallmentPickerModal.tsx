@@ -8,6 +8,7 @@ import { ModalActionRowStyle } from "../constants/uiStyles";
 import { MAX_INSTALLMENT_MONTHS, formatInstallmentLabel } from "../lib/installments";
 import { ONE_TIME_INSTALLMENT_MONTHS } from "../utils/ledgerEntries";
 import { ActionButton } from "./ActionButton";
+import { ModalCloseButton } from "./ModalCloseButton";
 
 type InstallmentPickerModalProps = {
   installmentMonths: number;
@@ -38,9 +39,7 @@ export function InstallmentPickerModal({
         <View style={styles.sheet}>
           <View style={styles.header}>
               <Text style={styles.title}>{EntryRegistrationCopy.installmentPickerTitle}</Text>
-              <Pressable onPress={onClose}>
-                <Text style={styles.closeText}>닫기</Text>
-              </Pressable>
+              <ModalCloseButton onPress={onClose} />
           </View>
           <Picker
             itemStyle={styles.item}
@@ -91,11 +90,6 @@ const styles = StyleSheet.create({
     color: AppColors.text,
     fontSize: 16,
     fontWeight: "800",
-  },
-  closeText: {
-    color: AppColors.mutedText,
-    fontSize: 13,
-    fontWeight: "700",
   },
   item: {
     color: AppColors.text,
