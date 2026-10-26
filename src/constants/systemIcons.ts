@@ -1,0 +1,30 @@
+import type { SymbolViewProps } from "expo-symbols";
+
+export const SystemIconUi = { size: 24 } as const;
+export const SystemIcons = {
+  archive: "archivebox", award: "rosette", "book-open": "book", briefcase: "briefcase",
+  coffee: "cup.and.saucer", "credit-card": "creditcard", gift: "gift", grid: "square.grid.2x2",
+  heart: "heart", home: "house", navigation: "location", percent: "percent",
+  "plus-circle": "plus.circle", repeat: "repeat", "rotate-ccw": "arrow.counterclockwise",
+  scissors: "scissors", "shopping-bag": "bag", "shopping-cart": "cart", smile: "face.smiling",
+  sun: "sun.max", tag: "tag", users: "person.2", zap: "bolt", calendar: "calendar",
+  check: "checkmark", "chevron-down": "chevron.down", "chevron-up": "chevron.up",
+  "chevron-right": "chevron.right", "chevron-left": "chevron.left", clipboard: "doc.on.clipboard",
+  close: "xmark", x: "xmark", "x-circle": "xmark.circle", copy: "doc.on.doc",
+  download: "arrow.down.to.line", "external-link": "arrow.up.right.square", menu: "line.3.horizontal",
+  paperclip: "paperclip", sliders: "slider.horizontal.3", "user-check": "person.crop.circle.badge.checkmark",
+  "user-minus": "person.badge.minus", plus: "plus", minus: "minus", search: "magnifyingglass",
+  "edit-2": "pencil", edit: "square.and.pencil", trash: "trash", "trash-2": "trash",
+  "arrow-up": "arrow.up", "arrow-down": "arrow.down", "arrow-left": "arrow.left", "arrow-right": "arrow.right",
+  settings: "gearshape", "help-circle": "questionmark.circle", "alert-circle": "exclamationmark.circle",
+  "info": "info.circle", clock: "clock", camera: "camera", image: "photo", file: "doc",
+  "file-text": "doc.plaintext", "log-out": "rectangle.portrait.and.arrow.right", mail: "envelope",
+  lock: "lock", unlock: "lock.open", eye: "eye", "eye-off": "eye.slash", user: "person",
+  "calendar-month-outline": "calendar", "calendar-month": "calendar",
+  "inbox-outline": "tray", inbox: "tray.fill", "chart-pie-outline": "chart.pie", "chart-pie": "chart.pie.fill",
+  "wallet-outline": "wallet.pass", wallet: "wallet.pass.fill", "chart-bar": "chart.bar",
+  "account-group": "person.2", "account-outline": "person", "cog-outline": "gearshape",
+  "format-list-bulleted": "list.bullet", "dots-horizontal": "ellipsis", "check-circle": "checkmark.circle",
+  account: "person", "coffee-outline": "cup.and.saucer", "cup-outline": "cup.and.saucer",
+  "food-drumstick-outline": "fork.knife", "edit-3": "pencil",
+} as const satisfies Record<string, SymbolViewProps["name"]>;
