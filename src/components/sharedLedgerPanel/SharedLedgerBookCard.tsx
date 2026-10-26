@@ -1,14 +1,12 @@
-import { Feather } from "@expo/vector-icons";
-import * as Clipboard from "expo-clipboard";
-import { useState } from "react";
-import { Share, Text, TextInput, View } from "react-native";
+import { Feather } from "../AppIcons";
+import { useEffect, useRef, useState } from "react";
+import { Text, TextInput, View } from "react-native";
 
 import { AppColors } from "../../constants/colors";
 import { AppMessages } from "../../constants/messages";
 import { ShareLedgerMessages } from "../../constants/shareLedgerMessages";
 import { SharedLedgerPanelUi } from "../../constants/sharedLedgerPanel";
-import { showNativeToast } from "../../lib/nativeToast";
-import { formatSharedLedgerInviteMessage } from "../../lib/sharedLedgerInvite";
+import { copyLedgerShareCode } from "../../lib/copyLedgerShareCode";
 import type { LedgerBook } from "../../types/ledgerBook";
 import type {
   LedgerBookJoinApprovalAttempt,
@@ -51,29 +49,34 @@ export function SharedLedgerBookCard({
   pendingJoinRequests,
 }: SharedLedgerBookCardProps) {
   const [isEditingBookName, setIsEditingBookName] = useState(false);
+  const [isCopying, setIsCopying] = useState(false);
+  const copyInProgress = useRef(false);
+  const mounted = useRef(true);
+  const currentBook = useRef(activeBook);
+  currentBook.current = activeBook;
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
   const shareCode = activeBook?.shareCode ?? null;
   const shouldShowJoinRequests = isOwner && Boolean(pendingJoinRequests.length);
   const hasDetails = Boolean(shareCode || shouldShowJoinRequests);
 
   const handleCopyShareCode = async () => {
-    if (!shareCode) {
+    if (!shareCode || isReadOnlyDueToPlanLimit || copyInProgress.current) {
       return;
     }
 
-    await onBeforeCopyShareCode();
-
-    await Clipboard.setStringAsync(shareCode);
+    copyInProgress.current = true;
+    setIsCopying(true);
+    const bookId = activeBook?.id;
     try {
-      await Share.share({
-        message: formatSharedLedgerInviteMessage(
-          bookName ?? "나의 가계부",
-          shareCode,
-        ),
-      });
-    } catch (error) {
-      console.error("[SharedLedgerBookCard] Share sheet failed", error);
+      await copyLedgerShareCode(shareCode, onBeforeCopyShareCode, () => mounted.current &&
+        currentBook.current?.id === bookId && currentBook.current?.shareCode === shareCode);
+    } finally {
+      copyInProgress.current = false;
+      if (mounted.current) setIsCopying(false);
     }
-    showNativeToast(ShareLedgerMessages.copyCodeSuccessToast);
   };
 
   const handleStartEditingBookName = () => {
@@ -159,7 +162,8 @@ export function SharedLedgerBookCard({
               onPress={() => {
                 void handleCopyShareCode();
               }}
-              disabled={isReadOnlyDueToPlanLimit}
+              disabled={isReadOnlyDueToPlanLimit || isCopying}
+              loading={isCopying}
               variant="primary"
             />
           </View>

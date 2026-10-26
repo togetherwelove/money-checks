@@ -1,4 +1,5 @@
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { ComposerBlockingModal as Modal } from "./ComposerBlockingModal";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";

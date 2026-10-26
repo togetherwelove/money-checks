@@ -1,12 +1,14 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Feather } from "./AppIcons";
+import { MenuView, type MenuAction } from "@react-native-menu/menu";
+import { useMemo } from "react";
+import { Keyboard, Pressable, StyleSheet, Text, View } from "react-native";
 
-import { AuthControls } from "../constants/authControls";
+import { AppSettingsUi } from "../constants/appSettings";
 import { AppColors } from "../constants/colors";
 import { EntryRegistrationCopy } from "../constants/entryRegistration";
 import { CompactTextProps } from "../constants/textLayout";
 import { AppLayout } from "../constants/layout";
-import { EntryComposerUi } from "../constants/entryComposer";
-import { EntryDetailFieldStyle, EntryDetailLabelStyle, EntryDetailValueStyle, EntryDetailRowStyle } from "../constants/entryDetailStyles";
+import { EntryDetailLabelStyle, EntryDetailValueStyle, EntryDetailRowStyle } from "../constants/entryDetailStyles";
 import type { LedgerBookMember } from "../types/ledgerBookMember";
 
 type EntryTargetMemberSelectorProps = {
@@ -20,61 +22,58 @@ export function EntryTargetMemberSelector({
   onSelectMember,
   selectedMemberId,
 }: EntryTargetMemberSelectorProps) {
+  const actions = useMemo<MenuAction[]>(
+    () => members.map((member) => ({
+      id: member.userId,
+      title: member.displayName,
+      state: member.userId === selectedMemberId ? "on" : "off",
+    })),
+    [members, selectedMemberId],
+  );
+  const selectedMember = members.find((member) => member.userId === selectedMemberId);
   if (members.length === 0) {
     return null;
   }
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}><Text style={styles.label}>{EntryRegistrationCopy.targetMemberLabel}</Text></View>
-      <View style={styles.optionList}>
-        {members.map((member) => {
-          const isSelected = member.userId === selectedMemberId;
-          return (
-            <Pressable
-              key={member.userId}
-              onPress={() => onSelectMember(member)}
-              style={[styles.option, isSelected ? styles.optionSelected : null]}
-            >
-              <Text
-                {...CompactTextProps}
-                style={[styles.optionLabel, isSelected ? styles.optionLabelSelected : null]}
-              >
-                {member.displayName}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      <Text numberOfLines={1} style={styles.label}>{EntryRegistrationCopy.targetMemberLabel}</Text>
+      <MenuView
+        style={styles.menu}
+        actions={actions}
+        title={EntryRegistrationCopy.targetMemberLabel}
+        onOpenMenu={() => Keyboard.dismiss()}
+        onPressAction={({ nativeEvent }) => {
+          const member = members.find((item) => item.userId === nativeEvent.event);
+          if (member) onSelectMember(member);
+        }}
+      >
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={EntryRegistrationCopy.targetMemberLabel}
+          accessibilityValue={{ text: selectedMember?.displayName ?? EntryRegistrationCopy.targetMemberPlaceholder }}
+          style={styles.option}
+        >
+          <Text {...CompactTextProps} numberOfLines={1} style={styles.optionLabel}>
+            {selectedMember?.displayName ?? EntryRegistrationCopy.targetMemberPlaceholder}
+          </Text>
+          <Feather name="chevron-down" color={AppColors.mutedText} size={AppSettingsUi.selectionChevronIconSize} />
+        </Pressable>
+      </MenuView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: EntryDetailFieldStyle,
-  header: EntryDetailRowStyle,
+  container: EntryDetailRowStyle,
+  menu: { flexShrink: 1 },
   label: EntryDetailLabelStyle,
-  optionList: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: AppLayout.screenPadding,
-  },
   option: {
-    borderWidth: AppLayout.dividerWidth,
-    borderColor: AppColors.border,
-    borderRadius: AuthControls.borderRadius,
-    backgroundColor: AppColors.background,
-    paddingHorizontal: EntryComposerUi.detailsPadding,
-    paddingVertical: AppLayout.compactGap,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: AppLayout.compactGap,
+    minHeight: EntryDetailRowStyle.minHeight,
   },
-  optionSelected: {
-    borderColor: AppColors.primary,
-    backgroundColor: AppColors.screenBackground,
-  },
-  optionLabel: {
-    ...EntryDetailValueStyle,
-  },
-  optionLabelSelected: {
-    color: AppColors.primary,
-  },
+  optionLabel: { ...EntryDetailValueStyle, flexShrink: 1, color: AppColors.primary },
 });

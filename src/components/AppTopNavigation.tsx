@@ -1,11 +1,12 @@
 import { MenuView } from "@react-native-menu/menu";
-import { Feather } from "@expo/vector-icons";
+import { Feather } from "./AppIcons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
 import { EntryComposerCopy as Copy, EntryComposerUi } from "../constants/entryComposer";
 import { AppLayout } from "../constants/layout";
 import { MenuUi } from "../constants/menu";
+import { OneLineTextFitProps } from "../constants/textLayout";
 import type { FooterTabScreen } from "../lib/footerTabs";
 
 const tabs = [
@@ -22,7 +23,7 @@ export function AppTopNavigation({ activeScreen, badges, bookName, disabled, onS
   return <View style={styles.bar}>
     {tabs.map(({ screen, label }) => <Pressable key={screen} accessibilityRole="tab" accessibilityState={{ selected: activeScreen === screen }}
       disabled={disabled} style={styles.tab} onPress={() => onSelect(screen)}>
-      <Text style={[styles.text, activeScreen === screen && styles.active]}>{label}{badges.includes(screen) ? Copy.badge : ""}</Text>
+      <Text {...OneLineTextFitProps} style={[styles.text, activeScreen === screen && styles.active]}>{label}{badges.includes(screen) ? Copy.badge : ""}</Text>
     </Pressable>)}
     <MenuView style={styles.bookTab} actions={bookActions} onPressAction={({ nativeEvent }) => { if (!disabled) { if (nativeEvent.event === "switch") onSwitchBook(); else onSelect("share"); } }}>
       <Pressable disabled={disabled} accessibilityRole="button" accessibilityLabel={Copy.book} style={[styles.tab, styles.bookButton]}>
@@ -38,7 +39,7 @@ const styles = StyleSheet.create({
   bookTab: { flex: 1, minWidth: 0 },
   bookButton: { flexDirection: "row", alignItems: "center", justifyContent: "flex-start", gap: AppLayout.compactGap },
   bookName: { flexShrink: 1 },
-  tab: { minHeight: EntryComposerUi.fieldHeight, justifyContent: "center", paddingHorizontal: AppLayout.cardGap, maxWidth: EntryComposerUi.bookTabMaxWidth },
+  tab: { minHeight: EntryComposerUi.fieldHeight, minWidth: 0, flexShrink: 1, justifyContent: "center", paddingHorizontal: AppLayout.cardGap, maxWidth: EntryComposerUi.bookTabMaxWidth },
   text: { fontSize: EntryComposerUi.fontSize, color: AppColors.mutedText },
   active: { color: AppColors.primary, fontWeight: "700" },
 });

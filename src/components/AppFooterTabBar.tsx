@@ -1,4 +1,4 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { MaterialCommunityIcons } from "./AppIcons";
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -63,8 +63,9 @@ export function AppFooterTabBar({
           return (
             <Pressable
               accessibilityLabel={tab.label}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: isActive }}
+              accessibilityRole={tab.isPrimary ? "button" : "tab"}
+              accessibilityState={{ selected: tab.isPrimary ? undefined : isActive, disabled: isDisabledPrimaryAction }}
+              disabled={isDisabledPrimaryAction}
               key={tab.targetScreen}
               onPress={() => onSelectTab(tab.targetScreen)}
               style={({ pressed }) => [

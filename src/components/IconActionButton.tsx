@@ -1,4 +1,6 @@
-import { Feather } from "@expo/vector-icons";
+import type { CategoryIconName } from "../types/category";
+import { Feather } from "./AppIcons";
+import type { ReactNode } from "react";
 import { Pressable, type PressableProps, StyleSheet } from "react-native";
 
 import { AuthControls } from "../constants/authControls";
@@ -10,8 +12,10 @@ export const ICON_ACTION_BUTTON_COMPACT_SIZE = 28;
 type IconActionButtonProps = {
   accessibilityLabel?: string;
   disabled?: boolean;
+  dimWhenDisabled?: boolean;
   hitSlop?: PressableProps["hitSlop"];
-  icon: keyof typeof Feather.glyphMap;
+  icon: CategoryIconName;
+  iconContent?: ReactNode;
   isActive?: boolean;
   onPress: () => void;
   size?: "compact" | "default";
@@ -20,8 +24,10 @@ type IconActionButtonProps = {
 export function IconActionButton({
   accessibilityLabel,
   disabled = false,
+  dimWhenDisabled = true,
   hitSlop,
   icon,
+  iconContent,
   isActive = false,
   onPress,
   size = "default",
@@ -30,6 +36,7 @@ export function IconActionButton({
     <Pressable
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
+      accessibilityState={{ disabled }}
       disabled={disabled}
       hitSlop={hitSlop}
       onPress={onPress}
@@ -37,14 +44,14 @@ export function IconActionButton({
         styles.button,
         size === "compact" ? styles.compactButton : null,
         isActive && styles.activeButton,
-        disabled && styles.disabledButton,
+        disabled && dimWhenDisabled && styles.disabledButton,
       ]}
     >
-      <Feather
+      {iconContent ?? <Feather
         color={isActive ? AppColors.primary : AppColors.mutedText}
         name={icon}
         size={size === "compact" ? 16 : 18}
-      />
+      />}
     </Pressable>
   );
 }

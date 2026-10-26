@@ -9,6 +9,7 @@ import { OneLineTextFitProps } from "../constants/textLayout";
 
 type ActionButtonProps = {
   disabled?: boolean;
+  dimWhenDisabled?: boolean;
   fullWidth?: boolean;
   label: string;
   labelContent?: ReactNode;
@@ -20,6 +21,7 @@ type ActionButtonProps = {
 
 export function ActionButton({
   disabled = false,
+  dimWhenDisabled = true,
   fullWidth = false,
   label,
   labelContent = null,
@@ -57,6 +59,8 @@ export function ActionButton({
 
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ disabled: disabled || isLoading, busy: isLoading }}
       disabled={disabled || isLoading}
       onPress={handlePress}
       style={[
@@ -64,7 +68,7 @@ export function ActionButton({
         styles[`${size}Button`],
         fullWidth ? styles.fullWidth : null,
         styles[`${variant}Button`],
-        disabled || isLoading ? styles.disabledButton : null,
+        dimWhenDisabled && (disabled || isLoading) ? styles.disabledButton : null,
       ]}
     >
       {labelContent ? (

@@ -1,4 +1,5 @@
 import type { LedgerAppScreen } from "../types/app";
+import { HelpCopy } from "../constants/help";
 
 export const AppScreenLabels: Record<LedgerAppScreen, string> = {
   account: "계정",
@@ -9,6 +10,7 @@ export const AppScreenLabels: Record<LedgerAppScreen, string> = {
   "contact-support": "개발자 문의",
   entry: "입출금 등록",
   help: "도움말",
+  "help-faq": HelpCopy.faqTitle,
   "notification-settings": "푸시 알림 설정",
   share: "가계부 공유",
   support: "개발자 후원",

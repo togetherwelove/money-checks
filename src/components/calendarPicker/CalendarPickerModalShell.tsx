@@ -1,82 +1,12 @@
 import type { ReactNode } from "react";
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { NativePickerSheet } from "../NativePickerSheet";
 
-import { AppColors } from "../../constants/colors";
-import { AppLayout } from "../../constants/layout";
-import { KeyboardAwareScrollView } from "../KeyboardAwareScrollView";
-import { ModalCloseButton } from "../ModalCloseButton";
-
-type CalendarPickerModalShellProps = {
+export function CalendarPickerModalShell(props: {
   children: ReactNode;
   isOpen: boolean;
   onClose: () => void;
   scrollEnabled?: boolean;
   title: string;
-};
-
-export function CalendarPickerModalShell({
-  children,
-  isOpen,
-  onClose,
-  scrollEnabled = true,
-  title,
-}: CalendarPickerModalShellProps) {
-  if (!isOpen) {
-    return null;
-  }
-
-  return (
-    <Modal animationType="fade" onRequestClose={onClose} transparent visible>
-      <View style={styles.overlay}>
-        <Pressable onPress={onClose} style={styles.backdrop} />
-        <View style={styles.sheet}>
-          <KeyboardAwareScrollView
-            contentContainerStyle={styles.sheetContent}
-            extraScrollHeight={AppLayout.screenPadding * 6}
-            fillAvailableHeight={false}
-            scrollEnabled={scrollEnabled}
-            showsVerticalScrollIndicator={false}
-          >
-            <View style={styles.header}>
-              <Text style={styles.title}>{title}</Text>
-              <ModalCloseButton onPress={onClose} />
-            </View>
-            {children}
-          </KeyboardAwareScrollView>
-        </View>
-      </View>
-    </Modal>
-  );
+}) {
+  return <NativePickerSheet {...props} />;
 }
-
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: "center",
-    backgroundColor: AppColors.overlay,
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  sheet: {
-    marginHorizontal: AppLayout.screenPadding * 2,
-    borderRadius: AppLayout.cardRadius,
-    overflow: "hidden",
-    backgroundColor: AppColors.surface,
-  },
-  sheetContent: {
-    padding: AppLayout.screenPadding * 2,
-    gap: AppLayout.cardGap,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  title: {
-    color: AppColors.text,
-    fontSize: 16,
-    fontWeight: "800",
-  },
-});

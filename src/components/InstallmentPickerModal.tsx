@@ -1,99 +1,47 @@
-import { Picker } from "@react-native-picker/picker";
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Keyboard, Text, TextInput, type TextInputInstance } from "react-native";
 
-import { AppColors } from "../constants/colors";
-import { EntryRegistrationCopy } from "../constants/entryRegistration";
-import { AppLayout } from "../constants/layout";
-import { ModalActionRowStyle } from "../constants/uiStyles";
-import { MAX_INSTALLMENT_MONTHS, formatInstallmentLabel } from "../lib/installments";
-import { ONE_TIME_INSTALLMENT_MONTHS } from "../utils/ledgerEntries";
-import { ActionButton } from "./ActionButton";
-import { ModalCloseButton } from "./ModalCloseButton";
+import { FormInputTextStyle, NoteTextStyle } from "../constants/uiStyles";
+import { InstallmentPickerConfig as Config, InstallmentPickerCopy as Copy } from "../constants/installmentPicker";
+import { MAX_INSTALLMENT_MONTHS } from "../lib/installments";
+import { EntryComposerHeader } from "./entryComposer/EntryComposerHeader";
+import { NativePickerSheet } from "./NativePickerSheet";
 
 type InstallmentPickerModalProps = {
   installmentMonths: number;
   isOpen: boolean;
   onClose: () => void;
-  onSelectInstallmentMonths: (installmentMonths: number) => void;
+  onSelectInstallmentMonths: (months: number) => void;
 };
 
-const INSTALLMENT_OPTIONS = Array.from(
-  { length: MAX_INSTALLMENT_MONTHS },
-  (_value, index) => index + ONE_TIME_INSTALLMENT_MONTHS,
-);
-
-export function InstallmentPickerModal({
-  installmentMonths,
-  isOpen,
-  onClose,
-  onSelectInstallmentMonths,
-}: InstallmentPickerModalProps) {
-  if (!isOpen) {
-    return null;
-  }
-
-  return (
-    <Modal animationType="fade" onRequestClose={onClose} transparent visible>
-      <View style={styles.overlay}>
-        <Pressable onPress={onClose} style={styles.backdrop} />
-        <View style={styles.sheet}>
-          <View style={styles.header}>
-              <Text style={styles.title}>{EntryRegistrationCopy.installmentPickerTitle}</Text>
-              <ModalCloseButton onPress={onClose} />
-          </View>
-          <Picker
-            itemStyle={styles.item}
-            selectedValue={installmentMonths}
-            onValueChange={(value) => onSelectInstallmentMonths(Number(value))}
-          >
-            {INSTALLMENT_OPTIONS.map((option) => (
-              <Picker.Item key={option} label={formatInstallmentLabel(option)} value={option} />
-            ))}
-          </Picker>
-          <View style={styles.actionRow}>
-            <ActionButton
-              label="확인"
-              onPress={onClose}
-              size="inline"
-              variant="primary"
-            />
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
+export function InstallmentPickerModal(props: InstallmentPickerModalProps) {
+  return <CustomInstallmentInput {...props} />;
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: "center",
-    backgroundColor: AppColors.overlay,
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  sheet: {
-    marginHorizontal: 16,
-    padding: 16,
-    gap: 12,
-    borderRadius: AppLayout.cardRadius,
-    backgroundColor: AppColors.surface,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  title: {
-    color: AppColors.text,
-    fontSize: 16,
-    fontWeight: "800",
-  },
-  item: {
-    color: AppColors.text,
-    fontSize: 18,
-  },
-  actionRow: ModalActionRowStyle,
-});
+function CustomInstallmentInput({ installmentMonths, isOpen, onClose, onSelectInstallmentMonths }: InstallmentPickerModalProps) {
+  const inputRef = useRef<TextInputInstance>(null);
+  const [text, setText] = useState(installmentMonths > Config.presetMaxMonths ? String(installmentMonths) : "");
+  useEffect(() => {
+    if (isOpen) setText(installmentMonths > Config.presetMaxMonths ? String(installmentMonths) : "");
+  }, [installmentMonths, isOpen]);
+  const months = Number(text);
+  const valid = /^\d+$/.test(text) && Number.isInteger(months)
+    && months >= Config.customMinMonths && months <= MAX_INSTALLMENT_MONTHS;
+  const close = () => { Keyboard.dismiss(); onClose(); };
+  const confirm = () => {
+    if (!valid) return;
+    onSelectInstallmentMonths(months);
+    close();
+  };
+
+  return <NativePickerSheet isOpen={isOpen} title={Copy.customLabel} onClose={close}
+    header={<EntryComposerHeader title={Copy.customLabel} saving={false}
+      actionDisabled={!valid} actionLabel={Copy.confirm} onAction={confirm} onClose={close} />}
+    onShow={() => inputRef.current?.focus()}>
+    <TextInput ref={inputRef} accessibilityLabel={Copy.customAccessibilityLabel}
+      inputMode="numeric" keyboardType="number-pad" value={text} onChangeText={setText}
+      onSubmitEditing={confirm} placeholder={Copy.customAccessibilityLabel}
+      returnKeyType="done" style={FormInputTextStyle} />
+    <Text style={NoteTextStyle}>{Copy.customHint}</Text>
+  </NativePickerSheet>;
+}

@@ -93,6 +93,23 @@ test("pre-resume chart request cannot restore stale cache after refresh", async 
   assert.equal("2026-05" in instance.render().entryCache, false);
 });
 
+test("concurrent chart preparations share the request and keep loading local until it completes", async () => {
+  let finish, calls = 0;
+  const instance = mount(async () => {
+    calls++;
+    return new Promise(resolve => { finish = resolve; });
+  });
+  const first = instance.render().preloadChartEntries(may);
+  const second = instance.render().preloadChartEntries(may);
+  assert.equal(calls, 1);
+  assert.equal(instance.render().isLoadingChartEntries, true);
+  assert.equal(instance.render().isLoadingEntries, false);
+  finish({ "2026-05": [{ id: "chart-data" }] });
+  await Promise.all([first, second]);
+  assert.equal(instance.render().isLoadingChartEntries, false);
+  assert.equal(instance.render().entryCache["2026-05"][0].id, 'chart-data');
+});
+
 test("overlapping resumes keep newest response and failed refresh remains retryable", async () => {
   let finishFirst, calls = 0;
   const instance = mount(async () => {

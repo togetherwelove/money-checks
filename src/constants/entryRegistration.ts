@@ -6,14 +6,12 @@ export const EntryRegistrationCopy = {
   categoryRequiredError: "분류를 선택해 주세요.",
   contentLabel: "내용",
   contentClearAccessibilityLabel: "내용 지우기",
-  contentPlaceholder: "내용 입력",
+  contentPlaceholder: "내용",
   contentRequiredError: "내용을 입력해 주세요.",
   datePickerAccessibilityLabel: "내역 날짜 선택",
   dateLabel: "날짜",
   datePickerConfirmAction: "확인",
   datePickerTitle: "날짜 선택",
-  dailyFirstEntryAdNoticeMessage: "매일 첫 등록 시 한 번만 진행됩니다.",
-  dailyFirstEntryAdNoticeTitle: "저장 전 광고가 표시됩니다",
   dailyFirstEntryAdUnavailableError: "광고를 불러오지 못했어요. 잠시 후 다시 등록해 주세요.",
   dailyFirstEntryRewardRequiredError: "광고 시청을 완료해 주세요. (매일 최초 1회)",
   dismissAccessibilityLabel: "등록 화면 닫기",
@@ -28,7 +26,7 @@ export const EntryRegistrationCopy = {
   installmentPrepaymentSuccess: "남은 할부금을 즉시 상환했어요.",
   installmentPrepaymentUnavailable: "즉시 상환할 미래 할부 내역이 없어요.",
   noteLabel: "메모",
-  notePlaceholder: "메모 입력",
+  notePlaceholder: "메모",
   paymentMethodAccessibilityLabel: "결제 방식 선택",
   paymentMethodLabel: "결제 방식",
   saveCreateSuccess: "내역을 등록했어요.",
@@ -36,6 +34,7 @@ export const EntryRegistrationCopy = {
   saveMigrationError: "DB 마이그레이션 적용이 필요해요.",
   saveUpdateSuccess: "내역을 수정했어요.",
   targetMemberLabel: "대상 구성원",
+  targetMemberPlaceholder: "구성원 선택",
 } as const;
 
 export function buildInstallmentPrepaymentConfirmMessage(

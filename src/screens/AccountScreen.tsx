@@ -16,7 +16,7 @@ import { TextLinkButton } from "../components/TextLinkButton";
 import { AccountVersionFooter } from "../components/accountScreen/AccountVersionFooter";
 import { AdTrackingPermissionCard } from "../components/accountScreen/AdTrackingPermissionCard";
 import { DeleteAccountModal } from "../components/accountScreen/DeleteAccountModal";
-import { DeleteAccountSubscriptionWarningModal } from "../components/accountScreen/DeleteAccountSubscriptionWarningModal";
+import { showDeleteSubscriptionWarning } from "../components/accountScreen/showDeleteSubscriptionWarning";
 import { AppColors } from "../constants/colors";
 import { KeyboardLayout } from "../constants/keyboard";
 import { AppLayout } from "../constants/layout";
@@ -75,7 +75,6 @@ export function AccountScreen({
 }: AccountScreenProps) {
   const [displayName, setDisplayName] = useState(fallbackDisplayName);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [isDeleteSubscriptionWarningOpen, setIsDeleteSubscriptionWarningOpen] = useState(false);
   const [isSavingDisplayName, setIsSavingDisplayName] = useState(false);
 
   useEffect(() => {
@@ -158,22 +157,13 @@ export function AccountScreen({
 
   const handleOpenDeleteFlow = () => {
     if (subscriptionTier === SubscriptionTiers.plus) {
-      setIsDeleteSubscriptionWarningOpen(true);
+      showDeleteSubscriptionWarning(handleOpenSubscriptionManagement, () => setIsDeleteModalOpen(true));
       return;
     }
 
     setIsDeleteModalOpen(true);
   };
 
-  const handleContinueDeleteFromSubscriptionWarning = () => {
-    setIsDeleteSubscriptionWarningOpen(false);
-    setIsDeleteModalOpen(true);
-  };
-
-  const handleManageSubscriptionFromDeleteWarning = () => {
-    setIsDeleteSubscriptionWarningOpen(false);
-    handleOpenSubscriptionManagement();
-  };
 
   return (
     <>
@@ -266,12 +256,6 @@ export function AccountScreen({
           <AppFooterContentInset />
         </View>
       </ScrollView>
-      <DeleteAccountSubscriptionWarningModal
-        isOpen={isDeleteSubscriptionWarningOpen}
-        onClose={() => setIsDeleteSubscriptionWarningOpen(false)}
-        onContinueDelete={handleContinueDeleteFromSubscriptionWarning}
-        onOpenSubscriptionManagement={handleManageSubscriptionFromDeleteWarning}
-      />
       <DeleteAccountModal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} />
     </>
   );

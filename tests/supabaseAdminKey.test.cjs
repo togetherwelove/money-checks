@@ -52,6 +52,7 @@ for (const [folder, handler] of [
     load(index, {
       "https://esm.sh/@supabase/supabase-js@2": { createClient: (_, key) => { clientKey = key; return {}; } },
       "../_shared/supabaseAdminKey.ts": keyModule,
+      "./appleTokenRevocation.ts": { revokeAppleAuthorization: async () => {} },
       [handlerImport]: { [handler]: async (_, options) => { handlerKey = options.serviceRoleKey; options.createAdminClient(); return new Response("ok"); } },
     }, { Deno: { env: { get: (name) => name === "SUPABASE_SECRET_KEYS" ? '{"default":"test-secret"}' : undefined }, serve: (callback) => { serve = callback; } } });
     assert.equal((await serve(new Request("https://test.invalid"))).status, 200);

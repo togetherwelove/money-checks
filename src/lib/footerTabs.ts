@@ -36,7 +36,7 @@ export function buildFooterTabs(): FooterTabItem[] {
     {
       activeIcon: "inbox",
       inactiveIcon: "inbox-outline",
-      label: "전체 내역",
+      label: AppMessages.allEntriesTitle,
       targetScreen: "all-entries",
     },
     {

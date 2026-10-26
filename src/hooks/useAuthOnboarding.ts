@@ -9,6 +9,7 @@ import {
   resolveAuthOnboardingStep,
 } from "../lib/authOnboarding";
 import { fetchOwnProfileDisplayName } from "../lib/profiles";
+import { runStartupCheck, startupErrorMessage } from "../lib/startupCheck";
 import { normalizeDisplayNameCandidate } from "../utils/displayName";
 
 type AuthOnboardingState = {
@@ -16,6 +17,8 @@ type AuthOnboardingState = {
   completePermissionOnboarding: () => void;
   hasCompletedPermissionOnboarding: boolean;
   isLoading: boolean;
+  errorMessage: string | null;
+  retry: () => void;
   step: AuthOnboardingStep;
 };
 
@@ -29,6 +32,8 @@ export function useAuthOnboarding({
   userId,
 }: UseAuthOnboardingOptions): AuthOnboardingState {
   const initialStoredState = readStoredAuthOnboardingState(appStorage, userId);
+  const [attempt, setAttempt] = useState(0);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const initialResolvedDisplayName = normalizeDisplayNameCandidate(fallbackDisplayName);
   const [isLoading, setIsLoading] = useState(
     !initialStoredState.hasCompletedNicknameOnboarding && !initialResolvedDisplayName,
@@ -43,6 +48,8 @@ export function useAuthOnboarding({
 
   useEffect(() => {
     let isMounted = true;
+    const controller = new AbortController();
+    setErrorMessage(null);
     const nextFallbackDisplayName = normalizeDisplayNameCandidate(fallbackDisplayName);
     const nextStoredState = readStoredAuthOnboardingState(appStorage, userId);
     const shouldWaitForProfileDisplayName =
@@ -58,7 +65,7 @@ export function useAuthOnboarding({
       setHasCompletedNicknameOnboarding(true);
     }
 
-    void fetchOwnProfileDisplayName(userId)
+    void runStartupCheck((signal) => fetchOwnProfileDisplayName(userId, signal), controller.signal)
       .then((fetchedDisplayName) => {
         const nextProfileDisplayName = normalizeDisplayNameCandidate(fetchedDisplayName);
         if (!isMounted) {
@@ -73,7 +80,11 @@ export function useAuthOnboarding({
           }
         }
       })
-      .catch(() => undefined)
+      .catch((error) => {
+        if (isMounted && shouldWaitForProfileDisplayName) {
+          setErrorMessage(startupErrorMessage(error));
+        }
+      })
       .finally(() => {
         if (!isMounted) {
           return;
@@ -84,16 +95,23 @@ export function useAuthOnboarding({
 
     return () => {
       isMounted = false;
+      controller.abort();
     };
-  }, [fallbackDisplayName, userId]);
+  }, [fallbackDisplayName, userId, attempt]);
+
+  const retry = useCallback(() => {
+    setErrorMessage(null);
+    setIsLoading(true);
+    setAttempt((value) => value + 1);
+  }, []);
 
   const step = useMemo(
     () =>
-      resolveAuthOnboardingStep({
+      isLoading || errorMessage ? null : resolveAuthOnboardingStep({
         hasCompletedNicknameOnboarding,
         hasResolvedDisplayName: Boolean(profileDisplayName),
       }),
-    [hasCompletedNicknameOnboarding, profileDisplayName],
+    [hasCompletedNicknameOnboarding, profileDisplayName, isLoading, errorMessage],
   );
 
   const completeNicknameOnboarding = useCallback(
@@ -115,6 +133,8 @@ export function useAuthOnboarding({
     completePermissionOnboarding,
     hasCompletedPermissionOnboarding,
     isLoading,
+    errorMessage,
+    retry,
     step,
   };
 }

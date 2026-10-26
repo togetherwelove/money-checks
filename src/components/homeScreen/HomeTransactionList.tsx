@@ -16,6 +16,7 @@ type HomeTransactionListProps = {
   isLoading: boolean;
   isRefreshing: boolean;
   onDeleteEntry: LedgerEntryDeleteHandler;
+  onDuplicateEntry: (entry: LedgerEntry) => void;
   onEditEntry: (entry: LedgerEntry) => void;
   onPrepayInstallmentEntry: InstallmentPrepaymentHandler;
   onRefresh: () => Promise<void>;
@@ -27,6 +28,7 @@ export function HomeTransactionList({
   isLoading,
   isRefreshing,
   onDeleteEntry,
+  onDuplicateEntry,
   onEditEntry,
   onPrepayInstallmentEntry,
   onRefresh,
@@ -34,6 +36,7 @@ export function HomeTransactionList({
   return (
     <ScrollView
       {...RefreshableScrollBehavior}
+      nestedScrollEnabled
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
       refreshControl={
@@ -61,6 +64,7 @@ export function HomeTransactionList({
           onDeleteEntry={(entry) => {
             showLedgerEntryDeleteAlert(entry, onDeleteEntry);
           }}
+          onDuplicateEntry={onDuplicateEntry}
           onEditEntry={onEditEntry}
           onPrepayInstallmentEntry={onPrepayInstallmentEntry}
         />

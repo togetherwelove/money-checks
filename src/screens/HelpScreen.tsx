@@ -1,60 +1,32 @@
 import { AppScrollBehavior } from "../constants/scroll";
-import { Feather } from "@expo/vector-icons";
+import { Feather } from "../components/AppIcons";
 import type { ReactNode } from "react";
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { AppFooterContentInset } from "../components/AppFooterContentInset";
-import { AppLinks } from "../constants/appLinks";
+import { HelpCopy, HelpLinkItems, HelpUi } from "../constants/help";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
-import { LegalLinks } from "../constants/legal";
 import { ReadingTextProps } from "../constants/textLayout";
 import {
+  CardTitleTextStyle,
   ListGroupStyle,
   ResponsivePageContentStyle,
   SupportingTextStyle,
 } from "../constants/uiStyles";
 import { showNativeToast } from "../lib/nativeToast";
 
-type HelpLinkItem = {
-  description: string;
-  label: string;
-  url: string;
-};
-
-const HELP_LINK_ITEMS: HelpLinkItem[] = [
-  {
-    description: "공지, 사용 안내, 업데이트 소식을 확인할 수 있어요",
-    label: "알뜰 홈페이지",
-    url: AppLinks.homepageUrl,
-  },
-  {
-    description: "앱에서 사용하는 오픈소스 소프트웨어 고지",
-    label: "오픈소스 라이선스",
-    url: LegalLinks.openSourceLicensesUrl,
-  },
-  {
-    description: "개인정보 수집, 이용, 보관 및 권리 안내",
-    label: "개인정보 처리방침",
-    url: LegalLinks.privacyPolicyUrl,
-  },
-  {
-    description: "서비스 이용 조건, 구독 및 책임 범위 안내",
-    label: "이용약관",
-    url: LegalLinks.termsOfUseUrl,
-  },
-];
-
 type HelpScreenProps = {
   screenTitle: ReactNode;
+  onOpenFaq: () => void;
 };
 
-export function HelpScreen({ screenTitle }: HelpScreenProps) {
+export function HelpScreen({ screenTitle, onOpenFaq }: HelpScreenProps) {
   const handleOpenLink = async (url: string) => {
     try {
       await Linking.openURL(url);
     } catch {
-      showNativeToast("링크를 열지 못했어요. 다시 시도해 주세요.");
+      showNativeToast(HelpCopy.linkError);
     }
   };
 
@@ -62,17 +34,26 @@ export function HelpScreen({ screenTitle }: HelpScreenProps) {
     <ScrollView {...AppScrollBehavior} contentContainerStyle={styles.content} style={styles.screen}>
       {screenTitle}
       <View style={styles.sections}>
+        <Text accessibilityRole="header" style={CardTitleTextStyle}>{HelpCopy.linksTitle}</Text>
         <Text {...ReadingTextProps} style={styles.description}>
-          필요한 정책 문서를 브라우저에서 확인할 수 있어요.
+          {HelpCopy.linksDescription}
         </Text>
         <View style={styles.linkList}>
-          {HELP_LINK_ITEMS.map((item, index) => (
+          <Pressable accessibilityRole="button" onPress={onOpenFaq} style={styles.linkRow}>
+            <View style={styles.linkTextBlock}>
+              <Text style={styles.linkLabel}>{HelpCopy.faqTitle}</Text>
+              <Text {...ReadingTextProps} style={styles.linkDescription}>{HelpCopy.faqLinkDescription}</Text>
+            </View>
+            <Feather color={AppColors.mutedStrongText} name="chevron-right" size={HelpUi.iconSize} />
+          </Pressable>
+          {HelpLinkItems.map((item, index) => (
             <Pressable
+              accessibilityRole="link"
               key={item.url}
               onPress={() => void handleOpenLink(item.url)}
               style={[
                 styles.linkRow,
-                index === HELP_LINK_ITEMS.length - 1 ? styles.lastLinkRow : null,
+                index === HelpLinkItems.length - 1 ? styles.lastLinkRow : null,
               ]}
             >
               <View style={styles.linkTextBlock}>
@@ -81,7 +62,7 @@ export function HelpScreen({ screenTitle }: HelpScreenProps) {
                   {item.description}
                 </Text>
               </View>
-              <Feather color={AppColors.mutedStrongText} name="external-link" size={18} />
+              <Feather color={AppColors.mutedStrongText} name="external-link" size={HelpUi.iconSize} />
             </Pressable>
           ))}
         </View>
@@ -119,8 +100,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: AppLayout.cardGap,
     paddingHorizontal: AppLayout.cardContentPadding,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
+    paddingVertical: HelpUi.rowVerticalPadding,
+    borderBottomWidth: AppLayout.dividerWidth,
     borderBottomColor: AppColors.border,
   },
   lastLinkRow: {
@@ -128,11 +109,11 @@ const styles = StyleSheet.create({
   },
   linkTextBlock: {
     flex: 1,
-    gap: 4,
+    gap: AppLayout.compactGap,
   },
   linkLabel: {
     color: AppColors.text,
-    fontSize: 15,
+    fontSize: HelpUi.questionFontSize,
     fontWeight: "700",
   },
   linkDescription: {

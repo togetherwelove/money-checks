@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useIsFocused } from "@react-navigation/native";
 import { AppState } from "react-native";
 
-import { CalendarGestureViewport } from "./monthCalendarPager/CalendarGestureViewport";
+import { CalendarScrollViewport } from "./monthCalendarPager/CalendarScrollViewport";
 import type { MonthCalendarPagerProps } from "./monthCalendarPager/monthCalendarPagerTypes";
 
 export function MonthCalendarPager(props: MonthCalendarPagerProps) {
@@ -32,8 +32,8 @@ export function MonthCalendarPager(props: MonthCalendarPagerProps) {
     setHeights((current) => current[key] === height ? current : { ...current, [key]: height });
   }, []);
   const active = isFocused && isAppActive;
-  // A new coordinate system gets a fresh transform in the very same commit.
-  // Menu renders and data updates within a month retain the gesture viewport.
-  const geometryKey = JSON.stringify([active, foregroundRevision, pages.map((page) => [page.key, page.height])]);
-  return <CalendarGestureViewport key={geometryKey} {...props} active={active} pages={pages} onHeightChange={onHeightChange} />;
+  // Reset the native scroll position after focus and geometry changes.
+  const geometryKey = JSON.stringify(pages.map((page) => [page.key, page.height]));
+  return <CalendarScrollViewport {...props} geometryKey={geometryKey} active={active} resetRevision={foregroundRevision}
+    pages={pages} onHeightChange={onHeightChange} />;
 }

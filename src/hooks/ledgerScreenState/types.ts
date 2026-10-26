@@ -44,6 +44,7 @@ export type LedgerScreenState = {
   entries: LedgerEntry[];
   isBusy: boolean;
   isLoading: boolean;
+  isLoadingChartEntries: boolean;
   isLoadingSelectedDateEntries: boolean;
   isLoadingTotalSummary: boolean;
   isReadOnlyDueToPlanLimit: boolean;

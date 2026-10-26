@@ -494,6 +494,9 @@ export function useActiveLedgerBook(
   };
 
   const renameActiveLedgerBook = async (nextName: string) => {
+    if (!activeBook || activeBook.ownerId !== userId) {
+      return false;
+    }
     setActiveBookError(null);
 
     try {

@@ -6,7 +6,7 @@ import { getAppScreenLabel } from "./appScreenLabels";
 export type AppMenuAction = "annual-report-download";
 
 export type AppMenuNavigationItem = {
-  icon: "credit-card" | "gift" | "help-circle" | "mail" | "settings" | "user";
+  icon: "credit-card" | "gift" | "help-circle" | "mail" | "settings" | "user" | "users";
   label: string;
   targetScreen: Exclude<LedgerAppScreen, "all-entries" | "calendar" | "charts" | "entry" | "share">;
 };
@@ -42,25 +42,20 @@ export function buildAppMenuSections(
     },
   ];
 
-  const ledgerItems: AppMenuItem[] = options.showAnnualReportDownload
-    ? [
-        {
-          action: "annual-report-download",
-          icon: "download",
-          label: AnnualReportCopy.headerAccessibilityLabel,
-        },
-      ]
-    : [];
+  const ledgerItems: AppMenuItem[] = [];
+  if (options.showAnnualReportDownload) {
+    ledgerItems.push({
+      action: "annual-report-download",
+      icon: "download",
+      label: AnnualReportCopy.headerAccessibilityLabel,
+    });
+  }
 
   return [
-    ...(ledgerItems.length > 0
-      ? [
-          {
-            label: MenuCopy.sections.ledger,
-            items: ledgerItems,
-          },
-        ]
-      : []),
+    ...(ledgerItems.length ? [{
+      label: MenuCopy.sections.ledger,
+      items: ledgerItems,
+    }] : []),
     {
       label: MenuCopy.sections.support,
       items: [

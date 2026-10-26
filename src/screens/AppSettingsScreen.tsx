@@ -1,20 +1,17 @@
-import { Feather } from "@expo/vector-icons";
-import { Picker } from "@react-native-picker/picker";
-import { type ReactNode, useEffect, useState } from "react";
-import { Linking, Modal, Pressable, StyleSheet, Switch, Text, View } from "react-native";
+import { CalendarSummaryBaseDayPickerModal } from "../components/appSettings/CalendarSummaryBaseDayPickerModal";
+import { Feather } from "../components/AppIcons";
+import { type ReactNode, useState } from "react";
+import { Linking, Pressable, StyleSheet, Switch, Text, View } from "react-native";
 
-import { ActionButton } from "../components/ActionButton";
-import { ModalCloseButton } from "../components/ModalCloseButton";
 import { AppFooterContentInset } from "../components/AppFooterContentInset";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { NotificationSettingsCard } from "../components/accountScreen/NotificationSettingsCard";
+import { SettingsValueSelector } from "../components/appSettings/SettingsValueSelector";
 import { ExpenseTextColorSelector } from "../components/appSettings/ExpenseTextColorSelector";
 import { CategoryAdditionSettings } from "../components/appSettings/CategoryAdditionSettings";
 import { AppSettingsCopy, AppSettingsUi } from "../constants/appSettings";
 import { AppSettingsRowStyles } from "../constants/appSettingsStyles";
 import {
-  CalendarSummaryBaseDay,
-  CalendarSummaryBaseDayOptions,
   type CalendarSummaryMode,
   CalendarSummaryModeOptions,
   CalendarSummaryModes,
@@ -41,7 +38,7 @@ import type {
 } from "../notifications/domain/notificationEvents";
 import type { NotificationPreferenceGroup } from "../notifications/preferences/notificationPreferences";
 
-type AppSettingsScreenProps = {
+export type AppSettingsScreenProps = {
   activeBookId: string | null;
   activeBookName: string;
   canAddCategory: boolean;
@@ -94,11 +91,7 @@ export function AppSettingsScreen({
   const expenseTextColor = useExpenseTextColor();
   const isHeatmapSwitchEnabled = isPlusActive && isCalendarHeatmapEnabled;
   const [isSummaryBaseDayPickerOpen, setIsSummaryBaseDayPickerOpen] = useState(false);
-  const [isSummaryModePickerOpen, setIsSummaryModePickerOpen] = useState(false);
   const isSelectedMonthSummaryMode = calendarSummaryMode === CalendarSummaryModes.selectedMonth;
-  const selectedSummaryModeOption =
-    CalendarSummaryModeOptions.find((option) => option.value === calendarSummaryMode) ??
-    CalendarSummaryModeOptions[0];
   const handleOpenNotificationPermission = () => {
     if (notificationPermissionState === "default") {
       void onRequestNotificationPermission();
@@ -116,27 +109,17 @@ export function AppSettingsScreen({
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{AppSettingsCopy.featureSectionTitle}</Text>
           <View style={styles.settingListGroup}>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => setIsSummaryModePickerOpen(true)}
-              style={({ pressed }) => [
-                styles.settingCard,
-                pressed ? styles.pressedSettingCard : null,
-              ]}
-            >
+            <View style={styles.settingCard}>
               <View style={styles.settingTextBlock}>
                 <Text style={styles.settingTitle}>{AppSettingsCopy.summaryModeTitle}</Text>
                 <Text style={styles.settingDescription}>{AppSettingsCopy.summaryModeDescription}</Text>
               </View>
-              <View style={SettingValueActionStyle}>
-                <Text style={SettingValueTextStyle}>{selectedSummaryModeOption.label}</Text>
-                <Feather
-                  color={AppColors.mutedStrongText}
-                  name="chevron-down"
-                  size={AppSettingsUi.selectionChevronIconSize}
-                />
-              </View>
-            </Pressable>
+              <SettingsValueSelector
+                value={calendarSummaryMode}
+                options={CalendarSummaryModeOptions}
+                onChange={onChangeCalendarSummaryMode}
+              />
+            </View>
             {isSelectedMonthSummaryMode ? (
               <Pressable
                 accessibilityRole="button"
@@ -223,15 +206,6 @@ export function AppSettingsScreen({
         </View>
         <AppFooterContentInset />
       </View>
-      <CalendarSummaryModePickerModal
-        isOpen={isSummaryModePickerOpen}
-        mode={calendarSummaryMode}
-        onClose={() => setIsSummaryModePickerOpen(false)}
-        onSelect={(nextMode) => {
-          onChangeCalendarSummaryMode(nextMode);
-          setIsSummaryModePickerOpen(false);
-        }}
-      />
       <CalendarSummaryBaseDayPickerModal
         baseDay={calendarSummaryBaseDay}
         isOpen={isSummaryBaseDayPickerOpen}
@@ -242,112 +216,6 @@ export function AppSettingsScreen({
         }}
       />
     </KeyboardAwareScrollView>
-  );
-}
-
-function CalendarSummaryBaseDayPickerModal({
-  baseDay,
-  isOpen,
-  onClose,
-  onSelect,
-}: {
-  baseDay: number | null;
-  isOpen: boolean;
-  onClose: () => void;
-  onSelect: (day: number) => void;
-}) {
-  const [draftDay, setDraftDay] = useState(baseDay ?? CalendarSummaryBaseDay.min);
-
-  useEffect(() => {
-    if (isOpen) {
-      setDraftDay(baseDay ?? CalendarSummaryBaseDay.min);
-    }
-  }, [baseDay, isOpen]);
-
-  return (
-    <Modal animationType="fade" onRequestClose={onClose} transparent visible={isOpen}>
-      <View style={styles.modalOverlay}>
-        <Pressable onPress={onClose} style={styles.modalBackdrop} />
-        <View style={styles.modalSheet}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{AppSettingsCopy.summaryBaseDayPickerTitle}</Text>
-            <ModalCloseButton onPress={onClose} />
-          </View>
-          <Picker
-            itemStyle={styles.pickerItem}
-            selectedValue={draftDay}
-            onValueChange={(value) => setDraftDay(value as number)}
-          >
-            {CalendarSummaryBaseDayOptions.map((option) => (
-              <Picker.Item key={option.value} label={option.label} value={option.value} />
-            ))}
-          </Picker>
-          <View style={styles.actionRow}>
-            <ActionButton
-              label={AppSettingsCopy.summaryModePickerConfirmLabel}
-              onPress={() => onSelect(draftDay)}
-              size="inline"
-              variant="primary"
-            />
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
-}
-
-function CalendarSummaryModePickerModal({
-  isOpen,
-  mode,
-  onClose,
-  onSelect,
-}: {
-  isOpen: boolean;
-  mode: CalendarSummaryMode;
-  onClose: () => void;
-  onSelect: (mode: CalendarSummaryMode) => void;
-}) {
-  const [draftMode, setDraftMode] = useState(mode);
-
-  useEffect(() => {
-    if (isOpen) {
-      setDraftMode(mode);
-    }
-  }, [isOpen, mode]);
-
-  if (!isOpen) {
-    return null;
-  }
-
-  return (
-    <Modal animationType="fade" onRequestClose={onClose} transparent visible>
-      <View style={styles.modalOverlay}>
-        <Pressable onPress={onClose} style={styles.modalBackdrop} />
-        <View style={styles.modalSheet}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{AppSettingsCopy.summaryModePickerTitle}</Text>
-            <ModalCloseButton onPress={onClose} />
-          </View>
-          <Picker
-            itemStyle={styles.pickerItem}
-            selectedValue={draftMode}
-            onValueChange={(value) => setDraftMode(value as CalendarSummaryMode)}
-          >
-            {CalendarSummaryModeOptions.map((option) => (
-              <Picker.Item key={option.value} label={option.label} value={option.value} />
-            ))}
-          </Picker>
-          <View style={styles.actionRow}>
-            <ActionButton
-              label={AppSettingsCopy.summaryModePickerConfirmLabel}
-              onPress={() => onSelect(draftMode)}
-              size="inline"
-              variant="primary"
-            />
-          </View>
-        </View>
-      </View>
-    </Modal>
   );
 }
 
@@ -369,42 +237,7 @@ const styles = StyleSheet.create({
     gap: AppSettingsUi.sectionGap,
   },
   sectionTitle: CardTitleTextStyle,
-  actionRow: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 8,
-  },
   disabledSettingCard: AppSettingsRowStyles.disabled,
-  modalBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  modalHeader: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 12,
-    justifyContent: "space-between",
-  },
-  modalOverlay: {
-    backgroundColor: AppColors.overlay,
-    flex: 1,
-    justifyContent: "center",
-  },
-  modalSheet: {
-    backgroundColor: AppColors.surface,
-    borderRadius: AppLayout.cardRadius,
-    gap: 12,
-    marginHorizontal: 16,
-    padding: 16,
-  },
-  modalTitle: {
-    color: AppColors.text,
-    fontSize: 16,
-    fontWeight: "800",
-  },
-  pickerItem: {
-    color: AppColors.text,
-    fontSize: 18,
-  },
   plusLabel: {
     ...BrandPlusTextStyle,
     fontSize: 13,

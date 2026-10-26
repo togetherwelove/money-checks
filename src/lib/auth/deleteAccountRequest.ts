@@ -8,11 +8,13 @@ type DeleteAccountFetch = (
   init: {
     headers: Record<string, string>;
     method: "POST";
+    body?: string;
   },
 ) => Promise<Response>;
 
 type DeleteAccountRequestOptions = {
   accessToken: string;
+  appleAuthorizationCode?: string;
   fetchFn: DeleteAccountFetch;
   functionUrl: string;
   publishableKey: string;
@@ -21,6 +23,7 @@ type DeleteAccountRequestOptions = {
 
 export async function deleteAccountRequest({
   accessToken,
+  appleAuthorizationCode,
   fetchFn,
   functionUrl,
   publishableKey,
@@ -28,6 +31,7 @@ export async function deleteAccountRequest({
 }: DeleteAccountRequestOptions): Promise<void> {
   const response = await fetchFn(functionUrl, {
     method: "POST",
+    body: JSON.stringify({ appleAuthorizationCode }),
     headers: {
       Authorization: `Bearer ${accessToken}`,
       apikey: publishableKey,

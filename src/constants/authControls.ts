@@ -1,4 +1,6 @@
 export const AuthControls = {
+  providerIconSize: 18,
+  appleButtonHeight: 48,
   borderRadius: 8,
   controlHeight: 32,
   inlineControlHeight: 32,

@@ -1,117 +1,74 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { AppState } from "react-native";
 
-import { RewardedInterstitialNoticeConfig } from "../constants/ads";
-import {
-  hasSeenDailyFirstEntrySaveInterstitialNotice,
-  hasShownDailyFirstEntrySaveInterstitial,
-  markDailyFirstEntrySaveInterstitialNoticeSeen,
-  markDailyFirstEntrySaveInterstitialShown,
-} from "../lib/ads/dailyFirstEntryInterstitial";
-import {
-  isRewardedInterstitialAdReady,
-  showRewardedInterstitialAd,
-} from "../lib/ads/rewardedInterstitialAd";
+import { EntryRegistrationCopy } from "../constants/entryRegistration";
+import { hasCompletedDailyFirstEntryAd, markDailyFirstEntryAdCompleted } from "../lib/ads/dailyFirstEntryInterstitial";
+import { showRewardedInterstitialAd, waitForRewardedInterstitialAdReady } from "../lib/ads/rewardedInterstitialAd";
 import { logAppError } from "../lib/logAppError";
+import { showNativeToast } from "../lib/nativeToast";
 import { toIsoDate } from "../utils/calendar";
 
-type PendingAd = { userId: string; date: string; screen: string };
-
-export function useDailyFirstEntryAd({ userId, screen, isReady, isSubscriptionLoading, isFree }: {
+type Context = {
   userId: string;
-  screen: string;
+  bookId: string | null;
   isReady: boolean;
   isSubscriptionLoading: boolean;
   isFree: boolean;
-}) {
-  const [pending, setPending] = useState<PendingAd | null>(null);
-  const [isNoticeVisible, setIsNoticeVisible] = useState(false);
-  const [appState, setAppState] = useState(AppState.currentState);
-  const showing = useRef(false);
-  const opened = useRef<Pick<PendingAd, "userId" | "date"> | null>(null);
+};
 
+export function useDailyFirstEntryAd(context: Context) {
+  const current = useRef(context);
+  current.current = context;
+  const mounted = useRef(true);
+  const inFlight = useRef(false);
+  const completed = useRef<{ userId: string; date: string } | null>(null);
   useEffect(() => {
-    const subscription = AppState.addEventListener("change", setAppState);
-    return () => subscription.remove();
+    mounted.current = true;
+    return () => { mounted.current = false; };
   }, []);
 
-  useEffect(() => {
-    if (!pending) return;
-    if (pending.userId !== userId || pending.date !== toIsoDate(new Date()) ||
-        (!isSubscriptionLoading && !isFree)) {
-      setPending(null);
-      return;
-    }
-    if (!isReady || isSubscriptionLoading || appState !== "active" || pending.screen !== screen) return;
+  return { ensureAdBeforeSave: async (): Promise<boolean> => {
+    if (inFlight.current) return false;
+    const origin = current.current;
+    const isCurrent = () => mounted.current && current.current.userId === origin.userId &&
+      current.current.bookId === origin.bookId;
+    const unavailable = () => {
+      if (isCurrent()) showNativeToast(EntryRegistrationCopy.dailyFirstEntryAdUnavailableError);
+      return false;
+    };
+    if (!isCurrent() || !origin.bookId) return false;
+    if (origin.isSubscriptionLoading) return unavailable();
+    if (!origin.isFree) return true;
 
-    let disposed = false;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    let noticeStartedAt: number | null = null;
-    const reportError = (error: unknown) => logAppError("AdMob", error, { step: "daily_first_entry_ad" });
-    const attempt = () => {
-      if (disposed) return;
-      try {
-        const today = toIsoDate(new Date());
-        if (pending.date !== today || hasShownDailyFirstEntrySaveInterstitial(userId, today) ||
-            (opened.current?.userId === userId && opened.current.date === today)) {
-          setPending(null);
-          return;
-        }
-        if (showing.current || AppState.currentState !== "active" || !isRewardedInterstitialAdReady()) {
-          noticeStartedAt = null;
-          setIsNoticeVisible(false);
-          schedule();
-          return;
-        }
-        if (!hasSeenDailyFirstEntrySaveInterstitialNotice(userId)) {
-          noticeStartedAt ??= Date.now();
-          if (Date.now() - noticeStartedAt < RewardedInterstitialNoticeConfig.previewDurationMs) {
-            setIsNoticeVisible(true);
-            schedule();
-            return;
-          }
-        }
-        setIsNoticeVisible(false);
-        showing.current = true;
-        void showRewardedInterstitialAd(() => {
-          const date = toIsoDate(new Date());
-          opened.current = { userId, date };
-          // Record exposure at OPENED, even if the app exits before CLOSED.
-          try {
-            markDailyFirstEntrySaveInterstitialShown(userId, date);
-            markDailyFirstEntrySaveInterstitialNoticeSeen(userId);
-          } catch (error) {
-            reportError(error);
-          }
-          if (!disposed) setPending(null);
-        }).catch(reportError).finally(() => {
-          showing.current = false;
-          schedule();
-        });
-      } catch (error) {
-        reportError(error);
-        setIsNoticeVisible(false);
-        // Storage/SDK errors must never propagate to entry saving.
-        if (!disposed) setPending(null);
+    inFlight.current = true;
+    try {
+      const today = toIsoDate(new Date());
+      if ((completed.current?.userId === origin.userId && completed.current.date === today) ||
+          hasCompletedDailyFirstEntryAd(origin.userId, today)) return true;
+      if (!origin.isReady || AppState.currentState !== "active") return unavailable();
+      const ready = await waitForRewardedInterstitialAdReady();
+      if (!isCurrent()) return false;
+      if (!ready || AppState.currentState !== "active") return unavailable();
+      const result = await showRewardedInterstitialAd();
+      if (!isCurrent()) return false;
+      if (!result.didOpen || !result.didClose) return unavailable();
+      if (!result.didEarnReward) {
+        showNativeToast(EntryRegistrationCopy.dailyFirstEntryRewardRequiredError);
+        return false;
       }
-    };
-    const schedule = () => {
-      if (!disposed) timer = setTimeout(attempt, RewardedInterstitialNoticeConfig.readyPollIntervalMs);
-    };
-    schedule();
-    return () => {
-      disposed = true;
-      clearTimeout(timer);
-      setIsNoticeVisible(false);
-    };
-  }, [pending, userId, screen, isReady, isSubscriptionLoading, isFree, appState]);
-
-  return {
-    isNoticeVisible,
-    requestAdAfterSave: () => {
       const date = toIsoDate(new Date());
-      setPending((current) => current?.userId === userId && current.date === date
-        ? current : { userId, date, screen });
-    },
-  };
+      completed.current = { userId: origin.userId, date };
+      try {
+        markDailyFirstEntryAdCompleted(origin.userId, date);
+      } catch (error) {
+        logAppError("AdMob", error, { step: "record_completed_entry_ad" });
+      }
+      return true;
+    } catch (error) {
+      logAppError("AdMob", error, { step: "entry_ad_before_save" });
+      return unavailable();
+    } finally {
+      inFlight.current = false;
+    }
+  } };
 }

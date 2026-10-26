@@ -35,11 +35,14 @@ import {
   upsertEntryInCachedMonth,
 } from "./ledgerEntryCache";
 
+const EMPTY_ENTRY_CACHE: LedgerEntryCache = Object.freeze({});
+
 type LedgerEntriesState = {
   entryCache: LedgerEntryCache;
   entries: LedgerEntry[];
   entriesError: string | null;
   isLoadingEntries: boolean;
+  isLoadingChartEntries: boolean;
   isRefreshing: boolean;
   preloadChartEntries: (chartMonth?: Date) => Promise<void>;
   refreshLedger: (invalidateCachedMonths?: boolean) => Promise<void>;
@@ -65,12 +68,14 @@ export function useLedgerEntries(
   );
   const [entriesError, setEntriesError] = useState<string | null>(null);
   const [isLoadingEntries, setIsLoadingEntries] = useState(false);
+  const [chartLoadingCount, setChartLoadingCount] = useState(0);
+  const pendingChartRequestsRef = useRef(new Map<string, Promise<void>>());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const cachedBookIdRef = useRef<string | null>(activeBookId);
   const refreshLedgerRef = useRef<LedgerEntriesState["refreshLedger"] | null>(null);
   const cacheRevisionRef = useRef(0);
   const scheduledBackgroundPreloadKeysRef = useRef<Set<string>>(new Set());
-  const entryCache = activeBookId ? (entryCacheByBookId[activeBookId] ?? {}) : {};
+  const entryCache = activeBookId ? (entryCacheByBookId[activeBookId] ?? EMPTY_ENTRY_CACHE) : EMPTY_ENTRY_CACHE;
   const refreshMonths = useMemo(() => getVisibleWindowMonths(visibleMonth), [visibleMonth]);
   const pagePreloadMonths = useMemo(
     () => getCalendarPagePreloadMonths(visibleMonth),
@@ -149,6 +154,9 @@ export function useLedgerEntries(
     if (!activeBookId) {
       return;
     }
+    const requestKey = `${activeBookId}:${getMonthKey(chartMonth)}:${cacheRevisionRef.current}`;
+    const pending = pendingChartRequestsRef.current.get(requestKey);
+    if (pending) return pending;
 
     const missingChartMonths = getChartTrendPreloadMonths(chartMonth).filter(
       (month) => !hasCachedMonth(entryCache, month),
@@ -157,16 +165,20 @@ export function useLedgerEntries(
       return;
     }
 
-    try {
-      await loadMonthsIntoBookCache(missingChartMonths, "preload_chart_entries");
-    } catch (error) {
+    setChartLoadingCount(count => count + 1);
+    const request = loadMonthsIntoBookCache(missingChartMonths, "preload_chart_entries").catch(error => {
       logAppError("LedgerEntries", error, {
         activeBookId,
         step: "preload_chart_entries",
         visibleMonth: chartMonth.toISOString(),
       });
       setEntriesError(AppMessages.ledgerError);
-    }
+    }).finally(() => {
+      setChartLoadingCount(count => Math.max(0, count - 1));
+      pendingChartRequestsRef.current.delete(requestKey);
+    });
+    pendingChartRequestsRef.current.set(requestKey, request);
+    return request;
   }, [activeBookId, entryCache, loadMonthsIntoBookCache, visibleMonth]);
 
   useEffect(() => {
@@ -472,6 +484,7 @@ export function useLedgerEntries(
     entries,
     entriesError,
     isLoadingEntries,
+    isLoadingChartEntries: chartLoadingCount > 0,
     isRefreshing,
     refreshLedger,
     removeEntriesFromCache: (entryIds) => {

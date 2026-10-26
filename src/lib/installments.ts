@@ -13,7 +13,7 @@ const InstallmentCopy = {
     prepaidLabel: "선결제 완료",
     monthsSuffix: "개월",
   } as const;
-export const MAX_INSTALLMENT_MONTHS = 24;
+export const MAX_INSTALLMENT_MONTHS = 99;
 
 export function buildLedgerEntriesFromDraft(draft: LedgerEntryDraft): LedgerEntry[] {
   const currency = resolveDisplayCurrency();

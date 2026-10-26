@@ -1,6 +1,5 @@
 import type { TextStyle, ViewStyle } from "react-native";
 
-import { AppColors } from "./colors";
 import { EntryComposerUi } from "./entryComposer";
 import { AppLayout } from "./layout";
 import { FormLabelTextStyle, SettingValueTextStyle } from "./uiStyles";
@@ -22,7 +21,3 @@ export const EntryDetailRowStyle: ViewStyle = {
   gap: AppLayout.screenPadding,
 };
 export const EntryDetailFieldStyle: ViewStyle = { gap: AppLayout.compactGap };
-export const EntryDetailDividerStyle: ViewStyle = {
-  borderBottomWidth: AppLayout.dividerWidth,
-  borderBottomColor: AppColors.border,
-};

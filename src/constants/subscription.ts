@@ -45,6 +45,8 @@ export const SubscriptionMessages = {
     purchaseInfoNameLabel: "구독명",
     purchaseInfoPeriodLabel: "구독 기간",
     purchaseInfoPriceLabel: "가격",
+    renewalNotice: "구독은 해지하지 않으면 매월 자동 갱신돼요. 다음 결제를 원하지 않으면 현재 이용 기간이 끝나기 최소 24시간 전에 App Store에서 해지해 주세요.",
+    priceUnavailable: "스토어에서 구독 가격을 불러오지 못했어요.",
     purchaseSuccess: "알뜰 plus가 활성화되었어요.",
     restoreAction: "구매 복원",
     restoreError: "구매 내역을 복원하지 못했어요. 잠시 후 다시 시도해 주세요.",

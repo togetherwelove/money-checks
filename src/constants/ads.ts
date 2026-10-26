@@ -16,28 +16,19 @@ export const AdMobInterstitialConfig = {
   iosAdUnitId: process.env.EXPO_PUBLIC_ADMOB_IOS_INTERSTITIAL_AD_UNIT_ID ?? "",
 } as const;
 
+export const InterstitialAdTiming = {
+  loadTimeoutMs: 10_000,
+  loadRetryDelayMs: 30_000,
+} as const;
+
 export const AdMobRewardedInterstitialConfig = {
   androidAdUnitId: process.env.EXPO_PUBLIC_ADMOB_ANDROID_REWARDED_INTERSTITIAL_AD_UNIT_ID ?? "",
   iosAdUnitId: process.env.EXPO_PUBLIC_ADMOB_IOS_REWARDED_INTERSTITIAL_AD_UNIT_ID ?? "",
 } as const;
 
-export const RewardedInterstitialNoticeConfig = {
-  previewDurationMs: 900,
+export const RewardedInterstitialReadinessConfig = {
   readyPollIntervalMs: 120,
   readyWaitTimeoutMs: 1_800,
-} as const;
-
-export const RewardedInterstitialNoticeOverlayUi = {
-  cardGap: 8,
-  cardMaxWidth: 320,
-  cardPaddingHorizontal: 18,
-  cardPaddingVertical: 16,
-  cardRadius: 18,
-  copyGap: 2,
-  titleFontSize: 16,
-  titleLineHeight: 22,
-  messageFontSize: 13,
-  messageLineHeight: 19,
 } as const;
 
 export const AdMobNativeConfig = {
@@ -64,6 +55,12 @@ export const NativeAdListConfig = {
 } as const;
 
 export const NativeAdCardUi = {
+  stackedWidthThreshold: 360,
+  stackedFontScaleThreshold: 1.3,
+  stackedHeadlineReservedLines: 2,
+  stackedBodyReservedLines: 3,
+  callToActionLineHeight: 16,
+  callToActionPaddingVertical: 6,
   callToActionGap: 4,
   callToActionIconButtonSize: 32,
   callToActionIconSize: 15,
@@ -80,6 +77,7 @@ export const NativeAdCardUi = {
   minHeight: 54,
   primaryRowGap: 8,
   bodyFontSize: 12,
+  bodyMaxLines: 2,
   bodyLineHeight: 16,
   headlineFontSize: 14,
   headlineLineHeight: 18,

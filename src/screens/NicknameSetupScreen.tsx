@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
+import type { TextInputInstance } from "react-native";
 
 import { ActionButton } from "../components/ActionButton";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
@@ -32,7 +33,7 @@ export function NicknameSetupScreen({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [inputInstanceKey, setInputInstanceKey] = useState(0);
   const [isInputReady, setIsInputReady] = useState(false);
-  const inputRef = useRef<TextInput | null>(null);
+  const inputRef = useRef<TextInputInstance | null>(null);
 
   useEffect(() => {
     const idleTask = scheduleIdleTask(() => {

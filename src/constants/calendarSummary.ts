@@ -8,6 +8,7 @@ export type CalendarSummaryMode =
   (typeof CalendarSummaryModes)[keyof typeof CalendarSummaryModes];
 
 export const CalendarSummaryBaseDay = {
+  unselected: 0,
   max: 31,
   min: 1,
 } as const;

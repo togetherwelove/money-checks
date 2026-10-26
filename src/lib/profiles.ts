@@ -1,4 +1,5 @@
 import type { ProfileDisplayRow } from "../types/supabase";
+import { StartupCopy } from "../constants/startup";
 import { isValidDisplayName, normalizeDisplayNameCandidate } from "../utils/displayName";
 import {
   getCachedProfileDisplayName,
@@ -9,17 +10,18 @@ import { supabase } from "./supabase";
 const PROFILE_TABLE = "profiles";
 const INVALID_DISPLAY_NAME_ERROR = "Display name is required.";
 
-export async function fetchProfileDisplayName(userId: string): Promise<string> {
+export async function fetchProfileDisplayName(userId: string, signal?: AbortSignal): Promise<string> {
   const cachedDisplayName = getCachedProfileDisplayName(userId);
   if (cachedDisplayName !== null) {
     return cachedDisplayName;
   }
 
-  const { data, error } = await supabase
+  const query = supabase
     .from(PROFILE_TABLE)
     .select("id, display_name")
-    .eq("id", userId)
-    .single<ProfileDisplayRow>();
+    .eq("id", userId);
+  const { data, error } = await (signal ? query.abortSignal(signal) : query).single<ProfileDisplayRow>();
+  if (signal?.aborted) throw new Error(StartupCopy.failed);
 
   if (error) {
     throw error;
@@ -30,8 +32,8 @@ export async function fetchProfileDisplayName(userId: string): Promise<string> {
   return displayName;
 }
 
-export async function fetchOwnProfileDisplayName(userId: string): Promise<string> {
-  return fetchProfileDisplayName(userId);
+export async function fetchOwnProfileDisplayName(userId: string, signal?: AbortSignal): Promise<string> {
+  return fetchProfileDisplayName(userId, signal);
 }
 
 export async function updateOwnProfileDisplayName(

@@ -31,6 +31,7 @@ export async function readCardSmsClipboardDraft({
   shouldIgnoreDraft,
 }: ReadCardSmsClipboardDraftOptions): Promise<CardSmsClipboardDraft | null> {
   try {
+    if (!await Clipboard.hasStringAsync()) return null;
     const clipboardText = await Clipboard.getStringAsync();
     if (!isLikelyCardSms(clipboardText)) {
       return null;

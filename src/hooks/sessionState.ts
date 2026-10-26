@@ -1,6 +1,6 @@
 import type { Session } from "@supabase/supabase-js";
 
-import { AppMessages } from "../constants/messages";
+import { runStartupCheck, startupErrorMessage } from "../lib/startupCheck";
 
 export type SessionState = {
   errorMessage: string | null;
@@ -9,6 +9,7 @@ export type SessionState = {
 };
 
 type SessionResponse = {
+  error?: unknown;
   data: {
     session: Session | null;
   };
@@ -16,16 +17,18 @@ type SessionResponse = {
 
 export async function loadInitialSession(
   getSession: () => Promise<SessionResponse>,
+  signal: AbortSignal,
 ): Promise<SessionState> {
   try {
-    const { data } = await getSession();
+    const { data, error } = await runStartupCheck(getSession, signal);
+    if (error) throw error;
     return {
       errorMessage: null,
       isLoading: false,
       session: data.session,
     };
-  } catch {
-    return createSessionErrorState();
+  } catch (error) {
+    return createSessionErrorState(error);
   }
 }
 
@@ -37,9 +40,9 @@ export function createResolvedSessionState(session: Session | null): SessionStat
   };
 }
 
-function createSessionErrorState(): SessionState {
+function createSessionErrorState(error: unknown): SessionState {
   return {
-    errorMessage: AppMessages.authSessionError,
+    errorMessage: startupErrorMessage(error),
     isLoading: false,
     session: null,
   };

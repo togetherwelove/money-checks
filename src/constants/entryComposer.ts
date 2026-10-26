@@ -1,6 +1,14 @@
 export const EntryComposerCopy = {
+  sheetTitle: "내역 추가 · 수정",
+  closeSheet: "입력창 닫기",
   amount: "금액",
+  typeLabel: "내역 유형",
+  expense: "지출",
+  income: "수입",
+  stepTitles: { amount: "금액", content: "내용", category: "분류", review: "등록 내용 확인", note: "메모" },
+  stepHints: { amount: "금액을 입력한 뒤 위의 확인 버튼을 눌러 주세요.", content: "어디에 사용한 내역인지 적어 주세요.", category: "내역에 맞는 분류를 선택해 주세요.", review: "내용을 확인한 뒤 위의 확인 버튼으로 저장하세요.", note: "기억할 내용을 적고 확인 버튼을 눌러 주세요." },
   next: "다음",
+  nextContent: "다음: 내용",
   confirm: "확인",
   save: "등록",
   clear: "입력 취소",
@@ -17,6 +25,10 @@ export const EntryComposerCopy = {
   replaceEditTitle: "선택한 내역을 수정할까요?",
   replaceEditMessage: "현재 입력 중인 정보는 사라지고 선택한 내역을 불러옵니다.",
   replaceEditAction: "수정하기",
+  duplicate: "복제",
+  replaceDuplicateTitle: "선택한 내역을 복제할까요?",
+  replaceDuplicateMessage: "현재 입력 중인 정보는 사라지고 복제한 내용을 불러옵니다. 확인 후 등록해 주세요.",
+  duplicateAdjustedMessage: "사용할 수 없는 구성원은 본인으로 변경했어요. 분류가 비어 있으면 다시 선택해 주세요.",
   editAccessibilityHint: "이 항목의 입력 또는 선택 영역을 열어 수정합니다.",
   photoCount: "첨부 사진",
   badge: " •",
@@ -29,9 +41,27 @@ export const EntryComposerCopy = {
   switchBook: "가계부 전환",
   manageBook: "가계부 관리 · 공유",
   unavailable: "현재 가계부에는 기록할 수 없어요.",
+  loading: "불러오는 중…",
+  saving: "저장 중…",
+  selectBookHint: "기록할 가계부를 선택해 주세요.",
+  selectBook: "가계부 선택",
 } as const;
 
 export const EntryComposerUi = {
+  sheetControlSize: 48,
+  sheetIconSize: 24,
+  sheetSegmentFontSize: 16,
+  sheetCardRadius: 28,
+  sheetFieldHeight: 48,
+  sheetFieldFontSize: 16,
+  sheetFieldLineHeight: 22,
+  sheetFieldVerticalPadding: 8,
+  sheetAmountFontSize: 22,
+  sheetAmountLineHeight: 28,
+  sheetPadding: 16,
+  sheetSectionGap: 12,
+  segmentInset: 4,
+  disabledOpacity: 0.4,
   panelMaxHeightRatio: 0.42,
   panelPadding: 14,
   sectionGap: 12,
@@ -59,4 +89,4 @@ export const EntryComposerDots = {
   offsets: [[-2, 0, 0, -2], [0, -2, 0, 0], [0, 0, -2, 0]],
 } as const;
 
-export type EntryComposerStep = "amount" | "content" | "category" | "review" | "note";
+export type EntryComposerUnavailableReason = "read-only" | "no-book";

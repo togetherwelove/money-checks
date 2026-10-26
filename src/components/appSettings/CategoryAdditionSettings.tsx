@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Feather } from "@expo/vector-icons";
+import { Feather } from "../AppIcons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { AppSettingsCopy as Copy, AppSettingsUi } from "../../constants/appSettings";
 import { AppSettingsRowStyles as Row } from "../../constants/appSettingsStyles";
