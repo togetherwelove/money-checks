@@ -6,13 +6,11 @@ import { type LedgerEntriesPageCursor, fetchLedgerEntriesPage } from "../lib/led
 import { subscribeToLedgerEntryChanges } from "../lib/ledgerEntryRealtime";
 import { logAppError } from "../lib/logAppError";
 import type { LedgerEntry } from "../types/ledger";
-import type { BusyTaskTracker } from "./ledgerScreenState/types";
 
 type UseAllLedgerEntriesParams = {
   activeBookId: string | null;
   selectedCategoryIds: readonly string[];
   searchQuery: string;
-  trackBlockingTask: BusyTaskTracker;
 };
 
 const EMPTY_ENTRIES: LedgerEntry[] = [];
@@ -21,21 +19,27 @@ export function useAllLedgerEntries({
   activeBookId,
   selectedCategoryIds,
   searchQuery,
-  trackBlockingTask,
 }: UseAllLedgerEntriesParams) {
   const [entries, setEntries] = useState<LedgerEntry[]>(EMPTY_ENTRIES);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(Boolean(activeBookId));
   const [nextCursor, setNextCursor] = useState<LedgerEntriesPageCursor | null>(null);
   const queryRevisionRef = useRef(0);
+  const entriesBookRef = useRef(activeBookId);
   const realtimeRefreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadFirstPage = useCallback(
-    async (usesBlockingOverlay: boolean) => {
+    async () => {
       const queryRevision = queryRevisionRef.current + 1;
       queryRevisionRef.current = queryRevision;
+      if (entriesBookRef.current !== activeBookId) {
+        entriesBookRef.current = activeBookId;
+        setEntries(EMPTY_ENTRIES);
+        setHasMore(false);
+        setNextCursor(null);
+      }
 
       if (!activeBookId) {
         setEntries(EMPTY_ENTRIES);
@@ -49,27 +53,19 @@ export function useAllLedgerEntries({
 
       setErrorMessage(null);
       setIsLoadingMore(false);
-      if (!usesBlockingOverlay) {
-        setIsRefreshing(true);
-      }
-
-      const executeTask = usesBlockingOverlay
-        ? trackBlockingTask
-        : async <T>(task: () => Promise<T>) => task();
+      setIsRefreshing(true);
 
       try {
         const {
           entries: nextEntries,
           hasMore: nextHasMore,
           nextCursor: firstPageNextCursor,
-        } = await executeTask(() =>
-          fetchLedgerEntriesPage(activeBookId, {
-            ascending: false,
-            categoryIds: selectedCategoryIds,
-            limit: LedgerQueryConfig.allEntriesPageSize,
-            searchQuery,
-          }),
-        );
+        } = await fetchLedgerEntriesPage(activeBookId, {
+          ascending: false,
+          categoryIds: selectedCategoryIds,
+          limit: LedgerQueryConfig.allEntriesPageSize,
+          searchQuery,
+        });
         if (queryRevisionRef.current !== queryRevision) {
           return;
         }
@@ -86,16 +82,17 @@ export function useAllLedgerEntries({
         });
         setErrorMessage(AppMessages.ledgerError);
       } finally {
-        if (!usesBlockingOverlay && queryRevisionRef.current === queryRevision) {
+        if (queryRevisionRef.current === queryRevision) {
           setIsRefreshing(false);
         }
       }
     },
-    [activeBookId, searchQuery, selectedCategoryIds, trackBlockingTask],
+    [activeBookId, searchQuery, selectedCategoryIds],
   );
 
   useEffect(() => {
-    void loadFirstPage(true);
+    void loadFirstPage();
+    return () => { queryRevisionRef.current += 1; };
   }, [loadFirstPage]);
 
   useEffect(() => {
@@ -110,7 +107,7 @@ export function useAllLedgerEntries({
 
       realtimeRefreshTimeoutRef.current = setTimeout(() => {
         realtimeRefreshTimeoutRef.current = null;
-        void loadFirstPage(false);
+        void loadFirstPage();
       }, LedgerQueryConfig.realtimeRefreshDelayMs);
     };
 
@@ -183,13 +180,13 @@ export function useAllLedgerEntries({
   ]);
 
   return {
-    entries,
-    errorMessage,
+    entries: entriesBookRef.current === activeBookId ? entries : EMPTY_ENTRIES,
+    errorMessage: entriesBookRef.current === activeBookId ? errorMessage : null,
     hasMore,
     isLoadingMore,
-    isRefreshing,
+    isRefreshing: Boolean(activeBookId) && (entriesBookRef.current !== activeBookId || isRefreshing),
     loadMoreEntries,
-    refreshEntries: () => loadFirstPage(false),
+    refreshEntries: loadFirstPage,
     removeEntriesFromFeed: (entryIds: readonly string[]) => {
       const deletedEntryIds = new Set(entryIds);
       setEntries((currentEntries) =>

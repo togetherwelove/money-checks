@@ -20,6 +20,8 @@ export const AllEntriesEntryTypeFilterOptions: readonly {
 ];
 
 export const AllEntriesFilterCopy = {
+  loadingLabel: "내역을 불러오는 중이에요.",
+  sheetTitle: "내역 필터",
   applyLabel: "필터 적용",
   cancelLabel: "취소",
   closeAccessibilityLabel: "필터 닫기",
@@ -50,19 +52,9 @@ export const AllEntriesFilterUi = {
   filterButtonHorizontalPadding: 12,
   filterButtonLabelFontSize: 13,
   filterButtonMinimumHeight: 44,
-  filterSheetMaximumHeightRatio: 0.82,
-  filterSheetOpenDurationMs: 240,
-  filterSheetCloseDurationMs: 180,
-  filterSheetDragActivationDistance: 8,
-  filterSheetDragCloseDistance: 100,
-  filterSheetDragCloseVelocity: 800,
-  filterSheetTopRadius: 20,
   iconSize: 15,
   resetLabelFontSize: 12,
   sectionLabelFontSize: 12,
-  sheetHandleHeight: 4,
-  sheetHandleTouchHeight: 36,
-  sheetHandleWidth: 36,
   typeOptionFontSize: 13,
   typeOptionMinimumHeight: 40,
 } as const;

@@ -1,10 +1,9 @@
 import { AppScrollBehavior } from "../constants/scroll";
 import { forwardRef } from "react";
-import type { ComponentRef, PropsWithChildren, ReactElement } from "react";
-import { StyleSheet } from "react-native";
+import type { PropsWithChildren, ReactElement } from "react";
+import { ScrollView, StyleSheet } from "react-native";
 import type { RefreshControlProps } from "react-native";
-import type { StyleProp, ViewStyle } from "react-native";
-import { KeyboardAwareScrollView as NativeKeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import type { ScrollViewInstance, StyleProp, ViewStyle } from "react-native";
 
 import { KeyboardLayout } from "../constants/keyboard";
 
@@ -20,7 +19,7 @@ type KeyboardAwareScrollViewProps = PropsWithChildren<{
 }>;
 
 export const KeyboardAwareScrollView = forwardRef<
-  ComponentRef<typeof NativeKeyboardAwareScrollView>,
+  ScrollViewInstance,
   KeyboardAwareScrollViewProps
 >(function KeyboardAwareScrollView(
   {
@@ -37,11 +36,10 @@ export const KeyboardAwareScrollView = forwardRef<
   ref,
 ) {
   return (
-    <NativeKeyboardAwareScrollView {...AppScrollBehavior}
+    <ScrollView {...AppScrollBehavior}
       ref={ref}
-      enableAutomaticScroll
-      contentContainerStyle={[centerContent && styles.centerContent, contentContainerStyle]}
-      extraScrollHeight={extraScrollHeight}
+      automaticallyAdjustKeyboardInsets
+      contentContainerStyle={[centerContent && styles.centerContent, extraScrollHeight > 0 && { paddingBottom: extraScrollHeight }, contentContainerStyle]}
       keyboardDismissMode={KeyboardLayout.dismissMode}
       keyboardShouldPersistTaps={KeyboardLayout.persistTaps}
       refreshControl={refreshControl}
@@ -50,7 +48,7 @@ export const KeyboardAwareScrollView = forwardRef<
       style={[fillAvailableHeight ? styles.scroll : null, style]}
     >
       {children}
-    </NativeKeyboardAwareScrollView>
+    </ScrollView>
   );
 });
 

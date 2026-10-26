@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Keyboard, StyleSheet, Text, TextInput, View } from "react-native";
+import type { TextInputInstance } from "react-native";
 
 import { CategorySelector } from "../components/CategorySelector";
 import { EntryTargetMemberSelector } from "../components/EntryTargetMemberSelector";
@@ -65,8 +66,8 @@ export function LedgerEntryForm({
 }: LedgerEntryFormProps) {
   const categories = CATEGORY_OPTIONS[draft.type];
   const formattedAmountValue = formatAmountInput(draft.amount);
-  const amountInputRef = useRef<TextInput>(null);
-  const contentInputRef = useRef<TextInput>(null);
+  const amountInputRef = useRef<TextInputInstance>(null);
+  const contentInputRef = useRef<TextInputInstance>(null);
   const amountSelectionRef = useRef<AmountInputSelection>({
     end: formattedAmountValue.length,
     start: formattedAmountValue.length,
@@ -207,7 +208,8 @@ export function LedgerEntryForm({
       {!editingEntryId ? (
         <EntryInstallmentSelector
           installmentMonths={draft.installmentMonths}
-          onPress={() => setIsInstallmentPickerOpen(true)}
+          onRequestCustom={() => setIsInstallmentPickerOpen(true)}
+          onSelectInstallmentMonths={onChangeInstallmentMonths}
         />
       ) : null}
       <View style={styles.fieldGroup}>

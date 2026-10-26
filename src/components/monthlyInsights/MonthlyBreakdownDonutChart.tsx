@@ -1,6 +1,6 @@
 import { AppScrollBehavior } from "../../constants/scroll";
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
-import Svg, { Circle, G } from "react-native-svg";
+import { BreakdownDonutGraphic } from "./BreakdownDonutGraphic";
 
 import { AppChartColors, AppColors } from "../../constants/colors";
 import {
@@ -35,10 +35,6 @@ type MonthlyBreakdownDonutChartProps = {
   title: string;
   variant: "expense" | "income";
 };
-
-const CHART_RADIUS =
-  (MonthlyInsightChartLayout.donutSize - MonthlyInsightChartLayout.donutStrokeWidth) / 2;
-const CHART_CIRCUMFERENCE = 2 * Math.PI * CHART_RADIUS;
 
 export function MonthlyBreakdownDonutChart({
   centerLabel,
@@ -79,42 +75,9 @@ export function MonthlyBreakdownDonutChart({
             ]}
           >
             <View style={styles.chartShell}>
-              <Svg
-                height={MonthlyInsightChartLayout.donutSize}
-                width={MonthlyInsightChartLayout.donutSize}
-              >
-                <G
-                  origin={`${MonthlyInsightChartLayout.donutSize / 2}, ${
-                    MonthlyInsightChartLayout.donutSize / 2
-                  }`}
-                  rotation="-90"
-                >
-                  <Circle
-                    cx={MonthlyInsightChartLayout.donutSize / 2}
-                    cy={MonthlyInsightChartLayout.donutSize / 2}
-                    fill="transparent"
-                    r={CHART_RADIUS}
-                    stroke={AppColors.surfaceMuted}
-                    strokeWidth={MonthlyInsightChartLayout.donutStrokeWidth}
-                  />
-                  {items.map((item, index) => (
-                    <Circle
-                      key={`${item.key}-${item.amount}`}
-                      cx={MonthlyInsightChartLayout.donutSize / 2}
-                      cy={MonthlyInsightChartLayout.donutSize / 2}
-                      fill="transparent"
-                      r={CHART_RADIUS}
-                      stroke={
-                        itemColorByKey.get(item.key) ??
-                        AppChartColors[index % AppChartColors.length]
-                      }
-                      strokeDasharray={`${CHART_CIRCUMFERENCE * item.share} ${CHART_CIRCUMFERENCE}`}
-                      strokeDashoffset={resolveDashOffset(items, index)}
-                      strokeWidth={MonthlyInsightChartLayout.donutStrokeWidth}
-                    />
-                  ))}
-                </G>
-              </Svg>
+              <BreakdownDonutGraphic items={items.map((item, index) => ({ ...item,
+                color: itemColorByKey.get(item.key) ?? AppChartColors[index % AppChartColors.length],
+              }))} />
               <View pointerEvents="none" style={styles.chartCenter}>
                 <Text {...CompactTextProps} style={[styles.centerLabel, semanticTextStyle]}>
                   {centerLabel}
@@ -201,12 +164,6 @@ export function MonthlyBreakdownDonutChart({
       </View>
     </View>
   );
-}
-
-function resolveDashOffset(items: MonthlyBreakdownItem[], index: number): number {
-  const previousShare = items.slice(0, index).reduce((sum, item) => sum + item.share, 0);
-
-  return -CHART_CIRCUMFERENCE * previousShare;
 }
 
 const styles = StyleSheet.create({

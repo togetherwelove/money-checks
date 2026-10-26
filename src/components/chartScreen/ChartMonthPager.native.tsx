@@ -16,7 +16,6 @@ type ChartMonthPagerProps = {
   onMoveMonth: (monthOffset: -1 | 1) => void;
   previousMonth: ChartMonthData;
   renderScreenTitle: (titleLabel: string) => ReactNode;
-  showsBannerAd: boolean;
 };
 
 export function ChartMonthPager({
@@ -26,7 +25,6 @@ export function ChartMonthPager({
   onMoveMonth,
   previousMonth,
   renderScreenTitle,
-  showsBannerAd,
 }: ChartMonthPagerProps) {
   const currentMonthKey = currentMonth.key;
   const isFocused = useIsFocused();
@@ -86,19 +84,16 @@ export function ChartMonthPager({
         activeBookId={activeBookId}
         month={previousMonth}
         screenTitle={renderScreenTitle(previousMonth.title)}
-        showsBannerAd={showsBannerAd}
       />
       <ChartMonthPageContent
         activeBookId={activeBookId}
         month={currentMonth}
         screenTitle={renderScreenTitle(currentMonth.title)}
-        showsBannerAd={showsBannerAd}
       />
       <ChartMonthPageContent
         activeBookId={activeBookId}
         month={nextMonth}
         screenTitle={renderScreenTitle(nextMonth.title)}
-        showsBannerAd={showsBannerAd}
       />
     </PagerView>
   );

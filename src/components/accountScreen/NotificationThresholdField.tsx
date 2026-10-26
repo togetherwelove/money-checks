@@ -1,16 +1,12 @@
-import { Feather } from "@expo/vector-icons";
-import { Picker } from "@react-native-picker/picker";
-import { useEffect, useState } from "react";
-import { Modal, Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
-
-import { ActionButton } from "../ActionButton";
-import { ModalCloseButton } from "../ModalCloseButton";
+import { Feather } from "../AppIcons";
+import { MenuView, type MenuAction } from "@react-native-menu/menu";
+import { useMemo } from "react";
+import { Keyboard, Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import { AppSettingsUi } from "../../constants/appSettings";
 import { AppColors } from "../../constants/colors";
 import { CurrencyUnitLabels } from "../../constants/currency";
-import { AppLayout } from "../../constants/layout";
 import { AppTextBreakProps } from "../../constants/textLayout";
-import { ModalActionRowStyle } from "../../constants/uiStyles";
+
 import { resolveDisplayCurrency } from "../../lib/currencyPreference";
 import {
   NotificationThresholdAmountCopy,
@@ -44,7 +40,14 @@ export function NotificationThresholdField({
   settings,
 }: NotificationThresholdFieldProps) {
   const currencyUnitLabel = CurrencyUnitLabels[resolveDisplayCurrency()];
-  const [isPeriodPickerOpen, setIsPeriodPickerOpen] = useState(false);
+  const periodActions = useMemo<MenuAction[]>(
+    () => settings.periodOptions.map((option) => ({
+      id: option.key,
+      title: option.label,
+      state: option.key === settings.selectedKey ? "on" : "off",
+    })),
+    [settings.periodOptions, settings.selectedKey],
+  );
   const selectedPeriodOption =
     settings.periodOptions.find((option) => option.key === settings.selectedKey) ??
     settings.periodOptions[0];
@@ -55,17 +58,28 @@ export function NotificationThresholdField({
     <View style={styles.field}>
       <View style={styles.amountField}>
         <View style={styles.amountControl}>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => setIsPeriodPickerOpen(true)}
-            style={({ pressed }) => [
-              styles.periodButton,
-              pressed ? styles.periodButtonPressed : null,
-            ]}
+          <MenuView
+            actions={periodActions}
+            title={NotificationUiCopy.thresholdPeriodPickerTitle}
+            onOpenMenu={() => Keyboard.dismiss()}
+            onPressAction={({ nativeEvent }) => {
+              const option = settings.periodOptions.find((item) => item.key === nativeEvent.event);
+              if (option) onChangePeriod(ThresholdPeriodByKey[option.key]);
+            }}
           >
-            <Text style={styles.periodText}>{selectedPeriodOption?.label}</Text>
-            <Feather color={AppColors.mutedStrongText} name="chevron-down" size={16} />
-          </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={NotificationUiCopy.thresholdPeriodPickerTitle}
+              accessibilityValue={{ text: selectedPeriodOption?.label }}
+              style={({ pressed }) => [
+                styles.periodButton,
+                pressed ? styles.periodButtonPressed : null,
+              ]}
+            >
+              <Text style={styles.periodText}>{selectedPeriodOption?.label}</Text>
+              <Feather color={AppColors.mutedStrongText} name="chevron-down" size={AppSettingsUi.selectionChevronIconSize} />
+            </Pressable>
+          </MenuView>
           <View style={styles.amountRow}>
             <TextInput
               inputMode="numeric"
@@ -92,16 +106,6 @@ export function NotificationThresholdField({
           value={settings.enabled}
         />
       </View>
-      <ThresholdPeriodPickerModal
-        isOpen={isPeriodPickerOpen}
-        onClose={() => setIsPeriodPickerOpen(false)}
-        onSelect={(period) => {
-          onChangePeriod(period);
-          setIsPeriodPickerOpen(false);
-        }}
-        options={settings.periodOptions}
-        selectedKey={settings.selectedKey}
-      />
     </View>
   );
 }
@@ -115,65 +119,6 @@ function resolveAmountInputWidth(value: string): number {
   return Math.min(
     NotificationThresholdAmountInput.inputWidth,
     Math.max(NotificationThresholdAmountInput.minInputWidth, measuredWidth),
-  );
-}
-
-function ThresholdPeriodPickerModal({
-  isOpen,
-  onClose,
-  onSelect,
-  options,
-  selectedKey,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  onSelect: (period: NotificationThresholdPeriod) => void;
-  options: NotificationThresholdSettings["periodOptions"];
-  selectedKey: NotificationThresholdKey;
-}) {
-  const [draftKey, setDraftKey] = useState(selectedKey);
-
-  useEffect(() => {
-    if (isOpen) {
-      setDraftKey(selectedKey);
-    }
-  }, [isOpen, selectedKey]);
-
-  if (!isOpen) {
-    return null;
-  }
-
-  return (
-    <Modal animationType="fade" onRequestClose={onClose} transparent visible>
-      <View style={styles.modalOverlay}>
-        <Pressable onPress={onClose} style={styles.modalBackdrop} />
-        <View style={styles.modalSheet}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{NotificationUiCopy.thresholdPeriodPickerTitle}</Text>
-            <ModalCloseButton onPress={onClose} />
-          </View>
-          <Picker
-            itemStyle={styles.pickerItem}
-            selectedValue={draftKey}
-            onValueChange={(value) => setDraftKey(value as NotificationThresholdKey)}
-          >
-            {options.map((option) => (
-              <Picker.Item key={option.key} label={option.label} value={option.key} />
-            ))}
-          </Picker>
-          <View style={styles.actionRow}>
-            <ActionButton
-              label="확인"
-              onPress={() => {
-                onSelect(ThresholdPeriodByKey[draftKey]);
-              }}
-              size="inline"
-              variant="primary"
-            />
-          </View>
-        </View>
-      </View>
-    </Modal>
   );
 }
 
@@ -210,7 +155,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
   },
-  actionRow: ModalActionRowStyle,
   currency: {
     color: AppColors.mutedText,
     fontSize: 12,
@@ -227,36 +171,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     gap: 12,
-  },
-  modalBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  modalHeader: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 12,
-    justifyContent: "space-between",
-  },
-  modalOverlay: {
-    backgroundColor: AppColors.overlay,
-    flex: 1,
-    justifyContent: "center",
-  },
-  modalSheet: {
-    backgroundColor: AppColors.surface,
-    borderRadius: AppLayout.cardRadius,
-    gap: 12,
-    marginHorizontal: 16,
-    padding: 16,
-  },
-  modalTitle: {
-    color: AppColors.text,
-    fontSize: 16,
-    fontWeight: "800",
-  },
-  pickerItem: {
-    color: AppColors.text,
-    fontSize: 18,
   },
   periodButton: {
     alignItems: "center",

@@ -13,6 +13,7 @@ type LedgerEntryListProps = {
   activeBookId?: string | null;
   entries: LedgerEntry[];
   onDeleteEntry: (entry: LedgerEntry) => void | Promise<void>;
+  onDuplicateEntry: (entry: LedgerEntry) => void;
   onEditEntry: (entry: LedgerEntry) => void;
   onPrepayInstallmentEntry: InstallmentPrepaymentHandler;
 };
@@ -21,6 +22,7 @@ export function LedgerEntryList({
   activeBookId = null,
   entries,
   onDeleteEntry,
+  onDuplicateEntry,
   onEditEntry,
   onPrepayInstallmentEntry,
 }: LedgerEntryListProps) {
@@ -44,6 +46,7 @@ export function LedgerEntryList({
           entry={entry}
           key={entry.id}
           onDeleteEntry={onDeleteEntry}
+          onDuplicateEntry={onDuplicateEntry}
           onEditEntry={onEditEntry}
           onPrepayInstallmentEntry={onPrepayInstallmentEntry}
         />

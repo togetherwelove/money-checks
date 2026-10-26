@@ -2,12 +2,10 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { ActionButton } from "../../components/ActionButton";
-import { CalendarPickerModalShell } from "../../components/calendarPicker/CalendarPickerModalShell";
+import { NativePickerSheet } from "../NativePickerSheet";
 import { AnnualReportCopy, AnnualReportUi, type AnnualReportRangeMode } from "../../constants/annualReport";
 import { AnnualReportPeriodOptions } from "./AnnualReportPeriodOptions";
 import { AppColors } from "../../constants/colors";
-import { ModalActionRowStyle } from "../../constants/uiStyles";
 import { parseIsoDate, toIsoDate } from "../../utils/calendar";
 
 type AnnualReportRangePickerModalProps = {
@@ -52,10 +50,12 @@ export function AnnualReportRangePickerModal({
   const activeDate = activeField === "start" ? draftStartDate : draftEndDate;
 
   return (
-    <CalendarPickerModalShell
+    <NativePickerSheet
       isOpen={isOpen}
       onClose={onClose}
       title={selectedYear !== null ? AnnualReportCopy.optionTitle : AnnualReportCopy.customRangeTitle}
+      action={selectedYear === null ? { label: AnnualReportCopy.downloadAction, disabled,
+        onPress: () => { void onConfirm(toIsoDate(draftStartDate), toIsoDate(draftEndDate)); } } : undefined}
     >
       {selectedYear !== null ? (
         <AnnualReportPeriodOptions selectedYear={selectedYear} onSelect={onSelectPeriod} />
@@ -95,18 +95,9 @@ export function AnnualReportRangePickerModal({
               value={activeDate}
             />
           </View>
-          <View style={styles.actionRow}>
-            <ActionButton
-              label={AnnualReportCopy.downloadAction}
-              disabled={disabled}
-              onPress={() => onConfirm(toIsoDate(draftStartDate), toIsoDate(draftEndDate))}
-              size="inline"
-              variant="primary"
-            />
-          </View>
         </>
       )}
-    </CalendarPickerModalShell>
+    </NativePickerSheet>
   );
 }
 
@@ -138,7 +129,6 @@ function DateFieldButton({
 }
 
 const styles = StyleSheet.create({
-  actionRow: ModalActionRowStyle,
   activeDateFieldButton: {
     borderColor: AppColors.primary,
     backgroundColor: AppColors.surfaceMuted,

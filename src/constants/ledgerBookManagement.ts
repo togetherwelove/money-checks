@@ -18,7 +18,7 @@ export const LedgerBookManagementCopy = {
     deleteError: "가계부를 삭제하지 못했어요.",
     deleteSuccess: "가계부를 삭제했어요.",
     emptyList: "사용 가능한 가계부가 없어요.",
-    listTitle: "내 가계부",
+    listTitle: "가계부 관리",
     ownerBadge: "소유",
     sharedBadge: "공유",
     activeStateLabel: "사용 중",

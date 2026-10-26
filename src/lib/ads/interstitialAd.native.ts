@@ -1,18 +1,18 @@
 import { AdEventType, InterstitialAd, TestIds } from "react-native-google-mobile-ads";
 
-import { type AdInterstitialPlacementKey, AdMobInterstitialConfig } from "../../constants/ads";
+import { type AdInterstitialPlacementKey, AdMobInterstitialConfig, InterstitialAdTiming } from "../../constants/ads";
 import { logAppError, logAppWarning } from "../logAppError";
 import { resolveAdMobAdUnitId } from "./adUnitId";
 import { logAdMobLoadError } from "./adMobLoadError";
 import { getAdRequestOptions } from "./adRequestOptions";
+import { waitForInterstitialLoad } from "./waitForInterstitialLoad.native";
 
 let interstitialAd: InterstitialAd | null = null;
 let interstitialAdDisposers: Array<() => void> = [];
 let isInterstitialLoaded = false;
 let isInterstitialShowing = false;
+let isPresentationPending = false;
 let loadRetryTimer: ReturnType<typeof setTimeout> | null = null;
-
-const INTERSTITIAL_LOAD_RETRY_DELAY_MS = 30_000;
 
 export function preloadInterstitialAd() {
   const adUnitId = resolveInterstitialAdUnitId();
@@ -29,31 +29,30 @@ export function preloadInterstitialAd() {
   interstitialAd.load();
 }
 
-export async function showInterstitialAd(placement: AdInterstitialPlacementKey): Promise<boolean> {
-  if (!canShowInterstitialPlacement(placement)) {
-    return false;
-  }
-
-  if (!interstitialAd) {
-    preloadInterstitialAd();
-  }
-
-  if (!interstitialAd || !isInterstitialLoaded || isInterstitialShowing) {
-    logAppWarning("AdMob", "Interstitial ad not ready", {
-      isLoaded: isInterstitialLoaded,
-      isShowing: isInterstitialShowing,
-      placement,
-      step: "show_interstitial_ad",
-    });
-    preloadInterstitialAd();
-    return false;
-  }
-
+export async function showInterstitialAd(
+  placement: AdInterstitialPlacementKey,
+  { waitForLoad = false }: { waitForLoad?: boolean } = {},
+): Promise<boolean> {
+  if (isPresentationPending || isInterstitialShowing) return false;
+  isPresentationPending = true;
   try {
-    const dismissPromise = waitForInterstitialDismissal(interstitialAd);
-    await interstitialAd.show();
-    await dismissPromise;
-    return true;
+    if (!interstitialAd) preloadInterstitialAd();
+    if (waitForLoad && interstitialAd && !isInterstitialLoaded) {
+      await waitForInterstitialLoad(interstitialAd);
+    }
+    if (!interstitialAd || !isInterstitialLoaded) {
+      logAppWarning("AdMob", "Interstitial ad not ready", {
+        isLoaded: isInterstitialLoaded, placement, step: "show_interstitial_ad",
+      });
+      return false;
+    }
+    const dismissal = waitForInterstitialDismissal(interstitialAd);
+    try {
+      await interstitialAd.show();
+      return await dismissal.promise;
+    } finally {
+      dismissal.cancel();
+    }
   } catch (error) {
     logAppError("AdMob", error, {
       placement,
@@ -61,44 +60,23 @@ export async function showInterstitialAd(placement: AdInterstitialPlacementKey):
     });
     rebuildInterstitialAd();
     return false;
+  } finally {
+    isPresentationPending = false;
   }
 }
 
-function canShowInterstitialPlacement(placement: AdInterstitialPlacementKey) {
-  if (__DEV__) {
-    return true;
-  }
-
-  return true;
-}
-
-function waitForInterstitialDismissal(currentInterstitialAd: InterstitialAd): Promise<void> {
-  return new Promise<void>((resolve, reject) => {
-    let hasSettled = false;
-
-    const cleanup = () => {
+function waitForInterstitialDismissal(currentInterstitialAd: InterstitialAd) {
+  let finish: (closed: boolean) => void = () => {};
+  const promise = new Promise<boolean>(resolve => {
+    finish = (closed) => {
       closeDisposer();
       errorDisposer();
+      resolve(closed);
     };
-
-    const settle = (nextHandler: () => void) => {
-      if (hasSettled) {
-        return;
-      }
-
-      hasSettled = true;
-      cleanup();
-      nextHandler();
-    };
-
-    const closeDisposer = currentInterstitialAd.addAdEventListener(AdEventType.CLOSED, () => {
-      settle(resolve);
-    });
-
-    const errorDisposer = currentInterstitialAd.addAdEventListener(AdEventType.ERROR, (error) => {
-      settle(() => reject(error));
-    });
+    const closeDisposer = currentInterstitialAd.addAdEventListener(AdEventType.CLOSED, () => finish(true));
+    const errorDisposer = currentInterstitialAd.addAdEventListener(AdEventType.ERROR, () => finish(false));
   });
+  return { promise, cancel: () => finish(false) };
 }
 
 function createInterstitialAd(adUnitId: string) {
@@ -150,6 +128,8 @@ function cleanupInterstitialAd() {
 
   interstitialAdDisposers = [];
   interstitialAd = null;
+  isInterstitialLoaded = false;
+  isInterstitialShowing = false;
 }
 
 function scheduleInterstitialAdRebuild() {
@@ -162,7 +142,7 @@ function scheduleInterstitialAdRebuild() {
   loadRetryTimer = setTimeout(() => {
     loadRetryTimer = null;
     preloadInterstitialAd();
-  }, INTERSTITIAL_LOAD_RETRY_DELAY_MS);
+  }, InterstitialAdTiming.loadRetryDelayMs);
 }
 
 function clearInterstitialLoadRetry() {

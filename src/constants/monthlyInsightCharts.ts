@@ -1,5 +1,6 @@
 
 export const MonthlyInsightChartCopy = {
+    swipeHint: "좌우로 넘겨 다른 달을 확인하세요.",
     breakdownCategoryLabel: "카테고리별",
     breakdownMemberLabel: "구성원별",
     categoryEmpty: "지출 내역이 없어 카테고리 차트를 표시하지 않아요.",
@@ -23,6 +24,8 @@ export const MonthlyInsightChartCopy = {
   } as const;
 
 export const MonthlyInsightChartLayout = {
+  nativeTrendHeight: 200,
+  nativePieMinimumIOSVersion: 17,
   donutLegendDotSize: 8,
   donutLegendGap: 2,
   donutLegendInactiveOpacity: 0.6,

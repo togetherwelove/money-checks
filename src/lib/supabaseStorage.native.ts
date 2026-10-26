@@ -1,4 +1,4 @@
-import * as SecureStore from "expo-secure-store";
+import { foregroundSecureStore as SecureStore } from "./foregroundSecureStore.native";
 
 import {
   buildChunkManifest,

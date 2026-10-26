@@ -1,16 +1,16 @@
+import { NativeSelectionSheet } from "../NativeSelectionSheet";
 import { AppScrollBehavior } from "../../constants/scroll";
-import { Feather } from "@expo/vector-icons";
+import { Feather } from "../AppIcons";
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import type { ScrollViewInstance } from "react-native";
 import type { LedgerEntryType } from "../../types/ledger";
 import { CategoryTypeTabs } from "./CategoryTypeTabs";
 import { ActionButton } from "../ActionButton";
-import { ModalCloseButton } from "../ModalCloseButton";
 
 import { CategoryCustomizerCopy } from "../../constants/categoryCustomizer";
 import {
   CATEGORY_MANAGE_ACTION_BUTTON_HEIGHT,
-  CATEGORY_MANAGE_MODAL_MAX_HEIGHT,
   CATEGORY_MANAGE_MOVE_BUTTON_ICON_SIZE,
   CATEGORY_MANAGE_ROW_GAP,
   CATEGORY_MANAGE_ROW_HEIGHT,
@@ -56,7 +56,7 @@ export function CategoryManageModal({
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
     categories[0]?.id ?? null,
   );
-  const listScrollRef = useRef<ScrollView | null>(null);
+  const listScrollRef = useRef<ScrollViewInstance | null>(null);
   const listViewportHeightRef = useRef(0);
   const pendingScrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wasOpenRef = useRef(false);
@@ -178,18 +178,6 @@ export function CategoryManageModal({
     onClose();
   }, [clearPendingCategoryScroll, onClose]);
 
-  const handleRequestClose = useCallback(() => {
-    closeWithoutSaving();
-  }, [closeWithoutSaving]);
-
-  const handlePressBackdrop = useCallback(() => {
-    closeWithoutSaving();
-  }, [closeWithoutSaving]);
-
-  const handlePressClose = useCallback(() => {
-    closeWithoutSaving();
-  }, [closeWithoutSaving]);
-
   const handlePressSave = useCallback(() => {
     saveCategoryOrder();
   }, [saveCategoryOrder]);
@@ -210,19 +198,9 @@ export function CategoryManageModal({
     [clearPendingCategoryScroll],
   );
 
-  if (!isOpen) {
-    return null;
-  }
-
   return (
-    <Modal animationType="fade" onRequestClose={handleRequestClose} transparent visible>
-      <View style={styles.overlay}>
-        <Pressable onPress={handlePressBackdrop} style={styles.backdrop} />
-        <View style={styles.sheet}>
-          <View style={styles.header}>
-            <Text style={styles.title}>{title}</Text>
-            <ModalCloseButton disabled={saving} onPress={handlePressClose} />
-          </View>
+    <NativeSelectionSheet isOpen={isOpen} onClose={closeWithoutSaving} dismissible={!saving} title={title}>
+      <View style={styles.sheet}>
           <CategoryTypeTabs value={entryType} disabled={saving || isLoading} onChange={changeEntryType} />
           <ActionButton label={CategoryCustomizerCopy.addAccessibilityLabel} onPress={onAdd} disabled={saving || isLoading} size="inline" />
           <ScrollView {...AppScrollBehavior}
@@ -267,10 +245,9 @@ export function CategoryManageModal({
               저장
             </Text>
           </Pressable>
-        </View>
       </View>
       {creationModal}
-    </Modal>
+    </NativeSelectionSheet>
   );
 }
 
@@ -358,33 +335,7 @@ function CategoryMoveButton({
 
 const styles = StyleSheet.create({
   saveError: { ...SupportingTextStyle, color: AppColors.expense },
-  overlay: {
-    flex: 1,
-    justifyContent: "center",
-    backgroundColor: AppColors.overlay,
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  sheet: {
-    marginHorizontal: 16,
-    maxHeight: CATEGORY_MANAGE_MODAL_MAX_HEIGHT,
-    padding: 16,
-    gap: 14,
-    borderRadius: AppLayout.cardRadius,
-    backgroundColor: AppColors.surface,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  title: {
-    color: AppColors.text,
-    fontSize: 16,
-    fontWeight: "800",
-  },
+  sheet: { flex: 1, padding: AppLayout.cardContentPadding, gap: AppLayout.cardGap },
   listContent: {
     gap: CATEGORY_MANAGE_ROW_GAP,
   },

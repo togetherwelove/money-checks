@@ -1,5 +1,8 @@
+import { useNativeAdCache } from "../hooks/useNativeAdCache";
+import { NativeAdCacheConfig } from "../constants/nativeAdCache";
 import { type ReactNode, useDeferredValue, useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   FlatList,
   Pressable,
   RefreshControl,
@@ -23,7 +26,6 @@ import { CATEGORY_OPTIONS } from "../constants/categories";
 import { AppColors } from "../constants/colors";
 import { RefreshableScrollBehavior } from "../constants/scroll";
 import { AppLayout } from "../constants/layout";
-import type { BusyTaskTracker } from "../hooks/ledgerScreenState/types";
 import { useAllLedgerEntries } from "../hooks/useAllLedgerEntries";
 import { useLedgerCategories } from "../hooks/useLedgerCategories";
 import { useLedgerCategoryIconMap } from "../hooks/useLedgerCategoryIconMap";
@@ -41,22 +43,23 @@ import type { InstallmentPrepaymentHandler } from "../types/installmentTransacti
 type AllEntriesScreenProps = {
   activeBook: LedgerBook | null;
   onDeleteEntry: LedgerEntryDeleteHandler;
+  onDuplicateEntry: (entry: LedgerEntry) => void;
   onEditEntry: (entry: LedgerEntry) => void;
   onPrepayInstallmentEntry: InstallmentPrepaymentHandler;
   screenTitle: ReactNode;
   showsNativeAds: boolean;
-  trackBlockingTask: BusyTaskTracker;
 };
 
 export function AllEntriesScreen({
   activeBook,
   onDeleteEntry,
+  onDuplicateEntry,
   onEditEntry,
   onPrepayInstallmentEntry,
   screenTitle,
   showsNativeAds,
-  trackBlockingTask,
 }: AllEntriesScreenProps) {
+  const nativeAdCache = useNativeAdCache(showsNativeAds);
   const [searchQuery, setSearchQuery] = useState("");
   const [entryTypeFilter, setEntryTypeFilter] = useState<AllEntriesEntryTypeFilter>(
     AllEntriesEntryTypeFilters.all,
@@ -99,7 +102,6 @@ export function AllEntriesScreen({
     activeBookId,
     selectedCategoryIds: queryCategoryIds,
     searchQuery: deferredSearchQuery,
-    trackBlockingTask,
   });
   const hasAppliedFilters =
     deferredSearchQuery.length > 0 ||
@@ -148,6 +150,7 @@ export function AllEntriesScreen({
         </View>
       </View>
       <FlatList
+        windowSize={NativeAdCacheConfig.listWindowSize}
         {...RefreshableScrollBehavior}
         contentContainerStyle={entries.length === 0 ? styles.emptyContent : styles.listContent}
         data={feedItems}
@@ -174,8 +177,11 @@ export function AllEntriesScreen({
               <Text style={styles.errorRetryLabel}>재시도</Text>
             </Pressable>
           </View>
-        ) : null}
-        ListEmptyComponent={
+        ) : undefined}
+        ListEmptyComponent={isRefreshing ? <View style={styles.emptyState}>
+          <ActivityIndicator color={AppColors.primary} accessibilityLabel={AllEntriesFilterCopy.loadingLabel} />
+          <Text style={styles.emptyHint}>{AllEntriesFilterCopy.loadingLabel}</Text>
+        </View> :
           <View style={styles.emptyState}>
             <Text style={styles.emptyTitle}>
               {hasAppliedFilters
@@ -218,7 +224,7 @@ export function AllEntriesScreen({
         }
         renderItem={({ item }) =>
           item.type === "native-ad" ? (
-            <AppNativeAdCard slotIndex={item.slotIndex} />
+            <AppNativeAdCard cache={nativeAdCache} slotIndex={item.slotIndex} />
           ) : (
             <LedgerEntryListItem
               categoryIconByKey={categoryIconByKey}
@@ -227,6 +233,7 @@ export function AllEntriesScreen({
               onDeleteEntry={(entry) => {
                 showLedgerEntryDeleteAlert(entry, handleDeleteEntry);
               }}
+              onDuplicateEntry={onDuplicateEntry}
               onEditEntry={onEditEntry}
               onPrepayInstallmentEntry={(entry) => {
                 void handlePrepayInstallmentEntry(entry);

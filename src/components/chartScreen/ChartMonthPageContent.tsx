@@ -12,14 +12,12 @@ type ChartMonthPageContentProps = {
   activeBookId?: string | null;
   month: ChartMonthData;
   screenTitle: ReactNode;
-  showsBannerAd: boolean;
 };
 
 export function ChartMonthPageContent({
   activeBookId = null,
   month,
   screenTitle,
-  showsBannerAd,
 }: ChartMonthPageContentProps) {
   return (
     <View style={styles.page}>
@@ -34,7 +32,6 @@ export function ChartMonthPageContent({
           activeBookId={activeBookId}
           insights={month.monthlyInsights}
           scope={month.scope}
-          showsBannerAd={showsBannerAd}
         />
         <AppFooterContentInset />
       </ScrollView>

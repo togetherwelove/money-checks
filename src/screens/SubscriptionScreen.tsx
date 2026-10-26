@@ -1,6 +1,4 @@
-import { Feather } from "@expo/vector-icons";
-import { useState } from "react";
-import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import { Linking, StyleSheet, Text, View } from "react-native";
 
 import { ActionButton } from "../components/ActionButton";
 import { AppFooterContentInset } from "../components/AppFooterContentInset";
@@ -20,7 +18,6 @@ import {
   CompactLabelTextStyle,
   ListGroupStyle,
   ResponsivePageContentStyle,
-  ScreenTitleTextStyle,
 } from "../constants/uiStyles";
 import { showNativeToast } from "../lib/nativeToast";
 
@@ -28,6 +25,7 @@ type SubscriptionScreenProps = {
   hasAvailablePlusPackage: boolean;
   isPlusActive: boolean;
   onPurchasePlus: () => Promise<void>;
+  onRestorePurchases: () => Promise<void>;
   plusPriceLabel: string | null;
 };
 
@@ -35,10 +33,10 @@ export function SubscriptionScreen({
   hasAvailablePlusPackage,
   isPlusActive,
   onPurchasePlus,
+  onRestorePurchases,
   plusPriceLabel,
 }: SubscriptionScreenProps) {
-  const [isPurchaseInfoExpanded, setIsPurchaseInfoExpanded] = useState(false);
-  const resolvedPlusPriceLabel = plusPriceLabel ?? SubscriptionMessages.heroPriceLabel;
+  const resolvedPlusPriceLabel = plusPriceLabel ?? SubscriptionMessages.priceUnavailable;
   const handleOpenLegalLink = async (url: string) => {
     try {
       await Linking.openURL(url);
@@ -52,10 +50,6 @@ export function SubscriptionScreen({
       <KeyboardAwareScrollView contentContainerStyle={styles.content} style={styles.scrollView}>
         <View style={styles.salesContent}>
           <View style={styles.copySection}>
-            <Text {...CompactTextProps} accessibilityRole="header" style={styles.brandTitle}>
-              {SubscriptionMessages.heroBrandName}{" "}
-              <Text style={styles.brandPlus}>{SubscriptionMessages.heroBrandPlus}</Text>
-            </Text>
             <Text {...AppTextBreakProps} style={styles.description}>
               {SubscriptionMessages.heroDescription}
             </Text>
@@ -76,7 +70,7 @@ export function SubscriptionScreen({
                   {SubscriptionMessages.plusSummary}
                 </Text>
               </View>
-            ) : hasAvailablePlusPackage ? (
+            ) : hasAvailablePlusPackage && plusPriceLabel ? (
               <ActionButton
                 fullWidth
                 label={SubscriptionMessages.purchaseAction}
@@ -97,57 +91,47 @@ export function SubscriptionScreen({
             <Text style={styles.priceDetailLabel}>{resolvedPlusPriceLabel}</Text>
           </View>
           <View style={styles.detailSection}>
-            <Pressable
-              onPress={() => setIsPurchaseInfoExpanded((currentValue) => !currentValue)}
-              style={styles.detailToggle}
-            >
-              <Text {...CompactTextProps} style={styles.detailToggleLabel}>
-                {isPurchaseInfoExpanded ? "접기" : "자세히보기"}
-              </Text>
-              <Feather
-                color={AppColors.mutedStrongText}
-                name={isPurchaseInfoExpanded ? "chevron-up" : "chevron-down"}
-                size={16}
-              />
-            </Pressable>
-            {isPurchaseInfoExpanded ? (
-              <View style={styles.purchaseInfoCard}>
-                <View style={styles.purchaseInfoRow}>
-                  <Text style={styles.purchaseInfoLabel}>
-                    {SubscriptionMessages.purchaseInfoNameLabel}
-                  </Text>
-                  <Text style={styles.purchaseInfoValue}>{SubscriptionMessages.screenTitle}</Text>
-                </View>
-                <View style={styles.purchaseInfoRow}>
-                  <Text style={styles.purchaseInfoLabel}>
-                    {SubscriptionMessages.purchaseInfoPeriodLabel}
-                  </Text>
-                  <Text style={styles.purchaseInfoValue}>
-                    {SubscriptionMessages.purchaseInfoDefaultPeriodValue}
-                  </Text>
-                </View>
-                <View style={[styles.purchaseInfoRow, styles.purchaseInfoLastRow]}>
-                  <Text style={styles.purchaseInfoLabel}>
-                    {SubscriptionMessages.purchaseInfoPriceLabel}
-                  </Text>
-                  <Text style={styles.purchaseInfoValue}>{resolvedPlusPriceLabel}</Text>
-                </View>
-                <View style={styles.legalLinkRow}>
-                  <TextLinkButton
-                    label="개인정보 처리방침"
-                    onPress={() => {
-                      void handleOpenLegalLink(LegalLinks.privacyPolicyUrl);
-                    }}
-                  />
-                  <TextLinkButton
-                    label="이용약관"
-                    onPress={() => {
-                      void handleOpenLegalLink(LegalLinks.termsOfUseUrl);
-                    }}
-                  />
-                </View>
+            <View style={styles.purchaseInfoCard}>
+              <View style={styles.purchaseInfoRow}>
+                <Text style={styles.purchaseInfoLabel}>
+                  {SubscriptionMessages.purchaseInfoNameLabel}
+                </Text>
+                <Text style={styles.purchaseInfoValue}>{SubscriptionMessages.screenTitle}</Text>
               </View>
-            ) : null}
+              <View style={styles.purchaseInfoRow}>
+                <Text style={styles.purchaseInfoLabel}>
+                  {SubscriptionMessages.purchaseInfoPeriodLabel}
+                </Text>
+                <Text style={styles.purchaseInfoValue}>
+                  {SubscriptionMessages.purchaseInfoDefaultPeriodValue}
+                </Text>
+              </View>
+              <View style={[styles.purchaseInfoRow, styles.purchaseInfoLastRow]}>
+                <Text style={styles.purchaseInfoLabel}>
+                  {SubscriptionMessages.purchaseInfoPriceLabel}
+                </Text>
+                <Text style={styles.purchaseInfoValue}>{resolvedPlusPriceLabel}</Text>
+              </View>
+              <Text style={styles.renewalNotice}>{SubscriptionMessages.renewalNotice}</Text>
+              <View style={styles.legalLinkRow}>
+                <TextLinkButton
+                  label={SubscriptionMessages.restoreAction}
+                  onPress={() => { void onRestorePurchases(); }}
+                />
+                <TextLinkButton
+                  label="개인정보 처리방침"
+                  onPress={() => {
+                    void handleOpenLegalLink(LegalLinks.privacyPolicyUrl);
+                  }}
+                />
+                <TextLinkButton
+                  label="이용약관"
+                  onPress={() => {
+                    void handleOpenLegalLink(LegalLinks.termsOfUseUrl);
+                  }}
+                />
+              </View>
+            </View>
           </View>
         </View>
         <AppFooterContentInset />
@@ -183,16 +167,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: SubscriptionHeroUi.brandDescriptionGap,
   },
-  brandTitle: {
-    ...ScreenTitleTextStyle,
-    fontSize: SubscriptionHeroUi.brandFontSize,
-    lineHeight: SubscriptionHeroUi.brandLineHeight,
-    textAlign: "center",
-  },
-  brandPlus: {
-    ...BrandPlusTextStyle,
-    fontSize: SubscriptionHeroUi.brandFontSize,
-  },
   benefitSection: {
     width: "100%",
     alignItems: "center",
@@ -202,17 +176,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
   },
-  detailToggle: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 4,
-  },
-  detailToggleLabel: {
+  renewalNotice: {
     color: AppColors.mutedStrongText,
     fontSize: 13,
     lineHeight: 18,
-    fontWeight: "700",
+    padding: AppLayout.cardContentPadding,
   },
   purchaseInfoCard: {
     ...ListGroupStyle,

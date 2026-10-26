@@ -1,10 +1,11 @@
-import { Feather } from "@expo/vector-icons";
+import { Feather } from "./AppIcons";
 import { type MenuAction, MenuView, type NativeActionEvent } from "@react-native-menu/menu";
 import { useRef } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppColors } from "../constants/colors";
 import { EntryRegistrationCopy } from "../constants/entryRegistration";
+import { EntryComposerCopy } from "../constants/entryComposer";
 import { InstallmentStatuses } from "../constants/installments";
 import { AppLayout } from "../constants/layout";
 import { AppMessages } from "../constants/messages";
@@ -20,12 +21,14 @@ type LedgerEntryListItemProps = {
   categoryLabelById: Map<string, string>;
   entry: LedgerEntry;
   onDeleteEntry: (entry: LedgerEntry) => void | Promise<void>;
+  onDuplicateEntry: (entry: LedgerEntry) => void;
   onEditEntry: (entry: LedgerEntry) => void;
   onPrepayInstallmentEntry?: (entry: LedgerEntry) => unknown;
   showsDate?: boolean;
 };
 
 const LedgerEntryMenuAction = {
+  duplicate: "duplicate-entry",
   delete: "delete-entry",
   prepayInstallment: "prepay-installment",
 } as const;
@@ -35,6 +38,7 @@ const CATEGORY_ICON_SIZE = 16;
 const ENTRY_ATTACHMENT_ICON_SIZE = 12;
 const ENTRY_ROW_GAP = 8;
 const LEDGER_ENTRY_DELETE_MENU_ICON_NAME = "trash";
+const LEDGER_ENTRY_DUPLICATE_MENU_ICON_NAME = "doc.on.doc";
 const LEDGER_ENTRY_PREPAY_MENU_ICON_NAME = "creditcard";
 const LEDGER_ENTRY_MENU_PRESS_SUPPRESSION_MS = 800;
 const deleteLedgerEntryMenuAction: MenuAction = {
@@ -50,8 +54,15 @@ const prepayInstallmentMenuAction: MenuAction = {
   imageColor: AppColors.primary,
   title: EntryRegistrationCopy.installmentPrepaymentAction,
 };
-const ledgerEntryMenuActions: MenuAction[] = [deleteLedgerEntryMenuAction];
+const duplicateLedgerEntryMenuAction: MenuAction = {
+  id: LedgerEntryMenuAction.duplicate,
+  image: LEDGER_ENTRY_DUPLICATE_MENU_ICON_NAME,
+  imageColor: AppColors.text,
+  title: EntryComposerCopy.duplicate,
+};
+const ledgerEntryMenuActions: MenuAction[] = [duplicateLedgerEntryMenuAction, deleteLedgerEntryMenuAction];
 const installmentLedgerEntryMenuActions: MenuAction[] = [
+  duplicateLedgerEntryMenuAction,
   prepayInstallmentMenuAction,
   deleteLedgerEntryMenuAction,
 ];
@@ -66,6 +77,7 @@ export function LedgerEntryListItem({
   categoryLabelById,
   entry,
   onDeleteEntry,
+  onDuplicateEntry,
   onEditEntry,
   onPrepayInstallmentEntry,
   showsDate = false,
@@ -174,6 +186,11 @@ export function LedgerEntryListItem({
 
   function handlePressMenuAction(event: NativeActionEvent) {
     markMenuInteraction();
+
+    if (event.nativeEvent.event === LedgerEntryMenuAction.duplicate) {
+      onDuplicateEntry(entry);
+      return;
+    }
 
     if (event.nativeEvent.event === LedgerEntryMenuAction.delete) {
       onDeleteEntry(entry);

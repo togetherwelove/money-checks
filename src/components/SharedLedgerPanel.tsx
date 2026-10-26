@@ -43,6 +43,7 @@ import { SharedLedgerJoinCard } from "./sharedLedgerPanel/SharedLedgerJoinCard";
 import { sharedLedgerPanelStyles as styles } from "./sharedLedgerPanel/sharedLedgerPanelStyles";
 
 type SharedLedgerPanelProps = {
+  badgedBookIds?: readonly string[];
   accessibleBooks: AccessibleLedgerBook[];
   activeBook: LedgerBook | null;
   currentUserId: string;
@@ -82,6 +83,7 @@ type SharedLedgerPanelProps = {
 };
 
 export function SharedLedgerPanel({
+  badgedBookIds,
   accessibleBooks,
   activeBook,
   currentUserId,
@@ -113,7 +115,7 @@ export function SharedLedgerPanel({
     members.find((member) => member.userId === currentUserId)?.role ??
     (activeBook?.ownerId === currentUserId ? "owner" : null);
   const canEditBookName =
-    !isReadOnlyDueToPlanLimit && (currentMemberRole === "owner" || currentMemberRole === "editor");
+    !isReadOnlyDueToPlanLimit && activeBook?.ownerId === currentUserId;
   const {
     bookNameInput,
     canEditBookName: canEditDisplayedBookName,
@@ -296,6 +298,7 @@ export function SharedLedgerPanel({
   return (
     <View style={styles.panel}>
       <LedgerBookManagementCard
+        badgedBookIds={badgedBookIds}
         accessibleBooks={accessibleBooks}
         activeBook={activeBook}
         canLeaveSharedBook={canLeaveSharedBook}

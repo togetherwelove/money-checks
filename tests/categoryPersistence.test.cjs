@@ -114,7 +114,7 @@ for (const entryType of ['expense', 'income']) test(`settings ${entryType} form 
     '../../constants/appSettings':{AppSettingsCopy:{},AppSettingsUi:{}},
     '../../constants/appSettingsStyles':{AppSettingsRowStyles:{}},
     './SettingsCategoryOrderModal':{SettingsCategoryOrderModal:'SettingsCategoryOrderModal'},
-    '../../constants/colors':{AppColors:{}},'@expo/vector-icons':{Feather:'Feather'},
+    '../../constants/colors':{AppColors:{}},'../AppIcons':{Feather:'Feather'},
     '../../constants/categories':{CATEGORY_OPTIONS:{expense:[{id:'base',label:'기본'}],income:[{id:'base',label:'기본'}]}},
     '../../constants/layout':{AppLayout:{}},'../../constants/uiStyles':{},'../../lib/customCategories':custom,
     '../../hooks/useCustomCategories':{useCustomCategories:(type,book)=>{scope=[type,book];return {customCategories:[category('기존')],systemCategoryLabelOverrides:{base:'수정한 기본'},saveCustomCategories:async(next)=>{saved=next;saveCount++;return saveResult;}};}},
@@ -152,9 +152,10 @@ test('category manager tabs protect unsaved order and disable changes during sav
   const jsx=(type,props)=>({type,props});
   const props={entryType:'expense',onChangeEntryType:value=>changes.push(value),onAdd:()=>added++,creationModal:{type:'CreateModal',props:{}},categories:[category('first'),category('second')],isOpen:true,onClose:()=>{},onChangeOrder:()=>save.promise};
   const {CategoryManageModal}=load('src/components/categorySelector/CategoryManageModal.tsx',{
+    '../NativeSelectionSheet': { NativeSelectionSheet: 'Sheet' },
     react:h.react,'react/jsx-runtime':{jsx,jsxs:jsx},
     'react-native':{Modal:'Modal',Pressable:'Pressable',ScrollView:'ScrollView',Text:'Text',View:'View',StyleSheet:{create:s=>s},Alert:{alert:(...args)=>alerts.push(args)}},
-    '@expo/vector-icons':{Feather:'Feather'},'./CategoryTypeTabs':{CategoryTypeTabs:'Tabs'},'../ActionButton':{ActionButton:'ActionButton'},'../ModalCloseButton':{ModalCloseButton:'ModalCloseButton'},
+    '../AppIcons':{Feather:'Feather'},'./CategoryTypeTabs':{CategoryTypeTabs:'Tabs'},'../ActionButton':{ActionButton:'ActionButton'},'../ModalCloseButton':{ModalCloseButton:'ModalCloseButton'},
     '../../constants/scroll':{},'../../constants/categoryCustomizer':load('src/constants/categoryCustomizer.ts',{}),
     '../../constants/categorySelector':{},'../../constants/colors':{AppColors:{}},'../../constants/layout':{AppLayout:{}},'../../constants/uiStyles':{},
   },{setTimeout:()=>1,clearTimeout:()=>{}});

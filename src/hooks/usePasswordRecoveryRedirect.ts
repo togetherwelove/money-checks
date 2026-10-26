@@ -23,7 +23,7 @@ export function usePasswordRecoveryRedirect({
       onRecoverySession();
     };
 
-    void Linking.getInitialURL().then(handlePasswordRecoveryRedirect);
+    void Linking.getInitialURL().then((url) => handlePasswordRecoveryRedirect(url ?? null));
     const linkingSubscription = Linking.addEventListener("url", ({ url }) => {
       void handlePasswordRecoveryRedirect(url);
     });

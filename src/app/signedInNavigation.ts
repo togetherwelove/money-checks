@@ -1,6 +1,18 @@
 import type { LedgerAppScreen } from "../types/app";
+import type { NavigatorScreenParams } from "@react-navigation/native";
 
-export type SignedInStackScreen = Exclude<LedgerAppScreen, "entry">;
+export type SignedInStackScreen = Exclude<LedgerAppScreen, "entry" | "share">;
+export type PrimaryStackScreen = "calendar" | "all-entries" | "charts";
+export const PrimaryTabRoutes = {
+  calendar: "calendar-tab",
+  "all-entries": "entries-tab",
+  charts: "charts-tab",
+} as const;
+export type SignedInTabParamList = {
+  "calendar-tab": NavigatorScreenParams<SignedInStackParamList> | undefined;
+  "entries-tab": NavigatorScreenParams<SignedInStackParamList> | undefined;
+  "charts-tab": NavigatorScreenParams<SignedInStackParamList> | undefined;
+};
 
 export type SignedInStackParamList = {
   account: undefined;
@@ -11,8 +23,8 @@ export type SignedInStackParamList = {
   "contact-support": undefined;
   "entry-sheet": { autoFocusContent?: boolean } | undefined;
   help: undefined;
+  "help-faq": undefined;
   "notification-settings": undefined;
-  share: undefined;
   subscription: undefined;
   support: undefined;
 };
@@ -30,8 +42,8 @@ export function isSignedInStackScreen(value: string | undefined): value is Signe
     value === "charts" ||
     value === "contact-support" ||
     value === "help" ||
+    value === "help-faq" ||
     value === "notification-settings" ||
-    value === "share" ||
     value === "subscription" ||
     value === "support"
   );

@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   gridLayer: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   gridLine: {
     position: "absolute",

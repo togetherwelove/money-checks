@@ -11,6 +11,7 @@ function load(file, dependencies) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
   }).outputText, { exports, require(name) {
     if (name === 'react/jsx-runtime') return { jsx, jsxs: jsx };
+    if (name.endsWith('/ComposerBlockingModal')) return { ComposerBlockingModal: 'Modal' };
     if (name in dependencies) return dependencies[name];
     throw Error(`Missing dependency: ${name}`);
   }});
@@ -26,7 +27,7 @@ native.StyleSheet = { create: value => value };
 
 test('common close control exposes an accessible dismiss action and native disabled state', () => {
   const { ModalCloseButton } = load('src/components/ModalCloseButton.tsx', {
-    '@expo/vector-icons': { Feather: 'Feather' }, 'react-native': native,
+    './AppIcons': { Feather: 'Feather' }, 'react-native': native,
     '../constants/colors': { AppColors: {} }, '../constants/modal': modalUi,
   });
   let closed = 0;

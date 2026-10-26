@@ -1,9 +1,9 @@
+import { NativePickerSheet } from "../NativePickerSheet";
 import { AppScrollBehavior } from "../../constants/scroll";
-import { Feather } from "@expo/vector-icons";
-import { useEffect, useRef } from "react";
+import { Feather } from "../AppIcons";
+import { useRef } from "react";
 import {
   Keyboard,
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,6 +11,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import type { TextInputInstance } from "react-native";
 
 import { CATEGORY_ICON_PICKER_OPTIONS } from "../../constants/categories";
 import {
@@ -20,11 +21,8 @@ import {
 import {
   CATEGORY_CREATE_MODAL_ICON_GAP,
   CATEGORY_CREATE_MODAL_ICON_SIZE,
-  CATEGORY_CREATE_MODAL_INPUT_FOCUS_DELAY_MS,
-  CATEGORY_CREATE_MODAL_MAX_HEIGHT,
 } from "../../constants/categorySelector";
 import { AppColors } from "../../constants/colors";
-import { AppLayout } from "../../constants/layout";
 import {
   FormInputTextStyle,
   FormLabelTextStyle,
@@ -33,7 +31,6 @@ import {
 } from "../../constants/uiStyles";
 import type { CategoryIconName } from "../../types/category";
 import { ActionButton } from "../ActionButton";
-import { ModalCloseButton } from "../ModalCloseButton";
 
 type CategoryCreateModalProps = {
   actionLabel?: string;
@@ -62,36 +59,11 @@ export function CategoryCreateModal({
   onChangeLabel,
   onSubmit,
 }: CategoryCreateModalProps) {
-  const inputRef = useRef<TextInput>(null);
-
-  useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
-    const focusTimer = setTimeout(() => {
-      inputRef.current?.focus();
-    }, CATEGORY_CREATE_MODAL_INPUT_FOCUS_DELAY_MS);
-
-    return () => {
-      clearTimeout(focusTimer);
-    };
-  }, [isOpen]);
-
-  if (!isOpen) {
-    return null;
-  }
+  const inputRef = useRef<TextInputInstance>(null);
 
   return (
-    <Modal animationType="fade" onRequestClose={handleCancel} transparent visible>
-      <View style={styles.overlay}>
-        <Pressable onPress={handleCancel} style={styles.backdrop} />
-        <View style={styles.sheet}>
-          <View style={styles.header}>
-            <Text style={styles.title}>{title}</Text>
-            <ModalCloseButton disabled={isBusy} onPress={handleCancel} />
-          </View>
-
+    <NativePickerSheet isOpen={isOpen} onClose={handleCancel} dismissible={!isBusy} title={title}
+      onShow={() => inputRef.current?.focus()}>
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>{CategoryCustomizerCopy.createIconLabel}</Text>
             <ScrollView {...AppScrollBehavior}
@@ -148,9 +120,7 @@ export function CategoryCreateModal({
               variant="primary"
             />
           </View>
-        </View>
-      </View>
-    </Modal>
+    </NativePickerSheet>
   );
 
   function handleCancel() {
@@ -167,33 +137,6 @@ export function CategoryCreateModal({
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: "center",
-    backgroundColor: AppColors.overlay,
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  sheet: {
-    marginHorizontal: 16,
-    maxHeight: CATEGORY_CREATE_MODAL_MAX_HEIGHT,
-    padding: 16,
-    gap: 14,
-    borderRadius: AppLayout.cardRadius,
-    backgroundColor: AppColors.surface,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  title: {
-    color: AppColors.text,
-    fontSize: 16,
-    fontWeight: "800",
-  },
   fieldGroup: {
     gap: 8,
   },

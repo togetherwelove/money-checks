@@ -1,5 +1,5 @@
 import { AppScrollBehavior } from "../constants/scroll";
-import { Feather } from "@expo/vector-icons";
+import { Feather } from "./AppIcons";
 import { useRef, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 

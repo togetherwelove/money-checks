@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { StyleSheet, Text, TextInput, View } from "react-native";
 
 import { AppColors } from "../../constants/colors";
-import { AppLayout } from "../../constants/layout";
+import { AccountDeletionMessages } from "../../constants/accountDeletion";
 import {
   CompactLabelTextStyle,
   FormInputTextStyle,
@@ -10,7 +10,7 @@ import {
 } from "../../constants/uiStyles";
 import { deleteOwnAccount } from "../../lib/auth/deleteAccount";
 import { ActionButton } from "../ActionButton";
-import { ModalCloseButton } from "../ModalCloseButton";
+import { NativePickerSheet } from "../NativePickerSheet";
 
 type DeleteAccountModalProps = {
   isOpen: boolean;
@@ -50,20 +50,8 @@ export function DeleteAccountModal({ isOpen, onClose }: DeleteAccountModalProps)
     setIsDeleting(false);
   };
 
-  if (!isOpen) {
-    return null;
-  }
-
   return (
-    <Modal animationType="fade" onRequestClose={handleClose} transparent visible>
-      <View style={styles.overlay}>
-        <Pressable onPress={handleClose} style={styles.backdrop} />
-        <View style={styles.sheet}>
-          <View style={styles.sheetContent}>
-            <View style={styles.header}>
-              <Text style={styles.title}>계정을 삭제할까요?</Text>
-              <ModalCloseButton disabled={isDeleting} onPress={handleClose} />
-            </View>
+    <NativePickerSheet isOpen={isOpen} onClose={handleClose} dismissible={!isDeleting} title={AccountDeletionMessages.confirmTitle}>
             <Text style={styles.warning}>
               계정 삭제 시 프로필, 가계부 기록, 참여 정보가 완전히 삭제돼요. 이 작업은 되돌릴 수
               없어요.
@@ -92,10 +80,7 @@ export function DeleteAccountModal({ isOpen, onClose }: DeleteAccountModalProps)
                 variant="destructive"
               />
             </View>
-          </View>
-        </View>
-      </View>
-    </Modal>
+    </NativePickerSheet>
   );
 }
 
@@ -108,35 +93,6 @@ function resolveDeleteErrorMessage(error: unknown): string {
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: "center",
-    backgroundColor: AppColors.overlay,
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  sheet: {
-    marginHorizontal: AppLayout.screenPadding * 2,
-    borderRadius: AppLayout.cardRadius,
-    overflow: "hidden",
-    backgroundColor: AppColors.surface,
-  },
-  sheetContent: {
-    padding: AppLayout.screenPadding * 2,
-    gap: AppLayout.cardGap,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  title: {
-    color: AppColors.text,
-    fontSize: 16,
-    fontWeight: "800",
-  },
   warning: {
     color: AppColors.expense,
     fontSize: 12,

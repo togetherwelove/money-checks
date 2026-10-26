@@ -19,6 +19,31 @@ function evaluate(source, mocks = {}, globals = {}) {
 }
 const { SubscriptionMessages, SubscriptionTiers } = evaluate(fs.readFileSync(path.join(root, "src/constants/subscription.ts"), "utf8"));
 
+test('paywall shows renewal disclosures and restore without expanding, and never advertises a fallback price', () => {
+  const jsx = (type, props) => ({ type, props });
+  const { SubscriptionScreen } = evaluate(fs.readFileSync(path.join(root, "src/screens/SubscriptionScreen.tsx"), "utf8"), {
+    "react/jsx-runtime": { jsx, jsxs: jsx },
+    "react-native": { View: "View", Text: "Text", StyleSheet: { create: value => value } },
+    "../constants/subscription": { SubscriptionMessages, SubscriptionHeroUi: {} },
+  });
+  function flatten(node) {
+    if (Array.isArray(node)) return node.flatMap(flatten);
+    if (!node?.props) return [];
+    return [node, ...flatten(node.props.children)];
+  }
+  let restored = 0;
+  const props = { hasAvailablePlusPackage: true, isPlusActive: false,
+    onPurchasePlus: async () => {}, onRestorePurchases: async () => { restored++; }, plusPriceLabel: '₩1,000/월' };
+  const nodes = flatten(SubscriptionScreen(props));
+  assert.ok(nodes.some(node => node.props.children === SubscriptionMessages.renewalNotice));
+  assert.ok(nodes.some(node => node.props.children === SubscriptionMessages.purchaseInfoDefaultPeriodValue));
+  nodes.find(node => node.props.label === SubscriptionMessages.restoreAction).props.onPress();
+  assert.equal(restored, 1);
+  const unavailable = flatten(SubscriptionScreen({ ...props, plusPriceLabel: null }));
+  assert.equal(unavailable.some(node => node.props.label === SubscriptionMessages.purchaseAction), false);
+  assert.equal(unavailable.some(node => node.props.children === SubscriptionMessages.heroPriceLabel), false);
+});
+
 for (const tier of [SubscriptionTiers.free, SubscriptionTiers.plus]) {
   test(`account ${tier} always exposes restore and keeps Plus management`, () => {
     const jsx = (type, props) => ({ type, props });

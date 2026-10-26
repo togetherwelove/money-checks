@@ -119,7 +119,7 @@ test('workbook has summary first, separate filters, frozen headers, numeric date
   if (process.env.ANNUAL_REPORT_SAMPLE_PATH) require('node:fs').writeFileSync(process.env.ANNUAL_REPORT_SAMPLE_PATH, bytes);
 });
 
-function downloadEnvironment({ available = true, accept = true, failShare = false } = {}) {
+function downloadEnvironment({ available = true, accept = true, failShare = false, failWrite = false } = {}) {
   const alerts = [], toasts = [], files = [];
   let ads = 0, shares = 0;
   const local = modules({
@@ -128,8 +128,8 @@ function downloadEnvironment({ available = true, accept = true, failShare = fals
       if (accept === 'dismiss') args[3].onDismiss(); else args[2][accept ? 1 : 0].onPress();
     }}}},
     'src/lib/nativeToast.ts': { showNativeToast: message => toasts.push(message) },
-    'expo-sharing': { isAvailableAsync: async () => available, shareAsync: async () => { shares++; if (failShare) throw Error('share failed'); } },
-    'expo-file-system': { Paths: { cache: 'cache' }, File: class { uri = 'cache/report.xlsx'; create() {} write(bytes) { files.push(bytes); } } },
+    'expo-sharing': { isAvailableAsync: async () => available, shareAsync: async () => { assert.equal(files.length, 1, 'file writing must finish before sharing'); shares++; if (failShare) throw Error('share failed'); } },
+    'expo-file-system': { Paths: { cache: 'cache' }, File: class { uri = 'cache/report.xlsx'; create() {} async write(bytes) { await Promise.resolve(); if (failWrite) throw Error('write failed'); files.push(bytes); } } },
   });
   return { alerts, toasts, files, get ads() { return ads; }, get shares() { return shares; },
     run(entries = [entry('a')]) { return local('src/lib/annualReport/downloadAnnualReport.ts').confirmAndDownloadAnnualReport({
@@ -158,5 +158,12 @@ test('empty periods, unavailable sharing and dismissed previews do not advertise
 test('share failure propagates without a success toast', async () => {
   const e = downloadEnvironment({ failShare: true });
   await assert.rejects(e.run(), /share failed/);
+  assert.equal(e.toasts.length, 0);
+});
+
+test('file write failure prevents sharing and success toast', async () => {
+  const e = downloadEnvironment({ failWrite: true });
+  await assert.rejects(e.run(), /write failed/);
+  assert.equal(e.shares, 0);
   assert.equal(e.toasts.length, 0);
 });

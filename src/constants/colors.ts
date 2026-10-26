@@ -24,6 +24,7 @@ export const AppColors = {
   menuOverlay: "rgba(31, 42, 40, 0.08)",
   transparent: "transparent",
   overlay: "rgba(31, 42, 40, 0.18)",
+  loadingPanelOverlay: "rgba(255, 255, 255, 0.88)",
 } as const;
 
 export const AppChartColors = [

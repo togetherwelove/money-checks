@@ -27,7 +27,7 @@ export function MonthlySummary({ balanceAmount, balanceLabel, summaryLabel, tota
     <View style={styles.container}>
       <Text accessibilityRole="header" style={styles.summaryLabel}>{summaryLabel}</Text>
       <View onLayout={(event) => setContentWidth(event.nativeEvent.layout.width)} style={[styles.metrics, stacked && styles.stackedMetrics]}>
-        <SummaryMetric label={CalendarSummaryLabels.expense} value={totalExpense} color={expenseTextColor} stacked={stacked} emphasized />
+        <SummaryMetric label={CalendarSummaryLabels.expense} value={totalExpense} color={expenseTextColor} stacked={stacked} />
         <SummaryMetric label={CalendarSummaryLabels.income} value={totalIncome} color={AppColors.income} stacked={stacked} />
         <SummaryMetric label={CalendarSummaryLabels.balance} value={balanceValue} color={!balanceLabel && balanceAmount > 0 ? AppColors.income : AppColors.text} stacked={stacked} />
       </View>
@@ -35,13 +35,13 @@ export function MonthlySummary({ balanceAmount, balanceLabel, summaryLabel, tota
   );
 }
 
-function SummaryMetric({ label, value, color, stacked, emphasized = false }: {
-  label: string; value: string; color: string; stacked: boolean; emphasized?: boolean;
+function SummaryMetric({ label, value, color, stacked }: {
+  label: string; value: string; color: string; stacked: boolean;
 }) {
   return (
     <View style={[styles.metric, stacked && styles.stackedMetric]}>
       <Text style={styles.metricLabel}>{label}</Text>
-      <Text style={[styles.metricValue, { color }, emphasized && styles.emphasizedValue, stacked && styles.stackedValue]}>{value}</Text>
+      <Text style={[styles.metricValue, { color }, stacked && styles.stackedValue]}>{value}</Text>
     </View>
   );
 }
@@ -55,6 +55,5 @@ const styles = StyleSheet.create({
   stackedMetric: { flex: 0, flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" },
   metricLabel: { flexShrink: 1, color: AppColors.mutedStrongText, fontSize: Ui.labelFontSize, fontWeight: "500" },
   metricValue: { fontSize: Ui.metricValueFontSize, fontWeight: "600", fontVariant: ["tabular-nums"] },
-  emphasizedValue: { fontWeight: "800" },
   stackedValue: { flexShrink: 1, textAlign: "right" },
 });

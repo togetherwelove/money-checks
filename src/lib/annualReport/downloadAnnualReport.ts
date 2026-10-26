@@ -40,7 +40,7 @@ export async function confirmAndDownloadAnnualReport(params: DownloadAnnualRepor
   const reportFile = new File(Paths.cache, fileName);
 
   reportFile.create({ overwrite: true });
-  reportFile.write(workbookBytes);
+  await reportFile.write(workbookBytes);
 
   await Sharing.shareAsync(reportFile.uri, {
       dialogTitle: fileName,

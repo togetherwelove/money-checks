@@ -31,7 +31,7 @@ export function useLedgerWidgetDeepLinks({
       }
     };
 
-    void Linking.getInitialURL().then(handleUrl);
+    void Linking.getInitialURL().then((url) => handleUrl(url ?? null));
     const subscription = Linking.addEventListener("url", ({ url }) => {
       handleUrl(url);
     });

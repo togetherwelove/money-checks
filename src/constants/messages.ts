@@ -1,5 +1,7 @@
 
 export const AppMessages = {
+    ledgerLoading: "내역을 불러오는 중이에요.",
+    allEntriesTitle: "전체 내역",
     brand: "알뜰",
     chartScreenTitle: "차트",
     summaryIncome: "총수입",

@@ -1,77 +1,45 @@
-import { Feather } from "@expo/vector-icons";
+import type { NativeAdCache } from "../lib/ads/nativeAdCache";
+import { Feather } from "./AppIcons";
 import { useEffect, useState } from "react";
-import { Image, Platform, StyleSheet, Text, View } from "react-native";
+import { Image, useWindowDimensions, StyleSheet, Text, View } from "react-native";
 import {
-  NativeAd,
-  NativeAdChoicesPlacement,
+  type NativeAd,
   NativeAdView,
   NativeAsset,
   NativeAssetType,
-  TestIds,
 } from "react-native-google-mobile-ads";
 
-import { AdMobNativeConfig, NativeAdCardUi, NativeAdListConfig } from "../constants/ads";
+import { NativeAdCardUi, NativeAdListConfig } from "../constants/ads";
 import { AppColors } from "../constants/colors";
-import { AppTextBreakProps, OneLineTextFitProps } from "../constants/textLayout";
-import { resolveAdMobAdUnitId } from "../lib/ads/adUnitId";
-import { getAdRequestOptions } from "../lib/ads/adRequestOptions";
-import { logAppError } from "../lib/logAppError";
+import { AppTextBreakProps } from "../constants/textLayout";
+import { resolveNativeAdLayout } from "../lib/ads/nativeAdLayout";
 
 type AppNativeAdCardProps = {
   slotIndex: number;
+  cache: NativeAdCache<NativeAd>;
 };
 
-export function AppNativeAdCard({ slotIndex }: AppNativeAdCardProps) {
+export function AppNativeAdCard({ slotIndex, cache }: AppNativeAdCardProps) {
   const [nativeAd, setNativeAd] = useState<NativeAd | null>(null);
 
+  const { fontScale, width } = useWindowDimensions();
+  const [cardWidth, setCardWidth] = useState(width);
+  const { stacked, reservedHeight } = resolveNativeAdLayout(Math.min(width, cardWidth), fontScale);
   useEffect(() => {
-    let isMounted = true;
-    let activeNativeAd: NativeAd | null = null;
+    let mounted = true;
+    setNativeAd(null);
+    const lease = cache.acquire(slotIndex);
+    void lease.promise.then((ad) => { if (mounted) setNativeAd(ad); });
+    return () => { mounted = false; lease.release(); };
+  }, [cache, slotIndex]);
 
-    const loadNativeAd = async () => {
-      const adUnitId = resolveNativeAdUnitId();
-      if (!adUnitId) {
-        return;
-      }
-
-      try {
-        activeNativeAd = await NativeAd.createForAdRequest(adUnitId, {
-          ...getAdRequestOptions(),
-          adChoicesPlacement: NativeAdChoicesPlacement.TOP_RIGHT,
-        });
-        if (!isMounted) {
-          activeNativeAd.destroy();
-          return;
-        }
-
-        setNativeAd(activeNativeAd);
-      } catch (error) {
-        logAppError("AdMob", error, {
-          platform: Platform.OS,
-          slotIndex,
-          step: "load_native_ad",
-          unitId: adUnitId,
-        });
-      }
-    };
-
-    void loadNativeAd();
-
-    return () => {
-      isMounted = false;
-      activeNativeAd?.destroy();
-    };
-  }, [slotIndex]);
-
-  if (!nativeAd) {
-    return null;
-  }
-
+  const adViewStyle = [styles.nativeAdView, { minHeight: reservedHeight }];
   return (
-    <View style={styles.card}>
-      <NativeAdView nativeAd={nativeAd} style={styles.nativeAdView}>
+    <View style={styles.card} onLayout={(event) => setCardWidth(event.nativeEvent.layout.width)}>
+      {!nativeAd ? <View pointerEvents="none" style={adViewStyle} /> : (
+      <NativeAdView nativeAd={nativeAd} style={adViewStyle}>
         <View style={styles.content}>
-          <View style={styles.detailsRow}>
+          <View style={[styles.detailsRow, stacked && styles.stackedDetails]}>
             {nativeAd.icon ? (
               <NativeAsset assetType={NativeAssetType.ICON}>
                 <View style={styles.iconFrame}>
@@ -79,19 +47,19 @@ export function AppNativeAdCard({ slotIndex }: AppNativeAdCardProps) {
                 </View>
               </NativeAsset>
             ) : null}
-            <View style={styles.copyColumn}>
+            <View style={[styles.copyColumn, stacked && styles.stackedCopy]}>
               <View style={styles.mainCopy}>
-                <View style={styles.headlineBlock}>
+                <View style={[styles.headlineBlock, stacked && styles.stackedHeadline]}>
                   <Text style={styles.sponsoredLabel}>{NativeAdListConfig.sponsoredLabel}</Text>
                   <NativeAsset assetType={NativeAssetType.HEADLINE}>
-                    <Text {...AppTextBreakProps} numberOfLines={1} style={styles.headline}>
+                    <Text {...AppTextBreakProps} style={[styles.headline, stacked && styles.stackedCopy]}>
                       {nativeAd.headline}
                     </Text>
                   </NativeAsset>
                 </View>
                 {nativeAd.body ? (
                   <NativeAsset assetType={NativeAssetType.BODY}>
-                    <Text {...AppTextBreakProps} numberOfLines={2} style={styles.body}>
+                    <Text {...AppTextBreakProps} style={styles.body}>
                       {nativeAd.body}
                     </Text>
                   </NativeAsset>
@@ -103,14 +71,14 @@ export function AppNativeAdCard({ slotIndex }: AppNativeAdCardProps) {
                 <View
                   accessibilityLabel={nativeAd.callToAction}
                   accessibilityRole="button"
-                  style={styles.callToAction}
+                  style={[styles.callToAction, stacked && styles.stackedButton]}
                 >
                   <Feather
                     color={AppColors.inverseText}
                     name="download"
                     size={NativeAdCardUi.callToActionIconSize}
                   />
-                  <Text {...OneLineTextFitProps} style={styles.callToActionText}>
+                  <Text {...AppTextBreakProps} style={[styles.callToActionText, stacked && styles.stackedButtonText]}>
                     {nativeAd.callToAction}
                   </Text>
                 </View>
@@ -119,18 +87,23 @@ export function AppNativeAdCard({ slotIndex }: AppNativeAdCardProps) {
           </View>
         </View>
       </NativeAdView>
+      )}
     </View>
   );
 }
 
-function resolveNativeAdUnitId() {
-  return resolveAdMobAdUnitId(AdMobNativeConfig, TestIds.NATIVE);
-}
-
 const styles = StyleSheet.create({
+  stackedDetails: {
+    flexDirection: "column",
+    alignItems: "stretch",
+  },
+  stackedCopy: { flex: 0 },
+  stackedHeadline: { flexDirection: "column", alignItems: "stretch" },
+  stackedButton: { alignSelf: "stretch" },
+  stackedButtonText: { maxWidth: "100%" },
   nativeAdView: {
     backgroundColor: AppColors.adBackground,
-    minHeight: NativeAdCardUi.minHeight,
+    justifyContent: "center",
   },
   card: {
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -202,14 +175,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexShrink: 0,
     gap: NativeAdCardUi.callToActionGap,
-    height: NativeAdCardUi.callToActionIconButtonSize,
+    minHeight: NativeAdCardUi.callToActionIconButtonSize,
     justifyContent: "center",
     paddingHorizontal: NativeAdCardUi.callToActionPaddingHorizontal,
+    paddingVertical: NativeAdCardUi.callToActionPaddingVertical,
   },
   callToActionText: {
     color: AppColors.inverseText,
     fontSize: NativeAdCardUi.callToActionTextFontSize,
     fontWeight: "700",
     maxWidth: NativeAdCardUi.callToActionTextMaxWidth,
+    flexShrink: 1,
+    lineHeight: NativeAdCardUi.callToActionLineHeight,
   },
 });

@@ -3,6 +3,7 @@ import { Alert, Pressable, Text, TextInput, View } from "react-native";
 
 import { LedgerBookManagementCopy } from "../../constants/ledgerBookManagement";
 import { AppMessages } from "../../constants/messages";
+import { NotificationBadgeCopy } from "../../constants/notificationBadges";
 import { SharedLedgerPanelUi } from "../../constants/sharedLedgerPanel";
 import {
   SubscriptionConfig,
@@ -21,6 +22,7 @@ import { TextLinkButton } from "../TextLinkButton";
 import { sharedLedgerPanelStyles as styles } from "./sharedLedgerPanelStyles";
 
 type LedgerBookManagementCardProps = {
+  badgedBookIds?: readonly string[];
   accessibleBooks: AccessibleLedgerBook[];
   activeBook: LedgerBook | null;
   canLeaveSharedBook: boolean;
@@ -40,6 +42,7 @@ type LedgerBookManagementCardProps = {
 };
 
 export function LedgerBookManagementCard({
+  badgedBookIds,
   accessibleBooks,
   activeBook,
   canLeaveSharedBook,
@@ -266,8 +269,9 @@ export function LedgerBookManagementCard({
               >
                 <View style={styles.ledgerBookItemContent}>
                   <View style={styles.ledgerBookItemNameRow}>
-                    {shouldShowPendingRequestBadge ? (
-                      <View style={styles.pendingRequestBadge} />
+                    {shouldShowPendingRequestBadge || badgedBookIds?.includes(book.id) ? (
+                      <View accessible accessibilityLabel={NotificationBadgeCopy.unreadBookAccessibilityLabel}
+                        style={styles.pendingRequestBadge} />
                     ) : null}
                     <Text
                       numberOfLines={1}

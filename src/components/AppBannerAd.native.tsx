@@ -57,14 +57,11 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.adBackground,
     borderBottomColor: AppColors.border,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderTopColor: AppColors.border,
-    borderTopWidth: StyleSheet.hairlineWidth,
     justifyContent: "center",
     width: "100%",
   },
   embeddedContainer: {
     backgroundColor: AppColors.adBackground,
     borderBottomWidth: 0,
-    borderTopWidth: 0,
   },
 });

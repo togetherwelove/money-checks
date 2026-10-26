@@ -88,14 +88,13 @@ test("chart navigation updates its own month, leaving the calendar untouched", (
   let calendarWrites = 0;
   let chartMonth;
   const { ChartScreen } = loadComponent("src/screens/ChartScreen.tsx", {
-    "react-native-reanimated": {
-      default: { View: "AnimatedView" }, __esModule: true,
-      useSharedValue: (value) => ({ value }), useAnimatedStyle: (factory) => factory(),
-    },
+    "@react-navigation/native": { useIsFocused: () => true },
+    "../components/ScreenLoadingOverlay": { ScreenLoadingOverlay: "LocalLoading" },
     "../components/chartScreen/ChartMonthPager": { ChartMonthPager: "Pager" },
     "../components/chartScreen/ChartMonthPageContent": { ChartMonthPageContent: "Page" },
+    "../components/AppBannerAd": { AppBannerAd: "Ad" },
     "../constants/colors": { AppColors: {} },
-    "../lib/chartTutorialStorage": {},
+    "../constants/monthlyInsightCharts": { MonthlyInsightChartCopy: {} },
   });
   const screen = ChartScreen({ state: {
     currentChartMonth: { scope: "periodic" }, visibleMonth: new Date(2026, 9, 1),
@@ -103,17 +102,17 @@ test("chart navigation updates its own month, leaving the calendar untouched", (
     setVisibleMonth: () => { calendarWrites++; },
     setVisibleChartMonth: (date) => { chartMonth = date; },
   } });
-  screen.props.children.props.children.props.onMoveMonth(1);
+  screen.props.children[1].props.children[1].props.onMoveMonth(1);
   assert.equal(calendarWrites, 0);
   assert.equal(chartMonth.getFullYear(), 2027);
   assert.equal(chartMonth.getMonth(), 0);
 });
 
-test("calendar delegates to a gesture viewport instead of a native scroll list", () => {
+test("calendar delegates to the native scroll viewport", () => {
   const { MonthCalendarPager } = loadComponent("src/components/MonthCalendarPager.native.tsx", {
     "@react-navigation/native": { useIsFocused: () => true },
     "react-native": { AppState: { currentState: "active" } },
-    "./monthCalendarPager/CalendarGestureViewport": { CalendarGestureViewport: "GestureViewport" },
+    "./monthCalendarPager/CalendarScrollViewport": { CalendarScrollViewport: "GestureViewport" },
   });
   const view = MonthCalendarPager({
     currentPage: { key: "2026-10", height: 100 },

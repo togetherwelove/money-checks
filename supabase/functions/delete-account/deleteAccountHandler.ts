@@ -1,3 +1,6 @@
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { AppleDeletionErrors } from "./appleDeletionMessages.ts";
+
 export const DELETE_BLOCKED_MESSAGE =
   "다른 멤버가 있는 공유 가계부 소유자는 먼저 멤버를 정리하거나 공유를 종료해야 합니다.";
 export const DELETE_FAILED_MESSAGE = "계정을 삭제하지 못했습니다.";
@@ -7,60 +10,10 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
 } as const;
 
-type AuthenticatedUser = {
-  id: string;
-};
-
-type OwnedBookRow = {
-  id: string;
-};
-
-type OtherMemberRow = {
-  book_id: string;
-};
-
-type QueryBuilderResult<Row> = Promise<{
-  data: Row[] | null;
-  error: Error | null;
-}>;
-
-type LedgerBooksQueryBuilder = {
-  select: (columns: string) => {
-    eq: (column: string, value: string) => QueryBuilderResult<OwnedBookRow>;
-  };
-};
-
-type LedgerBookMembersQueryBuilder = {
-  select: (columns: string) => {
-    in: (
-      column: string,
-      values: string[],
-    ) => {
-      neq: (
-        nextColumn: string,
-        value: string,
-      ) => {
-        limit: (count: number) => QueryBuilderResult<OtherMemberRow>;
-      };
-    };
-  };
-};
-
-export type DeleteAccountAdminClient = {
-  auth: {
-    admin: {
-      deleteUser: (userId: string) => Promise<{ error: Error | null }>;
-    };
-    getUser: (
-      accessToken: string,
-    ) => Promise<{ data: { user: AuthenticatedUser | null }; error: Error | null }>;
-  };
-  from: (
-    tableName: "ledger_book_members" | "ledger_books",
-  ) => LedgerBookMembersQueryBuilder | LedgerBooksQueryBuilder;
-};
+export type DeleteAccountAdminClient = Pick<SupabaseClient, "auth" | "from">;
 
 type DeleteAccountHandlerOptions = {
+  revokeAppleAuthorization?: (code: string, subject: string) => Promise<void>;
   createAdminClient: () => DeleteAccountAdminClient;
   serviceRoleKey: string;
   supabaseUrl: string;
@@ -103,6 +56,31 @@ export async function handleDeleteAccountRequest(
       return createJsonResponse(409, { error: DELETE_BLOCKED_MESSAGE });
     }
 
+    const appleIdentity = user.identities?.find((identity) => identity.provider === "apple");
+    if (appleIdentity) {
+      const body = await request.json().catch(() => null);
+      const code = body?.appleAuthorizationCode;
+      const subject = appleIdentity.identity_data?.sub ?? appleIdentity.id;
+      if (typeof code !== "string" || !code.trim() || !subject) {
+        return createJsonResponse(400, { error: AppleDeletionErrors.authorization });
+      }
+      if (!options.revokeAppleAuthorization) {
+        return createJsonResponse(503, { error: AppleDeletionErrors.configuration });
+      }
+      try {
+        await options.revokeAppleAuthorization(code, subject);
+      } catch (error) {
+        // Never log authorization codes, Apple tokens, or signing credentials.
+        if (error instanceof Error && error.message === AppleDeletionErrors.configuration) {
+          return createJsonResponse(503, { error: AppleDeletionErrors.configuration });
+        }
+        if (error instanceof Error && error.message === AppleDeletionErrors.mismatch) {
+          return createJsonResponse(403, { error: AppleDeletionErrors.mismatch });
+        }
+        return createJsonResponse(502, { error: AppleDeletionErrors.unavailable });
+      }
+    }
+
     const { error: deleteError } = await adminClient.auth.admin.deleteUser(user.id);
     if (deleteError) {
       console.error("[delete-account] deleteUser failed", deleteError);
@@ -128,7 +106,7 @@ async function ownsSharedLedgerWithOtherMembers(
   adminClient: DeleteAccountAdminClient,
   userId: string,
 ): Promise<boolean> {
-  const ledgerBooksQuery = adminClient.from("ledger_books") as LedgerBooksQueryBuilder;
+  const ledgerBooksQuery = adminClient.from("ledger_books");
   const { data: ownedBooks, error: ownedBooksError } = await ledgerBooksQuery
     .select("id")
     .eq("owner_id", userId);
@@ -142,7 +120,7 @@ async function ownsSharedLedgerWithOtherMembers(
     return false;
   }
 
-  const membersQuery = adminClient.from("ledger_book_members") as LedgerBookMembersQueryBuilder;
+  const membersQuery = adminClient.from("ledger_book_members");
   const { data: otherMembers, error: otherMembersError } = await membersQuery
     .select("book_id")
     .in("book_id", ownedBookIds)

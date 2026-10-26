@@ -1,4 +1,4 @@
-import { Feather } from "@expo/vector-icons";
+import { Feather } from "./AppIcons";
 import { Pressable, StyleSheet } from "react-native";
 import { AppColors } from "../constants/colors";
 import { ModalCloseButtonUi as Ui } from "../constants/modal";

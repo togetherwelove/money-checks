@@ -11,7 +11,6 @@ import { CompactTextProps } from "../constants/textLayout";
 import { useLedgerCategoryIconMap } from "../hooks/useLedgerCategoryIconMap";
 import type { CategoryIconName } from "../types/category";
 import type { MonthlyInsights } from "../types/ledger";
-import { AppBannerAd } from "./AppBannerAd";
 import { MonthlyBreakdownDonutChart } from "./monthlyInsights/MonthlyBreakdownDonutChart";
 import { MonthlyComparisonSection } from "./monthlyInsights/MonthlyComparisonSection";
 import { MonthlyTrendBarChart } from "./monthlyInsights/MonthlyTrendBarChart";
@@ -20,7 +19,6 @@ type MonthlyInsightsSectionProps = {
   activeBookId?: string | null;
   insights: MonthlyInsights;
   scope?: "all" | "periodic";
-  showsBannerAd?: boolean;
 };
 
 type BreakdownMode = "category" | "member";
@@ -59,7 +57,6 @@ export function MonthlyInsightsSection({
   activeBookId = null,
   insights,
   scope = "periodic",
-  showsBannerAd = false,
 }: MonthlyInsightsSectionProps) {
   const categoryIconByKey = useLedgerCategoryIconMap(activeBookId);
   const [breakdownMode, setBreakdownMode] = useState<BreakdownMode>("category");
@@ -155,11 +152,6 @@ export function MonthlyInsightsSection({
     activeIncomeBreakdownItems,
   );
   const separatesFirstBreakdown = scope === "periodic";
-  const bannerAd = showsBannerAd ? (
-    <View style={styles.adPanel}>
-      <AppBannerAd variant="embedded" />
-    </View>
-  ) : null;
 
   return (
     <View style={styles.section}>
@@ -175,7 +167,6 @@ export function MonthlyInsightsSection({
           />
         </View>
       ) : null}
-      {scope === "periodic" ? bannerAd : null}
       {/* {scope === "periodic" ? <MonthlyComparisonSection insights={insights} /> : null} */}
       <View
         style={[
@@ -240,7 +231,6 @@ export function MonthlyInsightsSection({
           />
         </View>
       </View>
-      {scope === "all" ? bannerAd : null}
     </View>
   );
 
@@ -378,12 +368,6 @@ function SegmentButton({
 }
 
 const styles = StyleSheet.create({
-  adPanel: {
-    backgroundColor: AppColors.adBackground,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: AppColors.border,
-    borderTopWidth: StyleSheet.hairlineWidth,
-  },
   breakdownSection: {
     gap: 10,
   },

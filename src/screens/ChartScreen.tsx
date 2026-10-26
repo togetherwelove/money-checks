@@ -1,34 +1,25 @@
-import { type ReactNode, useEffect } from "react";
-import { StyleSheet, View } from "react-native";
-import Animated, {
-  ReduceMotion,
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withSequence,
-  withTiming,
-} from "react-native-reanimated";
-
+import { AppBannerAd } from "../components/AppBannerAd";
+import { ScreenLoadingOverlay } from "../components/ScreenLoadingOverlay";
+import { type ReactNode, useEffect, useMemo } from "react";
+import { StyleSheet, Text, View } from "react-native";
 import { ChartMonthPager } from "../components/chartScreen/ChartMonthPager";
 import { ChartMonthPageContent } from "../components/chartScreen/ChartMonthPageContent";
 import { AppColors } from "../constants/colors";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
-import { hasSeenChartSwipeTutorial, markChartSwipeTutorialSeen } from "../lib/chartTutorialStorage";
+import { MonthlyInsightChartCopy } from "../constants/monthlyInsightCharts";
 
 type ChartScreenProps = {
   renderScreenTitle: (titleLabel: string) => ReactNode;
   showsBannerAd: boolean;
   state: LedgerScreenState;
-  userId: string;
 };
 
 export function ChartScreen({
   renderScreenTitle,
   showsBannerAd,
   state,
-  userId,
 }: ChartScreenProps) {
-  const translateX = useSharedValue(0);
+  const bannerAd = useMemo(() => showsBannerAd ? <AppBannerAd /> : null, [showsBannerAd]);
 
   useEffect(() => {
     if (state.currentChartMonth.scope === "all") {
@@ -38,50 +29,18 @@ export function ChartScreen({
     void state.preloadChartEntries();
   }, [state.currentChartMonth.scope, state.preloadChartEntries]);
 
-  useEffect(() => {
-    if (state.currentChartMonth.scope === "all") {
-      return;
-    }
-
-    if (hasSeenChartSwipeTutorial(userId)) {
-      return;
-    }
-
-    markChartSwipeTutorialSeen(userId);
-    translateX.value = withDelay(
-      420,
-      withSequence(
-        withTiming(-32, {
-          duration: 300,
-          reduceMotion: ReduceMotion.System,
-        }),
-        withTiming(32 * 0.15, {
-          duration: 300,
-          reduceMotion: ReduceMotion.System,
-        }),
-        withTiming(0, {
-          duration: 300,
-          reduceMotion: ReduceMotion.System,
-        }),
-      ),
-    );
-  }, [state.currentChartMonth.scope, translateX, userId]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.value }],
-  }));
-
   return (
     <View style={styles.screen}>
+      <View style={styles.adSlot}>{bannerAd}</View>
       {state.currentChartMonth.scope === "all" ? (
         <ChartMonthPageContent
           activeBookId={state.activeBook?.id ?? null}
           month={state.currentChartMonth}
           screenTitle={renderScreenTitle(state.currentChartMonth.title)}
-          showsBannerAd={showsBannerAd}
         />
       ) : (
-        <Animated.View style={[styles.pagerLayer, animatedStyle]}>
+        <View style={styles.pagerLayer}>
+          <Text style={styles.swipeHint}>{MonthlyInsightChartCopy.swipeHint}</Text>
           <ChartMonthPager
             activeBookId={state.activeBook?.id ?? null}
             currentMonth={state.currentChartMonth}
@@ -97,17 +56,22 @@ export function ChartScreen({
             }
             previousMonth={state.previousChartMonth}
             renderScreenTitle={renderScreenTitle}
-            showsBannerAd={showsBannerAd}
           />
-        </Animated.View>
+        </View>
       )}
+      {state.isLoading || state.isLoadingChartEntries ||
+        (state.currentChartMonth.scope === "all" && state.isLoadingTotalSummary) ? <ScreenLoadingOverlay /> : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  swipeHint: { color: AppColors.mutedText, textAlign: "center" },
+  adSlot: { flexShrink: 0 },
   pagerLayer: {
     flex: 1,
+    minHeight: 0,
+    overflow: "hidden",
   },
   screen: {
     flex: 1,

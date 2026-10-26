@@ -1,6 +1,7 @@
+import { ComposerBlockingModal as Modal } from "./ComposerBlockingModal";
 import { AppScrollBehavior } from "../constants/scroll";
 import { useState } from "react";
-import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppColors } from "../constants/colors";

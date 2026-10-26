@@ -1,7 +1,7 @@
+import { navigateToSingleInstanceStackScreen } from "./app/navigateToStackScreen";
+import { useSheetTransition } from "./hooks/useSheetTransition";
 import {
-  CommonActions,
   NavigationContainer,
-  StackActions,
   createNavigationContainerRef,
 } from "@react-navigation/native";
 import type { Session } from "@supabase/supabase-js";
@@ -14,37 +14,36 @@ import {
   useRef,
   useState,
 } from "react";
-import { Alert, AppState, Keyboard, KeyboardAvoidingView, StatusBar, StyleSheet, Text, View } from "react-native";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { Alert, AppState, Keyboard, StatusBar, StyleSheet, Text, View } from "react-native";
 import { RootSiblingParent } from "react-native-root-siblings";
-import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
-import { SignedInStackNavigator } from "./app/SignedInStackNavigator";
+import { SignedInTabNavigator } from "./app/SignedInTabNavigator";
 import {
-  type SignedInStackParamList,
+  type SignedInTabParamList,
   type SignedInStackScreen,
   isSignedInStackScreen,
 } from "./app/signedInNavigation";
-import { AppTopNavigation } from "./components/AppTopNavigation";
+import { ClipboardSuggestionBanner } from "./components/ClipboardSuggestionBanner";
+import { createScopedClipboardReader } from "./lib/scopedClipboardReader";
+import { AppHeaderBookMenu } from "./components/AppHeaderBookMenu";
+import { AppNativeHeaderTitle } from "./components/AppNativeHeaderTitle";
 import { EntryComposer, type EntryComposerHandle } from "./components/entryComposer/EntryComposer";
-import { useComposerKeyboard } from "./hooks/useComposerKeyboard";
 import { AppFloatingMenuButton } from "./components/AppFloatingMenuButton";
-import { AppMenuDrawer } from "./components/AppMenuDrawer";
-import { AppScreenTitle } from "./components/AppScreenTitle";
 import { BlockingOverlay } from "./components/BlockingOverlay";
-import { DailyFirstEntryAdNoticeOverlay } from "./components/DailyFirstEntryAdNoticeOverlay";
 import { confirmInstallmentPrepayment } from "./components/installmentPrepaymentAlert";
-import { LedgerBookSwitcherModal } from "./components/LedgerBookSwitcherModal";
+import { LedgerBookManagementSheet } from "./components/LedgerBookManagementSheet";
 import { OnboardingTransitionScreen } from "./components/OnboardingTransitionScreen";
 import { SessionLoadingScreen } from "./components/SessionLoadingScreen";
+import { StartupErrorScreen } from "./components/StartupErrorScreen";
 import { AnnualReportRangePickerModal } from "./components/annualReport/AnnualReportRangePickerModal";
 import { NativeYearPickerModal } from "./components/calendarPicker/NativeYearPickerModal";
 import { AdInterstitialPlacement } from "./constants/ads";
 import { AppColors } from "./constants/colors";
+import { AppLayout } from "./constants/layout";
 import { EntryRegistrationCopy } from "./constants/entryRegistration";
 import { InitialPermissionTiming } from "./constants/initialPermissions";
-import { formatYearLabel } from "./constants/ledgerDisplay";
-import { LedgerBookManagementCopy } from "./constants/ledgerBookManagement";
+import { formatYearLabel, formatMonthLabel } from "./constants/ledgerDisplay";
 import { FooterTabBarUi } from "./constants/menu";
 import { AppMessages } from "./constants/messages";
 import { NotificationBadgeScopes } from "./constants/notificationBadges";
@@ -65,6 +64,7 @@ import { useNotificationBadges } from "./hooks/useNotificationBadges";
 import { usePasswordRecoveryRedirect } from "./hooks/usePasswordRecoveryRedirect";
 import { useSubscriptionPlan } from "./hooks/useSubscriptionPlan";
 import { useSupabaseSession } from "./hooks/useSupabaseSession";
+import { useDismissStartupSplash } from "./hooks/useDismissStartupSplash";
 import { useSupportPackages } from "./hooks/useSupportPackages";
 import { applyAdTrackingPermissionToAdRequests } from "./lib/ads/adRequestOptions";
 import { preloadInterstitialAd, showInterstitialAd } from "./lib/ads/interstitialAd";
@@ -126,7 +126,7 @@ import type { LedgerAppScreen } from "./types/app";
 import type { LedgerEntry, LedgerEntryDraft } from "./types/ledger";
 import type { LedgerEntryDeleteScope } from "./types/ledgerEntryDeletion";
 import { getMonthKey, toIsoDate } from "./utils/calendar";
-import { createDraft } from "./utils/ledgerEntries";
+import { canSubmitDraft, createDraft } from "./utils/ledgerEntries";
 import { resolveFallbackDisplayName } from "./utils/sessionDisplayName";
 
 installAppTextDefaults();
@@ -139,45 +139,48 @@ export default function App() {
       setIsPasswordRecoverySession(true);
     }, []),
   });
-  const { errorMessage, isLoading, session } = useSupabaseSession();
+  const { errorMessage, isLoading, session, retry } = useSupabaseSession();
 
-  useEffect(() => {
-    if (!isLoading) {
-      SplashScreen.hideAsync().catch(() => {
-        /* Ignore errors */
-      });
-    }
-  }, [isLoading]);
+  const onSignedOutLayout = useDismissStartupSplash(
+    !isLoading && (!session || isPasswordRecoverySession),
+  );
 
   return (
     <SafeAreaProvider>
-      <GestureHandlerRootView style={styles.gestureRoot}>
+      <View style={styles.gestureRoot}>
         <RootSiblingParent>
           {isLoading ? (
             <SignedOutAppShell>
               <SessionLoadingScreen />
             </SignedOutAppShell>
+          ) : errorMessage ? (
+            <SignedOutAppShell key="session-error" onLayout={onSignedOutLayout}>
+              <StartupErrorScreen message={errorMessage} onRetry={retry} />
+            </SignedOutAppShell>
           ) : isPasswordRecoverySession && session ? (
-            <SignedOutAppShell>
+            <SignedOutAppShell key="password-recovery" onLayout={onSignedOutLayout}>
               <PasswordResetScreen onComplete={() => setIsPasswordRecoverySession(false)} />
             </SignedOutAppShell>
           ) : !session ? (
-            <SignedOutAppShell>
+            <SignedOutAppShell key="authentication" onLayout={onSignedOutLayout}>
               <AuthScreen initialErrorMessage={errorMessage} />
             </SignedOutAppShell>
           ) : (
             <SignedInApp session={session} />
           )}
         </RootSiblingParent>
-      </GestureHandlerRootView>
+      </View>
     </SafeAreaProvider>
   );
 }
 
-function SignedOutAppShell({ children }: { children: React.ReactNode }) {
+function SignedOutAppShell({ children, onLayout }: {
+  children: React.ReactNode;
+  onLayout?: () => void;
+}) {
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={AppColors.screenBackground} />
+    <View onLayout={onLayout} style={styles.container}>
+      <StatusBar barStyle="dark-content" />
       <SafeAreaView edges={["top"]} style={styles.signedOutSafeArea} />
       <SafeAreaView edges={["left", "right"]} style={styles.signedOutBodySafeArea}>
         <View style={styles.signedOutBody}>{children}</View>
@@ -187,25 +190,34 @@ function SignedOutAppShell({ children }: { children: React.ReactNode }) {
 }
 
 function SignedInApp({ session }: { session: Session }) {
-  const safeAreaInsets = useSafeAreaInsets();
-  const composerKeyboard = useComposerKeyboard();
-  const navigationRef = useRef(createNavigationContainerRef<SignedInStackParamList>()).current;
+  const navigationRef = useRef(createNavigationContainerRef<SignedInTabParamList>()).current;
   const entryComposerRef = useRef<EntryComposerHandle>(null);
-  const [isComposerEditing, setIsComposerEditing] = useState(false);
+  const composerSheet = useSheetTransition();
+  const isComposerVisible = composerSheet.isOpen;
+  const setIsComposerVisible = composerSheet.setOpen;
+  const composerVisibleRef = useRef(isComposerVisible);
+  composerVisibleRef.current = composerSheet.isPresented;
+  const closeComposer = useCallback(() => {
+    if (entryComposerRef.current?.isSaving()) return;
+    Keyboard.dismiss();
+    setIsComposerVisible(false);
+  }, [setIsComposerVisible]);
   const lastHandledClipboardRef = useRef<string | null>(null);
   const clipboardReadInFlightRef = useRef(false);
+  const clipboardPasteInFlightRef = useRef(false);
   const hasScheduledInitialPermissionRequestRef = useRef(false);
   const hasStartedInitialPermissionRequestRef = useRef(false);
   const permissionRequestTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const hasCheckedInitialClipboardImportRef = useRef(false);
+  const pendingClipboardCheckRef = useRef(true);
   const previousClipboardImportAppStateRef = useRef(AppState.currentState);
   const lastReadNotificationBadgeScreenKeyRef = useRef<string | null>(null);
   const [currentScreen, setCurrentScreen] = useState<LedgerAppScreen>("calendar");
   const [isEntrySheetOpen, setIsEntrySheetOpen] = useState(false);
-  const [composerHeight, setComposerHeight] = useState<number>(FooterTabBarUi.barMinHeight);
-  const isComposerVisible = !isEntrySheetOpen && (currentScreen === "calendar" || (currentScreen === "all-entries" && isComposerEditing));
-  const isComposerKeyboardOpen = isComposerVisible && composerKeyboard.isVisible;
-  const [isLedgerSwitcherOpen, setIsLedgerSwitcherOpen] = useState(false);
+  const ledgerManagementSheet = useSheetTransition();
+  const isLedgerManagementOpen = ledgerManagementSheet.isOpen;
+  const setIsLedgerManagementOpen = ledgerManagementSheet.setOpen;
+  const [footerHeight, setFooterHeight] = useState(0);
+  const [clipboardBannerHeight, setClipboardBannerHeight] = useState(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isNicknameScreenReady, setIsNicknameScreenReady] = useState(false);
   const [isYearPickerOpen, setIsYearPickerOpen] = useState(false);
@@ -298,15 +310,22 @@ function SignedInApp({ session }: { session: Session }) {
     fallbackDisplayName,
     userId: session.user.id,
   });
-  const isSignedInInteractionReady =
+  const onSignedInLayout = useDismissStartupSplash(
     !authOnboarding.isLoading &&
+      (authOnboarding.step !== "nickname" || isNicknameScreenReady),
+  );
+  const isSignedInNavigationReady =
+    !authOnboarding.isLoading &&
+    !authOnboarding.errorMessage &&
     authOnboarding.step === null &&
     !subscription.isLoading &&
-    !ledgerState.isBusy &&
-    !ledgerState.isLoading;
+    !ledgerState.isBusy;
+  const isSignedInInteractionReady = isSignedInNavigationReady && !ledgerState.isLoading;
+  const isClipboardBannerVisible = Boolean(clipboardSuggestionDraft && isSignedInInteractionReady &&
+    !composerSheet.isPresented && !isEntrySheetOpen && !ledgerManagementSheet.isPresented && !isMenuOpen);
   const markEntryNotificationsRead = useEntryNotificationReads(
     isSignedInInteractionReady && currentScreen === "calendar" &&
-      !isEntrySheetOpen && !isLedgerSwitcherOpen && !isMenuOpen,
+      !isEntrySheetOpen && !isLedgerManagementOpen && !isMenuOpen,
     ledgerState,
     notificationBadges.refresh,
   );
@@ -415,8 +434,7 @@ function SignedInApp({ session }: { session: Session }) {
       return;
     }
 
-    const rootState = navigationRef.getRootState();
-    const activeRoute = rootState.routes[rootState.index];
+    const activeRoute = navigationRef.getCurrentRoute();
     setIsEntrySheetOpen(activeRoute?.name === "entry-sheet");
     if (activeRoute?.name === "entry-sheet") {
       return;
@@ -433,16 +451,16 @@ function SignedInApp({ session }: { session: Session }) {
       return;
     }
 
-    if (navigationRef.canGoBack()) {
-      navigationRef.dispatch(StackActions.popToTop());
-      return;
-    }
-
-    navigationRef.navigate("calendar");
+    navigateToSingleInstanceStackScreen(navigationRef, "calendar");
   }, [navigationRef]);
 
   const navigateToStackScreen = useCallback(
     (screen: Exclude<LedgerAppScreen, "calendar" | "entry">) => {
+      if (screen === "share") {
+        Keyboard.dismiss();
+        setIsLedgerManagementOpen(true);
+        return;
+      }
       if (!navigationRef.isReady()) {
         return;
       }
@@ -456,20 +474,9 @@ function SignedInApp({ session }: { session: Session }) {
     returnToCalendarRoot();
   }, [returnToCalendarRoot]);
 
-  const handleSelectLedgerBook = useCallback(
-    async (bookId: string) => {
-      const didSwitch = await ledgerState.switchLedgerBook(bookId);
-      showNativeToast(
-        didSwitch ? LedgerBookManagementCopy.switchSuccess : LedgerBookManagementCopy.switchError,
-      );
-    },
-    [ledgerState.switchLedgerBook],
-  );
-
   const navigateToEntryFromCalendar = useCallback(() => {
-    returnToCalendarRoot();
-    requestAnimationFrame(() => entryComposerRef.current?.focus());
-  }, [returnToCalendarRoot]);
+    setIsComposerVisible(true);
+  }, []);
 
   const shouldIgnoreCardSmsClipboardDraft = useCallback(
     (clipboardDraft: CardSmsClipboardDraft) => {
@@ -485,28 +492,36 @@ function SignedInApp({ session }: { session: Session }) {
     [ledgerState.entries, ledgerState.selectedDate],
   );
 
-  const readAvailableCardSmsClipboardDraft = useCallback(
-    () =>
-      readCardSmsClipboardDraft({
-        baseDate: new Date(),
-        shouldIgnoreDraft: shouldIgnoreCardSmsClipboardDraft,
-      }),
-    [shouldIgnoreCardSmsClipboardDraft],
-  );
-
   const clipboardScopeRef = useRef<string | null>(null);
   const clipboardScope = isSignedInInteractionReady && !ledgerState.isReadOnlyDueToPlanLimit
     ? ledgerState.activeBook?.id ?? null : null;
   clipboardScopeRef.current = clipboardScope;
+  const clipboardReader = useMemo(() => createScopedClipboardReader<CardSmsClipboardDraft | null>(), []);
+  const readAvailableCardSmsClipboardDraft = useCallback(
+    () => {
+      const scope = clipboardScopeRef.current;
+      if (!scope) return Promise.resolve(null);
+      return clipboardReader(scope, () => readCardSmsClipboardDraft({
+        baseDate: new Date(),
+        shouldIgnoreDraft: shouldIgnoreCardSmsClipboardDraft,
+      }));
+    },
+    [clipboardReader, shouldIgnoreCardSmsClipboardDraft],
+  );
+
   useEffect(() => {
     setClipboardSuggestionDraft(null);
-    setIsComposerEditing(false);
   }, [clipboardScope]);
+  useEffect(() => {
+    Keyboard.dismiss();
+    setIsComposerVisible(false);
+  }, [ledgerState.activeBook?.id]);
 
-  const { requestAdAfterSave: handleDailyFirstEntrySaveInterstitial, isNoticeVisible: isDailyFirstEntryAdNoticeVisible } = useDailyFirstEntryAd({
+  const entrySaveInProgress = useRef(false);
+  const { ensureAdBeforeSave } = useDailyFirstEntryAd({
     userId: session.user.id,
-    screen: currentScreen,
-    isReady: isMobileAdsReady && isSignedInInteractionReady && !isEntrySheetOpen && !isMenuOpen && !isLedgerSwitcherOpen,
+    bookId: ledgerState.activeBook?.id ?? null,
+    isReady: isMobileAdsReady && isSignedInInteractionReady && !isMenuOpen && !isLedgerManagementOpen,
     isSubscriptionLoading: subscription.isLoading,
     isFree: subscription.currentTier === SubscriptionTiers.free,
   });
@@ -524,7 +539,7 @@ function SignedInApp({ session }: { session: Session }) {
         userId: session.user.id,
       });
       lastHandledClipboardRef.current = JSON.stringify(clipboardDraft);
-      returnToCalendarRoot();
+      setIsComposerVisible(true);
       entryComposerRef.current?.importDraft(draftToEdit);
     },
     [handleReadOnlyEditBlocked, ledgerState, returnToCalendarRoot, session.user.id],
@@ -564,17 +579,11 @@ function SignedInApp({ session }: { session: Session }) {
       return;
     }
 
+    navigateToEntryFromCalendar();
     const scope = clipboardScopeRef.current;
     if (!scope) return;
     const clipboardDraft = await readAvailableCardSmsClipboardDraft();
     if (scope !== clipboardScopeRef.current) return;
-    if (!clipboardDraft) {
-      setClipboardSuggestionDraft(null);
-      navigateToEntryFromCalendar();
-      return;
-    }
-
-    returnToCalendarRoot();
     setClipboardSuggestionDraft(clipboardDraft);
   }, [
     handleReadOnlyEditBlocked,
@@ -585,22 +594,24 @@ function SignedInApp({ session }: { session: Session }) {
     returnToCalendarRoot,
   ]);
 
-  const handleReadClipboardSuggestion = useCallback(async () => {
+  const handlePasteClipboardDraft = useCallback(async () => {
     const scope = clipboardScopeRef.current;
-    if (!scope || clipboardReadInFlightRef.current) return;
-    clipboardReadInFlightRef.current = true;
+    if (!scope || clipboardPasteInFlightRef.current) return;
+    clipboardPasteInFlightRef.current = true;
     try {
       const draft = await readAvailableCardSmsClipboardDraft();
-      if (scope !== clipboardScopeRef.current) return;
-      setClipboardSuggestionDraft(draft);
-      if (!draft) showNativeToast(CardSmsClipboardCopy.noAvailableEntry);
+      if (scope !== clipboardScopeRef.current || !composerVisibleRef.current) return;
+      setClipboardSuggestionDraft(null);
+      if (draft) handleOpenCardSmsClipboardDraft(draft);
+      else showNativeToast(CardSmsClipboardCopy.noAvailableEntry);
     } finally {
-      clipboardReadInFlightRef.current = false;
+      clipboardPasteInFlightRef.current = false;
     }
-  }, [readAvailableCardSmsClipboardDraft]);
+  }, [handleOpenCardSmsClipboardDraft, readAvailableCardSmsClipboardDraft]);
 
   const handleDetectClipboardSuggestion = useCallback(async () => {
     if (
+      AppState.currentState !== "active" ||
       !isSignedInInteractionReady ||
       ledgerState.isReadOnlyDueToPlanLimit ||
       navigationRef.getCurrentRoute()?.name === "entry-sheet" ||
@@ -631,11 +642,11 @@ function SignedInApp({ session }: { session: Session }) {
   ]);
 
   useEffect(() => {
-    if (hasCheckedInitialClipboardImportRef.current || !isSignedInInteractionReady) {
+    if (!pendingClipboardCheckRef.current || !isSignedInInteractionReady || AppState.currentState !== "active") {
       return;
     }
 
-    hasCheckedInitialClipboardImportRef.current = true;
+    pendingClipboardCheckRef.current = false;
     void handleDetectClipboardSuggestion();
   }, [handleDetectClipboardSuggestion, isSignedInInteractionReady]);
 
@@ -656,13 +667,16 @@ function SignedInApp({ session }: { session: Session }) {
         return;
       }
 
+      pendingClipboardCheckRef.current = true;
+      if (!isSignedInInteractionReady) return;
+      pendingClipboardCheckRef.current = false;
       void handleDetectClipboardSuggestion();
     });
 
     return () => {
       appStateSubscription.remove();
     };
-  }, [handleDetectClipboardSuggestion]);
+  }, [handleDetectClipboardSuggestion, isSignedInInteractionReady]);
 
   const handleDismissClipboardSuggestion = useCallback(() => {
     if (clipboardSuggestionDraft) lastHandledClipboardRef.current = JSON.stringify(clipboardSuggestionDraft);
@@ -689,16 +703,13 @@ function SignedInApp({ session }: { session: Session }) {
     onOpenEntry: navigateToEntryFromCalendar,
   });
 
-  const handleOpenAllEntries = useCallback(() => {
-    navigateToStackScreen("all-entries");
-  }, [navigateToStackScreen]);
   const handleOpenEntry = handleOpenEntryFromCalendar;
   const handleOpenSubscription = useCallback(() => {
     navigateToStackScreen("subscription");
   }, [navigateToStackScreen]);
-  const menuSections = buildAppMenuSections({
+  const menuSections = useMemo(() => buildAppMenuSections({
     showAnnualReportDownload: Boolean(annualReport.bookName),
-  });
+  }), [annualReport.bookName]);
   const footerBadgedScreens = useMemo<FooterTabScreen[]>(() => {
     return resolveFooterBadgeScreens(notificationBadges.snapshot);
   }, [notificationBadges.snapshot]);
@@ -728,10 +739,10 @@ function SignedInApp({ session }: { session: Session }) {
   useEffect(() => {
     const activeBook = ledgerState.activeBook;
     const targetScope =
-      currentScreen === "all-entries"
-        ? NotificationBadgeScopes.ledgerEntries
-        : currentScreen === "share"
-          ? NotificationBadgeScopes.joinRequests
+      isLedgerManagementOpen
+        ? NotificationBadgeScopes.joinRequests
+        : currentScreen === "all-entries"
+          ? NotificationBadgeScopes.ledgerEntries
           : null;
     const canMarkRead =
       activeBook &&
@@ -764,6 +775,7 @@ function SignedInApp({ session }: { session: Session }) {
     });
   }, [
     currentScreen,
+    isLedgerManagementOpen,
     ledgerState.activeBook?.id,
     ledgerState.activeBook?.ownerId,
     notificationBadges.markRead,
@@ -771,48 +783,6 @@ function SignedInApp({ session }: { session: Session }) {
     session.user.id,
   ]);
 
-  const handleSelectFooterTab = useCallback(
-    (targetScreen: FooterTabScreen) => {
-      if (!isSignedInInteractionReady && targetScreen !== currentScreen) {
-        return;
-      }
-
-      if (targetScreen !== "entry") {
-        setClipboardSuggestionDraft(null);
-      }
-
-      if (targetScreen === currentScreen) {
-        return;
-      }
-
-      if (targetScreen === "calendar") {
-        Keyboard.dismiss();
-        returnToCalendarRoot();
-        return;
-      }
-
-      if (targetScreen === "entry") {
-        void handleOpenEntry();
-        return;
-      }
-
-      if (targetScreen === "all-entries") {
-        handleOpenAllEntries();
-        return;
-      }
-
-      navigateToStackScreen(targetScreen);
-    },
-    [
-      currentScreen,
-      handleOpenAllEntries,
-      handleOpenEntry,
-      isSignedInInteractionReady,
-      ledgerState,
-      navigateToStackScreen,
-      returnToCalendarRoot,
-    ],
-  );
   const handleOpenYearPicker = () => {
     if (currentScreen !== "calendar") {
       return;
@@ -952,7 +922,7 @@ function SignedInApp({ session }: { session: Session }) {
       return;
     }
 
-    await showInterstitialAd(AdInterstitialPlacement.shareCodeCopy);
+    await showInterstitialAd(AdInterstitialPlacement.shareCodeCopy, { waitForLoad: true });
   };
 
   const handleBeforeSendJoinRequest = async () => {
@@ -964,32 +934,29 @@ function SignedInApp({ session }: { session: Session }) {
   };
 
   const handleSaveEntry = async (newDraft?: LedgerEntryDraft, sourceEntry?: LedgerEntry) => {
+    if (entrySaveInProgress.current || !ledgerState.activeBook || ledgerState.isReadOnlyDueToPlanLimit ||
+        !canSubmitDraft(newDraft ?? ledgerState.draft)) return false;
+    entrySaveInProgress.current = true;
     const currentEntries = ledgerState.entries;
     const wasEditingEntry = Boolean(sourceEntry) || (!newDraft && Boolean(ledgerState.editingEntryId));
-    let savedEntries: LedgerEntry[] = [];
     try {
-      savedEntries = await ledgerState.handleSaveEntry(newDraft, sourceEntry);
+      if (!wasEditingEntry && !await ensureAdBeforeSave()) return false;
+      const savedEntries = await ledgerState.handleSaveEntry(newDraft, sourceEntry);
+      if (savedEntries.length === 0) return false;
+      void runEntrySaveSideEffects(
+        savedEntries, currentEntries, wasEditingEntry ? "update" : "create",
+        (newDraft ?? ledgerState.draft).date,
+      );
+      return true;
     } catch (error) {
       logAppError("App", error, {
         step: "save_entry",
       });
       showNativeToast(resolveLedgerSaveErrorMessage(error));
       return false;
+    } finally {
+      entrySaveInProgress.current = false;
     }
-    if (savedEntries.length === 0) {
-      return false;
-    }
-
-    void runEntrySaveSideEffects(
-      savedEntries,
-      currentEntries,
-      wasEditingEntry ? "update" : "create",
-      (newDraft ?? ledgerState.draft).date,
-    );
-    if (!wasEditingEntry) {
-      void handleDailyFirstEntrySaveInterstitial();
-    }
-    return true;
   };
 
   const handleEditEntryFromCalendar = (entry: LedgerEntry) => {
@@ -998,7 +965,17 @@ function SignedInApp({ session }: { session: Session }) {
       return;
     }
 
+    setIsComposerVisible(true);
     entryComposerRef.current?.editEntry(entry);
+  };
+
+  const handleDuplicateEntry = (entry: LedgerEntry) => {
+    if (ledgerState.isReadOnlyDueToPlanLimit) {
+      handleReadOnlyEditBlocked();
+      return;
+    }
+    setIsComposerVisible(true);
+    entryComposerRef.current?.duplicateEntry(entry);
   };
 
   const handleEditEntryFromAllEntries = (entry: LedgerEntry) => {
@@ -1007,6 +984,7 @@ function SignedInApp({ session }: { session: Session }) {
       return;
     }
 
+    setIsComposerVisible(true);
     entryComposerRef.current?.editEntry(entry);
   };
 
@@ -1208,6 +1186,7 @@ function SignedInApp({ session }: { session: Session }) {
   useEffect(() => {
     if (
       authOnboarding.isLoading ||
+      authOnboarding.errorMessage ||
       authOnboarding.step !== null ||
       authOnboarding.hasCompletedPermissionOnboarding ||
       !notifications.isSupported ||
@@ -1245,6 +1224,7 @@ function SignedInApp({ session }: { session: Session }) {
     authOnboarding.completePermissionOnboarding,
     authOnboarding.hasCompletedPermissionOnboarding,
     authOnboarding.isLoading,
+    authOnboarding.errorMessage,
     authOnboarding.step,
     hasSettledInitialAdTrackingPermission,
     ledgerState.isLoading,
@@ -1254,20 +1234,41 @@ function SignedInApp({ session }: { session: Session }) {
   ]);
 
   const renderScreenTitle = (screen: SignedInStackScreen, titleLabel?: string) => (
-    <AppScreenTitle
-      canSwitchTitle={screen === "calendar"}
-      isReadOnlyTitle={screen === "calendar" && ledgerState.isReadOnlyDueToPlanLimit}
-      onPressTitle={screen === "calendar" ? handleOpenYearPicker : undefined}
-      titleLabel={
+    <AppNativeHeaderTitle
+      onPress={screen === "calendar" ? handleOpenYearPicker : undefined}
+      title={
         titleLabel ??
         (screen === "calendar"
-          ? formatYearLabel(ledgerState.visibleMonth)
+          ? `${formatYearLabel(ledgerState.visibleMonth)} ${formatMonthLabel(ledgerState.visibleMonth)}`
           : screen === "charts"
             ? ledgerState.currentChartMonth.title
             : getAppScreenLabel(screen))
       }
-      variant={screen === "calendar" ? "calendar" : screen === "charts" ? "chart" : "default"}
     />
+  );
+
+  const renderHeaderActions = () => (
+    <View style={styles.headerActions}>
+      <AppHeaderBookMenu bookName={ledgerState.activeBook?.name}
+        hasBadge={footerBadgedScreens.includes("share")}
+        disabled={!isSignedInInteractionReady || isEntrySheetOpen || composerSheet.isPresented || ledgerManagementSheet.isPresented}
+        onSwitch={() => { Keyboard.dismiss(); setIsLedgerManagementOpen(true); }} />
+        <AppFloatingMenuButton inline
+          onClose={() => setIsMenuOpen(false)}
+          onOpen={() => { Keyboard.dismiss(); setIsMenuOpen(true); }}
+          onSelectAction={(action) => {
+            setIsMenuOpen(false);
+            if (action === "annual-report-download") {
+              void annualReport.handleDownloadReport();
+            }
+          }}
+          onSelectItem={(targetScreen) => {
+            setIsMenuOpen(false);
+            navigateToStackScreen(targetScreen);
+          }}
+          sections={menuSections}
+        />
+    </View>
   );
 
   if (authOnboarding.isLoading) {
@@ -1278,9 +1279,17 @@ function SignedInApp({ session }: { session: Session }) {
     );
   }
 
+  if (authOnboarding.errorMessage) {
+    return (
+      <SignedOutAppShell key="profile-error" onLayout={onSignedInLayout}>
+        <StartupErrorScreen message={authOnboarding.errorMessage} onRetry={authOnboarding.retry} />
+      </SignedOutAppShell>
+    );
+  }
+
   if (authOnboarding.step === "nickname") {
     return (
-      <SignedOutAppShell>
+      <SignedOutAppShell key="nickname" onLayout={onSignedInLayout}>
         {isNicknameScreenReady ? (
           <NicknameSetupScreen
             accountEmail={session.user.email ?? null}
@@ -1296,46 +1305,25 @@ function SignedInApp({ session }: { session: Session }) {
 
   return (
     <ExpenseTextColorProvider>
-      <BottomContentInsetContext.Provider value={isComposerVisible ? composerHeight : safeAreaInsets.bottom + FooterTabBarUi.contentBottomGap}>
-      <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={AppColors.screenBackground} />
-      <SafeAreaView edges={["top"]} style={styles.topSafeArea} />
+      <BottomContentInsetContext.Provider value={FooterTabBarUi.contentBottomGap + (appPlatform.os === "web" ? 0 : footerHeight)
+        + (isClipboardBannerVisible ? clipboardBannerHeight + AppLayout.compactGap : 0)}>
+      <View onLayout={onSignedInLayout} style={styles.container}>
+      <StatusBar barStyle="dark-content" />
       <SafeAreaView edges={["left", "right"]} style={styles.bodySafeArea}>
-        <AppMenuDrawer
-          isOpen={isMenuOpen}
-          onClose={() => setIsMenuOpen(false)}
-          onOpen={() => { Keyboard.dismiss(); setIsMenuOpen(true); }}
-          onSelectAction={(action) => {
-            setIsMenuOpen(false);
-            if (action === "annual-report-download") {
-              void annualReport.handleDownloadReport();
-            }
-          }}
-          onSelectItem={(targetScreen) => {
-            setIsMenuOpen(false);
-            navigateToStackScreen(targetScreen);
-          }}
-          sections={menuSections}
-        >
-        <View style={styles.body}>
-          <AppTopNavigation activeScreen={currentScreen} badges={footerBadgedScreens}
-            bookName={ledgerState.activeBook?.name} disabled={!isSignedInInteractionReady || isEntrySheetOpen}
-            onSelect={(screen) => { Keyboard.dismiss(); handleSelectFooterTab(screen); }}
-            onSwitchBook={() => { Keyboard.dismiss(); setIsLedgerSwitcherOpen(true); }} />
-          <View style={styles.navigationShell}
-            onStartShouldSetResponderCapture={() => {
-              if (!isComposerVisible || !Keyboard.isVisible()) return false;
-              Keyboard.dismiss();
-              // Consume the dismissal touch before calendar dates can handle it.
-              return true;
-            }}
-            onResponderTerminationRequest={() => false}>
+
+        <View style={styles.body} accessibilityElementsHidden={composerSheet.isPresented || ledgerManagementSheet.isPresented}
+          importantForAccessibility={composerSheet.isPresented || ledgerManagementSheet.isPresented ? "no-hide-descendants" : "auto"}>
+          <View style={styles.navigationShell}>
             <NavigationContainer
               onReady={syncCurrentRouteState}
               onStateChange={syncCurrentRouteState}
               ref={navigationRef}
             >
-              <SignedInStackNavigator
+              <SignedInTabNavigator
+                disabled={!isSignedInNavigationReady || isEntrySheetOpen || composerSheet.isPresented || ledgerManagementSheet.isPresented}
+                badges={footerBadgedScreens}
+                onOpenEntry={() => { void handleOpenEntry(); }}
+                onFooterHeightChange={setFooterHeight}
                 accountProviderLabel={accountProviderLabel}
                 adTrackingPermissionState={adTrackingPermissionState}
                 calendarSummaryBaseDay={calendarSummaryModeSetting.calendarSummaryBaseDay}
@@ -1350,8 +1338,6 @@ function SignedInApp({ session }: { session: Session }) {
                 notificationPermissionLabel={notifications.permissionLabel}
                 notificationPermissionState={notifications.permissionState}
                 notificationStatusMessage={notifications.statusMessage}
-                onBeforeCopyShareCode={handleBeforeCopyShareCode}
-                onBeforeSendJoinRequest={handleBeforeSendJoinRequest}
                 onChangeCalendarSummaryMode={
                   calendarSummaryModeSetting.updateCalendarSummaryMode
                 }
@@ -1365,6 +1351,7 @@ function SignedInApp({ session }: { session: Session }) {
                 onDiscardEntryDraft={discardEntryDraft}
                 onEditSelectedEntryFromAllEntries={handleEditEntryFromAllEntries}
                 onEditSelectedEntryFromCalendar={handleEditEntryFromCalendar}
+                onDuplicateEntry={handleDuplicateEntry}
                 onOpenAdTrackingSettings={handleOpenAdTrackingSettings}
                 onOpenSubscription={handleOpenSubscription}
                 onOpenSubscriptionManagement={handleOpenSubscriptionManagement}
@@ -1379,17 +1366,11 @@ function SignedInApp({ session }: { session: Session }) {
                   handleOpenCalendar();
                 }}
                 onPrepayInstallmentEntry={handlePrepayInstallmentEntry}
-                onSendPendingJoinRequestNotification={
-                  notifications.sendPendingJoinRequestNotification
-                }
-                onSendPushNotificationToBookMembers={
-                  notifications.sendPushNotificationToBookMembers
-                }
-                onSendPushNotificationToUsers={notifications.sendPushNotificationToUsers}
                 onToggleCalendarHeatmap={calendarHeatmapSetting.updateCalendarHeatmapEnabled}
                 onToggleNotificationPreference={notifications.updatePreference}
                 plusPriceLabel={subscription.plusPriceLabel}
                 renderScreenTitle={renderScreenTitle}
+                renderHeaderActions={renderHeaderActions}
                 showAdTrackingPermissionCard={showAdTrackingPermissionCard}
                 showNotificationSettings={notifications.showNotificationSettings}
                 showsBannerAd={showsAdMobAds}
@@ -1401,45 +1382,43 @@ function SignedInApp({ session }: { session: Session }) {
               />
             </NavigationContainer>
           </View>
-          {isComposerKeyboardOpen && composerKeyboard.backdropHeight > 0 ? (
-            <View
-              pointerEvents="none"
-              accessible={false}
-              style={[styles.composerKeyboardBackdrop, { height: composerKeyboard.backdropHeight }]}
-            />
-          ) : null}
-          <KeyboardAvoidingView pointerEvents="box-none" behavior={appPlatform.isIOS ? "padding" : undefined}
-            keyboardVerticalOffset={composerKeyboard.verticalOffset}
-            style={[styles.composerOverlay, !isComposerVisible ? styles.hiddenComposer : null]}>
-            <View style={[styles.composerSafeArea, { paddingBottom: composerKeyboard.bottomInset }]}
-              onLayout={(event) => { if (isComposerVisible) setComposerHeight(event.nativeEvent.layout.height); }}>
+
+
+        </View>
+        {isClipboardBannerVisible && clipboardSuggestionDraft ? <ClipboardSuggestionBanner
+          draft={clipboardSuggestionDraft} bottomInset={footerHeight}
+          onLayout={event => setClipboardBannerHeight(event.nativeEvent.layout.height)}
+          onApply={handleApplyClipboardSuggestion} onDismiss={handleDismissClipboardSuggestion} /> : null}
               <EntryComposer ref={entryComposerRef} key={ledgerState.activeBook?.id ?? "no-book"}
-                clipboardDraft={clipboardSuggestionDraft} onApplyClipboard={handleApplyClipboardSuggestion}
+                sheet={{ visible: isComposerVisible, onClose: closeComposer, onDismiss: composerSheet.onDismiss }}
                 onDismissClipboard={handleDismissClipboardSuggestion}
-                onReadClipboard={handleReadClipboardSuggestion}
-                availableHeight={composerKeyboard.availableHeight}
+                onReadClipboard={handlePasteClipboardDraft}
                 bookId={ledgerState.activeBook?.id ?? null} selectedDate={ledgerState.selectedDate}
                 userId={session.user.id} disabled={ledgerState.isReadOnlyDueToPlanLimit || !isSignedInInteractionReady || !ledgerState.activeBook}
-                onSave={handleSaveEntry} onEditingChange={setIsComposerEditing}
+                unavailableReason={ledgerState.isLoading || ledgerState.isBusy ? undefined
+                  : !ledgerState.activeBook ? "no-book"
+                  : ledgerState.isReadOnlyDueToPlanLimit ? "read-only" : undefined}
+                onSelectBook={() => {
+                  if (entryComposerRef.current?.isSaving()) return;
+                  Keyboard.dismiss();
+                  composerSheet.closeAfterDismiss(() => setIsLedgerManagementOpen(true));
+                }}
+                onSave={handleSaveEntry} onComplete={() => setIsComposerVisible(false)}
                 onConverted={() => { void ledgerState.refreshLedger(true); }} />
-            </View>
-          </KeyboardAvoidingView>
-        </View>
-        </AppMenuDrawer>
-        <AppFloatingMenuButton
-          isOpen={isMenuOpen}
-          onPress={() => { Keyboard.dismiss(); setIsMenuOpen((currentValue) => !currentValue); }}
-        />
-        <LedgerBookSwitcherModal
-          activeBookId={ledgerState.activeBook?.id ?? null}
+        <LedgerBookManagementSheet
           badgedBookIds={badgedLedgerBookIds}
-          books={ledgerState.accessibleBooks}
-          isOpen={isLedgerSwitcherOpen}
-          onClose={() => setIsLedgerSwitcherOpen(false)}
-          onSelectBook={(bookId) => {
-            void handleSelectLedgerBook(bookId);
-          }}
+          state={ledgerState}
+          isOpen={isLedgerManagementOpen}
+          onClose={() => setIsLedgerManagementOpen(false)}
+          onDismiss={ledgerManagementSheet.onDismiss}
+          onOpenSubscription={() => ledgerManagementSheet.closeAfterDismiss(handleOpenSubscription)}
+          onBeforeCopyShareCode={handleBeforeCopyShareCode}
+          onBeforeSendJoinRequest={handleBeforeSendJoinRequest}
+          onSendPendingJoinRequestNotification={notifications.sendPendingJoinRequestNotification}
+          onSendPushNotificationToBookMembers={notifications.sendPushNotificationToBookMembers}
+          onSendPushNotificationToUsers={notifications.sendPushNotificationToUsers}
           subscriptionTier={subscription.currentTier}
+          userId={session.user.id}
         />
         <NativeYearPickerModal
           isOpen={currentScreen === "calendar" && appPlatform.isIOS && isYearPickerOpen}
@@ -1461,11 +1440,9 @@ function SignedInApp({ session }: { session: Session }) {
       </SafeAreaView>
       {blockingTaskCount > 0 ||
       ledgerState.isBusy ||
-      ledgerState.isLoading ||
       annualReport.isDownloading ? (
         <BlockingOverlay />
       ) : null}
-        <DailyFirstEntryAdNoticeOverlay isVisible={isDailyFirstEntryAdNoticeVisible} />
       </View>
       </BottomContentInsetContext.Provider>
     </ExpenseTextColorProvider>
@@ -1563,34 +1540,6 @@ function buildCardSmsClipboardLedgerEntryDraft({
   };
 }
 
-function navigateToSingleInstanceStackScreen(
-  navigationRef: ReturnType<typeof createNavigationContainerRef<SignedInStackParamList>>,
-  screen: Exclude<LedgerAppScreen, "calendar" | "entry">,
-) {
-  const rootState = navigationRef.getRootState();
-  const targetRouteIndex = rootState.routes.findIndex((route) => route.name === screen);
-
-  if (targetRouteIndex < 0) {
-    navigationRef.navigate(screen);
-    return;
-  }
-
-  if (rootState.index === targetRouteIndex) {
-    return;
-  }
-
-  const routes = rootState.routes.slice(0, targetRouteIndex + 1).map((route) => ({
-    name: route.name as keyof SignedInStackParamList,
-  }));
-
-  navigationRef.dispatch(
-    CommonActions.reset({
-      index: routes.length - 1,
-      routes,
-    }),
-  );
-}
-
 function resolveLedgerSaveErrorMessage(error: unknown): string {
   const errorText = extractLedgerSaveErrorText(error);
 
@@ -1638,16 +1587,7 @@ function extractLedgerSaveErrorText(error: unknown): string {
 }
 
 const styles = StyleSheet.create({
-  composerOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: "flex-end" },
-  composerKeyboardBackdrop: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: AppColors.screenBackground,
-  },
-  composerSafeArea: { backgroundColor: AppColors.surface },
-  hiddenComposer: { display: "none" },
+  headerActions: { flexDirection: "row", alignItems: "center" },
   gestureRoot: {
     flex: 1,
   },

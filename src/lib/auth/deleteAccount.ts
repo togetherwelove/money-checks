@@ -3,14 +3,17 @@ import { supabase } from "../supabase";
 import { supabasePublishableKey, supabaseUrl } from "../supabase";
 import { deleteAccountRequest } from "./deleteAccountRequest";
 import { resolveDeleteAccountAccessToken } from "./resolveDeleteAccountAccessToken";
+import { authorizeAppleAccountDeletion } from "./appleAccountDeletion.native";
 
 const DELETE_ACCOUNT_FUNCTION_PATH = "/functions/v1/delete-account";
 
 export async function deleteOwnAccount(): Promise<void> {
+  const appleAuthorizationCode = await authorizeAppleAccountDeletion();
   const accessToken = await resolveDeleteAccountAccessToken(supabase.auth);
 
   await deleteAccountRequest({
     accessToken,
+    appleAuthorizationCode,
     fetchFn: fetch,
     functionUrl: `${supabaseUrl}${DELETE_ACCOUNT_FUNCTION_PATH}`,
     publishableKey: supabasePublishableKey,

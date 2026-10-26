@@ -10,9 +10,10 @@ import easProject from "./eas-project.json";
 loadProjectEnv(__dirname, { silent: true });
 
 const admobAppIdPattern = /^ca-app-pub-\d+~\d+$/;
+const androidAdMobTestAppId = "ca-app-pub-3940256099942544~3347511713";
 
-function readRequiredAdMobAppId(environmentVariableName: string) {
-  const appId = process.env[environmentVariableName]?.trim();
+function readRequiredAdMobAppId(environmentVariableName: string, fallbackAppId?: string) {
+  const appId = process.env[environmentVariableName]?.trim() ?? fallbackAppId;
   if (!appId || !admobAppIdPattern.test(appId)) {
     throw new Error(
       `${environmentVariableName} must be a valid AdMob app ID in ca-app-pub-<publisher>~<app> format.`,
@@ -26,6 +27,7 @@ const packageJsonPath = path.join(__dirname, "package.json");
 const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8")) as { version?: string };
 const appVersion = packageJson.version ?? "0.0.0";
 const admobIosAppId = readRequiredAdMobAppId("EXPO_PUBLIC_ADMOB_IOS_APP_ID");
+const admobAndroidAppId = readRequiredAdMobAppId("EXPO_PUBLIC_ADMOB_ANDROID_APP_ID", androidAdMobTestAppId);
 const nativeAdDebuggerEnable = false;
 const appIconPath = "./assets/app/icon.png";
 const splashScreenConfig = {
@@ -72,15 +74,13 @@ const config: ExpoConfig = {
   scheme: "moneychecks",
   version: appVersion,
   icon: appIconPath,
-  orientation: "portrait",
+  orientation: "default",
   userInterfaceStyle: "light",
   extra: {
     eas: {
       projectId: easProject.projectId,
     },
   },
-  splash: splashScreenConfig,
-  assetBundlePatterns: ["**/*"],
   ios: {
     bundleIdentifier: "com.chanwook.moneychecks",
     googleServicesFile: iosGoogleServicesFilePath,
@@ -91,7 +91,7 @@ const config: ExpoConfig = {
       ITSAppUsesNonExemptEncryption: false,
       NSUserTrackingUsageDescription: iosUserTrackingPermission,
     },
-    supportsTablet: false,
+    supportsTablet: true,
   },
   plugins: [
     "@react-native-community/datetimepicker",
@@ -119,6 +119,7 @@ const config: ExpoConfig = {
     [
       "react-native-google-mobile-ads",
       {
+        androidAppId: admobAndroidAppId,
         iosAppId: admobIosAppId,
       },
     ],

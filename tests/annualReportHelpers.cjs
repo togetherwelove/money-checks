@@ -24,7 +24,7 @@ function modules(overrides = {}) {
       esModuleInterop: true,
     }}).outputText;
     vm.runInNewContext(output, { exports, Date, Intl, TextEncoder, TextDecoder, Uint8Array, DataView,
-      console, setTimeout, clearTimeout, require(request) {
+      console, setTimeout, clearTimeout, AbortController, require(request) {
         if (request in overrides) return overrides[request];
         if (!request.startsWith('.')) throw Error(`Unexpected dependency: ${request}`);
         const base = path.resolve(path.dirname(file), request);

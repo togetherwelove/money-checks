@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
-import { ScreenSlideTransition } from "../components/ScreenSlideTransition";
 import { AuthLandingCard } from "../components/authScreen/AuthLandingCard";
 import { EmailSignInCard } from "../components/authScreen/EmailSignInCard";
 import { EmailSignUpAgreementCard } from "../components/authScreen/EmailSignUpAgreementCard";
@@ -168,7 +167,7 @@ export function AuthScreen({ initialErrorMessage = null }: AuthScreenProps) {
   };
 
   return (
-    <ScreenSlideTransition screenKey={screen}>
+    <>
       {screen === "sign-up" ? (
         <SignUpScreen
           onBackToSignIn={() => {
@@ -281,7 +280,7 @@ export function AuthScreen({ initialErrorMessage = null }: AuthScreenProps) {
           <AuthCaptchaChallenge ref={captchaChallengeRef} />
         </KeyboardAwareScrollView>
       )}
-    </ScreenSlideTransition>
+    </>
   );
 }
 

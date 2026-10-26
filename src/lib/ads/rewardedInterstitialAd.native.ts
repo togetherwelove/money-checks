@@ -8,7 +8,7 @@ import {
 
 import {
   AdMobRewardedInterstitialConfig,
-  RewardedInterstitialNoticeConfig,
+  RewardedInterstitialReadinessConfig,
 } from "../../constants/ads";
 import { logAppError, logAppWarning } from "../logAppError";
 import { resolveAdMobAdUnitId } from "./adUnitId";
@@ -19,6 +19,7 @@ let rewardedInterstitialAd: RewardedInterstitialAd | null = null;
 let rewardedInterstitialAdDisposers: Array<() => void> = [];
 let isRewardedInterstitialLoaded = false;
 let isRewardedInterstitialShowing = false;
+let isPresentationPending = false;
 let loadRetryTimer: ReturnType<typeof setTimeout> | null = null;
 let rewardedInterstitialOpenedAtMs: number | null = null;
 let hasRewardedInterstitialEarnedReward = false;
@@ -43,6 +44,7 @@ type RewardedInterstitialShowResult =
     };
 
 export type RewardedInterstitialDisplayResult = {
+  didClose: boolean;
   didEarnReward: boolean;
   didOpen: boolean;
 };
@@ -65,7 +67,7 @@ export function preloadRewardedInterstitialAd() {
 
 export function isRewardedInterstitialAdReady() {
   return Boolean(
-    rewardedInterstitialAd && isRewardedInterstitialLoaded && !isRewardedInterstitialShowing,
+    rewardedInterstitialAd && isRewardedInterstitialLoaded && !isRewardedInterstitialShowing && !isPresentationPending,
   );
 }
 
@@ -74,13 +76,13 @@ export async function waitForRewardedInterstitialAdReady(): Promise<boolean> {
   const startedAtMs = Date.now();
 
   while (
-    Date.now() - startedAtMs < RewardedInterstitialNoticeConfig.readyWaitTimeoutMs
+    Date.now() - startedAtMs < RewardedInterstitialReadinessConfig.readyWaitTimeoutMs
   ) {
     if (isRewardedInterstitialAdReady()) {
       return true;
     }
 
-    await wait(RewardedInterstitialNoticeConfig.readyPollIntervalMs);
+    await wait(RewardedInterstitialReadinessConfig.readyPollIntervalMs);
   }
 
   return isRewardedInterstitialAdReady();
@@ -93,7 +95,7 @@ export async function showRewardedInterstitialAd(
     preloadRewardedInterstitialAd();
   }
 
-  if (!rewardedInterstitialAd || !isRewardedInterstitialLoaded || isRewardedInterstitialShowing) {
+  if (!rewardedInterstitialAd || !isRewardedInterstitialLoaded || isRewardedInterstitialShowing || isPresentationPending) {
     logAppWarning("AdMob", "Rewarded interstitial ad not ready", {
       isLoaded: isRewardedInterstitialLoaded,
       isShowing: isRewardedInterstitialShowing,
@@ -101,12 +103,14 @@ export async function showRewardedInterstitialAd(
     });
     preloadRewardedInterstitialAd();
     return {
+      didClose: false,
       didEarnReward: false,
       didOpen: false,
     };
   }
 
   const resultController = new AbortController();
+  isPresentationPending = true;
   try {
     rewardedInterstitialShowAttemptStartedAtMs = Date.now();
     logRewardedInterstitialTrace("show_requested");
@@ -151,11 +155,13 @@ export async function showRewardedInterstitialAd(
     });
     rebuildRewardedInterstitialAd();
     return {
+      didClose: false,
       didEarnReward: false,
       didOpen: false,
     };
   } finally {
     resultController.abort();
+    isPresentationPending = false;
   }
 }
 
@@ -213,6 +219,7 @@ function waitForRewardedInterstitialResult(
         });
         settle(() =>
           resolve({
+            didClose: true,
             didEarnReward: hasEarnedReward,
             didOpen,
           }),
@@ -236,7 +243,7 @@ function waitForRewardedInterstitialResult(
       },
     );
 
-    const onAbort = () => settle(() => resolve({ didEarnReward: hasEarnedReward, didOpen }));
+    const onAbort = () => settle(() => resolve({ didClose: false, didEarnReward: hasEarnedReward, didOpen }));
     signal.addEventListener("abort", onAbort);
     resultTimeout = setTimeout(() => {
       settle(() => {
@@ -244,6 +251,7 @@ function waitForRewardedInterstitialResult(
           step: "rewarded_interstitial_result_timeout",
         });
         resolve({
+          didClose: false,
           didEarnReward: hasEarnedReward,
           didOpen,
         });
