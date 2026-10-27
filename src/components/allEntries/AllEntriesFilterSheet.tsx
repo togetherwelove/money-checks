@@ -2,13 +2,7 @@ import { NativeSelectionSheet } from "../NativeSelectionSheet";
 import { AppScrollBehavior } from "../../constants/scroll";
 import { Feather } from "../AppIcons";
 import { useMemo, useState } from "react";
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import {
   type AllEntriesEntryTypeFilter,
@@ -48,13 +42,8 @@ export function AllEntriesFilterSheet({
 }: AllEntriesFilterSheetProps) {
   const [draftEntryTypeFilter, setDraftEntryTypeFilter] =
     useState<AllEntriesEntryTypeFilter>(entryTypeFilter);
-  const [draftCategoryIds, setDraftCategoryIds] = useState<string[]>([
-    ...selectedCategoryIds,
-  ]);
-  const selectedCategoryIdSet = useMemo(
-    () => new Set(draftCategoryIds),
-    [draftCategoryIds],
-  );
+  const [draftCategoryIds, setDraftCategoryIds] = useState<string[]>([...selectedCategoryIds]);
+  const selectedCategoryIdSet = useMemo(() => new Set(draftCategoryIds), [draftCategoryIds]);
   const visibleCategories = useMemo(
     () => filterCategoriesByEntryType(categories, draftEntryTypeFilter),
     [categories, draftEntryTypeFilter],
@@ -90,51 +79,59 @@ export function AllEntriesFilterSheet({
   };
 
   return (
-    <NativeSelectionSheet isOpen onClose={onClose} title={AllEntriesFilterCopy.sheetTitle}
-      action={{ label: formatAllEntriesApplyLabel(filterCount), onPress: () => {
-        onApply(draftEntryTypeFilter, draftCategoryIds);
-        onClose();
-      } }}>
-      <ScrollView {...AppScrollBehavior}
-            style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.typeFilterRow}>
-          <View style={styles.typeOptions}>
-            {AllEntriesEntryTypeFilterOptions.map((option) => (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityState={{ selected: draftEntryTypeFilter === option.value }}
-                key={option.value}
-                onPress={() => changeEntryTypeFilter(option.value)}
+    <NativeSelectionSheet
+      isOpen
+      onClose={onClose}
+      title={AllEntriesFilterCopy.sheetTitle}
+      action={{
+        label: formatAllEntriesApplyLabel(filterCount),
+        onPress: () => {
+          onApply(draftEntryTypeFilter, draftCategoryIds);
+          onClose();
+        },
+      }}
+    >
+      <View style={styles.typeFilterRow}>
+        <View style={styles.typeOptions}>
+          {AllEntriesEntryTypeFilterOptions.map((option) => (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ selected: draftEntryTypeFilter === option.value }}
+              key={option.value}
+              onPress={() => changeEntryTypeFilter(option.value)}
+              style={[
+                styles.typeOption,
+                draftEntryTypeFilter === option.value ? styles.selectedOption : null,
+              ]}
+            >
+              <Text
                 style={[
-                  styles.typeOption,
-                  draftEntryTypeFilter === option.value ? styles.selectedOption : null,
+                  styles.typeOptionLabel,
+                  draftEntryTypeFilter === option.value ? styles.selectedOptionLabel : null,
                 ]}
               >
-                <Text
-                  style={[
-                    styles.typeOptionLabel,
-                    draftEntryTypeFilter === option.value
-                      ? styles.selectedOptionLabel
-                      : null,
-                  ]}
-                >
-                  {option.label}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-          <Pressable
-            accessibilityRole="button"
-            onPress={resetDraftFilters}
-            style={({ pressed }) => [styles.resetButton, pressed ? styles.pressed : null]}
-          >
-            <Text style={styles.resetLabel}>{AllEntriesFilterCopy.resetLabel}</Text>
-          </Pressable>
+                {option.label}
+              </Text>
+            </Pressable>
+          ))}
         </View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={AllEntriesFilterCopy.resetLabel}
+          onPress={resetDraftFilters}
+          style={({ pressed }) => [styles.resetButton, pressed ? styles.pressed : null]}
+        >
+          <Text style={styles.resetLabel}>{AllEntriesFilterCopy.resetLabel}</Text>
+        </Pressable>
+      </View>
 
+      <ScrollView
+        {...AppScrollBehavior}
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.section}>
           {expenseCategories.length > 0 ? (
             <CategoryGroup
@@ -156,7 +153,6 @@ export function AllEntriesFilterSheet({
           ) : null}
         </View>
       </ScrollView>
-
     </NativeSelectionSheet>
   );
 }
@@ -176,7 +172,9 @@ function CategoryGroup({
 }) {
   return (
     <View style={styles.categoryGroup}>
-      <Text accessibilityRole="header" style={styles.categoryGroupTitle}>{title}</Text>
+      <Text accessibilityRole="header" style={styles.categoryGroupTitle}>
+        {title}
+      </Text>
       <View style={styles.categoryGrid}>
         {categories.map((category) => {
           const selected = selectedCategoryIdSet.has(category.id);
@@ -195,10 +193,7 @@ function CategoryGroup({
               />
               <Text
                 numberOfLines={1}
-                style={[
-                  styles.categoryChipLabel,
-                  selected ? styles.selectedOptionLabel : null,
-                ]}
+                style={[styles.categoryChipLabel, selected ? styles.selectedOptionLabel : null]}
               >
                 {category.label}
               </Text>
@@ -220,10 +215,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     gap: AppLayout.cardGap,
+    paddingTop: AppLayout.cardGap,
+    paddingHorizontal: AppLayout.cardContentPadding,
+    flexShrink: 0,
   },
   resetButton: {
     justifyContent: "center",
-    minHeight: AllEntriesFilterUi.activeFilterChipHeight,
+    minHeight: AllEntriesFilterUi.filterButtonMinimumHeight,
+    flexShrink: 0,
   },
   resetLabel: {
     color: AppColors.primary,

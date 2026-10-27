@@ -1,75 +1,24 @@
-import { AppMessages } from "../constants/messages";
+import { NativeBottomNavigationTabs } from "../constants/nativeBottomNavigation";
 import type { LedgerAppScreen } from "../types/app";
-import { getAppScreenLabel } from "./appScreenLabels";
 
-export type FooterTabScreen = "all-entries" | "calendar" | "charts" | "entry" | "share" | "app-settings";
-
-type RegularFooterTabItem = {
-  activeIcon: "cog" | "book-open-page-variant" | "calendar-month" | "chart-pie" | "inbox" | "plus-circle";
-  inactiveIcon:
-    | "cog-outline"
-    | "book-open-page-variant-outline"
-    | "calendar-month-outline"
-    | "chart-pie-outline"
-    | "inbox-outline"
-    | "plus-circle-outline";
-  isPrimary?: false;
+type Destination = (typeof NativeBottomNavigationTabs)[number];
+export type FooterTabScreen = Destination["screen"];
+export type FooterTabItem = {
+  activeIcon: Destination["selectedIcon"];
+  inactiveIcon: Destination["icon"];
   label: string;
-  targetScreen: Exclude<FooterTabScreen, "entry">;
+  targetScreen: FooterTabScreen;
 };
-
-type PrimaryFooterTabItem = {
-  icon: "plus";
-  isPrimary: true;
-  label: string;
-  targetScreen: "entry";
-};
-
-export type FooterTabItem = PrimaryFooterTabItem | RegularFooterTabItem;
 
 export function buildFooterTabs(): FooterTabItem[] {
-  return [
-    {
-      activeIcon: "calendar-month",
-      inactiveIcon: "calendar-month-outline",
-      label: AppMessages.calendarTab,
-      targetScreen: "calendar",
-    },
-    {
-      activeIcon: "inbox",
-      inactiveIcon: "inbox-outline",
-      label: AppMessages.allEntriesTitle,
-      targetScreen: "all-entries",
-    },
-    {
-      icon: "plus",
-      isPrimary: true,
-      label: AppMessages.entryScreenTitle,
-      targetScreen: "entry",
-    },
-    {
-      activeIcon: "chart-pie",
-      inactiveIcon: "chart-pie-outline",
-      label: AppMessages.chartScreenTitle,
-      targetScreen: "charts",
-    },
-    {
-      activeIcon: "book-open-page-variant",
-      inactiveIcon: "book-open-page-variant-outline",
-      label: getAppScreenLabel("share"),
-      targetScreen: "share",
-    },
-    { activeIcon: "cog", inactiveIcon: "cog-outline", label: getAppScreenLabel("app-settings"), targetScreen: "app-settings" },
-  ];
+  return NativeBottomNavigationTabs.map((tab) => ({
+    activeIcon: tab.selectedIcon,
+    inactiveIcon: tab.icon,
+    label: tab.label,
+    targetScreen: tab.screen,
+  }));
 }
 
 export function isFooterTabScreen(screen: LedgerAppScreen): screen is FooterTabScreen {
-  return (
-    screen === "calendar" ||
-    screen === "all-entries" ||
-    screen === "entry" ||
-    screen === "charts" ||
-    screen === "share" ||
-    screen === "app-settings"
-  );
+  return NativeBottomNavigationTabs.some((tab) => tab.screen === screen);
 }

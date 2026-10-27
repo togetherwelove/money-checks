@@ -24,6 +24,7 @@ import type {
 import type { NotificationPreferenceGroup } from "../notifications/preferences/notificationPreferences";
 import { AccountScreen } from "../screens/AccountScreen";
 import { AllEntriesScreen } from "../screens/AllEntriesScreen";
+import { AllMenuScreen } from "../screens/AllMenuScreen";
 import { AppSettingsScreen } from "../screens/AppSettingsScreen";
 import { ChartScreen } from "../screens/ChartScreen";
 import { EntryNativeSheetScreen } from "../screens/EntryNativeSheetScreen";
@@ -37,7 +38,12 @@ import { SupportScreen } from "../screens/SupportScreen";
 import type { InstallmentPrepaymentHandler } from "../types/installmentTransactions";
 import type { LedgerEntry } from "../types/ledger";
 import type { LedgerEntryDeleteHandler } from "../types/ledgerEntryDeletion";
-import type { PrimaryStackScreen, SignedInStackParamList, SignedInStackScreen } from "./signedInNavigation";
+import {
+  PrimaryTabRoutes,
+  type PrimaryStackScreen,
+  type SignedInStackParamList,
+  type SignedInStackScreen,
+} from "./signedInNavigation";
 
 const Stack = createNativeStackNavigator<SignedInStackParamList>();
 const signedInStackScreenOptions: NativeStackNavigationOptions = {
@@ -62,6 +68,7 @@ const entryNativeSheetOptions: NativeStackNavigationOptions = {
 };
 
 export type SignedInStackNavigatorProps = {
+  entryAppend: ReactNode;
   menuSections: SettingsMenuLinksProps["sections"];
   onSelectMenuItem: SettingsMenuLinksProps["onSelect"];
   renderLedgerBooks: () => ReactNode;
@@ -119,6 +126,7 @@ export type SignedInStackNavigatorProps = {
 };
 
 export function SignedInStackNavigator({
+  entryAppend,
   menuSections,
   onSelectMenuItem,
   renderLedgerBooks,
@@ -174,13 +182,15 @@ export function SignedInStackNavigator({
   return (
     <Stack.Navigator
       initialRouteName={initialScreen}
-      screenListeners={{ transitionStart: (event) => {
-        if (event.data.closing) Keyboard.dismiss();
-      } }}
+      screenListeners={{
+        transitionStart: (event) => {
+          if (event.data.closing) Keyboard.dismiss();
+        },
+      }}
       screenOptions={({ route }) => {
         const screen = route.name;
         if (screen === "entry-sheet") return entryNativeSheetOptions;
-        const isPrimaryScreen = screen === "calendar" || screen === "all-entries" || screen === "charts" || screen === "share" || screen === "app-settings";
+        const isPrimaryScreen = screen in PrimaryTabRoutes;
         return {
           ...signedInStackScreenOptions,
           animation: isPrimaryScreen ? "none" : signedInStackScreenOptions.animation,
@@ -196,6 +206,7 @@ export function SignedInStackNavigator({
       <Stack.Screen name="calendar">
         {() => (
           <HomeScreen
+            entryAppend={entryAppend}
             calendarSummaryMode={calendarSummaryMode}
             isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
             onDeleteSelectedEntry={onDeleteSelectedEntry}
@@ -209,10 +220,7 @@ export function SignedInStackNavigator({
           />
         )}
       </Stack.Screen>
-      <Stack.Screen
-        name="entry-sheet"
-        options={entryNativeSheetOptions}
-      >
+      <Stack.Screen name="entry-sheet" options={entryNativeSheetOptions}>
         {({ route }) => (
           <EntryNativeSheetScreen
             autoFocusContent={route.params?.autoFocusContent ?? false}
@@ -265,69 +273,49 @@ export function SignedInStackNavigator({
           />
         )}
       </Stack.Screen>
-      <Stack.Screen name="app-settings">
+      <Stack.Screen name="all-menu">
         {() => (
-          <AppSettingsScreen
+          <AllMenuScreen
             menuSections={menuSections}
             onSelectMenuItem={onSelectMenuItem}
             activeBookId={ledgerState.activeBook?.id ?? null}
-            activeBookName={ledgerState.activeBook?.name ?? ""}
-            canAddCategory={Boolean(ledgerState.activeBook) && !ledgerState.isReadOnlyDueToPlanLimit}
-            notificationPermissionLabel={notificationPermissionLabel}
-            notificationPermissionState={notificationPermissionState}
-            notificationPreferenceGroups={notificationPreferenceGroups}
-            notificationStatusMessage={notificationStatusMessage}
+            canManageCategories={
+              Boolean(ledgerState.activeBook) && !ledgerState.isReadOnlyDueToPlanLimit
+            }
+          />
+        )}
+      </Stack.Screen>
+      <Stack.Screen name="app-settings">
+        {() => (
+          <AppSettingsScreen
             calendarSummaryBaseDay={calendarSummaryBaseDay}
             calendarSummaryMode={calendarSummaryMode}
             isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
             onChangeCalendarSummaryMode={onChangeCalendarSummaryMode}
             onChangeCalendarSummaryBaseDay={onChangeCalendarSummaryBaseDay}
             isPlusActive={isPlusActive}
-            onChangeNotificationThresholdEnabled={onChangeNotificationThresholdEnabled}
-            onChangeNotificationThresholdPeriod={onChangeNotificationThresholdPeriod}
-            onChangeNotificationThreshold={onChangeNotificationThreshold}
-            onRequestNotificationPermission={onRequestNotificationPermission}
             onOpenSubscription={onOpenSubscription}
             onToggleCalendarHeatmap={onToggleCalendarHeatmap}
-            onToggleNotificationPreference={onToggleNotificationPreference}
             screenTitle={null}
-            showNotificationSettings={showNotificationSettings}
           />
         )}
       </Stack.Screen>
       <Stack.Screen name="notification-settings">
-        {() =>
-          showNotificationSettings ? (
-            <NotificationSettingsScreen
-              notificationPermissionLabel={notificationPermissionLabel}
-              notificationPermissionState={notificationPermissionState}
-              notificationPreferenceGroups={notificationPreferenceGroups}
-              notificationStatusMessage={notificationStatusMessage}
-              onChangeNotificationThresholdEnabled={onChangeNotificationThresholdEnabled}
-              onChangeNotificationThresholdPeriod={onChangeNotificationThresholdPeriod}
-              onChangeNotificationThreshold={onChangeNotificationThreshold}
-              onRequestNotificationPermission={onRequestNotificationPermission}
-              onToggleNotificationPreference={onToggleNotificationPreference}
-              screenTitle={null}
-            />
-          ) : (
-            <AccountScreen
-              accountProviderLabel={accountProviderLabel}
-              adTrackingPermissionState={adTrackingPermissionState}
-              email={email}
-              fallbackDisplayName={fallbackDisplayName}
-              onOpenAdTrackingSettings={onOpenAdTrackingSettings}
-              onOpenSubscriptionManagement={onOpenSubscriptionManagement}
-              onRequestAdTrackingPermission={onRequestAdTrackingPermission}
-              onRestorePurchases={onRestorePurchases}
-              screenTitle={null}
-              showAdTrackingPermissionCard={showAdTrackingPermissionCard}
-              subscriptionTier={subscriptionTier}
-              trackBlockingTask={trackBlockingTask}
-              userId={userId}
-            />
-          )
-        }
+        {() => (
+          <NotificationSettingsScreen
+            showNotificationSettings={showNotificationSettings}
+            notificationPermissionLabel={notificationPermissionLabel}
+            notificationPermissionState={notificationPermissionState}
+            notificationPreferenceGroups={notificationPreferenceGroups}
+            notificationStatusMessage={notificationStatusMessage}
+            onChangeNotificationThresholdEnabled={onChangeNotificationThresholdEnabled}
+            onChangeNotificationThresholdPeriod={onChangeNotificationThresholdPeriod}
+            onChangeNotificationThreshold={onChangeNotificationThreshold}
+            onRequestNotificationPermission={onRequestNotificationPermission}
+            onToggleNotificationPreference={onToggleNotificationPreference}
+            screenTitle={null}
+          />
+        )}
       </Stack.Screen>
       <Stack.Screen name="subscription">
         {() => (
@@ -351,19 +339,13 @@ export function SignedInStackNavigator({
         )}
       </Stack.Screen>
       <Stack.Screen name="help">
-        {({ navigation }) => <HelpScreen screenTitle={null}
-          onOpenFaq={() => navigation.navigate("help-faq")} />}
-      </Stack.Screen>
-      <Stack.Screen name="help-faq">
-        {() => <HelpFaqScreen screenTitle={null} />}
-      </Stack.Screen>
-      <Stack.Screen name="contact-support">
-        {() => (
-          <SupportContactScreen
-            email={email}
-            screenTitle={null}
-          />
+        {({ navigation }) => (
+          <HelpScreen screenTitle={null} onOpenFaq={() => navigation.navigate("help-faq")} />
         )}
+      </Stack.Screen>
+      <Stack.Screen name="help-faq">{() => <HelpFaqScreen screenTitle={null} />}</Stack.Screen>
+      <Stack.Screen name="contact-support">
+        {() => <SupportContactScreen email={email} screenTitle={null} />}
       </Stack.Screen>
     </Stack.Navigator>
   );

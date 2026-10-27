@@ -419,13 +419,6 @@ test("manual input dismisses a pending clipboard suggestion without importing it
   assert.equal(composer.writes.length, 0);
 });
 
-test("clipboard icon dispatches its paste action without changing input itself", () => {
-  let reads = 0;
-  const composer = mountComposer({ amount: "1000" }, false, { onReadClipboard: () => { reads++; } });
-  composer.nodes.find(node => node.props.accessibilityLabel === "클립보드 내역 확인").props.onPress();
-  assert.equal(reads, 1);
-  assert.equal(composer.writes.length, 0);
-});
 
 test("empty input keeps the clipboard suggestion available", () => {
   let dismissed = 0;

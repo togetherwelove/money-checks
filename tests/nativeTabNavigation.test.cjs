@@ -3,6 +3,24 @@ const test = require('node:test');
 const { modules, hooks } = require('./annualReportHelpers.cjs');
 const jsx = (type, props) => ({ type, props });
 
+test('iOS uses native symbol tabs for four destinations and forwards the in-list append row', () => {
+  const load = modules({
+    'react/jsx-runtime': { jsx, jsxs: jsx },
+    '@react-navigation/bottom-tabs/unstable': { createNativeBottomTabNavigator: () => ({ Navigator: 'NativeTabs', Screen: 'Tab' }) },
+    'src/app/SignedInStackNavigator.tsx': { SignedInStackNavigator: 'Stack' },
+    'src/app/NativeTabScene.tsx': { NativeTabScene: 'Scene' },
+  });
+  const { SignedInTabNavigator } = load('src/app/SignedInTabNavigator.ios.tsx');
+  const append = jsx('Append', {});
+  const tree = SignedInTabNavigator({ badges: [], disabled: false, entryAppend: append });
+  assert.equal(tree.type, 'NativeTabs');
+  assert.equal(tree.props.children.length, 4);
+  for (const tab of tree.props.children) {
+    assert.equal(tab.props.options.tabBarIcon({ focused: false }).type, 'sfSymbol');
+    assert.equal(tab.props.children().props.children.props.entryAppend, append);
+  }
+});
+
 function mount(version = 26, os = 'ios', initialIcons = null, loadIcons = async () => null) {
   const state = hooks(), opened = [], heights = [];
   const load = modules({
@@ -23,7 +41,7 @@ function mount(version = 26, os = 'ios', initialIcons = null, loadIcons = async 
   return { render: extra => state.render(() => SignedInTabNavigator({ ...props, ...extra })), opened, heights, unmount: state.unmount };
 }
 
-test('the official native tabs own all five destination stacks and render them eagerly', () => {
+test('the official native tabs own all four destination stacks and render them eagerly', () => {
   const ui = mount();
   const tree = ui.render();
   assert.equal(tree.type, 'NativeTabs');
@@ -31,11 +49,11 @@ test('the official native tabs own all five destination stacks and render them e
   assert.equal(tree.props.screenOptions.lazy, false);
   assert.equal(tree.props.screenOptions.headerShown, false);
   const tabs = tree.props.children;
-  assert.deepEqual(Array.from(tabs, tab => tab.props.name), ['calendar-tab', 'entries-tab', 'charts-tab', 'books-tab', 'settings-tab']);
-  assert.deepEqual(Array.from(tabs, tab => tab.props.children().props.children.props.initialScreen), ['calendar', 'all-entries', 'charts', 'share', 'app-settings']);
+  assert.deepEqual(Array.from(tabs, tab => tab.props.name), ['calendar-tab', 'entries-tab', 'charts-tab', 'settings-tab']);
+  assert.deepEqual(Array.from(tabs, tab => tab.props.children().props.children.props.initialScreen), ['calendar', 'all-entries', 'charts', 'all-menu']);
   assert.ok(tabs.every(tab => tab.props.children().type === 'Scene'));
   assert.ok(tabs.every(tab => tab.props.children().props.children.type === 'Stack'));
-  assert.equal(tabs.length, 5);
+  assert.equal(tabs.length, 4);
   assert.ok(tabs.every(tab => tab.props.options.tabBarSelectionEnabled));
   assert.equal(tabs[1].props.options.tabBarBadge, ' ');
   const blocked = ui.render({ disabled: true });
@@ -48,7 +66,7 @@ test('the first visible native tabs use final icon images without a symbol-to-im
   const pending = new Promise(done => { resolve = done; });
   const ui = mount(26, 'ios', () => undefined, () => pending);
   assert.equal(ui.render().type, 'Loading');
-  resolve({ tabs: Array.from({ length: 5 }, (_, index) => ({ normal: { uri: `normal-${index}` }, selected: { uri: `selected-${index}` } })), add: { uri: 'add' } });
+  resolve({ tabs: Array.from({ length: 4 }, (_, index) => ({ normal: { uri: `normal-${index}` }, selected: { uri: `selected-${index}` } })), add: { uri: 'add' } });
   await pending;
   const tree = ui.render();
   assert.equal(tree.type, 'NativeTabs');
@@ -68,7 +86,7 @@ test('icon generation shares pending work and cached assets across tab navigator
   const first = icons.loadNativeBottomNavigationIcons();
   assert.equal(icons.loadNativeBottomNavigationIcons(), first);
   const assets = await first;
-  assert.equal(calls, 10);
+  assert.equal(calls, 8);
   assert.equal(icons.getCachedNativeBottomNavigationIcons(), assets);
   assert.equal(await icons.loadNativeBottomNavigationIcons(), assets);
 });

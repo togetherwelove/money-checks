@@ -2,25 +2,24 @@ import type { NavigatorScreenParams } from "@react-navigation/native";
 import type { LedgerAppScreen } from "../types/app";
 
 export type SignedInStackScreen = Exclude<LedgerAppScreen, "entry">;
-export type PrimaryStackScreen = "calendar" | "all-entries" | "charts" | "share" | "app-settings";
+export type PrimaryStackScreen = keyof typeof PrimaryTabRoutes;
 export const PrimaryTabRoutes = {
   calendar: "calendar-tab",
   "all-entries": "entries-tab",
   charts: "charts-tab",
-  share: "books-tab",
-  "app-settings": "settings-tab",
+  "all-menu": "settings-tab",
 } as const;
 export type SignedInTabParamList = {
   "calendar-tab": NavigatorScreenParams<SignedInStackParamList> | undefined;
   "entries-tab": NavigatorScreenParams<SignedInStackParamList> | undefined;
   "charts-tab": NavigatorScreenParams<SignedInStackParamList> | undefined;
-  "books-tab": NavigatorScreenParams<SignedInStackParamList> | undefined;
   "settings-tab": NavigatorScreenParams<SignedInStackParamList> | undefined;
 };
 
 export type SignedInStackParamList = {
   account: undefined;
   "all-entries": undefined;
+  "all-menu": undefined;
   "app-settings": undefined;
   calendar: undefined;
   charts: undefined;
@@ -42,6 +41,7 @@ export function isSignedInStackScreen(value: string | undefined): value is Signe
   return (
     value === "account" ||
     value === "all-entries" ||
+    value === "all-menu" ||
     value === "app-settings" ||
     value === "calendar" ||
     value === "charts" ||

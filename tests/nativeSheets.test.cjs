@@ -146,11 +146,14 @@ test('shared header preserves confirmation labels and rejects disabled or busy a
   assert.equal(closed, 0);
 });
 
-test('filter sheet changes remain draft until applied and dismissal does not apply', () => {
+test('filter sheet income selection and reset update draft controls before explicit apply', () => {
   const { h, load } = setup();
   const { AllEntriesFilterSheet } = load('src/components/allEntries/AllEntriesFilterSheet.tsx');
   const applied = []; let closed = 0;
-  const props = { categories: [{ id: 'food', label: 'Food', type: 'expense', iconName: 'coffee' }],
+  const props = { categories: [
+    { id: 'food', label: 'Food', type: 'expense', iconName: 'coffee' },
+    { id: 'salary', label: 'Salary', type: 'income', iconName: 'briefcase' },
+  ],
     entryTypeFilter: 'expense', selectedCategoryIds: ['food'], onApply: (type, ids) => applied.push([type, [...ids]]), onClose: () => closed++,
   };
   const render = () => h.render(() => AllEntriesFilterSheet(props));
@@ -159,11 +162,22 @@ test('filter sheet changes remain draft until applied and dismissal does not app
   assert.equal(closed, 1);
   assert.deepEqual(applied, []);
   let all = nodes(tree);
+  const income = all.find(node => node.type === 'Pressable' && nodes(node).some(child => child.props.children === '수입'));
+  income.props.onPress();
+  tree = render();
+  all = nodes(tree);
+  const selectedIncome = all.find(node => node.type === 'Pressable' && nodes(node).some(child => child.props.children === '수입'));
+  assert.equal(selectedIncome.props.accessibilityState.selected, true);
+  assert.ok(nodes(tree.props.children[0]).includes(selectedIncome));
+  assert.deepEqual(applied, []);
+  tree.props.action.onPress();
+  assert.deepEqual(applied, [['income', []]]);
   all.find(node => node.type === 'Pressable' && nodes(node).some(child => child.props.children === '초기화')).props.onPress();
   tree = render();
-  assert.deepEqual(applied, []);
+  assert.deepEqual(applied, [['income', []]]);
   all = nodes(tree);
+  assert.equal(all.find(node => node.type === 'Pressable' && nodes(node).some(child => child.props.children === '전체')).props.accessibilityState.selected, true);
   tree.props.action.onPress();
-  assert.deepEqual(applied, [['all', []]]);
-  assert.equal(closed, 2);
+  assert.deepEqual(applied, [['income', []], ['all', []]]);
+  assert.equal(closed, 3);
 });

@@ -13,10 +13,7 @@ export function WeekdayHeader() {
     <View style={styles.weekdays}>
       {AppMessages.weekdayLabels.map((label, index) => (
         <View key={label} style={styles.weekdayCell}>
-          <Text
-            {...CompactTextProps}
-            style={[styles.weekdayText, getWeekendTextStyle(index)]}
-          >
+          <Text {...CompactTextProps} style={[styles.weekdayText, getWeekendTextStyle(index)]}>
             {label}
           </Text>
         </View>

@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { AppState, Keyboard } from "react-native";
 import type { EntryComposerHandle } from "../components/entryComposer/EntryComposer";
-import { CardSmsClipboardCopy } from "../constants/cardSmsClipboard";
 import {
   readCardSmsClipboardDraft,
   type CardSmsClipboardDraft,
 } from "../lib/cardSmsClipboardImport";
-import { showNativeToast } from "../lib/nativeToast";
 import { createScopedClipboardReader } from "../lib/scopedClipboardReader";
 import type { LedgerEntryDraft } from "../types/ledger";
 import { createDraft } from "../utils/ledgerEntries";
@@ -44,7 +42,6 @@ export function useEntryClipboard({
 }: Options) {
   const lastHandledClipboardRef = useRef<string | null>(null);
   const clipboardReadInFlightRef = useRef(false);
-  const clipboardPasteInFlightRef = useRef(false);
   const pendingClipboardCheckRef = useRef(true);
   const [clipboardCheckRevision, setClipboardCheckRevision] = useState(0);
   const previousClipboardImportAppStateRef = useRef(AppState.currentState);
@@ -159,6 +156,7 @@ export function useEntryClipboard({
     if (!scope) return;
     const clipboardDraft = await readAvailableCardSmsClipboardDraft();
     if (scope !== clipboardScopeRef.current) return;
+    if (clipboardDraft && JSON.stringify(clipboardDraft) === lastHandledClipboardRef.current) return;
     setClipboardSuggestionDraft(clipboardDraft);
   }, [
     handleReadOnlyEditBlocked,
@@ -168,20 +166,6 @@ export function useEntryClipboard({
     readAvailableCardSmsClipboardDraft,
   ]);
 
-  const handlePasteClipboardDraft = useCallback(async () => {
-    const scope = clipboardScopeRef.current;
-    if (!scope || clipboardPasteInFlightRef.current) return;
-    clipboardPasteInFlightRef.current = true;
-    try {
-      const draft = await readAvailableCardSmsClipboardDraft();
-      if (scope !== clipboardScopeRef.current || !composerVisibleRef.current) return;
-      setClipboardSuggestionDraft(null);
-      if (draft) handleOpenCardSmsClipboardDraft(draft);
-      else showNativeToast(CardSmsClipboardCopy.noAvailableEntry);
-    } finally {
-      clipboardPasteInFlightRef.current = false;
-    }
-  }, [handleOpenCardSmsClipboardDraft, readAvailableCardSmsClipboardDraft]);
 
   const handleDetectClipboardSuggestion = useCallback(async () => {
     const scope = clipboardScopeRef.current;
@@ -305,7 +289,6 @@ export function useEntryClipboard({
   return {
     clipboardSuggestionDraft,
     handleOpenEntryFromCalendar,
-    handlePasteClipboardDraft,
     handleDismissClipboardSuggestion,
     handleApplyClipboardSuggestion,
     handleOpenClipboardImportFromWidget,

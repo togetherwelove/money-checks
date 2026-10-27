@@ -1,7 +1,9 @@
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, } from "react-native";
+import { ActivityIndicator, ScrollView, StyleSheet, type ScrollViewInstance } from "react-native";
+import type { ReactNode } from "react";
 
 import { AppColors } from "../../constants/colors";
-import { RefreshableScrollBehavior } from "../../constants/scroll";
+import { AppScrollBehavior } from "../../constants/scroll";
+import { useEntryAppendScroll } from "../../hooks/useEntryAppendScroll";
 import { HomeScreenUi } from "../../constants/home";
 import type { LedgerEntry } from "../../types/ledger";
 import type { LedgerEntryDeleteHandler } from "../../types/ledgerEntryDeletion";
@@ -14,49 +16,46 @@ type HomeTransactionListProps = {
   activeBookId: string | null;
   entries: LedgerEntry[];
   isLoading: boolean;
-  isRefreshing: boolean;
+  selectedDate: string;
   onDeleteEntry: LedgerEntryDeleteHandler;
   onDuplicateEntry: (entry: LedgerEntry) => void;
   onEditEntry: (entry: LedgerEntry) => void;
   onPrepayInstallmentEntry: InstallmentPrepaymentHandler;
-  onRefresh: () => Promise<void>;
+  entryAppend?: ReactNode;
 };
 
 export function HomeTransactionList({
   activeBookId,
   entries,
   isLoading,
-  isRefreshing,
+  selectedDate,
   onDeleteEntry,
   onDuplicateEntry,
   onEditEntry,
   onPrepayInstallmentEntry,
-  onRefresh,
+  entryAppend,
 }: HomeTransactionListProps) {
+  const scroll = useEntryAppendScroll<ScrollViewInstance>(
+    `${activeBookId}:${selectedDate}`,
+    isLoading,
+    entries.length,
+  );
   return (
     <ScrollView
-      {...RefreshableScrollBehavior}
+      {...AppScrollBehavior}
+      ref={scroll.ref}
+      onLayout={scroll.onLayout}
+      onContentSizeChange={scroll.onContentSizeChange}
+      onScrollBeginDrag={scroll.onScrollBeginDrag}
+      onTouchStart={scroll.onTouchStart}
       nestedScrollEnabled
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
-      refreshControl={
-        <RefreshControl
-          onRefresh={() => {
-            void onRefresh();
-          }}
-          refreshing={isRefreshing}
-          tintColor={AppColors.primary}
-        />
-      }
       showsVerticalScrollIndicator={false}
       style={styles.scroll}
     >
       {isLoading && entries.length === 0 ? (
-        <ActivityIndicator
-          color={AppColors.primary}
-          size="small"
-          style={styles.loading}
-        />
+        <ActivityIndicator color={AppColors.primary} size="small" style={styles.loading} />
       ) : (
         <LedgerEntryList
           activeBookId={activeBookId}
@@ -69,6 +68,7 @@ export function HomeTransactionList({
           onPrepayInstallmentEntry={onPrepayInstallmentEntry}
         />
       )}
+      {entryAppend}
       <AppFooterContentInset />
     </ScrollView>
   );

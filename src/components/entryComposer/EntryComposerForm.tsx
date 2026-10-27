@@ -3,7 +3,6 @@ import { Feather } from "../AppIcons";
 import { Pressable, StyleSheet, Text, TextInput, View, type TextInputInstance } from "react-native";
 
 import { CATEGORY_OPTIONS } from "../../constants/categories";
-import { CardSmsClipboardCopy } from "../../constants/cardSmsClipboard";
 import { AppLayout } from "../../constants/layout";
 import { AppColors } from "../../constants/colors";
 import { EntryComposerCopy as Copy, EntryComposerUi as Ui } from "../../constants/entryComposer";
@@ -24,7 +23,6 @@ type Props = {
   contentInputRef?: RefObject<TextInputInstance | null>;
   onChangeText?: () => void;
   onConvert?: () => void;
-  onReadClipboard?: () => void;
 };
 
 const textActionHitSlop = {
@@ -32,7 +30,7 @@ const textActionHitSlop = {
   bottom: (Ui.fieldHeight - Ui.sheetTextFieldHeight) / 2,
 };
 
-export function EntryComposerForm({ composer, bookId, disabled, editing, inputRef, contentInputRef: providedContentInputRef, onChangeText, onConvert, onReadClipboard }: Props) {
+export function EntryComposerForm({ composer, bookId, disabled, editing, inputRef, contentInputRef: providedContentInputRef, onChangeText, onConvert }: Props) {
   const { draft, update } = composer;
   const fallbackContentInputRef = useRef<TextInputInstance>(null);
   const contentInputRef = providedContentInputRef ?? fallbackContentInputRef;
@@ -40,12 +38,6 @@ export function EntryComposerForm({ composer, bookId, disabled, editing, inputRe
     <View style={styles.form}>
       <View style={styles.dateRow}>
         <EntryDateSelector compact inline selectedDate={draft.date} onSelectDate={date => update("date", date)} />
-        {onReadClipboard ? <Pressable accessibilityRole="button"
-          accessibilityLabel={CardSmsClipboardCopy.showSuggestion}
-          accessibilityState={{ disabled }} disabled={disabled}
-          onPress={() => { if (!disabled) onReadClipboard(); }} style={[styles.inputAction, styles.clipboardAction]}>
-          <Feather name="clipboard" size={Ui.cancelIconSize} color={AppColors.mutedText} />
-        </Pressable> : null}
       </View>
       {(["amount", "content", "note"] as const).map(field => {
         const label = field === "amount" ? Copy.amount : field === "content" ? EntryRegistrationCopy.contentLabel : EntryRegistrationCopy.noteLabel;
@@ -106,7 +98,6 @@ export function EntryComposerForm({ composer, bookId, disabled, editing, inputRe
 
 const styles = StyleSheet.create({
   dateRow: { minHeight: Ui.fieldHeight },
-  clipboardAction: { position: "absolute", top: 0, right: 0, minHeight: Ui.fieldHeight },
   form: { gap: Ui.sheetSectionGap },
   detailsSection: { paddingTop: Ui.detailsSectionTopPadding, gap: Ui.detailsHeadingGap },
   label: FormLabelTextStyle,

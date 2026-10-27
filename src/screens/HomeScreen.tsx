@@ -21,12 +21,7 @@ import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
 import type { LedgerEntry } from "../types/ledger";
 import type { LedgerEntryDeleteHandler } from "../types/ledgerEntryDeletion";
 import type { InstallmentPrepaymentHandler } from "../types/installmentTransactions";
-import {
-  addMonths,
-  parseIsoDate,
-  startOfMonth,
-  toIsoDate,
-} from "../utils/calendar";
+import { addMonths, parseIsoDate, startOfMonth, toIsoDate } from "../utils/calendar";
 
 import { formatSummarySelectedDate, resolveDisplayedSummary } from "../utils/homeSummary";
 
@@ -41,6 +36,7 @@ type HomeScreenProps = {
   isCalendarHeatmapEnabled: boolean;
   showsBannerAd: boolean;
   state: LedgerScreenState;
+  entryAppend?: ReactNode;
 };
 
 export function HomeScreen({
@@ -54,6 +50,7 @@ export function HomeScreen({
   isCalendarHeatmapEnabled,
   showsBannerAd,
   state,
+  entryAppend,
 }: HomeScreenProps) {
   const todayIsoDate = toIsoDate(new Date());
   const {
@@ -75,83 +72,89 @@ export function HomeScreen({
     [state.handleSelectDate, todayIsoDate, visibleMonth],
   );
 
-  const bannerAd = useMemo(() => showsBannerAd ? <AppBannerAd /> : null, [showsBannerAd]);
+  const bannerAd = useMemo(() => (showsBannerAd ? <AppBannerAd /> : null), [showsBannerAd]);
 
   return (
     <View style={[styles.screen, styles.screenContent]}>
       <View style={styles.adPanel}>{bannerAd}</View>
       <HomeAdaptiveLayout
-        calendar={<View>
-        {screenTitle(`${formatYearLabel(visibleMonth)} ${formatMonthLabel(visibleMonth)}`)}
-        {errorMessage ? (
-          <Pressable
-            accessibilityRole="button"
-            disabled={isRefreshing}
-            onPress={() => {
-              if (isRefreshing) {
-                return;
-              }
+        calendar={
+          <View>
+            {screenTitle(`${formatYearLabel(visibleMonth)} ${formatMonthLabel(visibleMonth)}`)}
+            {errorMessage ? (
+              <Pressable
+                accessibilityRole="button"
+                disabled={isRefreshing}
+                onPress={() => {
+                  if (isRefreshing) {
+                    return;
+                  }
 
-              void onRefreshLedger();
-            }}
-            style={({ pressed }) => [
-              styles.errorRetry,
-              pressed && !isRefreshing ? styles.errorRetryPressed : null,
-              isRefreshing ? styles.errorRetryDisabled : null,
-            ]}
-          >
-            <Text style={styles.error}>{errorMessage}</Text>
-            <Text style={styles.errorRetryLabel}>재시도</Text>
-          </Pressable>
-        ) : null}
-        <View style={styles.calendarAdSection}>
-          <WeekdayHeader />
-          <MonthCalendarPager
-            currentPage={state.currentMonthPage}
-            isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
-            isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
-            nextPage={state.nextMonthPage}
-            onMoveMonth={handleMoveMonth}
-            onSelectDate={onSelectCalendarDate}
-            previousPage={state.previousMonthPage}
+                  void onRefreshLedger();
+                }}
+                style={({ pressed }) => [
+                  styles.errorRetry,
+                  pressed && !isRefreshing ? styles.errorRetryPressed : null,
+                  isRefreshing ? styles.errorRetryDisabled : null,
+                ]}
+              >
+                <Text style={styles.error}>{errorMessage}</Text>
+                <Text style={styles.errorRetryLabel}>재시도</Text>
+              </Pressable>
+            ) : null}
+            <View style={styles.calendarAdSection}>
+              <WeekdayHeader />
+              <MonthCalendarPager
+                currentPage={state.currentMonthPage}
+                isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
+                isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
+                nextPage={state.nextMonthPage}
+                onMoveMonth={handleMoveMonth}
+                onSelectDate={onSelectCalendarDate}
+                previousPage={state.previousMonthPage}
+                selectedDate={selectedDate}
+              />
+            </View>
+          </View>
+        }
+        transactionHeader={
+          <View style={styles.transactionSection}>
+            <View style={styles.transactionSummaryPanel}>
+              <MonthlySummary
+                balanceAmount={displayedSummary.balanceAmount}
+                balanceLabel={displayedSummary.balanceLabel}
+                summaryLabel={displayedSummary.summaryLabel}
+                totalExpense={displayedSummary.totalExpense}
+                totalIncome={displayedSummary.totalIncome}
+              />
+            </View>
+            <View style={styles.selectedDateHeader}>
+              <Text accessibilityRole="header" style={styles.selectedDateLabel}>
+                {formatSummarySelectedDate(selectedDate)}
+              </Text>
+              {!errorMessage ? (
+                <Text style={styles.selectedDateCount}>
+                  {formatSelectedDateEntryCount(
+                    isLoadingSelectedDateEntries || state.isLoading ? null : selectedEntries.length,
+                  )}
+                </Text>
+              ) : null}
+            </View>
+          </View>
+        }
+        renderTransactions={() => (
+          <HomeTransactionList
+            activeBookId={state.activeBook?.id ?? null}
+            entries={selectedEntries}
+            isLoading={isLoadingSelectedDateEntries}
             selectedDate={selectedDate}
+            onDeleteEntry={onDeleteSelectedEntry}
+            onDuplicateEntry={onDuplicateEntry}
+            onEditEntry={onEditSelectedEntry}
+            onPrepayInstallmentEntry={onPrepayInstallmentEntry}
+            entryAppend={entryAppend}
           />
-        </View>
-      </View>}
-        transactionHeader={<View style={styles.transactionSection}>
-        <View style={styles.transactionSummaryPanel}>
-          <MonthlySummary
-            balanceAmount={displayedSummary.balanceAmount}
-            balanceLabel={displayedSummary.balanceLabel}
-            summaryLabel={displayedSummary.summaryLabel}
-            totalExpense={displayedSummary.totalExpense}
-            totalIncome={displayedSummary.totalIncome}
-          />
-        </View>
-        <View style={styles.selectedDateHeader}>
-          <Text accessibilityRole="header" style={styles.selectedDateLabel}>
-            {formatSummarySelectedDate(selectedDate)}
-          </Text>
-          {!errorMessage ? (
-            <Text style={styles.selectedDateCount}>
-              {formatSelectedDateEntryCount(
-                isLoadingSelectedDateEntries || state.isLoading ? null : selectedEntries.length,
-              )}
-            </Text>
-          ) : null}
-        </View>
-      </View>}
-        renderTransactions={() => (<HomeTransactionList
-          activeBookId={state.activeBook?.id ?? null}
-          entries={selectedEntries}
-          isLoading={isLoadingSelectedDateEntries}
-          isRefreshing={isRefreshing}
-          onDeleteEntry={onDeleteSelectedEntry}
-          onDuplicateEntry={onDuplicateEntry}
-          onEditEntry={onEditSelectedEntry}
-          onPrepayInstallmentEntry={onPrepayInstallmentEntry}
-          onRefresh={onRefreshLedger}
-        />)}
+        )}
       />
       {state.isLoading ? <ScreenLoadingOverlay /> : null}
     </View>
@@ -195,8 +198,20 @@ const styles = StyleSheet.create({
     borderColor: AppColors.border,
   },
   adPanel: { flexShrink: 0 },
-  selectedDateHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: AppLayout.cardContentPadding, paddingVertical: AppLayout.cardGap, gap: AppLayout.compactGap },
-  selectedDateLabel: { flexShrink: 1, color: AppColors.text, fontSize: MonthlySummaryUi.dateLabelFontSize, fontWeight: "700" },
+  selectedDateHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: AppLayout.cardContentPadding,
+    paddingVertical: AppLayout.cardGap,
+    gap: AppLayout.compactGap,
+  },
+  selectedDateLabel: {
+    flexShrink: 1,
+    color: AppColors.text,
+    fontSize: MonthlySummaryUi.dateLabelFontSize,
+    fontWeight: "700",
+  },
   selectedDateCount: { color: AppColors.mutedText, fontSize: MonthlySummaryUi.dateLabelFontSize },
   transactionSummaryPanel: {
     borderBottomWidth: StyleSheet.hairlineWidth,

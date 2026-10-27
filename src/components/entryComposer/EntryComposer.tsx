@@ -24,7 +24,6 @@ type Props = {
   sheet: { visible: boolean; onClose: () => void; onDismiss?: () => void };
   ref?: Ref<EntryComposerHandle>;
   onDismissClipboard?: () => void;
-  onReadClipboard?: () => void;
   bookId: string | null;
   selectedDate: string;
   userId: string;
@@ -47,7 +46,7 @@ export type EntryComposerHandle = {
   discardDeletedEntry: (entries: LedgerEntry[]) => void;
 };
 
-export function EntryComposer({ ref, sheet, onDismissClipboard, onReadClipboard, bookId, selectedDate, userId, disabled, unavailableReason, onSelectBook, onSave, onEntryReviewChange, onConverted, onComplete }: Props) {
+export function EntryComposer({ ref, sheet, onDismissClipboard, bookId, selectedDate, userId, disabled, unavailableReason, onSelectBook, onSave, onEntryReviewChange, onConverted, onComplete }: Props) {
   const [conversionOpen, setConversionOpen] = useState(false);
   const [sourceEntry, setSourceEntry] = useState<LedgerEntry | undefined>();
   const composer = useEntryComposer(bookId, selectedDate, userId);
@@ -237,7 +236,6 @@ export function EntryComposer({ ref, sheet, onDismissClipboard, onReadClipboard,
           onConverted?.();
         }} /> : null}
       <EntryComposerForm composer={composer} bookId={bookId} disabled={locked}
-        onReadClipboard={onReadClipboard}
         editing={Boolean(sourceEntry)} inputRef={inputRef} contentInputRef={contentInputRef} onChangeText={onDismissClipboard}
         onConvert={sourceEntry?.installmentGroupId && sourceEntry.type === "expense" && sourceEntry.installmentStatus !== InstallmentStatuses.prepaid
           ? () => setConversionOpen(true) : undefined} />
