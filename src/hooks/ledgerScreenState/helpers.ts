@@ -1,6 +1,5 @@
 import {
   deleteLedgerEntry,
-  fetchLedgerEntries,
   fetchLedgerEntriesByInstallmentGroup,
   fetchLedgerEntriesSummary,
   insertLedgerEntries,

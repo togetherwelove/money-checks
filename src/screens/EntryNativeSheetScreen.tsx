@@ -77,24 +77,6 @@ export function EntryNativeSheetScreen({
     didCompleteRef.current = true;
     navigation.goBack();
   }, [navigation]);
-  const closeForPendingSave = useCallback(() => {
-    didCompleteRef.current = true;
-
-    return new Promise<void>((resolve) => {
-      const removeTransitionEndListener = navigation.addListener(
-        "transitionEnd",
-        ({ data }) => {
-          if (!data.closing) {
-            return;
-          }
-
-          removeTransitionEndListener();
-          resolve();
-        },
-      );
-      navigation.goBack();
-    });
-  }, [navigation]);
   const handleDraftChange = useCallback(() => {
     setIsDirty(true);
   }, []);

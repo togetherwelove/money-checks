@@ -24,21 +24,18 @@ export type AppMenuSection = {
   label: string;
 };
 
-export function buildAppMenuSections(
-  options: {
-    showAnnualReportDownload?: boolean;
-  } = {},
+export function getAppMenuItemId(item: AppMenuItem): string {
+  return "targetScreen" in item ? item.targetScreen : item.action;
+}
+
+export function buildSettingsMenuSections(
+  options: { showAnnualReportDownload?: boolean } = {},
 ): AppMenuSection[] {
   const accountItems: AppMenuItem[] = [
     {
       icon: "user",
       label: getAppScreenLabel("account"),
       targetScreen: "account",
-    },
-    {
-      icon: "settings",
-      label: getAppScreenLabel("app-settings"),
-      targetScreen: "app-settings",
     },
   ];
 
@@ -52,10 +49,14 @@ export function buildAppMenuSections(
   }
 
   return [
-    ...(ledgerItems.length ? [{
-      label: MenuCopy.sections.ledger,
-      items: ledgerItems,
-    }] : []),
+    ...(ledgerItems.length
+      ? [
+          {
+            label: MenuCopy.sections.ledger,
+            items: ledgerItems,
+          },
+        ]
+      : []),
     {
       label: MenuCopy.sections.support,
       items: [
@@ -86,11 +87,4 @@ export function buildAppMenuSections(
       items: accountItems,
     },
   ];
-}
-
-export function buildSettingsMenuSections(options: { showAnnualReportDownload?: boolean } = {}): AppMenuSection[] {
-  return buildAppMenuSections(options).map(section => ({
-    ...section,
-    items: section.items.filter(item => !("targetScreen" in item) || item.targetScreen !== "app-settings"),
-  })).filter(section => section.items.length > 0);
 }

@@ -1,4 +1,4 @@
-import type { Session } from "@supabase/supabase-js";
+
 import { useCallback, useEffect, useState } from "react";
 import { AppState, Platform } from "react-native";
 

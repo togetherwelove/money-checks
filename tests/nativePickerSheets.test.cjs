@@ -110,7 +110,6 @@ test('report range confirmation moves to the header and uses the current draft d
     'react/jsx-runtime': { jsx, jsxs: jsx },
     'react-native': { View: 'View', Text: 'Text', Pressable: 'Pressable', StyleSheet: { create: value => value } },
     '@react-native-community/datetimepicker': 'DatePicker',
-    'react-native': { StyleSheet: { create: value => value } },
     'src/components/NativePickerSheet.tsx': { NativePickerSheet: 'Sheet' },
     'src/components/annualReport/AnnualReportPeriodOptions.tsx': { AnnualReportPeriodOptions: 'Options' },
   });
@@ -136,7 +135,6 @@ test('standalone date selection confirms from the header and cancellation leaves
     'react-native': { View: 'View', Text: 'Text', Pressable: 'Pressable', Keyboard: { dismiss() {} }, StyleSheet: { create: value => value } },
     '@expo/vector-icons': { Feather: 'Icon' },
     '@react-native-community/datetimepicker': 'DatePicker',
-    'react-native': { StyleSheet: { create: value => value } },
     'src/components/NativePickerSheet.tsx': { NativePickerSheet: 'Sheet' },
     'src/components/EntryInlineDatePicker.tsx': { EntryInlineDatePicker: 'Calendar' },
   });

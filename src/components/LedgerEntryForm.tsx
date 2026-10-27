@@ -301,6 +301,7 @@ export function LedgerEntryForm({
 
 const styles = StyleSheet.create({
   form: {
+    position: "relative",
     gap: AppLayout.cardGap,
   },
   fieldGroup: {

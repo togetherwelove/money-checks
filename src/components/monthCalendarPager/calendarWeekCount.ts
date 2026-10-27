@@ -1,10 +1,6 @@
 import type { CalendarDay } from "../../types/ledger";
 import { CALENDAR_DAYS_PER_WEEK } from "./calendarLayout";
 
-function getCalendarWeekCount(days: CalendarDay[]): number {
-  return getVisibleCalendarWeeks(days).length;
-}
-
 export function getVisibleCalendarWeeks(days: CalendarDay[]): CalendarDay[][] {
   return chunkDays(days).filter(weekHasCurrentMonth);
 }

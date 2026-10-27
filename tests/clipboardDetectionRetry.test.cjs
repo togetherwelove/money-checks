@@ -6,7 +6,7 @@ const test = require('node:test');
 const flush = () => new Promise(setImmediate);
 
 function setup() {
-  const source = fs.readFileSync('src/App.tsx', 'utf8');
+  const source = fs.readFileSync('src/hooks/useEntryClipboard.ts', 'utf8');
   const tree = ts.createSourceFile('App.tsx', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   let detect, ready, scopeChanged;
   const visit = node => {

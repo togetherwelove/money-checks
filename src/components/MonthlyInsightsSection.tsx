@@ -13,7 +13,6 @@ import { useLedgerCategoryIconMap } from "../hooks/useLedgerCategoryIconMap";
 import type { CategoryIconName } from "../types/category";
 import type { MonthlyInsights } from "../types/ledger";
 import { MonthlyBreakdownDonutChart } from "./monthlyInsights/MonthlyBreakdownDonutChart";
-import { MonthlyComparisonSection } from "./monthlyInsights/MonthlyComparisonSection";
 import { MonthlyTrendBarChart } from "./monthlyInsights/MonthlyTrendBarChart";
 
 type MonthlyInsightsSectionProps = {
@@ -168,7 +167,6 @@ export function MonthlyInsightsSection({
           />
         </View>
       ) : null}
-      {/* {scope === "periodic" ? <MonthlyComparisonSection insights={insights} /> : null} */}
       <View
         style={[
           styles.breakdownSection,

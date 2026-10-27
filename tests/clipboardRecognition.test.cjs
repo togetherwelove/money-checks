@@ -32,7 +32,7 @@ test('a stale book request cannot clear the current book read and failures remai
 });
 
 test('+ opens immediately, asynchronous recognition does not reopen a dismissed sheet, and old-book results are ignored', async () => {
-  const source = fs.readFileSync('src/App.tsx', 'utf8');
+  const source = fs.readFileSync('src/hooks/useEntryClipboard.ts', 'utf8');
   const tree = ts.createSourceFile('App.tsx', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   let handler;
   function visit(node) {
@@ -96,7 +96,7 @@ test('footer preview reuses the same import and dismissal actions above the meas
 });
 
 test('returning while data is loading defers clipboard detection until readiness and cleans up its listener', () => {
-  const source = fs.readFileSync('src/App.tsx', 'utf8');
+  const source = fs.readFileSync('src/hooks/useEntryClipboard.ts', 'utf8');
   const tree = ts.createSourceFile('App.tsx', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   let readinessEffect, resumeEffect;
   function visit(node) {
@@ -134,7 +134,7 @@ test('returning while data is loading defers clipboard detection until readiness
 });
 
 test('paste applies directly once without a preview, reports empty reads, and cannot reopen a closed sheet', async () => {
-  const source = fs.readFileSync('src/App.tsx', 'utf8');
+  const source = fs.readFileSync('src/hooks/useEntryClipboard.ts', 'utf8');
   const tree = ts.createSourceFile('App.tsx', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   let handler;
   function visit(node) {

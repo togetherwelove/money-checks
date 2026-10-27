@@ -2,7 +2,7 @@ import { AppScrollBehavior } from "../constants/scroll";
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
 
-import { LedgerEditorPanel } from "../components/LedgerEditorPanel";
+import { LedgerEntryForm } from "../components/LedgerEntryForm";
 import { AppColors } from "../constants/colors";
 import { InstallmentStatuses } from "../constants/installments";
 import { ENTRY_PHOTO_LIMIT, EntryPhotoCopy } from "../constants/entryPhotos";
@@ -13,7 +13,7 @@ import { pickImageAttachments } from "../lib/imageAttachments";
 import { fetchLedgerBookMembers } from "../lib/ledgerBooks";
 import { logAppError } from "../lib/logAppError";
 import { showNativeToast } from "../lib/nativeToast";
-import type { LedgerEntry, LedgerEntryDraft, LedgerEntryType } from "../types/ledger";
+import type { LedgerEntryDraft, LedgerEntryType } from "../types/ledger";
 import type { LedgerBookMember } from "../types/ledgerBookMember";
 import type { InstallmentPrepaymentHandler } from "../types/installmentTransactions";
 
@@ -202,7 +202,7 @@ export function EntryScreen({
           <Text style={styles.errorRetryLabel}>재시도</Text>
         </Pressable>
       ) : null}
-      <LedgerEditorPanel
+      <LedgerEntryForm
         activeBookId={activeBookId}
         autoFocusContent={autoFocusContent}
         draft={draft}

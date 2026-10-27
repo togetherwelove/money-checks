@@ -9,7 +9,6 @@ import { IconActionButton } from "../components/IconActionButton";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { TextLinkButton } from "../components/TextLinkButton";
 import { AppColors } from "../constants/colors";
-import { AppLayout } from "../constants/layout";
 import {
 FormInputTextStyle,
 FormMultilineInputTextStyle,

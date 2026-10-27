@@ -1,7 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import { MenuStyles } from "../../constants/menuStyles";
-import { AppTextBreakProps } from "../../constants/textLayout";
 
 import type { AdTrackingPermissionState } from "../../lib/ads/trackingTransparency";
 import { ActionButton } from "../ActionButton";

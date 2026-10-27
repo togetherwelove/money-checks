@@ -17,7 +17,6 @@ import { AppColors } from "../constants/colors";
 import { MonthlySummaryUi } from "../constants/home";
 import { AppLayout } from "../constants/layout";
 import { formatMonthLabel, formatYearLabel } from "../constants/ledgerDisplay";
-import { AppMessages } from "../constants/messages";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
 import type { LedgerEntry } from "../types/ledger";
 import type { LedgerEntryDeleteHandler } from "../types/ledgerEntryDeletion";
