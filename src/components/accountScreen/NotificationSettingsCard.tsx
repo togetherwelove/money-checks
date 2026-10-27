@@ -1,23 +1,23 @@
+import { Pressable,StyleSheet,Text,View } from "react-native";
+import { MenuStyles } from "../../constants/menuStyles";
 import { Feather } from "../AppIcons";
-import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppSettingsUi } from "../../constants/appSettings";
+import { AppSettingsRowStyles } from "../../constants/appSettingsStyles";
 import { AppColors } from "../../constants/colors";
 import { AppLayout } from "../../constants/layout";
 import { AppTextBreakProps } from "../../constants/textLayout";
 import {
-  InsetPanelStyle,
-  ListGroupRowStyle,
-  SupportingTextStyle,
+SupportingTextStyle
 } from "../../constants/uiStyles";
 import type { NotificationPermissionState } from "../../lib/notifications/pushNotifications";
 import {
-  NotificationSettingsUi,
-  NotificationUiCopy,
+NotificationSettingsUi,
+NotificationUiCopy,
 } from "../../notifications/config/notificationCopy";
 import type {
-  NotificationThresholdKey,
-  NotificationThresholdPeriod,
+NotificationThresholdKey,
+NotificationThresholdPeriod,
 } from "../../notifications/domain/notificationEvents";
 import type { NotificationPreferenceGroup as NotificationPreferenceGroupState } from "../../notifications/preferences/notificationPreferences";
 import { NotificationPreferenceGroup } from "./NotificationPreferenceGroup";
@@ -134,9 +134,9 @@ const styles = StyleSheet.create({
   card: {
     gap: AppSettingsUi.sectionGap,
   },
-  permissionList: InsetPanelStyle,
+  permissionList: MenuStyles.group,
   permissionRow: {
-    ...ListGroupRowStyle,
+    ...MenuStyles.row,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -152,11 +152,7 @@ const styles = StyleSheet.create({
     gap: 4,
     minWidth: 0,
   },
-  label: {
-    color: AppColors.text,
-    fontSize: 14,
-    fontWeight: "800",
-  },
+  label: AppSettingsRowStyles.title,
   value: {
     color: AppColors.text,
     flexShrink: 1,

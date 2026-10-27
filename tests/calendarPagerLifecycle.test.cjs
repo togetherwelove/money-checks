@@ -31,90 +31,92 @@ function hookHost() {
   return { react, render(fn) { index = 0; effects = []; const result = fn(); effects.forEach(fn => fn()); return result; }, dispose() { hooks.forEach(h => h?.cleanup?.()); } };
 }
 const jsx = (type, props, key) => ({ type, props, key });
-const layouts = load('src/components/monthCalendarPager/monthCalendarScrollSnap.ts', {});
-const constants = { CALENDAR_MONTH_TRANSITION_HEADER_HEIGHT: 40 };
 function mount() {
-  const host = hookHost(), moves = [], selected = [], scrolls = [];
-  const { CalendarScrollViewport } = load('src/components/monthCalendarPager/CalendarScrollViewport.tsx', {
+  const host = hookHost(), moves = [], selected = [], resets = [];
+  const { CalendarSwipeViewport } = load('src/components/monthCalendarPager/CalendarSwipeViewport.tsx', {
     react: host.react, 'react/jsx-runtime': { jsx, jsxs: jsx },
-    'react-native': { ScrollView: 'ScrollView', View: 'View', StyleSheet: { create: s => s }, PixelRatio: { getPixelSizeForLayoutSize: value => Math.round(value * 2) } },
-    '../../constants/scroll': { AppScrollBehavior: {} }, '../../constants/uiStyles': { FullBleedHorizontalStyle: {} },
-    './calendarLayout': constants, './monthCalendarScrollSnap': layouts,
+    'react-native': { View: 'View', StyleSheet: { create: s => s } },
+    'react-native-pager-view': { __esModule: true, default: 'Pager' },
+    '../../constants/scroll': { AppPagerScrollBehavior: {} }, '../../constants/uiStyles': { FullBleedHorizontalStyle: {} },
     './MonthCalendarSection': { MonthCalendarSection: 'Month' },
   });
   const props = { active: true, geometryKey: 'initial', resetRevision: 0,
     pages: [{ key: '09', height: 100 }, { key: '10', height: 140 }, { key: '11', height: 120 }],
     onMoveMonth: value => moves.push(value), onSelectDate: date => selected.push(date), onHeightChange() {} };
-  const render = () => host.render(() => CalendarScrollViewport(props));
-  let tree = render();
-  tree.props.ref.current = { scrollTo: value => scrolls.push(value) };
-  return { props, moves, selected, scrolls, render, dispose: host.dispose };
+  const render = () => host.render(() => CalendarSwipeViewport(props));
+  const tree = render();
+  tree.props.ref.current = { setPageWithoutAnimation: value => resets.push(value) };
+  return { props, moves, selected, resets, render, dispose: host.dispose };
 }
-const event = y => ({ nativeEvent: { contentOffset: { y } } });
-test('native scroll snaps to measured month offsets and keeps the current grid height', () => {
-  const ui = mount(), tree = ui.render();
-  assert.equal(tree.type, 'ScrollView');
-  assert.deepEqual(Array.from(tree.props.snapToOffsets), [40, 180, 360]);
-  assert.equal(tree.props.contentOffset.y, 180);
+const stateEvent = pageScrollState => ({ nativeEvent: { pageScrollState } });
+const selectedEvent = position => ({ nativeEvent: { position } });
+const scrollEvent = (position, offset = 0) => ({ nativeEvent: { position, offset } });
+
+test('calendar uses native horizontal paging with the current grid height', () => {
+  const tree = mount().render();
+  assert.equal(tree.type, 'Pager');
+  assert.equal(tree.props.orientation, 'horizontal');
+  assert.equal(tree.props.initialPage, 1);
   assert.equal(tree.props.style[1].height, 140);
-  assert.equal(tree.props.contentContainerStyle.paddingBottom, 60);
-  assert.equal(tree.props.disableIntervalMomentum, true);
 });
-for (const [offset, direction] of [[40, -1], [360, 1]]) {
-  test(`a user scroll commits month direction ${direction} once`, () => {
+for (const [page, direction] of [[0, -1], [2, 1]]) {
+  test(`a swipe commits month direction ${direction} only once after native scrolling ends`, () => {
     const ui = mount(), tree = ui.render();
-    tree.props.onMomentumScrollEnd(event(offset));
+    tree.props.onPageSelected(selectedEvent(page));
     assert.deepEqual(ui.moves, []);
-    tree.props.onScrollBeginDrag(); tree.props.onMomentumScrollEnd(event(offset));
-    tree.props.onMomentumScrollEnd(event(offset));
+    tree.props.onPageScrollStateChanged(stateEvent('dragging'));
+    tree.props.onPageSelected(selectedEvent(page));
+    assert.deepEqual(ui.moves, []);
+    tree.props.onPageScrollStateChanged(stateEvent('idle'));
+    tree.props.onPageScrollStateChanged(stateEvent('idle'));
+    tree.props.onPageSelected(selectedEvent(page));
     assert.deepEqual(ui.moves, [direction]);
   });
 }
-test('blur and foreground resets discard pending scroll callbacks and preserve date selection', () => {
-  const ui = mount();
-  let tree = ui.render();
-  tree.props.onScrollBeginDrag();
-  ui.props.active = false; ui.render();
-  tree.props.onMomentumScrollEnd(event(360));
-  assert.deepEqual(ui.moves, []);
-  ui.props.active = true; tree = ui.render();
-  tree.props.onScrollBeginDrag();
-  ui.props.resetRevision++; ui.render();
-  tree.props.onMomentumScrollEnd(event(360));
-  assert.deepEqual(ui.moves, []);
-  tree = ui.render();
-  tree.props.children[1].props.children.props.onSelectDate('2026-10-02');
-  assert.deepEqual(ui.selected, ['2026-10-02']);
-  tree.props.onScrollBeginDrag(); tree.props.onMomentumScrollEnd(event(40));
-  assert.deepEqual(ui.moves, [-1]);
-  assert.ok(ui.scrolls.every(value => value.animated === false));
-});
-test('geometry changes recenter the native scroll and reject previous pending commits', () => {
+test('idle before page-selected still commits the final native scroll position', () => {
   const ui = mount(), tree = ui.render();
-  tree.props.onScrollBeginDrag();
-  ui.props.pages = [{ key: '10', height: 120 }, { key: '11', height: 220 }, { key: '12', height: 100 }];
-  ui.props.geometryKey = 'changed';
-  const next = ui.render();
-  tree.props.onMomentumScrollEnd(event(360));
-  assert.deepEqual(ui.moves, []);
-  assert.equal(ui.scrolls.at(-1).y, 200);
-  assert.equal(next.props.style[1].height, 220);
-});
-
-test('a slow drag ending exactly at a snap point commits without waiting for momentum', () => {
-  const ui = mount(), tree = ui.render();
-  tree.props.onScrollBeginDrag();
-  tree.props.onScrollEndDrag({ nativeEvent: { contentOffset: { y: 360 }, velocity: { y: 0 } } });
-  tree.props.onMomentumScrollEnd(event(360));
+  tree.props.onPageScrollStateChanged(stateEvent('dragging'));
+  tree.props.onPageScroll(scrollEvent(2));
+  tree.props.onPageScrollStateChanged(stateEvent('idle'));
+  tree.props.onPageSelected(selectedEvent(2));
   assert.deepEqual(ui.moves, [1]);
 });
+test('a cancelled swipe keeps the month and does not select a date while dragging', () => {
+  const ui = mount(), tree = ui.render();
+  tree.props.onPageScrollStateChanged(stateEvent('dragging'));
+  tree.props.children[1].props.children.props.onSelectDate('2026-10-02');
+  tree.props.onPageScroll(scrollEvent(1));
+  tree.props.onPageScrollStateChanged(stateEvent('idle'));
+  assert.deepEqual(ui.moves, []); assert.deepEqual(ui.selected, []);
+  tree.props.children[1].props.children.props.onSelectDate('2026-10-02');
+  tree.props.children[0].props.children.props.onSelectDate('2026-09-02');
+  assert.deepEqual(ui.selected, ['2026-10-02']);
+});
+for (const change of ['blur', 'foreground', 'geometry']) {
+  test(`${change} cancels stale page events and recenters without changing the month`, () => {
+    const ui = mount(), tree = ui.render();
+    tree.props.onPageScrollStateChanged(stateEvent('dragging'));
+    tree.props.onPageSelected(selectedEvent(2));
+    if (change === 'blur') ui.props.active = false;
+    if (change === 'foreground') ui.props.resetRevision++;
+    if (change === 'geometry') {
+      ui.props.geometryKey = 'new';
+      ui.props.pages = [{key:'10',height:120},{key:'11',height:220},{key:'12',height:100}];
+    }
+    const next = ui.render();
+    tree.props.onPageScrollStateChanged(stateEvent('idle'));
+    assert.deepEqual(ui.moves, []); assert.equal(ui.resets.at(-1), 1);
+    if (change === 'geometry') assert.equal(next.props.style[1].height, 220);
+    ui.dispose();
+  });
+}
 
 test('geometry, focus, foreground, menu and data renders retain the viewport', () => {
   const host = hookHost(); let focused = true, listener, removed = false;
   const { MonthCalendarPager } = load('src/components/MonthCalendarPager.native.tsx', {
     react: host.react, 'react/jsx-runtime': { jsx, jsxs: jsx }, '@react-navigation/native': { useIsFocused: () => focused },
     'react-native': { AppState: { currentState: 'active', addEventListener(_, fn) { listener = fn; return { remove() { removed = true; } }; } } },
-    './monthCalendarPager/CalendarScrollViewport': { CalendarScrollViewport: 'Viewport' },
+    './monthCalendarPager/CalendarSwipeViewport': { CalendarSwipeViewport: 'Viewport' },
   });
   const props = { previousPage: {key:'09',height:100}, currentPage: {key:'10',height:100}, nextPage:{key:'11',height:100} };
   const render = () => host.render(() => MonthCalendarPager(props));

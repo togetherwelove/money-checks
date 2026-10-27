@@ -1,15 +1,12 @@
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
+import { MenuStyles } from "../constants/menuStyles";
 
-import { KeyboardAwareScrollView } from "./KeyboardAwareScrollView";
-import { AppFooterContentInset } from "./AppFooterContentInset";
-import { SharedLedgerPanel } from "./SharedLedgerPanel";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import { DEFAULT_MEMBER_DISPLAY_NAME } from "../constants/ledgerDisplay";
 import type { SubscriptionTier } from "../constants/subscription";
-import { ResponsivePageContentStyle } from "../constants/uiStyles";
 import {
   readCachedLedgerBookMembers,
   writeCachedLedgerBookMembers,
@@ -19,8 +16,7 @@ import { isLedgerBookEditableWithinPlanLimit } from "../lib/ledgerEditability";
 import { fetchProfileDisplayName } from "../lib/profiles";
 import { supabase } from "../lib/supabase";
 import type { NotificationEvent } from "../notifications/domain/notificationEvents";
-import type { LedgerBook } from "../types/ledgerBook";
-import type { AccessibleLedgerBook } from "../types/ledgerBook";
+import type { AccessibleLedgerBook, LedgerBook } from "../types/ledgerBook";
 import type {
   JoinSharedLedgerBookAttempt,
   JoinSharedLedgerBookPreview,
@@ -31,6 +27,9 @@ import type {
 } from "../types/ledgerBookJoinRequest";
 import type { LedgerBookMember } from "../types/ledgerBookMember";
 import type { LedgerBookMemberRow } from "../types/supabase";
+import { AppFooterContentInset } from "./AppFooterContentInset";
+import { KeyboardAwareScrollView } from "./KeyboardAwareScrollView";
+import { SharedLedgerPanel } from "./SharedLedgerPanel";
 
 let shareMembersRealtimeChannelSequence = 0;
 const EMPTY_MEMBERS: LedgerBookMember[] = [];
@@ -320,8 +319,6 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.screenBackground,
   },
   content: {
-    ...ResponsivePageContentStyle,
-    paddingHorizontal: AppLayout.screenPadding,
-    paddingTop: AppLayout.screenTopPadding,
+    ...MenuStyles.content,
   },
 });

@@ -1,4 +1,5 @@
-import { Linking, StyleSheet, Text, View } from "react-native";
+import { Linking,StyleSheet,Text,View } from "react-native";
+import { MenuStyles } from "../constants/menuStyles";
 
 import { ActionButton } from "../components/ActionButton";
 import { AppFooterContentInset } from "../components/AppFooterContentInset";
@@ -7,17 +8,14 @@ import { TextLinkButton } from "../components/TextLinkButton";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import { LegalLinks } from "../constants/legal";
-import { SubscriptionHeroUi, SubscriptionMessages } from "../constants/subscription";
+import { SubscriptionHeroUi,SubscriptionMessages } from "../constants/subscription";
 import {
-  AppTextBreakProps,
-  CompactTextProps,
-  OneLineTextFitProps,
+AppTextBreakProps,
+CompactTextProps,
+OneLineTextFitProps,
 } from "../constants/textLayout";
 import {
-  BrandPlusTextStyle,
-  CompactLabelTextStyle,
-  ListGroupStyle,
-  ResponsivePageContentStyle,
+BrandPlusTextStyle
 } from "../constants/uiStyles";
 import { showNativeToast } from "../lib/nativeToast";
 
@@ -150,17 +148,15 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.screenBackground,
   },
   content: {
-    ...ResponsivePageContentStyle,
+    ...MenuStyles.content,
     flexGrow: 1,
-    paddingHorizontal: AppLayout.screenPadding,
-    paddingTop: AppLayout.screenTopPadding,
   },
   salesContent: {
     flexGrow: 1,
     width: "100%",
     alignItems: "center",
-    justifyContent: "center",
-    gap: 44,
+    justifyContent: "flex-start",
+    gap: MenuStyles.sections.gap,
   },
   copySection: {
     width: "100%",
@@ -183,21 +179,13 @@ const styles = StyleSheet.create({
     padding: AppLayout.cardContentPadding,
   },
   purchaseInfoCard: {
-    ...ListGroupStyle,
+    ...MenuStyles.group,
     width: "100%",
   },
   purchaseInfoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    ...MenuStyles.row,
     flexWrap: "wrap",
-    gap: AppLayout.compactGap,
-    borderBottomWidth: 1,
-    paddingHorizontal: AppLayout.cardContentPadding,
-    paddingVertical: 12,
-    borderBottomColor: AppColors.border,
-  },
-  purchaseInfoLastRow: {
+  },  purchaseInfoLastRow: {
     borderBottomWidth: 0,
   },
   legalLinkRow: {
@@ -209,7 +197,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: AppColors.border,
   },
-  purchaseInfoLabel: CompactLabelTextStyle,
+  purchaseInfoLabel: MenuStyles.description,
   purchaseInfoValue: {
     color: AppColors.text,
     fontSize: 15,

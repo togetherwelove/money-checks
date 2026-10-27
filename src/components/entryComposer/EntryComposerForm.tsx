@@ -1,4 +1,4 @@
-import { useRef, type Ref } from "react";
+import { useRef, type Ref, type RefObject } from "react";
 import { Feather } from "../AppIcons";
 import { Pressable, StyleSheet, Text, TextInput, View, type TextInputInstance } from "react-native";
 
@@ -21,14 +21,21 @@ type Props = {
   disabled: boolean;
   editing: boolean;
   inputRef: Ref<TextInputInstance>;
+  contentInputRef?: RefObject<TextInputInstance | null>;
   onChangeText?: () => void;
   onConvert?: () => void;
   onReadClipboard?: () => void;
 };
 
-export function EntryComposerForm({ composer, bookId, disabled, editing, inputRef, onChangeText, onConvert, onReadClipboard }: Props) {
+const textActionHitSlop = {
+  top: (Ui.fieldHeight - Ui.sheetTextFieldHeight) / 2,
+  bottom: (Ui.fieldHeight - Ui.sheetTextFieldHeight) / 2,
+};
+
+export function EntryComposerForm({ composer, bookId, disabled, editing, inputRef, contentInputRef: providedContentInputRef, onChangeText, onConvert, onReadClipboard }: Props) {
   const { draft, update } = composer;
-  const contentInputRef = useRef<TextInputInstance>(null);
+  const fallbackContentInputRef = useRef<TextInputInstance>(null);
+  const contentInputRef = providedContentInputRef ?? fallbackContentInputRef;
   return (
     <View style={styles.form}>
       <View style={styles.dateRow}>
@@ -59,7 +66,7 @@ export function EntryComposerForm({ composer, bookId, disabled, editing, inputRe
             }}
             placeholder={field === "amount" ? Copy.amount : field === "content" ? EntryRegistrationCopy.contentPlaceholder : EntryRegistrationCopy.notePlaceholder}
             placeholderTextColor={AppColors.mutedText}
-            style={[styles.input, field === "amount" && styles.amountInput]}
+            style={[styles.input, field === "amount" ? styles.amountInput : styles.textInput]}
             value={field === "amount" ? formatAmountInput(draft.amount) : draft[field]}
             onChangeText={value => {
               if (disabled) return;
@@ -72,7 +79,9 @@ export function EntryComposerForm({ composer, bookId, disabled, editing, inputRe
         return <View key={field} style={styles.fieldRow}>
           {input}
           {draft[field] ? <Pressable accessibilityRole="button" accessibilityLabel={clearLabel}
-            accessibilityState={{ disabled }} disabled={disabled} style={styles.inputAction}
+            accessibilityState={{ disabled }} disabled={disabled}
+            hitSlop={field === "amount" ? undefined : textActionHitSlop}
+            style={[styles.inputAction, field !== "amount" && styles.textInputAction]}
             onPress={() => {
               if (disabled) return;
               onChangeText?.();
@@ -87,8 +96,10 @@ export function EntryComposerForm({ composer, bookId, disabled, editing, inputRe
           update("category", category?.label ?? "");
           update("categoryId", category?.id ?? "");
         }} />
-      <Text accessibilityRole="header" style={styles.label}>{Copy.details}</Text>
-      <EntryComposerDetails composer={composer} editing={editing} onConvert={onConvert} showDate={false} />
+      <View style={styles.detailsSection}>
+        <Text accessibilityRole="header" style={styles.label}>{Copy.details}</Text>
+        <EntryComposerDetails composer={composer} editing={editing} onConvert={onConvert} showDate={false} />
+      </View>
     </View>
   );
 }
@@ -97,6 +108,7 @@ const styles = StyleSheet.create({
   dateRow: { minHeight: Ui.fieldHeight },
   clipboardAction: { position: "absolute", top: 0, right: 0, minHeight: Ui.fieldHeight },
   form: { gap: Ui.sheetSectionGap },
+  detailsSection: { paddingTop: Ui.detailsSectionTopPadding, gap: Ui.detailsHeadingGap },
   label: FormLabelTextStyle,
   input: {
     ...UnderlineFormInputTextStyle,
@@ -111,6 +123,8 @@ const styles = StyleSheet.create({
   fieldRow: { flexDirection: "row", alignItems: "center", gap: AppLayout.cardGap,
     borderBottomWidth: AppLayout.dividerWidth, borderBottomColor: AppColors.border },
   amountInput: { fontSize: Ui.sheetAmountFontSize, lineHeight: Ui.sheetAmountLineHeight, fontWeight: "600" },
+  textInput: { minHeight: Ui.sheetTextFieldHeight, paddingVertical: Ui.sheetTextFieldVerticalPadding },
+  textInputAction: { minHeight: Ui.sheetTextFieldHeight },
   inputAction: { alignItems: "center", justifyContent: "center",
     flexShrink: 0, minWidth: Ui.sheetFieldHeight, minHeight: Ui.sheetFieldHeight },
 });

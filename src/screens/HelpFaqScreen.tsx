@@ -1,12 +1,11 @@
 import type { ReactNode } from "react";
-import { ScrollView, StyleSheet } from "react-native";
+import { ScrollView,StyleSheet } from "react-native";
+import { MenuStyles } from "../constants/menuStyles";
 
 import { AppFooterContentInset } from "../components/AppFooterContentInset";
 import { HelpFaqSection } from "../components/HelpFaqSection";
-import { AppLayout } from "../constants/layout";
 import { AppColors } from "../constants/colors";
 import { AppScrollBehavior } from "../constants/scroll";
-import { ResponsivePageContentStyle } from "../constants/uiStyles";
 
 export function HelpFaqScreen({ screenTitle }: { screenTitle: ReactNode }) {
   return (
@@ -22,8 +21,6 @@ export function HelpFaqScreen({ screenTitle }: { screenTitle: ReactNode }) {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: AppColors.screenBackground },
   content: {
-    ...ResponsivePageContentStyle,
-    paddingHorizontal: AppLayout.screenPadding,
-    paddingTop: AppLayout.screenTopPadding,
+    ...MenuStyles.content,
   },
 });

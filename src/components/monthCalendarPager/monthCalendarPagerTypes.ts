@@ -8,7 +8,6 @@ export type MonthCalendarPagerProps = {
   isReadOnlyDueToPlanLimit?: boolean;
   nextPage: MonthPage;
   onMoveMonth: (monthOffset: MonthOffset) => void;
-  onPreviewMonthOffsetChange?: (monthOffset: MonthOffset) => void;
   onSelectDate: (isoDate: string) => void;
   previousPage: MonthPage;
   selectedDate: string;

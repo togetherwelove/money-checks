@@ -1,23 +1,31 @@
+import { MenuStyles } from "./menuStyles";
+import { AppColors } from "./colors";
 import type { TextStyle, ViewStyle } from "react-native";
 
 import { EntryComposerUi } from "./entryComposer";
 import { AppLayout } from "./layout";
-import { FormLabelTextStyle, SettingValueTextStyle } from "./uiStyles";
 
-export const EntryDetailLabelStyle: TextStyle = FormLabelTextStyle;
+export const EntryDetailLabelStyle: TextStyle = MenuStyles.title;
 export const EntryDetailValueStyle: TextStyle = {
-  ...SettingValueTextStyle,
+  ...MenuStyles.title,
   fontWeight: "600",
+  color: AppColors.primary,
 };
 export const EntryDetailHintStyle: TextStyle = {
-  ...EntryDetailLabelStyle,
+  ...MenuStyles.description,
   fontWeight: "400",
 };
 export const EntryDetailRowStyle: ViewStyle = {
-  minHeight: EntryComposerUi.detailsRowHeight,
+  minHeight: EntryComposerUi.fieldHeight,
   flexDirection: "row",
   alignItems: "center",
   justifyContent: "space-between",
   gap: AppLayout.screenPadding,
 };
 export const EntryDetailFieldStyle: ViewStyle = { gap: AppLayout.compactGap };
+
+export const EntryDetailContainerStyle: ViewStyle = {
+  paddingVertical: EntryComposerUi.detailsRowVerticalPadding,
+  borderBottomWidth: MenuStyles.row.borderBottomWidth,
+  borderBottomColor: AppColors.border,
+};

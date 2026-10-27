@@ -13,7 +13,7 @@ const CardSmsClipboardLocalizedCopy = {
   } as const;
 
 export const CardSmsClipboardCopy = {
-  suggestionLabel: "복사한 내역",
+  suggestionQuestion: "복사한 내역을 불러올까요?",
   showSuggestion: "클립보드 내역 확인",
   noAvailableEntry: "불러올 수 있는 복사한 내역이 없어요.",
   dismissSuggestion: "복사한 내역 제안 닫기",
@@ -27,4 +27,11 @@ export const CardSmsClipboardCopy = {
   actionPreviewSuffix: "",
   previewOmissionIndicator: "...",
   previewSeparator: " · ",
+} as const;
+
+export const ClipboardPromptUi = {
+  animationDurationMs: 280,
+  buttonCollapsedScale: 0.7,
+  revealProgress: 0.25,
+  cornerRadius: 20,
 } as const;

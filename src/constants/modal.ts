@@ -5,3 +5,8 @@ export const ModalCloseButtonUi = {
   pressedOpacity: 0.6,
   disabledOpacity: 0.4,
 } as const;
+
+export const CalendarPickerCopy = {
+  title: "날짜 선택",
+  applyAction: "적용",
+} as const;

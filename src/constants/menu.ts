@@ -71,4 +71,18 @@ export const FooterActionPopoverUi = {
   maxWidth: 320,
   textFontSize: 14,
 } as const;
+
+export const FloatingEntryButtonUi = {
+  size: 40,
+  touchSize: 44,
+  iconSize: 22,
+  footerGap: 12,
+  rightInset: 16,
+  shadowOffsetY: 3,
+  shadowOpacity: 0.18,
+  shadowRadius: 6,
+  elevation: 5,
+  pressedOpacity: 0.8,
+  disabledOpacity: 0.45,
+} as const;
 import { AppTextScale, resolveTextScale } from "./textLayout";

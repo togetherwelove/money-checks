@@ -27,7 +27,7 @@ function mount(editing = false, onConvert, extra = {}) {
     });
     vm.runInNewContext(outputText, { exports, require: (name) => {
       if (name in mocks) return mocks[name];
-      if (name.includes("constants/") || name.endsWith(".json")) {
+      if (path.resolve(path.dirname(file), name).includes(`${path.sep}constants${path.sep}`) || name.endsWith(".json")) {
         return load(path.resolve(path.dirname(file), name.endsWith(".json") ? name : `${name}.ts`));
       }
       return new Proxy({}, { get: (_, key) => key });

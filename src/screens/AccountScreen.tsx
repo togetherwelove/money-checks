@@ -1,14 +1,15 @@
-import { AppScrollBehavior } from "../constants/scroll";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode,useEffect,useState } from "react";
 import {
-  Alert,
-  Keyboard,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+Alert,
+Keyboard,
+ScrollView,
+StyleSheet,
+Text,
+TextInput,
+View,
 } from "react-native";
+import { MenuStyles } from "../constants/menuStyles";
+import { AppScrollBehavior } from "../constants/scroll";
 
 import { ActionButton } from "../components/ActionButton";
 import { AppFooterContentInset } from "../components/AppFooterContentInset";
@@ -19,28 +20,23 @@ import { DeleteAccountModal } from "../components/accountScreen/DeleteAccountMod
 import { showDeleteSubscriptionWarning } from "../components/accountScreen/showDeleteSubscriptionWarning";
 import { AppColors } from "../constants/colors";
 import { KeyboardLayout } from "../constants/keyboard";
-import { AppLayout } from "../constants/layout";
 import { AppMessages } from "../constants/messages";
 import {
-  SubscriptionMessages,
-  type SubscriptionTier,
-  SubscriptionTiers,
+SubscriptionMessages,
+type SubscriptionTier,
+SubscriptionTiers,
 } from "../constants/subscription";
 import {
-  BrandPlusTextStyle,
-  CardTitleTextStyle,
-  CompactLabelTextStyle,
-  GroupedSectionStyle,
-  ResponsivePageContentStyle,
-  UnderlineFormInputTextStyle,
+BrandPlusTextStyle,
+UnderlineFormInputTextStyle
 } from "../constants/uiStyles";
 import type { BusyTaskTracker } from "../hooks/ledgerScreenState/types";
 import type { AdTrackingPermissionState } from "../lib/ads/trackingTransparency";
 import { isApplePrivateRelayEmail } from "../lib/auth/applePrivateRelayEmail";
 import { signOutFromApp } from "../lib/auth/signOut";
 import { showNativeToast } from "../lib/nativeToast";
-import { fetchOwnProfileDisplayName, updateOwnProfileDisplayName } from "../lib/profiles";
-import { isValidDisplayName, normalizeDisplayNameCandidate } from "../utils/displayName";
+import { fetchOwnProfileDisplayName,updateOwnProfileDisplayName } from "../lib/profiles";
+import { isValidDisplayName,normalizeDisplayNameCandidate } from "../utils/displayName";
 
 type AccountScreenProps = {
   accountProviderLabel: string;
@@ -300,27 +296,24 @@ function InfoRow({
 
 const styles = StyleSheet.create({
   sections: {
-    gap: AppLayout.cardGap,
+    gap: MenuStyles.sections.gap,
   },
   screen: {
     flex: 1,
     backgroundColor: AppColors.screenBackground,
   },
   content: {
-    ...ResponsivePageContentStyle,
-    paddingHorizontal: AppLayout.screenPadding,
-    paddingTop: AppLayout.screenTopPadding,
+    ...MenuStyles.content,
   },
   card: {
-    ...GroupedSectionStyle,
-    gap: 8,
+    ...MenuStyles.panel,
   },
-  cardTitle: CardTitleTextStyle,
+  cardTitle: MenuStyles.sectionTitle,
   infoRow: {
     gap: 4,
     paddingVertical: 4,
   },
-  label: CompactLabelTextStyle,
+  label: MenuStyles.description,
   inlineInput: {
     ...UnderlineFormInputTextStyle,
   },

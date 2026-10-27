@@ -8,7 +8,7 @@ import { EntryComposerHeader } from "./entryComposer/EntryComposerHeader";
 
 export type SheetHeaderAction = { label: string; onPress: () => void; disabled?: boolean; loading?: boolean };
 
-export function NativeSelectionSheet({ children, isOpen, onClose, onShow, onDismiss, title, dismissible = true, header, action }: {
+export function NativeSelectionSheet({ children, isOpen, onClose, onShow, onDismiss, title, dismissible = true, requiresCloseConfirmation = false, header, action }: {
   children: ReactNode;
   isOpen: boolean;
   onClose: () => void;
@@ -16,6 +16,7 @@ export function NativeSelectionSheet({ children, isOpen, onClose, onShow, onDism
   onDismiss?: () => void;
   title: string;
   dismissible?: boolean;
+  requiresCloseConfirmation?: boolean;
   header?: ReactNode;
   action?: SheetHeaderAction;
 }) {
@@ -34,9 +35,8 @@ export function NativeSelectionSheet({ children, isOpen, onClose, onShow, onDism
       onDismiss={onDismiss}
       animationType="slide"
       presentationStyle="formSheet"
-      // iOS forwards swipe attempts to onRequestClose; let JS own the dismissal
-      // so UIKit dismissal cannot race the modal's unmount.
-      allowSwipeDismissal={false}
+      // Confirm pending input before dismissal; ordinary sheets follow the native gesture.
+      allowSwipeDismissal={canDismiss && !requiresCloseConfirmation}
       onRequestClose={() => { if (canDismiss) onClose(); }}
     >
       <RootSiblingParent inactive={!isOpen}>

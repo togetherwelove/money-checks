@@ -89,14 +89,15 @@ test('payment menu selects presets immediately and opens a sheet only for custom
   let customRequests = 0;
   const tree = EntryInstallmentSelector({ installmentMonths: 3,
     onSelectInstallmentMonths: months => selected.push(months), onRequestCustom: () => customRequests++ });
-  assert.equal(tree.type, 'MenuView');
-  assert.deepEqual(Array.from(tree.props.actions, action => action.id), ['1', '2', '3', '4', '5', '6', 'custom']);
-  assert.equal(tree.props.actions[2].state, 'on');
-  tree.props.onPressAction({ nativeEvent: { event: '1' } });
+  assert.equal(tree.type, 'View');
+  const menu = find(tree, 'MenuView');
+  assert.deepEqual(Array.from(menu.props.actions, action => action.id), ['1', '2', '3', '4', '5', '6', 'custom']);
+  assert.equal(menu.props.actions[2].state, 'on');
+  menu.props.onPressAction({ nativeEvent: { event: '1' } });
   assert.deepEqual(selected, [1]);
   assert.equal(customRequests, 0);
-  tree.props.onPressAction({ nativeEvent: { event: 'custom' } });
+  menu.props.onPressAction({ nativeEvent: { event: 'custom' } });
   assert.equal(customRequests, 1);
-  tree.props.onPressAction({ nativeEvent: { event: 'unknown' } });
+  menu.props.onPressAction({ nativeEvent: { event: 'unknown' } });
   assert.deepEqual(selected, [1]);
 });

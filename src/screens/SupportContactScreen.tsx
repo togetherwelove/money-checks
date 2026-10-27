@@ -1,6 +1,7 @@
+import { type ReactNode,useState } from "react";
+import { Image,ScrollView,StyleSheet,Text,TextInput,View } from "react-native";
+import { MenuStyles } from "../constants/menuStyles";
 import { AppScrollBehavior } from "../constants/scroll";
-import { type ReactNode, useState } from "react";
-import { Image, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { ActionButton } from "../components/ActionButton";
 import { AppFooterContentInset } from "../components/AppFooterContentInset";
@@ -10,18 +11,15 @@ import { TextLinkButton } from "../components/TextLinkButton";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import {
-  CompactLabelTextStyle,
-  FormInputTextStyle,
-  FormMultilineInputTextStyle,
-  ResponsivePageContentStyle,
-  SupportingTextStyle,
-  ActionSurfaceStyle,
+FormInputTextStyle,
+FormMultilineInputTextStyle,
+SupportingTextStyle
 } from "../constants/uiStyles";
 import { showNativeToast } from "../lib/nativeToast";
 import {
-  type SupportAttachment,
-  composeSupportMail,
-  pickSupportAttachments,
+type SupportAttachment,
+composeSupportMail,
+pickSupportAttachments,
 } from "../lib/supportContact";
 
 type SupportContactScreenProps = {
@@ -154,19 +152,16 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.screenBackground,
   },
   content: {
-    ...ResponsivePageContentStyle,
+    ...MenuStyles.content,
     flexGrow: 1,
-    paddingHorizontal: AppLayout.screenPadding,
-    paddingTop: AppLayout.screenTopPadding,
   },
   card: {
-    ...ActionSurfaceStyle,
-    gap: AppLayout.cardGap,
+    ...MenuStyles.panel,
   },
   fieldGroup: {
-    gap: 6,
+    gap: MenuStyles.textBlock.gap,
   },
-  label: CompactLabelTextStyle,
+  label: MenuStyles.title,
   input: FormInputTextStyle,
   bodyInput: {
     ...FormMultilineInputTextStyle,

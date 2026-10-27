@@ -1,15 +1,16 @@
-import { Feather } from "./AppIcons";
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable,StyleSheet,Text,View } from "react-native";
+import { MenuStyles } from "../constants/menuStyles";
+import { Feather } from "./AppIcons";
 
-import { AppColors } from "../constants/colors";
 import { AppSettingsUi } from "../constants/appSettings";
 import { AppSettingsRowStyles } from "../constants/appSettingsStyles";
-import { HelpCopy, HelpUi } from "../constants/help";
+import { AppColors } from "../constants/colors";
+import { HelpCopy,HelpUi } from "../constants/help";
 import { HelpFaqGroups } from "../constants/helpFaq";
 import { AppLayout } from "../constants/layout";
 import { ReadingTextProps } from "../constants/textLayout";
-import { CardTitleTextStyle, ListGroupRowStyle, ListGroupStyle, SupportingTextStyle } from "../constants/uiStyles";
+import { ListGroupRowStyle,SupportingTextStyle } from "../constants/uiStyles";
 
 export function HelpFaqSection() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -19,8 +20,8 @@ export function HelpFaqSection() {
       <Text {...ReadingTextProps} style={SupportingTextStyle}>{HelpCopy.faqDescription}</Text>
       {HelpFaqGroups.map((group) => (
         <View key={group.id} style={styles.group}>
-          <Text accessibilityRole="header" style={CardTitleTextStyle}>{group.title}</Text>
-          <View style={ListGroupStyle}>
+          <Text accessibilityRole="header" style={MenuStyles.sectionTitle}>{group.title}</Text>
+          <View style={MenuStyles.group}>
             {group.items.map((item, index) => {
               const expanded = expandedId === item.id;
               return (
@@ -36,7 +37,7 @@ export function HelpFaqSection() {
                   </Pressable>
                   {expanded ? (
                     <View style={styles.answer}>
-                      <Text {...ReadingTextProps} style={SupportingTextStyle}>{item.answer}</Text>
+                      <Text {...ReadingTextProps} style={MenuStyles.body}>{item.answer}</Text>
                     </View>
                   ) : null}
                 </View>
@@ -56,5 +57,5 @@ const styles = StyleSheet.create({
   divider: { borderBottomWidth: AppLayout.dividerWidth, borderBottomColor: AppColors.border },
   questionRow: { ...AppSettingsRowStyles.row, ...AppSettingsRowStyles.lastRow },
   question: { ...AppSettingsRowStyles.title, flex: 1, minWidth: 0 },
-  answer: { ...ListGroupRowStyle, ...AppSettingsRowStyles.lastRow, paddingTop: 0 },
+  answer: { ...ListGroupRowStyle, ...AppSettingsRowStyles.lastRow, paddingTop: 0, paddingHorizontal: MenuStyles.row.paddingHorizontal },
 });

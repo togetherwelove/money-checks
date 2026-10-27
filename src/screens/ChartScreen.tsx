@@ -7,6 +7,8 @@ import { ChartMonthPageContent } from "../components/chartScreen/ChartMonthPageC
 import { AppColors } from "../constants/colors";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
 import { MonthlyInsightChartCopy } from "../constants/monthlyInsightCharts";
+import { CompactLabelTextStyle } from "../constants/uiStyles";
+import { CompactTextProps } from "../constants/textLayout";
 
 type ChartScreenProps = {
   renderScreenTitle: (titleLabel: string) => ReactNode;
@@ -40,7 +42,7 @@ export function ChartScreen({
         />
       ) : (
         <View style={styles.pagerLayer}>
-          <Text style={styles.swipeHint}>{MonthlyInsightChartCopy.swipeHint}</Text>
+          <Text {...CompactTextProps} style={styles.swipeHint}>{MonthlyInsightChartCopy.swipeHint}</Text>
           <ChartMonthPager
             activeBookId={state.activeBook?.id ?? null}
             currentMonth={state.currentChartMonth}
@@ -66,7 +68,7 @@ export function ChartScreen({
 }
 
 const styles = StyleSheet.create({
-  swipeHint: { color: AppColors.mutedText, textAlign: "center" },
+  swipeHint: { ...CompactLabelTextStyle, textAlign: "center" },
   adSlot: { flexShrink: 0 },
   pagerLayer: {
     flex: 1,

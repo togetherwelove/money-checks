@@ -4,15 +4,16 @@ import {
 } from "@react-navigation/native-stack";
 import type { ReactNode } from "react";
 import { Keyboard } from "react-native";
+import type { SettingsMenuLinksProps } from "../components/appSettings/SettingsMenuLinks";
 
 import type { CalendarSummaryMode } from "../constants/calendarSummary";
 import { AppColors } from "../constants/colors";
-import { getPrimaryHeaderActions } from "./primaryHeaderActions";
 import type { SubscriptionTier } from "../constants/subscription";
 import type { SupportPackageIdentifier } from "../constants/support";
 import type { BusyTaskTracker } from "../hooks/ledgerScreenState/types";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
 import type { AdTrackingPermissionState } from "../lib/ads/trackingTransparency";
+import { getAppScreenLabel } from "../lib/appScreenLabels";
 import type { NotificationPermissionState } from "../lib/notifications/pushNotifications";
 import type { SupportPackageSnapshot } from "../lib/subscription/supportClient";
 import type {
@@ -26,18 +27,16 @@ import { AllEntriesScreen } from "../screens/AllEntriesScreen";
 import { AppSettingsScreen } from "../screens/AppSettingsScreen";
 import { ChartScreen } from "../screens/ChartScreen";
 import { EntryNativeSheetScreen } from "../screens/EntryNativeSheetScreen";
-import { HelpScreen } from "../screens/HelpScreen";
 import { HelpFaqScreen } from "../screens/HelpFaqScreen";
-import { getAppScreenLabel } from "../lib/appScreenLabels";
+import { HelpScreen } from "../screens/HelpScreen";
 import { HomeScreen } from "../screens/HomeScreen";
 import { NotificationSettingsScreen } from "../screens/NotificationSettingsScreen";
 import { SubscriptionScreen } from "../screens/SubscriptionScreen";
 import { SupportContactScreen } from "../screens/SupportContactScreen";
 import { SupportScreen } from "../screens/SupportScreen";
+import type { InstallmentPrepaymentHandler } from "../types/installmentTransactions";
 import type { LedgerEntry } from "../types/ledger";
 import type { LedgerEntryDeleteHandler } from "../types/ledgerEntryDeletion";
-import type { InstallmentPrepaymentHandler } from "../types/installmentTransactions";
-import type { LedgerWidgetSummary } from "../types/widget";
 import type { PrimaryStackScreen, SignedInStackParamList, SignedInStackScreen } from "./signedInNavigation";
 
 const Stack = createNativeStackNavigator<SignedInStackParamList>();
@@ -63,9 +62,10 @@ const entryNativeSheetOptions: NativeStackNavigationOptions = {
 };
 
 export type SignedInStackNavigatorProps = {
+  menuSections: SettingsMenuLinksProps["sections"];
+  onSelectMenuItem: SettingsMenuLinksProps["onSelect"];
+  renderLedgerBooks: () => ReactNode;
   initialScreen?: PrimaryStackScreen;
-  onOpenEntry?: () => void;
-  entryActionDisabled?: boolean;
   accountProviderLabel: string;
   adTrackingPermissionState: AdTrackingPermissionState;
   email: string;
@@ -108,7 +108,6 @@ export type SignedInStackNavigatorProps = {
   ) => void;
   plusPriceLabel: string | null;
   renderScreenTitle: (screen: SignedInStackScreen, titleLabel?: string) => ReactNode;
-  renderHeaderActions: () => ReactNode;
   showAdTrackingPermissionCard: boolean;
   showNotificationSettings: boolean;
   showsBannerAd: boolean;
@@ -120,9 +119,10 @@ export type SignedInStackNavigatorProps = {
 };
 
 export function SignedInStackNavigator({
+  menuSections,
+  onSelectMenuItem,
+  renderLedgerBooks,
   initialScreen = "calendar",
-  onOpenEntry,
-  entryActionDisabled = false,
   accountProviderLabel,
   adTrackingPermissionState,
   email,
@@ -162,7 +162,6 @@ export function SignedInStackNavigator({
   onToggleNotificationPreference,
   plusPriceLabel,
   renderScreenTitle,
-  renderHeaderActions,
   showAdTrackingPermissionCard,
   showNotificationSettings,
   showsBannerAd,
@@ -181,19 +180,19 @@ export function SignedInStackNavigator({
       screenOptions={({ route }) => {
         const screen = route.name;
         if (screen === "entry-sheet") return entryNativeSheetOptions;
-        const isPrimaryScreen = screen === "calendar" || screen === "all-entries" || screen === "charts";
+        const isPrimaryScreen = screen === "calendar" || screen === "all-entries" || screen === "charts" || screen === "share" || screen === "app-settings";
         return {
           ...signedInStackScreenOptions,
           animation: isPrimaryScreen ? "none" : signedInStackScreenOptions.animation,
           title: getAppScreenLabel(screen),
           headerTitle: () => renderScreenTitle(screen),
-          ...(isPrimaryScreen ? getPrimaryHeaderActions(renderHeaderActions, onOpenEntry, entryActionDisabled)
-            : { headerRight: renderHeaderActions }),
+
           headerBackVisible: !isPrimaryScreen,
           gestureEnabled: !isPrimaryScreen,
         };
       }}
     >
+      <Stack.Screen name="share">{renderLedgerBooks}</Stack.Screen>
       <Stack.Screen name="calendar">
         {() => (
           <HomeScreen
@@ -269,6 +268,8 @@ export function SignedInStackNavigator({
       <Stack.Screen name="app-settings">
         {() => (
           <AppSettingsScreen
+            menuSections={menuSections}
+            onSelectMenuItem={onSelectMenuItem}
             activeBookId={ledgerState.activeBook?.id ?? null}
             activeBookName={ledgerState.activeBook?.name ?? ""}
             canAddCategory={Boolean(ledgerState.activeBook) && !ledgerState.isReadOnlyDueToPlanLimit}
@@ -286,6 +287,7 @@ export function SignedInStackNavigator({
             onChangeNotificationThresholdPeriod={onChangeNotificationThresholdPeriod}
             onChangeNotificationThreshold={onChangeNotificationThreshold}
             onRequestNotificationPermission={onRequestNotificationPermission}
+            onOpenSubscription={onOpenSubscription}
             onToggleCalendarHeatmap={onToggleCalendarHeatmap}
             onToggleNotificationPreference={onToggleNotificationPreference}
             screenTitle={null}

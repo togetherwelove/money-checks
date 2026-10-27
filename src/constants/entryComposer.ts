@@ -47,6 +47,9 @@ export const EntryComposerCopy = {
   selectBook: "가계부 선택",
 } as const;
 
+const SHEET_TEXT_FIELD_LINE_HEIGHT = 22;
+const SHEET_TEXT_FIELD_VERTICAL_PADDING = 6;
+
 export const EntryComposerUi = {
   sheetControlSize: 48,
   sheetIconSize: 24,
@@ -54,8 +57,10 @@ export const EntryComposerUi = {
   sheetCardRadius: 28,
   sheetFieldHeight: 48,
   sheetFieldFontSize: 16,
-  sheetFieldLineHeight: 22,
+  sheetFieldLineHeight: SHEET_TEXT_FIELD_LINE_HEIGHT,
   sheetFieldVerticalPadding: 8,
+  sheetTextFieldHeight: SHEET_TEXT_FIELD_LINE_HEIGHT + SHEET_TEXT_FIELD_VERTICAL_PADDING * 2,
+  sheetTextFieldVerticalPadding: SHEET_TEXT_FIELD_VERTICAL_PADDING,
   sheetAmountFontSize: 22,
   sheetAmountLineHeight: 28,
   sheetPadding: 16,
@@ -66,8 +71,10 @@ export const EntryComposerUi = {
   panelPadding: 14,
   sectionGap: 12,
   detailsPadding: 12,
+  detailsSectionTopPadding: 8,
+  detailsHeadingGap: 4,
   detailsRowHeight: 28,
-  detailsSectionGap: 8,
+  detailsRowVerticalPadding: 4,
   detailsFontSize: 12,
   fieldHeight: 44,
   summaryRowHeight: 36,

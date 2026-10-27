@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import { ModalCloseButtonUi } from "../constants/modal";
+import { CompactTextProps } from "../constants/textLayout";
 import { EntryDetailFieldStyle, EntryDetailLabelStyle, EntryDetailValueStyle, EntryDetailRowStyle } from "../constants/entryDetailStyles";
 import {
   ENTRY_PHOTO_CARD_GAP,
@@ -42,8 +43,11 @@ export function EntryPhotoAttachmentField({
     <>
       <View style={styles.fieldGroup}>
         <View style={styles.header}>
+          <Text {...CompactTextProps} style={styles.label}>{EntryPhotoCopy.fieldLabel}</Text>
           <View style={styles.headerInfo}>
-            <Text style={styles.label}>{EntryPhotoCopy.fieldLabel}</Text>
+            <Text {...CompactTextProps} style={styles.attachmentCount}>
+              {EntryPhotoCopy.attachmentCountLabel(attachments.length)}
+            </Text>
             <IconActionButton
               accessibilityLabel={EntryPhotoCopy.addPhotoAction}
               icon="paperclip"
@@ -51,9 +55,6 @@ export function EntryPhotoAttachmentField({
               size="compact"
             />
           </View>
-          <Text style={styles.attachmentCount}>
-            {EntryPhotoCopy.attachmentCountLabel(attachments.length)}
-          </Text>
         </View>
         {attachments.length > 0 ? (
           <ScrollView {...AppScrollBehavior}

@@ -7,7 +7,7 @@ async function setup() {
   const { PrimaryTabRoutes } = modules()('src/app/signedInNavigation.ts');
   const tabs = TabRouter({ initialRouteName: 'calendar-tab', backBehavior: 'history' });
   const tabOptions = { routeNames: Object.values(PrimaryTabRoutes), routeParamList: {}, routeGetIdList: {} };
-  const stackOptions = { routeNames: ['calendar', 'all-entries', 'charts', 'help', 'help-faq', 'entry-sheet'], routeParamList: {}, routeGetIdList: {} };
+  const stackOptions = { routeNames: ['calendar', 'all-entries', 'charts', 'share', 'app-settings', 'help', 'help-faq', 'entry-sheet'], routeParamList: {}, routeGetIdList: {} };
   const stacks = new Map();
   let state = tabs.getInitialState(tabOptions);
   state.routes = state.routes.map(route => {
@@ -62,4 +62,18 @@ test('secondary navigation targets only the active tab stack and returns to an e
   ui.navigate('all-entries');
   assert.equal(ui.state().routes[ui.state().index].state.routes.length, 1);
   assert.equal(ui.actions.some(action => action.type === 'RESET'), false);
+});
+
+test('settings owns its child pages and books stays a separate root tab', async () => {
+  const ui = await setup();
+  ui.navigate('app-settings'); ui.navigate('help'); ui.navigate('help-faq');
+  assert.equal(ui.state().routes[ui.state().index].name, 'settings-tab');
+  ui.navigate('share');
+  assert.equal(ui.state().routes[ui.state().index].name, 'books-tab');
+  assert.equal(ui.state().routes[ui.state().index].state.routes.length, 1);
+  ui.navigate('app-settings');
+  const active = ui.state().routes[ui.state().index];
+  assert.equal(active.name, 'settings-tab');
+  assert.equal(active.state.routes.length, 1);
+  assert.equal(active.state.routes[0].name, 'app-settings');
 });

@@ -37,7 +37,7 @@ export function SignedInTabNavigator(props: SignedInTabNavigatorProps) {
         },
       }}>
       {() => <NativeTabScene onBottomInsetChange={props.onFooterHeightChange}>
-        <SignedInStackNavigator {...props} initialScreen={tab.screen} entryActionDisabled={props.disabled} />
+        <SignedInStackNavigator {...props} initialScreen={tab.screen} />
       </NativeTabScene>}
     </Tab.Screen>)}
   </Tab.Navigator>;
