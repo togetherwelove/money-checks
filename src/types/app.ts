@@ -1,6 +1,7 @@
 export type LedgerAppScreen =
   | "account"
   | "all-entries"
+  | "all-menu"
   | "app-settings"
   | "calendar"
   | "charts"

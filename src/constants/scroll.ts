@@ -7,6 +7,11 @@ export const AppScrollBehavior = {
   overScrollMode: "never",
 } as const satisfies ScrollViewProps;
 
+export const EntryListScrollUi = {
+  firstEntryPreviewMs: 650,
+  loadMoreThreshold: 0.4,
+} as const;
+
 export const AppPagerScrollBehavior = {
   overdrag: false,
   overScrollMode: "never",

@@ -13,23 +13,6 @@ const load = modules({
   'src/components/entryComposer/EntryComposerDetails.tsx': { EntryComposerDetails: 'Details' },
 });
 
-test('clipboard action shares the date row and respects the input lock', () => {
-  let reads = 0;
-  const props = { composer: { draft: { type: 'expense', amount: '', content: '', note: '' } },
-    disabled: false, inputRef: { current: null }, onReadClipboard: () => reads++ };
-  const tree = EntryComposerForm(props);
-  const row = tree.props.children[0];
-  assert.equal(row.props.children[0].type, 'DateSelector');
-  const button = row.props.children[1];
-  assert.equal(button.type, 'Pressable');
-  assert.equal(nodes(button).some(node => node.type === 'Text'), false);
-  assert.equal(button.props.accessibilityLabel, '클립보드 내역 확인');
-  button.props.onPress();
-  const blocked = nodes(EntryComposerForm({ ...props, disabled: true })).find(n => n.type === 'Pressable');
-  assert.equal(blocked.props.disabled, true);
-  blocked.props.onPress();
-  assert.equal(reads, 1);
-});
 const { EntryComposerForm } = load('src/components/entryComposer/EntryComposerForm.tsx');
 const nodes = node => Array.isArray(node) ? node.flatMap(nodes) : node?.props ? [node, ...nodes(node.props.children)] : [];
 

@@ -1,15 +1,7 @@
 import { useNativeAdCache } from "../hooks/useNativeAdCache";
 import { NativeAdCacheConfig } from "../constants/nativeAdCache";
 import { type ReactNode, useDeferredValue, useEffect, useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppNativeAdCard } from "../components/AppNativeAdCard";
 import { AppFooterContentInset } from "../components/AppFooterContentInset";
@@ -24,7 +16,7 @@ import {
 } from "../constants/allEntries";
 import { CATEGORY_OPTIONS } from "../constants/categories";
 import { AppColors } from "../constants/colors";
-import { RefreshableScrollBehavior } from "../constants/scroll";
+import { AppScrollBehavior, EntryListScrollUi } from "../constants/scroll";
 import { AppLayout } from "../constants/layout";
 import { useAllLedgerEntries } from "../hooks/useAllLedgerEntries";
 import { useLedgerCategories } from "../hooks/useLedgerCategories";
@@ -131,9 +123,7 @@ export function AllEntriesScreen({
             onOpenFilter={() => setIsFilterSheetOpen(true)}
             onRemoveCategory={(categoryId) => {
               setSelectedCategoryIds((currentCategoryIds) =>
-                currentCategoryIds.filter(
-                  (currentCategoryId) => currentCategoryId !== categoryId,
-                ),
+                currentCategoryIds.filter((currentCategoryId) => currentCategoryId !== categoryId),
               );
             }}
             onRemoveEntryType={() => {
@@ -151,49 +141,58 @@ export function AllEntriesScreen({
       </View>
       <FlatList
         windowSize={NativeAdCacheConfig.listWindowSize}
-        {...RefreshableScrollBehavior}
+        {...AppScrollBehavior}
         contentContainerStyle={entries.length === 0 ? styles.emptyContent : styles.listContent}
         data={feedItems}
         keyExtractor={(item) => item.key}
-        ListHeaderComponent={errorMessage ? (
-          <View style={styles.controls}>
-            <Pressable
-              accessibilityRole="button"
-              disabled={isRefreshing}
-              onPress={() => {
-                if (isRefreshing) {
-                  return;
-                }
+        ListHeaderComponent={
+          errorMessage ? (
+            <View style={styles.controls}>
+              <Pressable
+                accessibilityRole="button"
+                disabled={isRefreshing}
+                onPress={() => {
+                  if (isRefreshing) {
+                    return;
+                  }
 
-                void refreshEntries();
-              }}
-              style={({ pressed }) => [
-                styles.errorRetry,
-                pressed && !isRefreshing ? styles.errorRetryPressed : null,
-                isRefreshing ? styles.errorRetryDisabled : null,
-              ]}
-            >
-              <Text style={styles.error}>{errorMessage}</Text>
-              <Text style={styles.errorRetryLabel}>재시도</Text>
-            </Pressable>
-          </View>
-        ) : undefined}
-        ListEmptyComponent={isRefreshing ? <View style={styles.emptyState}>
-          <ActivityIndicator color={AppColors.primary} accessibilityLabel={AllEntriesFilterCopy.loadingLabel} />
-          <Text style={styles.emptyHint}>{AllEntriesFilterCopy.loadingLabel}</Text>
-        </View> :
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>
-              {hasAppliedFilters
-                ? AllEntriesFilterCopy.emptyFilterTitle
-                : "표시할 기록이 없어요."}
-            </Text>
-            <Text style={styles.emptyHint}>
-              {hasAppliedFilters
-                ? AllEntriesFilterCopy.emptyFilterHint
-                : "새로운 기록을 추가해 보세요."}
-            </Text>
-          </View>
+                  void refreshEntries();
+                }}
+                style={({ pressed }) => [
+                  styles.errorRetry,
+                  pressed && !isRefreshing ? styles.errorRetryPressed : null,
+                  isRefreshing ? styles.errorRetryDisabled : null,
+                ]}
+              >
+                <Text style={styles.error}>{errorMessage}</Text>
+                <Text style={styles.errorRetryLabel}>재시도</Text>
+              </Pressable>
+            </View>
+          ) : undefined
+        }
+        ListEmptyComponent={
+          isRefreshing ? (
+            <View style={styles.emptyState}>
+              <ActivityIndicator
+                color={AppColors.primary}
+                accessibilityLabel={AllEntriesFilterCopy.loadingLabel}
+              />
+              <Text style={styles.emptyHint}>{AllEntriesFilterCopy.loadingLabel}</Text>
+            </View>
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyTitle}>
+                {hasAppliedFilters
+                  ? AllEntriesFilterCopy.emptyFilterTitle
+                  : "표시할 기록이 없어요."}
+              </Text>
+              <Text style={styles.emptyHint}>
+                {hasAppliedFilters
+                  ? AllEntriesFilterCopy.emptyFilterHint
+                  : "새로운 기록을 추가해 보세요."}
+              </Text>
+            </View>
+          )
         }
         ListFooterComponent={
           <>
@@ -212,16 +211,7 @@ export function AllEntriesScreen({
 
           void loadMoreEntries();
         }}
-        onEndReachedThreshold={0.4}
-        refreshControl={
-          <RefreshControl
-            onRefresh={() => {
-              void refreshEntries();
-            }}
-            refreshing={isRefreshing}
-            tintColor={AppColors.primary}
-          />
-        }
+        onEndReachedThreshold={EntryListScrollUi.loadMoreThreshold}
         renderItem={({ item }) =>
           item.type === "native-ad" ? (
             <AppNativeAdCard cache={nativeAdCache} slotIndex={item.slotIndex} />
@@ -268,9 +258,7 @@ export function AllEntriesScreen({
     const deletedEntryIds =
       scope === LedgerEntryDeleteScopes.installmentGroup && entry.installmentGroupId
         ? entries
-            .filter(
-              (currentEntry) => currentEntry.installmentGroupId === entry.installmentGroupId,
-            )
+            .filter((currentEntry) => currentEntry.installmentGroupId === entry.installmentGroupId)
             .map((currentEntry) => currentEntry.id)
         : [entry.id];
     removeEntriesFromFeed(deletedEntryIds);

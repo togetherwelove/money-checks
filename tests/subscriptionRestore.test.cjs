@@ -37,7 +37,10 @@ test('paywall shows renewal disclosures and restore without expanding, and never
     onPurchasePlus: async () => {}, onRestorePurchases: async () => { restored++; }, plusPriceLabel: '₩1,000/월' };
   const nodes = flatten(SubscriptionScreen(props));
   assert.ok(nodes.some(node => node.props.children === SubscriptionMessages.renewalNotice));
-  assert.ok(nodes.some(node => node.props.children === SubscriptionMessages.purchaseInfoDefaultPeriodValue));
+  assert.equal(nodes.filter(node => node.props.children === props.plusPriceLabel).length, 1);
+  assert.ok(nodes.some(node => node.props.children === SubscriptionMessages.heroDescription));
+  assert.ok(nodes.some(node => node.props.label === '개인정보 처리방침'));
+  assert.ok(nodes.some(node => node.props.label === '이용약관'));
   nodes.find(node => node.props.label === SubscriptionMessages.restoreAction).props.onPress();
   assert.equal(restored, 1);
   const unavailable = flatten(SubscriptionScreen({ ...props, plusPriceLabel: null }));

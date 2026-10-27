@@ -1,20 +1,22 @@
 import type { ReactNode } from "react";
-import { Linking,StyleSheet } from "react-native";
+import { Linking, StyleSheet, Text } from "react-native";
 import { MenuStyles } from "../constants/menuStyles";
 
 import { AppFooterContentInset } from "../components/AppFooterContentInset";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { NotificationSettingsCard } from "../components/accountScreen/NotificationSettingsCard";
 import { AppColors } from "../constants/colors";
+import { PushNotificationCopy } from "../notifications/config/pushNotificationCopy";
 import type { NotificationPermissionState } from "../lib/notifications/pushNotifications";
 import type {
-NotificationEventType,
-NotificationThresholdKey,
-NotificationThresholdPeriod,
+  NotificationEventType,
+  NotificationThresholdKey,
+  NotificationThresholdPeriod,
 } from "../notifications/domain/notificationEvents";
 import type { NotificationPreferenceGroup } from "../notifications/preferences/notificationPreferences";
 
-type NotificationSettingsScreenProps = {
+export type NotificationSettingsScreenProps = {
+  showNotificationSettings: boolean;
   notificationPermissionLabel: string;
   notificationPermissionState: NotificationPermissionState;
   notificationPreferenceGroups: NotificationPreferenceGroup[];
@@ -31,6 +33,7 @@ type NotificationSettingsScreenProps = {
 };
 
 export function NotificationSettingsScreen({
+  showNotificationSettings,
   notificationPermissionLabel,
   notificationPermissionState,
   notificationPreferenceGroups,
@@ -54,17 +57,21 @@ export function NotificationSettingsScreen({
   return (
     <KeyboardAwareScrollView contentContainerStyle={styles.content} style={styles.screen}>
       {screenTitle}
-      <NotificationSettingsCard
-        onChangeThresholdEnabled={onChangeNotificationThresholdEnabled}
-        onChangeThresholdPeriod={onChangeNotificationThresholdPeriod}
-        onChangeThresholdValue={onChangeNotificationThreshold}
-        onOpenDeviceNotificationSettings={handleOpenNotificationPermission}
-        onTogglePreference={onToggleNotificationPreference}
-        permissionLabel={notificationPermissionLabel}
-        permissionState={notificationPermissionState}
-        preferenceGroups={notificationPreferenceGroups}
-        statusMessage={notificationStatusMessage}
-      />
+      {showNotificationSettings ? (
+        <NotificationSettingsCard
+          onChangeThresholdEnabled={onChangeNotificationThresholdEnabled}
+          onChangeThresholdPeriod={onChangeNotificationThresholdPeriod}
+          onChangeThresholdValue={onChangeNotificationThreshold}
+          onOpenDeviceNotificationSettings={handleOpenNotificationPermission}
+          onTogglePreference={onToggleNotificationPreference}
+          permissionLabel={notificationPermissionLabel}
+          permissionState={notificationPermissionState}
+          preferenceGroups={notificationPreferenceGroups}
+          statusMessage={notificationStatusMessage}
+        />
+      ) : (
+        <Text style={MenuStyles.description}>{PushNotificationCopy.permissionUnsupported}</Text>
+      )}
       <AppFooterContentInset />
     </KeyboardAwareScrollView>
   );

@@ -52,6 +52,7 @@ const SHEET_TEXT_FIELD_VERTICAL_PADDING = 6;
 
 export const EntryComposerUi = {
   sheetControlSize: 48,
+  sheetTypePickerWidth: 176,
   sheetIconSize: 24,
   sheetSegmentFontSize: 16,
   sheetCardRadius: 28,

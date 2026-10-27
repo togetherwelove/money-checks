@@ -1,3 +1,4 @@
+import { LedgerEntryRowStyles as Row, LedgerEntryRowUi } from "../constants/ledgerEntryRow";
 import { Feather } from "./AppIcons";
 import { type MenuAction, MenuView, type NativeActionEvent } from "@react-native-menu/menu";
 import { useRef } from "react";
@@ -7,7 +8,6 @@ import { AppColors } from "../constants/colors";
 import { EntryRegistrationCopy } from "../constants/entryRegistration";
 import { EntryComposerCopy } from "../constants/entryComposer";
 import { InstallmentStatuses } from "../constants/installments";
-import { AppLayout } from "../constants/layout";
 import { AppMessages } from "../constants/messages";
 import { useExpenseTextColor } from "../contexts/ExpenseTextColorContext";
 import { formatInstallmentProgressLabel, stripInstallmentNoteSuffix } from "../lib/installments";
@@ -34,9 +34,8 @@ const LedgerEntryMenuAction = {
 } as const;
 const ENTRY_META_SEPARATOR = " · ";
 const FALLBACK_CATEGORY_ICON_NAME: CategoryIconName = "grid";
-const CATEGORY_ICON_SIZE = 16;
+const CATEGORY_ICON_SIZE = LedgerEntryRowUi.iconSize;
 const ENTRY_ATTACHMENT_ICON_SIZE = 12;
-const ENTRY_ROW_GAP = 8;
 const LEDGER_ENTRY_DELETE_MENU_ICON_NAME = "trash";
 const LEDGER_ENTRY_DUPLICATE_MENU_ICON_NAME = "doc.on.doc";
 const LEDGER_ENTRY_PREPAY_MENU_ICON_NAME = "creditcard";
@@ -60,7 +59,10 @@ const duplicateLedgerEntryMenuAction: MenuAction = {
   imageColor: AppColors.text,
   title: EntryComposerCopy.duplicate,
 };
-const ledgerEntryMenuActions: MenuAction[] = [duplicateLedgerEntryMenuAction, deleteLedgerEntryMenuAction];
+const ledgerEntryMenuActions: MenuAction[] = [
+  duplicateLedgerEntryMenuAction,
+  deleteLedgerEntryMenuAction,
+];
 const installmentLedgerEntryMenuActions: MenuAction[] = [
   duplicateLedgerEntryMenuAction,
   prepayInstallmentMenuAction,
@@ -257,59 +259,27 @@ function resolveEntryContentLabel(entry: LedgerEntry, categoryLabel: string): st
 }
 
 const styles = StyleSheet.create({
-  entryRow: {
-    position: "relative",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: ENTRY_ROW_GAP,
-    paddingHorizontal: AppLayout.screenPadding,
-    paddingVertical: 6,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: AppColors.border,
-  },
+  entryRow: Row.row,
   entryPressable: {
     flex: 1,
   },
   entryMenuAnchor: {
     flex: 1,
   },
-  entryBody: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: ENTRY_ROW_GAP,
-  },
-  entryLeadingIcon: {
-    width: 20,
-    alignItems: "center",
-  },
-  entryTextBlock: {
-    flex: 1,
-    gap: 2,
-  },
+  entryBody: Row.body,
+  entryLeadingIcon: Row.leadingIcon,
+  entryTextBlock: Row.textBlock,
   entryMetaRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
   },
-  entryContent: {
-    color: AppColors.text,
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  entryAmount: {
-    flexShrink: 0,
-    fontSize: 13,
-    fontWeight: "700",
-  },
+  entryContent: Row.content,
+  entryAmount: Row.amount,
   income: {
     color: AppColors.income,
   },
-  entryMeta: {
-    flexShrink: 1,
-    color: AppColors.mutedText,
-    fontSize: 12,
-  },
+  entryMeta: Row.meta,
   formerMemberName: {
     color: AppColors.expense,
     fontWeight: "700",

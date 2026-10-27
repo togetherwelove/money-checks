@@ -1,4 +1,4 @@
-import { Linking,StyleSheet,Text,View } from "react-native";
+import { Linking, StyleSheet, Text, View } from "react-native";
 import { MenuStyles } from "../constants/menuStyles";
 
 import { ActionButton } from "../components/ActionButton";
@@ -8,15 +8,9 @@ import { TextLinkButton } from "../components/TextLinkButton";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import { LegalLinks } from "../constants/legal";
-import { SubscriptionHeroUi,SubscriptionMessages } from "../constants/subscription";
-import {
-AppTextBreakProps,
-CompactTextProps,
-OneLineTextFitProps,
-} from "../constants/textLayout";
-import {
-BrandPlusTextStyle
-} from "../constants/uiStyles";
+import { SubscriptionHeroUi, SubscriptionMessages } from "../constants/subscription";
+import { AppTextBreakProps, CompactTextProps, OneLineTextFitProps } from "../constants/textLayout";
+import { BrandPlusTextStyle } from "../constants/uiStyles";
 import { showNativeToast } from "../lib/nativeToast";
 
 type SubscriptionScreenProps = {
@@ -54,11 +48,13 @@ export function SubscriptionScreen({
           </View>
           <View style={styles.benefitSection}>
             <View style={styles.benefitList}>
-              {["· 광고 모두 제거", "· 가계부 동시 최대 3개", "· 가계부당 공유 멤버 최대 5명"].map((item) => (
-                <Text key={item} style={styles.benefitItem}>
-                  {item}
-                </Text>
-              ))}
+              {["· 광고 모두 제거", "· 가계부 동시 최대 3개", "· 가계부당 공유 멤버 최대 5명"].map(
+                (item) => (
+                  <Text key={item} style={styles.benefitItem}>
+                    {item}
+                  </Text>
+                ),
+              )}
             </View>
           </View>
           <View style={styles.ctaSection}>
@@ -89,46 +85,26 @@ export function SubscriptionScreen({
             <Text style={styles.priceDetailLabel}>{resolvedPlusPriceLabel}</Text>
           </View>
           <View style={styles.detailSection}>
-            <View style={styles.purchaseInfoCard}>
-              <View style={styles.purchaseInfoRow}>
-                <Text style={styles.purchaseInfoLabel}>
-                  {SubscriptionMessages.purchaseInfoNameLabel}
-                </Text>
-                <Text style={styles.purchaseInfoValue}>{SubscriptionMessages.screenTitle}</Text>
-              </View>
-              <View style={styles.purchaseInfoRow}>
-                <Text style={styles.purchaseInfoLabel}>
-                  {SubscriptionMessages.purchaseInfoPeriodLabel}
-                </Text>
-                <Text style={styles.purchaseInfoValue}>
-                  {SubscriptionMessages.purchaseInfoDefaultPeriodValue}
-                </Text>
-              </View>
-              <View style={[styles.purchaseInfoRow, styles.purchaseInfoLastRow]}>
-                <Text style={styles.purchaseInfoLabel}>
-                  {SubscriptionMessages.purchaseInfoPriceLabel}
-                </Text>
-                <Text style={styles.purchaseInfoValue}>{resolvedPlusPriceLabel}</Text>
-              </View>
-              <Text style={styles.renewalNotice}>{SubscriptionMessages.renewalNotice}</Text>
-              <View style={styles.legalLinkRow}>
-                <TextLinkButton
-                  label={SubscriptionMessages.restoreAction}
-                  onPress={() => { void onRestorePurchases(); }}
-                />
-                <TextLinkButton
-                  label="개인정보 처리방침"
-                  onPress={() => {
-                    void handleOpenLegalLink(LegalLinks.privacyPolicyUrl);
-                  }}
-                />
-                <TextLinkButton
-                  label="이용약관"
-                  onPress={() => {
-                    void handleOpenLegalLink(LegalLinks.termsOfUseUrl);
-                  }}
-                />
-              </View>
+            <Text style={styles.renewalNotice}>{SubscriptionMessages.renewalNotice}</Text>
+            <View style={styles.legalLinkRow}>
+              <TextLinkButton
+                label={SubscriptionMessages.restoreAction}
+                onPress={() => {
+                  void onRestorePurchases();
+                }}
+              />
+              <TextLinkButton
+                label="개인정보 처리방침"
+                onPress={() => {
+                  void handleOpenLegalLink(LegalLinks.privacyPolicyUrl);
+                }}
+              />
+              <TextLinkButton
+                label="이용약관"
+                onPress={() => {
+                  void handleOpenLegalLink(LegalLinks.termsOfUseUrl);
+                }}
+              />
             </View>
           </View>
         </View>
@@ -155,7 +131,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     width: "100%",
     alignItems: "center",
-    justifyContent: "flex-start",
+    justifyContent: "center",
     gap: MenuStyles.sections.gap,
   },
   copySection: {
@@ -178,16 +154,6 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     padding: AppLayout.cardContentPadding,
   },
-  purchaseInfoCard: {
-    ...MenuStyles.group,
-    width: "100%",
-  },
-  purchaseInfoRow: {
-    ...MenuStyles.row,
-    flexWrap: "wrap",
-  },  purchaseInfoLastRow: {
-    borderBottomWidth: 0,
-  },
   legalLinkRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -196,14 +162,6 @@ const styles = StyleSheet.create({
     padding: AppLayout.cardContentPadding,
     borderTopWidth: 1,
     borderTopColor: AppColors.border,
-  },
-  purchaseInfoLabel: MenuStyles.description,
-  purchaseInfoValue: {
-    color: AppColors.text,
-    fontSize: 15,
-    fontWeight: "700",
-    textAlign: "right",
-    flexShrink: 1,
   },
   description: {
     color: AppColors.text,

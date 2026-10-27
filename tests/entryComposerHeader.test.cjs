@@ -12,9 +12,10 @@ const controls = Object.fromEntries(['Button', 'Host', 'HStack', 'Image', 'Picke
   'CircularProgressIndicator', 'FilledIconButton', 'Icon', 'IconButton', 'SingleChoiceSegmentedButtonRow']
   .map(name => [name, name]));
 const SegmentedButton = Object.assign(() => {}, { Label: 'SegmentLabel' });
+let fontScale = 1;
 const load = modules({
   'react/jsx-runtime': { jsx, jsxs: jsx },
-  'react-native': { View: 'View', Text: 'HeaderTitle', StyleSheet: { create: value => value } },
+  'react-native': { View: 'View', Text: 'HeaderTitle', StyleSheet: { create: value => value }, useWindowDimensions: () => ({ fontScale }) },
   '@expo/ui/swift-ui': controls,
   'expo-glass-effect': { isLiquidGlassAvailable: () => true },
   '@expo/ui/swift-ui/modifiers': modifiers,
@@ -50,7 +51,14 @@ for (const platform of ['ios', 'android']) {
       const pickerModifiers = picker.props.modifiers;
       assert.deepEqual(Array.from(pickerModifiers, modifier => modifier.name),
         ['pickerStyle', 'controlSize', 'glassEffect', 'disabled']);
-      assert.equal(pickerModifiers[1].value, 'large');
+      assert.equal(pickerModifiers[1].value, 'regular');
+      const pickerHost = active.all.find(node => node.type === 'Host' && node.props.children.type === 'Picker');
+      assert.equal(pickerHost.props.style[1].width, 176);
+      fontScale = 2;
+      const scaled = actions().all.find(node => node.type === 'Host' && node.props.children.type === 'Picker');
+      assert.equal(scaled.props.style[1].width, 352);
+      assert.equal(scaled.props.style[0].maxWidth, '100%');
+      fontScale = 1;
       const glass = pickerModifiers.find(modifier => modifier.name === 'glassEffect');
       assert.equal(glass.value.glass.interactive, false);
       assert.equal(glass.value.glass.tint, undefined);

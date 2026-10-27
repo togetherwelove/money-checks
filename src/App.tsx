@@ -1,3 +1,4 @@
+import { LedgerEntryAppendRow } from "./components/LedgerEntryAppendRow";
 import { useTrackedTask } from "./hooks/useTrackedTask";
 import {
   resolveLedgerSaveErrorMessage,
@@ -8,7 +9,6 @@ import { useInitialNotificationPermission } from "./hooks/useInitialNotification
 import { useAppNotificationRouting } from "./hooks/useAppNotificationRouting";
 import { useAppAds } from "./hooks/useAppAds";
 import { useEntryClipboard } from "./hooks/useEntryClipboard";
-import { FloatingEntryButton } from "./components/FloatingEntryButton";
 import { NavigationContainer, createNavigationContainerRef } from "@react-navigation/native";
 import type { Session } from "@supabase/supabase-js";
 import * as SplashScreen from "expo-splash-screen";
@@ -28,7 +28,6 @@ import {
 } from "./app/signedInNavigation";
 import { AppNativeHeaderTitle } from "./components/AppNativeHeaderTitle";
 import { BlockingOverlay } from "./components/BlockingOverlay";
-import { ClipboardSuggestionBanner } from "./components/ClipboardSuggestionBanner";
 import { LedgerBookManagementSheet } from "./components/LedgerBookManagementSheet";
 import { OnboardingTransitionScreen } from "./components/OnboardingTransitionScreen";
 import { SessionLoadingScreen } from "./components/SessionLoadingScreen";
@@ -41,7 +40,7 @@ import { AdInterstitialPlacement } from "./constants/ads";
 import { AppColors } from "./constants/colors";
 import { EntryRegistrationCopy } from "./constants/entryRegistration";
 import { formatMonthLabel, formatYearLabel } from "./constants/ledgerDisplay";
-import { FooterTabBarUi, FloatingEntryButtonUi } from "./constants/menu";
+import { FooterTabBarUi } from "./constants/menu";
 import { AppMessages } from "./constants/messages";
 import { SubscriptionMessages, SubscriptionTiers } from "./constants/subscription";
 import { SupportMessages, type SupportPackageIdentifier } from "./constants/support";
@@ -73,7 +72,7 @@ import { resolveSessionAuthProvider, resolveSessionAuthProviderLabel } from "./l
 import { type FooterTabScreen } from "./lib/footerTabs";
 import { scheduleIdleTask } from "./lib/idleScheduler";
 import { logAppError } from "./lib/logAppError";
-import { buildSettingsMenuSections } from "./lib/menuItems";
+import { buildAllMenuSections } from "./lib/menuItems";
 import { showNativeToast } from "./lib/nativeToast";
 import {
   resolveBadgedBookIds,
@@ -180,7 +179,6 @@ function SignedInApp({ session }: { session: Session }) {
   const isLedgerManagementOpen = ledgerManagementSheet.isOpen;
   const setIsLedgerManagementOpen = ledgerManagementSheet.setOpen;
   const [footerHeight, setFooterHeight] = useState(0);
-  const [clipboardBannerHeight, setClipboardBannerHeight] = useState(0);
   const [isYearPickerOpen, setIsYearPickerOpen] = useState(false);
   const [isNicknameScreenReady, setIsNicknameScreenReady] = useState(false);
   const { taskCount: blockingTaskCount, trackTask: trackBlockingTask } = useTrackedTask();
@@ -345,7 +343,6 @@ function SignedInApp({ session }: { session: Session }) {
   const {
     clipboardSuggestionDraft,
     handleOpenEntryFromCalendar,
-    handlePasteClipboardDraft,
     handleDismissClipboardSuggestion,
     handleApplyClipboardSuggestion,
     handleOpenClipboardImportFromWidget,
@@ -363,21 +360,13 @@ function SignedInApp({ session }: { session: Session }) {
     setIsComposerVisible,
   });
 
-  const isClipboardBannerVisible = Boolean(
+  const isClipboardSuggestionVisible = Boolean(
     clipboardSuggestionDraft &&
       isSignedInInteractionReady &&
       !composerSheet.isPresented &&
       !isEntrySheetOpen &&
       !ledgerManagementSheet.isPresented,
   );
-  const showsFloatingEntryButton =
-    (currentScreen === "calendar" ||
-      currentScreen === "all-entries" ||
-      currentScreen === "charts" ||
-      isClipboardBannerVisible) &&
-    !isEntrySheetOpen &&
-    !composerSheet.isPresented &&
-    !ledgerManagementSheet.isPresented;
   useLedgerWidgetDeepLinks({
     enabled: isSignedInInteractionReady,
     onOpenClipboardImport: handleOpenClipboardImportFromWidget,
@@ -388,16 +377,26 @@ function SignedInApp({ session }: { session: Session }) {
   const handleOpenSubscription = useCallback(() => {
     navigateToStackScreen("subscription");
   }, [navigateToStackScreen]);
-  const menuSections = useMemo(
-    () =>
-      buildSettingsMenuSections({
-        showAnnualReportDownload: Boolean(annualReport.bookName),
-      }),
-    [annualReport.bookName],
-  );
   const footerBadgedScreens = useMemo<FooterTabScreen[]>(() => {
     return resolveFooterBadgeScreens(notificationBadges.snapshot);
   }, [notificationBadges.snapshot]);
+  const menuSections = useMemo(
+    () =>
+      buildAllMenuSections({
+        showAnnualReportDownload: Boolean(annualReport.bookName),
+        hasSharedLedgerNotifications: footerBadgedScreens.includes("all-menu"),
+        activeBookName: ledgerState.activeBook?.name,
+        canManageCategories:
+          Boolean(ledgerState.activeBook) && !ledgerState.isReadOnlyDueToPlanLimit,
+      }),
+    [
+      annualReport.bookName,
+      footerBadgedScreens,
+      ledgerState.activeBook?.id,
+      ledgerState.activeBook?.name,
+      ledgerState.isReadOnlyDueToPlanLimit,
+    ],
+  );
   const badgedLedgerBookIds = useMemo(
     () => resolveBadgedBookIds(notificationBadges.snapshot),
     [notificationBadges.snapshot],
@@ -758,15 +757,7 @@ function SignedInApp({ session }: { session: Session }) {
   return (
     <ExpenseTextColorProvider>
       <BottomContentInsetContext.Provider
-        value={
-          FooterTabBarUi.contentBottomGap +
-          (appPlatform.os === "web" ? 0 : footerHeight) +
-          (isClipboardBannerVisible
-            ? clipboardBannerHeight + FloatingEntryButtonUi.footerGap
-            : showsFloatingEntryButton
-              ? FloatingEntryButtonUi.size + FloatingEntryButtonUi.footerGap
-              : 0)
-        }
+        value={FooterTabBarUi.contentBottomGap + (appPlatform.os === "web" ? 0 : footerHeight)}
       >
         <View onLayout={onSignedInLayout} style={styles.container}>
           <StatusBar barStyle="dark-content" />
@@ -797,6 +788,33 @@ function SignedInApp({ session }: { session: Session }) {
                     }
                     badges={footerBadgedScreens}
                     onFooterHeightChange={setFooterHeight}
+                    entryAppend={
+                      <LedgerEntryAppendRow
+                        selectedDate={ledgerState.selectedDate}
+                        disabled={
+                          !isSignedInInteractionReady ||
+                          ledgerState.isReadOnlyDueToPlanLimit ||
+                          !ledgerState.activeBook
+                        }
+                        unavailableReason={
+                          ledgerState.isLoading || ledgerState.isBusy
+                            ? undefined
+                            : !ledgerState.activeBook
+                              ? "no-book"
+                              : ledgerState.isReadOnlyDueToPlanLimit
+                                ? "read-only"
+                                : undefined
+                        }
+                        clipboardDraft={
+                          isClipboardSuggestionVisible ? clipboardSuggestionDraft : null
+                        }
+                        onAdd={() => {
+                          void handleOpenEntry();
+                        }}
+                        onApplyClipboard={handleApplyClipboardSuggestion}
+                        onDismissClipboard={handleDismissClipboardSuggestion}
+                      />
+                    }
                     accountProviderLabel={accountProviderLabel}
                     adTrackingPermissionState={adTrackingPermissionState}
                     calendarSummaryBaseDay={calendarSummaryModeSetting.calendarSummaryBaseDay}
@@ -845,9 +863,9 @@ function SignedInApp({ session }: { session: Session }) {
                     renderScreenTitle={renderScreenTitle}
                     menuSections={menuSections}
                     onSelectMenuItem={(item) => {
-                      Keyboard.dismiss();
-                      if ("action" in item) void annualReport.handleDownloadReport();
-                      else navigateToStackScreen(item.targetScreen);
+                      if ("targetScreen" in item) navigateToStackScreen(item.targetScreen);
+                      else if (item.action === "annual-report-download")
+                        void annualReport.handleDownloadReport();
                     }}
                     renderLedgerBooks={() => (
                       <LedgerBooksScreen
@@ -877,27 +895,8 @@ function SignedInApp({ session }: { session: Session }) {
                     userId={session.user.id}
                   />
                 </NavigationContainer>
-                {showsFloatingEntryButton ? (
-                  <FloatingEntryButton
-                    bottomInset={footerHeight}
-                    expanded={isClipboardBannerVisible}
-                    disabled={!isSignedInNavigationReady}
-                    onPress={() => {
-                      void handleOpenEntry();
-                    }}
-                  />
-                ) : null}
               </View>
             </View>
-            {isClipboardBannerVisible && clipboardSuggestionDraft ? (
-              <ClipboardSuggestionBanner
-                draft={clipboardSuggestionDraft}
-                bottomInset={footerHeight}
-                onLayout={(event) => setClipboardBannerHeight(event.nativeEvent.layout.height)}
-                onApply={handleApplyClipboardSuggestion}
-                onDismiss={handleDismissClipboardSuggestion}
-              />
-            ) : null}
             <EntryComposer
               ref={entryComposerRef}
               key={ledgerState.activeBook?.id ?? "no-book"}
@@ -907,7 +906,6 @@ function SignedInApp({ session }: { session: Session }) {
                 onDismiss: composerSheet.onDismiss,
               }}
               onDismissClipboard={handleDismissClipboardSuggestion}
-              onReadClipboard={handlePasteClipboardDraft}
               bookId={ledgerState.activeBook?.id ?? null}
               selectedDate={ledgerState.selectedDate}
               userId={session.user.id}

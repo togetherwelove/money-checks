@@ -45,7 +45,7 @@ test('+ opens immediately, asynchronous recognition does not reopen a dismissed 
   const code = ts.transpileModule(`const handler = ${handler};`, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
   const open = vm.runInNewContext(`${code}\nhandler;`, {
     isSignedInInteractionReady: true, ledgerState: { isReadOnlyDueToPlanLimit: false },
-    clipboardScopeRef: scope, navigateToEntryFromCalendar: () => opened++,
+    lastHandledClipboardRef: { current: null }, clipboardScopeRef: scope, navigateToEntryFromCalendar: () => opened++,
     readAvailableCardSmsClipboardDraft: () => new Promise(resolve => { finish = resolve; }),
     setClipboardSuggestionDraft: draft => drafts.push(draft), handleReadOnlyEditBlocked() {},
   });
@@ -77,23 +77,6 @@ test('detected SMS retains amount, merchant, date and cancellation type; empty c
   assert.equal(await readCardSmsClipboardDraft({ baseDate }), null);
 });
 
-test('footer preview reuses the same import and dismissal actions above the measured footer', () => {
-  const jsx = (type, props) => ({ type, props });
-  const load = modules({
-    'react/jsx-runtime': { jsx, jsxs: jsx },
-    react: { useState: value => [value, () => {}] },
-    'react-native': { Animated: { View: 'AnimatedView' }, StyleSheet: { create: value => value } },
-    'src/hooks/useClipboardExpansionAnimation.ts': { useClipboardExpansionAnimation: () => ({ interpolate: config => config }) },
-    'src/components/entryComposer/ClipboardEntrySuggestion.tsx': { ClipboardEntrySuggestion: 'Preview' },
-  });
-  const { ClipboardSuggestionBanner } = load('src/components/ClipboardSuggestionBanner.tsx');
-  let applied = 0, dismissed = 0;
-  const tree = ClipboardSuggestionBanner({ bottomInset: 98, draft: { amount: '8500' },
-    onApply: () => applied++, onDismiss: () => dismissed++ });
-  assert.ok(tree.props.style[1].bottom > 98);
-  tree.props.children.props.onApply(); tree.props.children.props.onDismiss();
-  assert.equal(applied, 1); assert.equal(dismissed, 1);
-});
 
 test('returning while data is loading defers clipboard detection until readiness and cleans up its listener', () => {
   const source = fs.readFileSync('src/hooks/useEntryClipboard.ts', 'utf8');
@@ -131,34 +114,4 @@ test('returning while data is loading defers clipboard detection until readiness
   retryWhenReady(); retryWhenReady();
   assert.equal(reads, 1); assert.equal(pending.current, false);
   cleanup(); assert.equal(removed, 1);
-});
-
-test('paste applies directly once without a preview, reports empty reads, and cannot reopen a closed sheet', async () => {
-  const source = fs.readFileSync('src/hooks/useEntryClipboard.ts', 'utf8');
-  const tree = ts.createSourceFile('App.tsx', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
-  let handler;
-  function visit(node) {
-    if (ts.isVariableDeclaration(node) && node.name.getText(tree) === 'handlePasteClipboardDraft') handler = node.initializer.arguments[0].getText(tree);
-    ts.forEachChild(node, visit);
-  }
-  visit(tree); assert.ok(handler);
-  const applied = [], previews = [], toasts = [], visible = { current: true }, scope = { current: 'a' };
-  let reads = 0, finish;
-  const code = ts.transpileModule(`const handler = ${handler};`, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText;
-  const paste = vm.runInNewContext(`${code}\nhandler;`, {
-    clipboardScopeRef: scope, clipboardPasteInFlightRef: { current: false }, composerVisibleRef: visible,
-    readAvailableCardSmsClipboardDraft: () => { reads++; return new Promise(resolve => { finish = resolve; }); },
-    setClipboardSuggestionDraft: draft => previews.push(draft), handleOpenCardSmsClipboardDraft: draft => applied.push(draft),
-    showNativeToast: message => toasts.push(message), CardSmsClipboardCopy: { noAvailableEntry: 'No matching entry' },
-  });
-  const pending = paste(); await paste(); assert.equal(reads, 1);
-  const draft = { amount: '8500', content: 'Coffee' }; finish(draft); await pending;
-  assert.equal(applied[0], draft); assert.deepEqual(previews, [null]);
-  const empty = paste(); finish(null); await empty;
-  assert.deepEqual(toasts, ['No matching entry']);
-  const closing = paste(); visible.current = false; finish(draft); await closing;
-  assert.equal(applied.length, 1);
-  visible.current = true;
-  const stale = paste(); scope.current = 'b'; finish(draft); await stale;
-  assert.equal(applied.length, 1);
 });

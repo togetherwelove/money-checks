@@ -4,7 +4,7 @@ import {
   frame, glassEffect, labelStyle, pickerStyle, tag, tint,
 } from "@expo/ui/swift-ui/modifiers";
 import { isLiquidGlassAvailable } from "expo-glass-effect";
-import { StyleSheet, Text as HeaderTitle, View } from "react-native";
+import { StyleSheet, Text as HeaderTitle, View, useWindowDimensions } from "react-native";
 
 import { AppColors } from "../../constants/colors";
 import { EntryComposerCopy as Copy, EntryComposerUi as Ui } from "../../constants/entryComposer";
@@ -25,6 +25,7 @@ const actionGlass = supportsGlass
   : [];
 
 export function EntryComposerHeader({ title, type = "expense", onSelectType, typeDisabled = false, saving = false, actionDisabled = false, actionLabel, onAction, onClose }: EntryComposerHeaderProps) {
+  const { fontScale } = useWindowDimensions();
   return <View style={styles.header}>
     <Host style={styles.button} colorScheme="light" alignment="center">
       <Button role="cancel"
@@ -37,15 +38,16 @@ export function EntryComposerHeader({ title, type = "expense", onSelectType, typ
       </Button>
     </Host>
     {title ? <HeaderTitle accessibilityRole="header" numberOfLines={1} style={styles.title}>{title}</HeaderTitle>
-      : <Host style={styles.picker} colorScheme="light" alignment="center">
+      : <View style={styles.pickerSlot}>
+      <Host style={[styles.picker, { width: Ui.sheetTypePickerWidth * Math.max(1, fontScale) }]} colorScheme="light" alignment="center">
       <Picker<LedgerEntryType> label={Copy.typeLabel} selection={type}
         onSelectionChange={value => { if (!typeDisabled) onSelectType?.(value); }}
-        modifiers={[pickerStyle("segmented"), controlSize("large"),
+        modifiers={[pickerStyle("segmented"), controlSize("regular"),
           ...pickerGlass, disabled(typeDisabled)]}>
         <Text modifiers={[tag("expense")]}>{Copy.expense}</Text>
         <Text modifiers={[tag("income")]}>{Copy.income}</Text>
       </Picker>
-    </Host>}
+    </Host></View>}
     {onAction ? <Host style={styles.button} colorScheme="light" alignment="center">
       <Button onPress={() => { if (!actionDisabled && !saving) onAction(); }}
         modifiers={[buttonStyle(supportsGlass ? "plain" : "borderedProminent"), buttonBorderShape("circle"), controlSize("large"),
@@ -63,5 +65,6 @@ const styles = StyleSheet.create({
   title: { flex: 1, textAlign: "center", color: AppColors.text, fontSize: Ui.sheetFieldFontSize, fontWeight: "600" },
   header: { flexDirection: "row", alignItems: "center", gap: AppLayout.cardGap, padding: Ui.sheetPadding },
   button: { width: Ui.sheetControlSize, height: Ui.sheetControlSize },
-  picker: { flex: 1, height: Ui.sheetControlSize },
+  pickerSlot: { flex: 1, minWidth: 0, alignItems: "center", justifyContent: "center" },
+  picker: { maxWidth: "100%", height: Ui.sheetControlSize },
 });

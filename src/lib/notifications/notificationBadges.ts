@@ -77,9 +77,7 @@ export function writeCachedNotificationBadgeSnapshot(
   appStorage.setItem(createNotificationBadgeCacheKey(userId), JSON.stringify(snapshot));
 }
 
-export function resolveFooterBadgeScreens(
-  snapshot: NotificationBadgeSnapshot,
-): FooterTabScreen[] {
+export function resolveFooterBadgeScreens(snapshot: NotificationBadgeSnapshot): FooterTabScreen[] {
   const screens: FooterTabScreen[] = [];
   const bookStates = Object.values(snapshot.byBookId);
 
@@ -87,7 +85,7 @@ export function resolveFooterBadgeScreens(
     screens.push("all-entries");
   }
   if (bookStates.some((state) => state.joinRequestUnreadCount > 0)) {
-    screens.push("share");
+    screens.push("all-menu");
   }
 
   return screens;
@@ -95,9 +93,7 @@ export function resolveFooterBadgeScreens(
 
 export function resolveBadgedBookIds(snapshot: NotificationBadgeSnapshot): string[] {
   return Object.entries(snapshot.byBookId)
-    .filter(
-      ([, state]) => state.ledgerEntryUnreadCount > 0 || state.joinRequestUnreadCount > 0,
-    )
+    .filter(([, state]) => state.ledgerEntryUnreadCount > 0 || state.joinRequestUnreadCount > 0)
     .map(([bookId]) => bookId);
 }
 
