@@ -1,25 +1,18 @@
+import { useLedgerEntryRealtimeCache } from "./useLedgerEntryRealtimeCache";
+import {
+  updateBookEntryCache,
+  countLedgerEntriesByMonth,
+  setMonthsEntriesInCache,
+} from "./bookEntryCache";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import {
-  DEFAULT_MEMBER_DISPLAY_NAME,
-  DELETED_MEMBER_DISPLAY_NAME,
-} from "../../constants/ledgerDisplay";
-import { LedgerQueryConfig, LedgerRealtimeConfig } from "../../constants/ledgerQueries";
+import { LedgerQueryConfig } from "../../constants/ledgerQueries";
 import { AppMessages } from "../../constants/messages";
-import { resolveLedgerEntryTargetMemberId } from "../../lib/ledgerEntryMetadata";
-import {
-  type LedgerEntryRealtimePayload,
-  resolveChangedLedgerEntryRow,
-  resolveDeletedLedgerEntryId,
-  subscribeToLedgerEntryChanges,
-} from "../../lib/ledgerEntryRealtime";
 import { logAppError } from "../../lib/logAppError";
 import { createPerformanceTrace } from "../../lib/performanceTrace";
-import { fetchProfileDisplayName } from "../../lib/profiles";
 import type { LedgerEntry } from "../../types/ledger";
 import { getMonthKey, parseIsoDate } from "../../utils/calendar";
-import { mapLedgerEntryRow } from "../../utils/ledgerMapper";
 import { loadLedgerMonthsEntries } from "./helpers";
 import {
   type LedgerEntryCache,
@@ -75,7 +68,9 @@ export function useLedgerEntries(
   const refreshLedgerRef = useRef<LedgerEntriesState["refreshLedger"] | null>(null);
   const cacheRevisionRef = useRef(0);
   const scheduledBackgroundPreloadKeysRef = useRef<Set<string>>(new Set());
-  const entryCache = activeBookId ? (entryCacheByBookId[activeBookId] ?? EMPTY_ENTRY_CACHE) : EMPTY_ENTRY_CACHE;
+  const entryCache = activeBookId
+    ? (entryCacheByBookId[activeBookId] ?? EMPTY_ENTRY_CACHE)
+    : EMPTY_ENTRY_CACHE;
   const refreshMonths = useMemo(() => getVisibleWindowMonths(visibleMonth), [visibleMonth]);
   const pagePreloadMonths = useMemo(
     () => getCalendarPagePreloadMonths(visibleMonth),
@@ -141,45 +136,47 @@ export function useLedgerEntries(
       trace("loaded_month_group", { entryCount: countLedgerEntriesByMonth(nextEntriesByMonth) });
       setEntryCacheByBookId((currentCacheByBookId) =>
         updateBookEntryCache(currentCacheByBookId, activeBookId, (currentCache) =>
-          months.reduce((nextCache, month) => {
-            const monthKey = getMonthKey(month);
-            return setMonthEntriesInCache(nextCache, month, nextEntriesByMonth[monthKey] ?? []);
-          }, currentCache),
+          setMonthsEntriesInCache(currentCache, months, nextEntriesByMonth),
         ),
       );
     },
     [activeBookId],
   );
-  const preloadChartEntries = useCallback(async (chartMonth = visibleMonth) => {
-    if (!activeBookId) {
-      return;
-    }
-    const requestKey = `${activeBookId}:${getMonthKey(chartMonth)}:${cacheRevisionRef.current}`;
-    const pending = pendingChartRequestsRef.current.get(requestKey);
-    if (pending) return pending;
+  const preloadChartEntries = useCallback(
+    async (chartMonth = visibleMonth) => {
+      if (!activeBookId) {
+        return;
+      }
+      const requestKey = `${activeBookId}:${getMonthKey(chartMonth)}:${cacheRevisionRef.current}`;
+      const pending = pendingChartRequestsRef.current.get(requestKey);
+      if (pending) return pending;
 
-    const missingChartMonths = getChartTrendPreloadMonths(chartMonth).filter(
-      (month) => !hasCachedMonth(entryCache, month),
-    );
-    if (missingChartMonths.length === 0) {
-      return;
-    }
+      const missingChartMonths = getChartTrendPreloadMonths(chartMonth).filter(
+        (month) => !hasCachedMonth(entryCache, month),
+      );
+      if (missingChartMonths.length === 0) {
+        return;
+      }
 
-    setChartLoadingCount(count => count + 1);
-    const request = loadMonthsIntoBookCache(missingChartMonths, "preload_chart_entries").catch(error => {
-      logAppError("LedgerEntries", error, {
-        activeBookId,
-        step: "preload_chart_entries",
-        visibleMonth: chartMonth.toISOString(),
-      });
-      setEntriesError(AppMessages.ledgerError);
-    }).finally(() => {
-      setChartLoadingCount(count => Math.max(0, count - 1));
-      pendingChartRequestsRef.current.delete(requestKey);
-    });
-    pendingChartRequestsRef.current.set(requestKey, request);
-    return request;
-  }, [activeBookId, entryCache, loadMonthsIntoBookCache, visibleMonth]);
+      setChartLoadingCount((count) => count + 1);
+      const request = loadMonthsIntoBookCache(missingChartMonths, "preload_chart_entries")
+        .catch((error) => {
+          logAppError("LedgerEntries", error, {
+            activeBookId,
+            step: "preload_chart_entries",
+            visibleMonth: chartMonth.toISOString(),
+          });
+          setEntriesError(AppMessages.ledgerError);
+        })
+        .finally(() => {
+          setChartLoadingCount((count) => Math.max(0, count - 1));
+          pendingChartRequestsRef.current.delete(requestKey);
+        });
+      pendingChartRequestsRef.current.set(requestKey, request);
+      return request;
+    },
+    [activeBookId, entryCache, loadMonthsIntoBookCache, visibleMonth],
+  );
 
   useEffect(() => {
     const activeBookChanged = cachedBookIdRef.current !== activeBookId;
@@ -237,10 +234,7 @@ export function useLedgerEntries(
 
       setEntryCacheByBookId((currentCacheByBookId) =>
         updateBookEntryCache(currentCacheByBookId, activeBookId, (currentCache) =>
-          months.reduce((nextCache, month) => {
-            const monthKey = getMonthKey(month);
-            return setMonthEntriesInCache(nextCache, month, nextEntriesByMonth[monthKey] ?? []);
-          }, currentCache),
+          setMonthsEntriesInCache(currentCache, months, nextEntriesByMonth),
         ),
       );
     };
@@ -341,99 +335,7 @@ export function useLedgerEntries(
     visibleMonth,
   ]);
 
-  useEffect(() => {
-    if (!activeBookId) {
-      return;
-    }
-
-    const handleLedgerEntryChange = async (payload: LedgerEntryRealtimePayload) => {
-      if (payload.eventType === "DELETE") {
-        const deletedEntryId = resolveDeletedLedgerEntryId(payload);
-        if (!deletedEntryId) {
-          return;
-        }
-
-        setEntryCacheByBookId((currentCacheByBookId) =>
-          updateBookEntryCache(currentCacheByBookId, activeBookId, (currentCache) =>
-            removeEntryFromCache(currentCache, deletedEntryId),
-          ),
-        );
-        return;
-      }
-
-      const changedRow = resolveChangedLedgerEntryRow(payload);
-      const authorUserId = changedRow.user_id;
-      const targetMemberUserId = resolveLedgerEntryTargetMemberId(changedRow);
-      const authorName = await resolveRealtimeMemberDisplayName({
-        entryId: changedRow.id,
-        step: "load_entry_author_name",
-        userId: authorUserId,
-      });
-      const targetMemberName = await resolveRealtimeMemberDisplayName({
-        entryId: changedRow.id,
-        step: "load_entry_target_member_name",
-        userId: targetMemberUserId,
-      });
-
-      setEntryCacheByBookId((currentCacheByBookId) =>
-        updateBookEntryCache(currentCacheByBookId, activeBookId, (currentCache) => {
-          const currentEntry = Object.values(currentCache)
-            .flat()
-            .find((entry) => entry.id === changedRow.id);
-          const nextEntry = mapLedgerEntryRow(
-            changedRow,
-            currentEntry?.authorId === authorUserId
-              ? (currentEntry.authorName ?? authorName)
-              : authorName,
-          );
-          return upsertEntryInCachedMonth(removeEntryFromCache(currentCache, changedRow.id), {
-            ...nextEntry,
-            authorHasBookAccess: authorUserId ? (currentEntry?.authorHasBookAccess ?? true) : false,
-            targetMemberHasBookAccess: targetMemberUserId
-              ? (currentEntry?.targetMemberHasBookAccess ?? true)
-              : false,
-            targetMemberName,
-          });
-        }),
-      );
-    };
-
-    return subscribeToLedgerEntryChanges({
-      bookId: activeBookId,
-      channelScope: LedgerRealtimeConfig.calendarChannelScope,
-      onResync: () => {
-        void refreshLedgerRef.current?.(true);
-      },
-      onChange: (payload) => {
-        void handleLedgerEntryChange(payload);
-      },
-    });
-  }, [activeBookId]);
-
-  async function resolveRealtimeMemberDisplayName({
-    entryId,
-    step,
-    userId,
-  }: {
-    entryId: string;
-    step: string;
-    userId: string | null;
-  }): Promise<string> {
-    if (!userId) {
-      return DELETED_MEMBER_DISPLAY_NAME;
-    }
-
-    try {
-      return (await fetchProfileDisplayName(userId)).trim() || DEFAULT_MEMBER_DISPLAY_NAME;
-    } catch (error) {
-      logAppError("LedgerEntries", error, {
-        entryId,
-        step,
-        userId,
-      });
-      return DEFAULT_MEMBER_DISPLAY_NAME;
-    }
-  }
+  useLedgerEntryRealtimeCache(activeBookId, setEntryCacheByBookId, refreshLedgerRef);
 
   const refreshLedger = async (invalidateCachedMonths = false) => {
     if (!activeBookId) {
@@ -458,10 +360,7 @@ export function useLedgerEntries(
         updateBookEntryCache(currentCacheByBookId, activeBookId, (currentCache) => {
           // Resume/reconnect and conversions may change months outside this window.
           const nextCache: LedgerEntryCache = invalidateCachedMonths ? {} : { ...currentCache };
-          return refreshMonths.reduce((updatedCache, month) => {
-            const monthKey = getMonthKey(month);
-            return setMonthEntriesInCache(updatedCache, month, nextEntriesByMonth[monthKey] ?? []);
-          }, nextCache);
+          return setMonthsEntriesInCache(nextCache, refreshMonths, nextEntriesByMonth);
         }),
       );
     } catch (error) {
@@ -508,9 +407,7 @@ export function useLedgerEntries(
           let nextCache = Object.fromEntries(
             Object.entries(currentCache).map(([monthKey, monthEntries]) => [
               monthKey,
-              monthEntries.filter(
-                (entry) => entry.installmentGroupId !== installmentGroupId,
-              ),
+              monthEntries.filter((entry) => entry.installmentGroupId !== installmentGroupId),
             ]),
           );
 
@@ -543,17 +440,6 @@ export function useLedgerEntries(
   };
 }
 
-function updateBookEntryCache(
-  cacheByBookId: Record<string, LedgerEntryCache>,
-  bookId: string,
-  updateCache: (currentCache: LedgerEntryCache) => LedgerEntryCache,
-): Record<string, LedgerEntryCache> {
-  return {
-    ...cacheByBookId,
-    [bookId]: updateCache(cacheByBookId[bookId] ?? {}),
-  };
-}
-
 function wait(durationMs: number) {
   return new Promise<void>((resolve) => {
     setTimeout(resolve, durationMs);
@@ -562,8 +448,4 @@ function wait(durationMs: number) {
 
 function createBookMonthPreloadKey(bookId: string, month: Date) {
   return `${bookId}:${getMonthKey(month)}`;
-}
-
-function countLedgerEntriesByMonth(entriesByMonth: Record<string, LedgerEntry[]>): number {
-  return Object.values(entriesByMonth).reduce((count, entries) => count + entries.length, 0);
 }

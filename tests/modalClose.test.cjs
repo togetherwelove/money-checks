@@ -52,6 +52,7 @@ test('photo preview X, backdrop and system back dismiss without removing the att
     '../constants/layout': { AppLayout: { screenPadding: 16 } },
     '../constants/modal': modalUi, '../constants/entryDetailStyles': {},
     '../constants/uiStyles': {},
+    '../constants/textLayout': {},
     '../constants/entryPhotos': { EntryPhotoCopy: { attachmentCountLabel: count => String(count) } },
     './IconActionButton': { IconActionButton: 'IconActionButton' },
     './TextLinkButton': { TextLinkButton: 'TextLinkButton' },

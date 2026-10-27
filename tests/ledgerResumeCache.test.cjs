@@ -1,9 +1,6 @@
 const assert = require("node:assert/strict");
-const fs = require("node:fs");
 const path = require("node:path");
-const vm = require("node:vm");
 const { test } = require("node:test");
-const ts = require("typescript");
 
 const monthKey = (date) => date.toISOString().slice(0, 7);
 const october = new Date("2026-10-01T00:00:00Z");
@@ -48,13 +45,11 @@ function mount(loadMonths) {
       setMonthEntriesInCache: (cache, month, entries) => ({ ...cache, [monthKey(month)]: entries }),
     },
   };
-  const exports = {};
-  const source = fs.readFileSync(path.join(__dirname, "../src/hooks/ledgerScreenState/useLedgerEntries.ts"), "utf8");
-  vm.runInNewContext(ts.transpileModule(source, {
-    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
-  }).outputText, { exports, console, setTimeout, require: (name) => {
-    if (name in mocks) return mocks[name]; throw new Error(name);
-  } });
+  const { modules } = require('./annualReportHelpers.cjs');
+  const overrides = Object.fromEntries(Object.entries(mocks).map(([name, value]) => [
+    name.startsWith('.') ? path.relative(process.cwd(), path.resolve('src/hooks/ledgerScreenState', name + '.ts')).replaceAll('\\', '/') : name, value,
+  ]));
+  const exports = modules(overrides)('src/hooks/ledgerScreenState/useLedgerEntries.ts');
   const render = () => {
     stateIndex = 0; refIndex = 0; effects = [];
     return exports.useLedgerEntries("book", october, null);

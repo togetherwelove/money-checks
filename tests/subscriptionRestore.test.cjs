@@ -25,6 +25,7 @@ test('paywall shows renewal disclosures and restore without expanding, and never
     "react/jsx-runtime": { jsx, jsxs: jsx },
     "react-native": { View: "View", Text: "Text", StyleSheet: { create: value => value } },
     "../constants/subscription": { SubscriptionMessages, SubscriptionHeroUi: {} },
+    "../constants/menuStyles": { MenuStyles: { sections: { gap: 0 } } },
   });
   function flatten(node) {
     if (Array.isArray(node)) return node.flatMap(flatten);
@@ -57,6 +58,7 @@ for (const tier of [SubscriptionTiers.free, SubscriptionTiers.plus]) {
       "../constants/keyboard": { KeyboardLayout: {} },
       "../constants/layout": { AppLayout: {} },
       "../constants/colors": { AppColors: {} },
+      "../constants/menuStyles": { MenuStyles: { sections: { gap: 0 } } },
     });
     const nodes = [];
     const visit = (node) => {

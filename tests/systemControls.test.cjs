@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
-const { modules } = require('./annualReportHelpers.cjs');
+const { modules, currencyMock } = require('./annualReportHelpers.cjs');
 const jsx = (type, props) => ({ type, props });
 const nodes = node => Array.isArray(node) ? node.flatMap(nodes) : node?.props ? [node, ...nodes(node.props.children)] : [];
 const controls = Object.fromEntries(['Host', 'List', 'Form', 'Section', 'Picker', 'Toggle', 'Text', 'Button', 'RNHostView', 'VStack', 'HStack', 'Menu', 'Spacer', 'Chart'].map(name => [name, name]));
@@ -12,7 +12,8 @@ const load = modules({
   '@react-navigation/bottom-tabs/unstable': { createNativeBottomTabNavigator: () => ({ Navigator: 'Tabs', Screen: 'Tab' }) },
   'src/app/SignedInStackNavigator.tsx': { SignedInStackNavigator: 'Stack' },
   'src/app/NativeTabScene.tsx': { NativeTabScene: 'Scene' },
-  'src/components/monthlyInsights/BreakdownDonutGraphic.fallback.tsx': { BreakdownDonutGraphic: 'FallbackDonut' },
+  'react-native-svg': { __esModule: true, default: 'Svg', Circle: 'Circle', G: 'G' },
+  'src/lib/currencyPreference.ts': currencyMock,
   '@expo/ui/swift-ui/modifiers': Object.fromEntries(['accessibilityLabel', 'accessibilityValue', 'buttonStyle', 'labelsHidden', 'background', 'listStyle', 'listRowBackground', 'scrollContentBackground', 'listSectionSpacing', 'fixedSize', 'font', 'foregroundStyle', 'listRowInsets', 'frame', 'pickerStyle', 'disabled', 'tag'].map(name => [name, value => ({ name, value })])),
   'src/components/appSettings/CalendarHeatmapSetting.tsx': { CalendarHeatmapSetting: 'Heatmap' },
   'src/components/appSettings/SettingsMenuLinks.tsx': { SettingsMenuLinks: 'SettingsLinks' },
@@ -51,26 +52,32 @@ test('native settings preserve summary, base day, paid feature gating and notifi
   assert.deepEqual(calls, [['day', 31], ['notify', events, false]]);
 });
 
-test('native donut preserves labels, amounts and legend-assigned colors while omitting zero slices', () => {
+test('iOS donut preserves legend-assigned colors and proportions with no visible zero slice', () => {
   const { BreakdownDonutGraphic } = load('src/components/monthlyInsights/BreakdownDonutGraphic.ios.tsx');
   const tree = BreakdownDonutGraphic({ items: [
     { key: 'food', label: 'Food', amount: 30, share: 1, color: '#123456' },
     { key: 'empty', label: 'Empty', amount: 0, share: 0, color: '#ffffff' },
   ] });
-  const chart = nodes(tree).find(node => node.type === 'Chart');
-  assert.equal(chart.props.type, 'pie');
-  assert.equal(chart.props.data.length, 1);
-  assert.equal(chart.props.data[0].x, 'Food');
-  assert.equal(chart.props.data[0].y, 30);
-  assert.equal(chart.props.data[0].color, '#123456');
+  const slices = nodes(tree).filter(node => node.type === 'Circle' && node.props.strokeDasharray);
+  assert.deepEqual(slices.map(node => node.props.stroke), ['#123456', '#ffffff']);
+  const [filled, empty] = slices.map(node => node.props.strokeDasharray.split(' ').map(Number));
+  assert.equal(filled[0], filled[1]);
+  assert.equal(empty[0], 0);
+  assert.equal(slices[1].props.strokeDashoffset, -filled[1]);
 });
 
-test('native trend preserves both series and every monthly amount', () => {
+test('iOS trend preserves both series, monthly labels and proportional bar heights', () => {
   const { MonthlyTrendBarChart } = load('src/components/monthlyInsights/MonthlyTrendBarChart.ios.tsx');
   const tree = MonthlyTrendBarChart({ trendMonths: [{ monthLabel: 'Jan', incomeAmount: 100, expenseAmount: 30 }, { monthLabel: 'Feb', incomeAmount: 200, expenseAmount: 50 }] });
-  const chart = nodes(tree).find(node => node.type === 'Chart');
-  assert.deepEqual(Array.from(chart.props.data, point => point.y), [100, 30, 200, 50]);
-  assert.equal(new Set(chart.props.data.map(point => point.x)).size, 4);
+  const bars = nodes(tree).filter(node => typeof node.type === 'function' && 'amount' in node.props);
+  assert.deepEqual(Array.from(bars, bar => bar.props.amount), [100, 30, 200, 50]);
+  assert.equal(bars[0].props.color, bars[2].props.color);
+  assert.equal(bars[1].props.color, bars[3].props.color);
+  assert.notEqual(bars[0].props.color, bars[1].props.color);
+  const heights = bars.map(bar => bar.type(bar.props).props.style[1].height);
+  assert.equal(heights[2] / heights[0], 2);
+  assert.ok(nodes(tree).some(node => node.props.children === 'Jan'));
+  assert.ok(nodes(tree).some(node => node.props.children === 'Feb'));
 });
 
 test('member menu keeps identity with duplicate names and does not replace a missing selection', () => {

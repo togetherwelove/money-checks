@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-import type { CategoryDefinition, CategoryIconName } from "../types/category";
+import type { CategoryIconName } from "../types/category";
 import { useLedgerCategories } from "./useLedgerCategories";
 
 export function useLedgerCategoryIconMap(bookId?: string | null): Map<string, CategoryIconName> {

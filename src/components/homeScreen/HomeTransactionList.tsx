@@ -1,4 +1,4 @@
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, } from "react-native";
 
 import { AppColors } from "../../constants/colors";
 import { RefreshableScrollBehavior } from "../../constants/scroll";

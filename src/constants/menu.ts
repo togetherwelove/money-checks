@@ -1,24 +1,11 @@
 
 export const MenuCopy = {
-    closeAccessibilityLabel: "메뉴 닫기",
-    openAccessibilityLabel: "메뉴 열기",
     sections: {
       account: "계정",
       ledger: "내보내기",
       support: "이용 및 지원",
     },
   } as const;
-
-export const MenuUi = {
-  floatingButtonHitSlop: 8,
-  floatingButtonIconSize: 18,
-  floatingButtonInset: 8,
-  floatingButtonVerticalInset: 2,
-  floatingButtonPressedOpacity: 0.7,
-  floatingButtonReservedWidth: 44,
-  floatingButtonSize: 40,
-  floatingButtonZIndex: 30,
-} as const;
 
 export const FooterTabBarUi = {
   activeTabBorderRadius: 24,

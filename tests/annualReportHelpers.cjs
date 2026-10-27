@@ -50,6 +50,14 @@ function hooks() {
       }];
     },
     useRef(initial) { return values[cursor++] ??= { current: initial }; },
+    useMemo(factory, deps) {
+      const index = cursor++;
+      if (!values[index] || deps.some((dep, i) => !Object.is(dep, values[index].deps[i]))) {
+        values[index] = { deps, value: factory() };
+      }
+      return values[index].value;
+    },
+    useCallback(callback, deps) { return react.useMemo(() => callback, deps); },
     useEffect(effect, deps) {
       const index = cursor++;
       if (!values[index] || deps.some((dep, i) => dep !== values[index].deps[i])) {

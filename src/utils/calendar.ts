@@ -4,7 +4,6 @@ import {
 } from "../components/monthCalendarPager/calendarLayout";
 import { EMPTY_CATEGORY_LABEL, formatMonthLabel } from "../constants/ledgerDisplay";
 import type { CalendarDay, LedgerEntry, MonthlyLedgerSummary } from "../types/ledger";
-import { formatAmountNumber } from "./amount";
 import { formatCurrency as formatDisplayCurrency } from "./currency";
 
 const CALENDAR_FORMAT_LOCALE = "ko-KR";

@@ -1,8 +1,6 @@
 import { AppScrollBehavior } from "../../constants/scroll";
 import type { ReactNode } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
-
-import { AppColors } from "../../constants/colors";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { AppLayout } from "../../constants/layout";
 import type { ChartMonthData } from "../../hooks/ledgerScreenState/types";
 import { MonthlyInsightsSection } from "../MonthlyInsightsSection";

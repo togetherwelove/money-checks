@@ -15,13 +15,15 @@ test('one sheet exposes current-book management, refreshes on opening or switchi
     'src/components/LedgerBookManagementContent.tsx': { LedgerBookManagementContent: 'Management' },
   });
   const { LedgerBookManagementSheet } = load('src/components/LedgerBookManagementSheet.tsx');
+  const { LedgerBookManagementView } = load('src/components/LedgerBookManagementView.tsx');
   const state = { activeBook: { id: 'a' }, accessibleBooks: [], isBusy: false,
     refreshExpiredShareCode: async () => { refreshed++; }, switchLedgerBook: async () => true };
   const render = extra => h.render(() => LedgerBookManagementSheet({
     isOpen: true, state, onClose() {}, badgedBookIds: ['b'], ...extra,
   }));
   let tree = render();
-  let content = nodes(tree).find(node => node.type === 'Management');
+  const view = nodes(tree).find(node => node.type === LedgerBookManagementView);
+  const content = LedgerBookManagementView(view.props);
   assert.equal(content.props.activeBook, state.activeBook);
   assert.equal(content.props.onSwitchLedgerBook, state.switchLedgerBook);
   assert.deepEqual(content.props.badgedBookIds, ['b']);
@@ -34,7 +36,7 @@ test('one sheet exposes current-book management, refreshes on opening or switchi
   assert.ok(nodes(tree).some(node => node.type === 'Busy'));
   tree = render({ isOpen: false });
   assert.equal(tree.props.isOpen, false);
-  assert.equal(nodes(tree).some(node => node.type === 'Management'), true);
+  assert.equal(nodes(tree).some(node => node.type === LedgerBookManagementView), true);
   render();
   assert.equal(refreshed, 3);
   h.unmount();
