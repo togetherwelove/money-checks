@@ -1,19 +1,13 @@
-import { AppScrollBehavior } from "../constants/scroll";
-import { Feather } from "../components/AppIcons";
 import type { ReactNode } from "react";
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Linking,Pressable,ScrollView,StyleSheet,Text,View } from "react-native";
+import { Feather } from "../components/AppIcons";
+import { MenuStyles } from "../constants/menuStyles";
+import { AppScrollBehavior } from "../constants/scroll";
 
 import { AppFooterContentInset } from "../components/AppFooterContentInset";
-import { HelpCopy, HelpLinkItems, HelpUi } from "../constants/help";
 import { AppColors } from "../constants/colors";
-import { AppLayout } from "../constants/layout";
+import { HelpCopy,HelpLinkItems,HelpUi } from "../constants/help";
 import { ReadingTextProps } from "../constants/textLayout";
-import {
-  CardTitleTextStyle,
-  ListGroupStyle,
-  ResponsivePageContentStyle,
-  SupportingTextStyle,
-} from "../constants/uiStyles";
 import { showNativeToast } from "../lib/nativeToast";
 
 type HelpScreenProps = {
@@ -34,7 +28,7 @@ export function HelpScreen({ screenTitle, onOpenFaq }: HelpScreenProps) {
     <ScrollView {...AppScrollBehavior} contentContainerStyle={styles.content} style={styles.screen}>
       {screenTitle}
       <View style={styles.sections}>
-        <Text accessibilityRole="header" style={CardTitleTextStyle}>{HelpCopy.linksTitle}</Text>
+        <Text accessibilityRole="header" style={MenuStyles.sectionTitle}>{HelpCopy.linksTitle}</Text>
         <Text {...ReadingTextProps} style={styles.description}>
           {HelpCopy.linksDescription}
         </Text>
@@ -74,50 +68,26 @@ export function HelpScreen({ screenTitle, onOpenFaq }: HelpScreenProps) {
 
 const styles = StyleSheet.create({
   sections: {
-    gap: AppLayout.cardGap,
+    gap: MenuStyles.section.gap,
   },
   screen: {
     flex: 1,
     backgroundColor: AppColors.screenBackground,
   },
   content: {
-    ...ResponsivePageContentStyle,
-    paddingHorizontal: AppLayout.screenPadding,
-    paddingTop: AppLayout.screenTopPadding,
+    ...MenuStyles.content,
   },
-  description: {
-    ...SupportingTextStyle,
-    color: AppColors.mutedStrongText,
-  },
+  description: MenuStyles.description,
   linkList: {
-    ...ListGroupStyle,
+    ...MenuStyles.group,
     gap: 0,
     paddingVertical: 0,
   },
-  linkRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: AppLayout.cardGap,
-    paddingHorizontal: AppLayout.cardContentPadding,
-    paddingVertical: HelpUi.rowVerticalPadding,
-    borderBottomWidth: AppLayout.dividerWidth,
-    borderBottomColor: AppColors.border,
-  },
+  linkRow: MenuStyles.row,
   lastLinkRow: {
     borderBottomWidth: 0,
   },
-  linkTextBlock: {
-    flex: 1,
-    gap: AppLayout.compactGap,
-  },
-  linkLabel: {
-    color: AppColors.text,
-    fontSize: HelpUi.questionFontSize,
-    fontWeight: "700",
-  },
-  linkDescription: {
-    ...SupportingTextStyle,
-    color: AppColors.mutedStrongText,
-  },
+  linkTextBlock: MenuStyles.textBlock,
+  linkLabel: MenuStyles.title,
+  linkDescription: MenuStyles.description,
 });

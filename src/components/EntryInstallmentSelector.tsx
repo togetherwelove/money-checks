@@ -36,7 +36,9 @@ export function EntryInstallmentSelector({
       state: installmentMonths > Config.presetMaxMonths ? "on" : "off" },
   ], [installmentMonths]);
   return (
-    <MenuView actions={actions} onOpenMenu={() => Keyboard.dismiss()}
+    <View style={styles.row}>
+    <Text style={styles.label}>{EntryRegistrationCopy.paymentMethodLabel}</Text>
+    <MenuView style={styles.menu} actions={actions} onOpenMenu={() => Keyboard.dismiss()}
       onPressAction={({ nativeEvent }) => {
         if (nativeEvent.event === Config.customValue) { onRequestCustom(); return; }
         const months = presetMonths.find(month => String(month) === nativeEvent.event);
@@ -47,11 +49,10 @@ export function EntryInstallmentSelector({
       accessibilityRole="button"
       accessibilityValue={{ text: formatInstallmentLabel(installmentMonths) }}
       style={({ pressed }) => [
-        styles.row,
+        styles.trigger,
         pressed ? styles.pressedRow : null,
       ]}
     >
-      <Text style={styles.label}>{EntryRegistrationCopy.paymentMethodLabel}</Text>
       <View style={styles.valueAction}>
         <Text style={styles.value}>{formatInstallmentLabel(installmentMonths)}</Text>
         <Feather
@@ -62,11 +63,14 @@ export function EntryInstallmentSelector({
       </View>
     </Pressable>
     </MenuView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   label: EntryDetailLabelStyle,
+  menu: { flexShrink: 1 },
+  trigger: { ...SettingValueActionStyle, minHeight: EntryDetailRowStyle.minHeight },
   pressedRow: {
     opacity: EntryInstallmentSelectorUi.pressedOpacity,
   },

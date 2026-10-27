@@ -1,11 +1,9 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet,Text,View } from "react-native";
+import { MenuStyles } from "../../constants/menuStyles";
 
 import { AppSettingsUi } from "../../constants/appSettings";
-import { AppColors } from "../../constants/colors";
-import { AppLayout } from "../../constants/layout";
 import { OneLineTextFitProps } from "../../constants/textLayout";
-import { InsetPanelStyle } from "../../constants/uiStyles";
-import type { NotificationThresholdKey, NotificationThresholdPeriod } from "../../notifications/domain/notificationEvents";
+import type { NotificationThresholdKey,NotificationThresholdPeriod } from "../../notifications/domain/notificationEvents";
 import type { NotificationPreferenceGroup as NotificationPreferenceGroupState } from "../../notifications/preferences/notificationPreferences";
 import { NotificationPreferenceRow } from "./NotificationPreferenceRow";
 import { NotificationThresholdField } from "./NotificationThresholdField";
@@ -72,14 +70,10 @@ const styles = StyleSheet.create({
   headingBlock: {
     minWidth: 0,
   },
-  title: {
-    color: AppColors.text,
-    fontSize: 14,
-    fontWeight: "800",
-  },
+  title: MenuStyles.sectionTitle,
   thresholdBlock: {
-    ...InsetPanelStyle,
-    paddingHorizontal: AppLayout.cardContentPadding,
+    ...MenuStyles.group,
+    paddingHorizontal: MenuStyles.row.paddingHorizontal,
   },
-  list: InsetPanelStyle,
+  list: MenuStyles.group,
 });

@@ -87,3 +87,10 @@ export function buildAppMenuSections(
     },
   ];
 }
+
+export function buildSettingsMenuSections(options: { showAnnualReportDownload?: boolean } = {}): AppMenuSection[] {
+  return buildAppMenuSections(options).map(section => ({
+    ...section,
+    items: section.items.filter(item => !("targetScreen" in item) || item.targetScreen !== "app-settings"),
+  })).filter(section => section.items.length > 0);
+}

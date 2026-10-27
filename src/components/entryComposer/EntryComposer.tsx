@@ -59,6 +59,8 @@ export function EntryComposer({ ref, sheet, onDismissClipboard, onReadClipboard,
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
   const inputRef = useRef<TextInputInstance>(null);
+  const contentInputRef = useRef<TextInputInstance>(null);
+  const focusTargetRef = useRef(inputRef);
   const locked = disabled || saving;
   const hasInput = Boolean(draft.amount || draft.content || draft.note || draft.categoryId || draft.photoAttachments.length);
   const defaultMemberId = composer.members.find(member => member.userId === userId)?.userId
@@ -76,7 +78,7 @@ export function EntryComposer({ ref, sheet, onDismissClipboard, onReadClipboard,
   useImperativeHandle(ref, () => ({
     isSaving: () => savingRef.current,
     isBusy: () => hasInput || savingRef.current,
-    focus: () => { if (!locked) inputRef.current?.focus(); },
+    focus: () => { if (!locked) focusTargetRef.current.current?.focus(); },
     discardDeletedEntry: (entries) => {
       if (!sourceEntry || !entries.some((entry) => entry.id === sourceEntry.id)) return;
       composer.reset(); setSourceEntry(undefined); onEntryReviewChange?.(false);
@@ -87,6 +89,7 @@ export function EntryComposer({ ref, sheet, onDismissClipboard, onReadClipboard,
       const apply = () => {
         if (!mounted.current || lockedRef.current || savingRef.current) return;
         setDraft(createDraftFromEntry(entry, userId));
+        focusTargetRef.current = inputRef;
         setSourceEntry(entry);
         onEntryReviewChange?.(true);
         onDismissClipboard?.();
@@ -104,9 +107,10 @@ export function EntryComposer({ ref, sheet, onDismissClipboard, onReadClipboard,
         if (!mounted.current || lockedRef.current || savingRef.current) return;
         const member = composer.members.find((item) => item.userId === userId) ?? composer.members[0];
         setDraft({ ...imported, targetMemberId: member?.userId ?? userId, targetMemberName: member?.displayName });
+        focusTargetRef.current = contentInputRef;
         setSourceEntry(undefined);
         onEntryReviewChange?.(false);
-          Keyboard.dismiss();
+        if (sheetPresented.current && sheetVisibleRef.current) contentInputRef.current?.focus();
       };
       if (!hasInput) { apply(); return; }
       Alert.alert(CardSmsClipboardCopy.replaceTitle, CardSmsClipboardCopy.replaceMessage, [
@@ -121,6 +125,7 @@ export function EntryComposer({ ref, sheet, onDismissClipboard, onReadClipboard,
         const context = duplicationContext.current;
         const copied = createDuplicateEntryDraft(entry, context.selectedDate, userId, context.members, context.categories);
         setDraft(copied);
+        focusTargetRef.current = inputRef;
         setSourceEntry(undefined);
         onEntryReviewChange?.(true);
         onDismissClipboard?.();
@@ -148,9 +153,11 @@ export function EntryComposer({ ref, sheet, onDismissClipboard, onReadClipboard,
     if (sheetVisible === false) {
       sheetPresented.current = false;
       inputRef.current?.blur();
+      contentInputRef.current?.blur();
+      focusTargetRef.current = inputRef;
       Keyboard.dismiss();
     } else if (sheetVisible && sheetPresented.current && !locked) {
-      inputRef.current?.focus();
+      focusTargetRef.current.current?.focus();
     }
   }, [sheetVisible, locked]);
 
@@ -175,6 +182,7 @@ export function EntryComposer({ ref, sheet, onDismissClipboard, onReadClipboard,
     if (!mounted.current || (!allowDisabled && lockedRef.current) || savingRef.current) return false;
     Keyboard.dismiss();
     composer.reset();
+    focusTargetRef.current = inputRef;
     setSourceEntry(undefined);
     onEntryReviewChange?.(false);
     return true;
@@ -184,6 +192,8 @@ export function EntryComposer({ ref, sheet, onDismissClipboard, onReadClipboard,
     sheetPresented.current = false;
     sheetVisibleRef.current = false;
     inputRef.current?.blur();
+    contentInputRef.current?.blur();
+    focusTargetRef.current = inputRef;
     Keyboard.dismiss();
     sheet.onClose();
   };
@@ -228,16 +238,16 @@ export function EntryComposer({ ref, sheet, onDismissClipboard, onReadClipboard,
         }} /> : null}
       <EntryComposerForm composer={composer} bookId={bookId} disabled={locked}
         onReadClipboard={onReadClipboard}
-        editing={Boolean(sourceEntry)} inputRef={inputRef} onChangeText={onDismissClipboard}
+        editing={Boolean(sourceEntry)} inputRef={inputRef} contentInputRef={contentInputRef} onChangeText={onDismissClipboard}
         onConvert={sourceEntry?.installmentGroupId && sourceEntry.type === "expense" && sourceEntry.installmentStatus !== InstallmentStatuses.prepaid
           ? () => setConversionOpen(true) : undefined} />
     </EntryComposerPanel>
   );
-  return <EntryComposerSheet visible={sheet.visible} saving={saving} onDismiss={sheet.onDismiss}
+  return <EntryComposerSheet visible={sheet.visible} saving={saving} requiresCloseConfirmation={Boolean(hasCloseValues)} onDismiss={sheet.onDismiss}
     onShow={() => {
       if (!sheetVisibleRef.current) return;
       sheetPresented.current = true;
-      if (!lockedRef.current) inputRef.current?.focus();
+      if (!lockedRef.current) focusTargetRef.current.current?.focus();
     }}
     onClose={requestClose} header={<EntryComposerHeader type={draft.type}
       typeDisabled={locked}

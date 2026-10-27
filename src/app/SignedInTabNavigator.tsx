@@ -14,8 +14,7 @@ export function SignedInTabNavigator(props: SignedInTabNavigatorProps) {
       disabled={props.disabled} badges={props.badges}
       onLayout={event => props.onFooterHeightChange(event.nativeEvent.layout.height)}
       onSelect={screen => {
-        if (screen === "entry") props.onOpenEntry();
-        else if (screen in PrimaryTabRoutes) navigation.navigate(PrimaryTabRoutes[screen as keyof typeof PrimaryTabRoutes]);
+        if (screen in PrimaryTabRoutes) navigation.navigate(PrimaryTabRoutes[screen as keyof typeof PrimaryTabRoutes]);
       }} />}>
     {destinations.map(tab => <Tab.Screen key={tab.screen} name={PrimaryTabRoutes[tab.screen]}>
       {() => <SignedInStackNavigator {...props} initialScreen={tab.screen} />}

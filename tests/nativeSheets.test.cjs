@@ -49,14 +49,14 @@ test('subscription warning only runs the selected action and keeps cancellation 
   assert.deepEqual(events, ['manage', 'continue']);
 });
 
-test('empty sheets route native swipe attempts through the same close handler as the header', () => {
+test('ordinary sheets allow the native dismissal gesture and synchronize the close handler', () => {
   const { load } = setup();
   const { NativeSelectionSheet } = load('src/components/NativeSelectionSheet.tsx');
   let closed = 0;
   const tree = NativeSelectionSheet({ isOpen: true, onClose: () => closed++, title: 'Title', children: 'Content' });
   assert.equal(tree.type, 'Modal');
   assert.equal(tree.props.presentationStyle, 'formSheet');
-  assert.equal(tree.props.allowSwipeDismissal, false);
+  assert.equal(tree.props.allowSwipeDismissal, true);
   assert.notEqual(tree.props.transparent, true);
   assert.equal(nodes(tree).find(node => node.type === 'ToastHost').props.inactive, false);
   const hidden = NativeSelectionSheet({ isOpen: false, onClose() {}, title: 'Title', children: 'Content' });
@@ -115,7 +115,7 @@ test('sheets intercept native swipe attempts without disabling the close request
   const { load } = setup();
   const { NativeSelectionSheet } = load('src/components/NativeSelectionSheet.tsx');
   let requested = 0;
-  const tree = NativeSelectionSheet({ isOpen: true, title: 'Entry',
+  const tree = NativeSelectionSheet({ isOpen: true, title: 'Entry', requiresCloseConfirmation: true,
     onClose: () => requested++, children: 'Draft' });
   assert.equal(tree.props.allowSwipeDismissal, false);
   tree.props.onRequestClose();

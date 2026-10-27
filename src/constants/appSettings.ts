@@ -1,3 +1,5 @@
+import { MenuDesign } from "./menuDesign";
+
 export const AppSettingsCopy = {
   categorySectionTitle: "분류",
   categoryMenuTitle: "분류 추가·순서 변경",
@@ -11,7 +13,8 @@ export const AppSettingsCopy = {
   expenseTextColorDescription: "앱 전체의 지출 텍스트 색상을 선택할 수 있어요.",
   expenseTextColorTitle: "지출 텍스트 색상",
   featureSectionTitle: "기능",
-  heatmapDescription: "입출금 현황을 시각적으로 확인할 수 있어요.",
+  heatmapDescription: "달력에 지출이 많은 날을 진하게 표시해요.",
+  heatmapSubscriptionAction: "달력 히트맵, Plus 구독 안내 보기",
   heatmapTitle: "달력 히트맵",
   plusBadge: "plus",
   pushNotificationSectionTitle: "푸시 알림",
@@ -26,12 +29,15 @@ export const AppSettingsCopy = {
 } as const;
 
 export const AppSettingsUi = {
-  rowTitleFontSize: 14,
+  plusLockIconSize: 12,
+  rowTitleFontSize: MenuDesign.titleFontSize,
+  rowTitleFontWeight: MenuDesign.fontWeight,
+  rowTitleLineHeight: MenuDesign.titleLineHeight,
   disabledRowOpacity: 0.64,
   contentBottomPadding: 24,
-  contentHorizontalPadding: 16,
-  rowMinHeight: 64,
-  sectionGap: 12,
-  sectionSpacing: 24,
-  selectionChevronIconSize: 16,
+  contentHorizontalPadding: MenuDesign.horizontalPadding,
+  rowMinHeight: MenuDesign.rowMinHeight,
+  sectionGap: MenuDesign.contentGap,
+  sectionSpacing: MenuDesign.sectionGap,
+  selectionChevronIconSize: MenuDesign.controlIconSize,
 } as const;

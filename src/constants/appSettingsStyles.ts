@@ -1,24 +1,19 @@
 import { StyleSheet } from "react-native";
 import { AppSettingsUi } from "./appSettings";
 import { AppColors } from "./colors";
-import { AppLayout } from "./layout";
-import { ListGroupRowStyle } from "./uiStyles";
+import { MenuStyles } from "./menuStyles";
+import { MenuDesign } from "./menuDesign";
 
 export const AppSettingsRowStyles = StyleSheet.create({
-  row: {
-    ...ListGroupRowStyle,
-    alignItems: "center",
-    flexDirection: "row",
-    gap: AppSettingsUi.sectionGap,
-    justifyContent: "space-between",
-    minHeight: AppSettingsUi.rowMinHeight,
+  row: MenuStyles.row,
+  title: MenuStyles.title,
+  description: MenuStyles.description,
+  embeddedRow: { paddingHorizontal: 0, paddingVertical: 0, minHeight: 0 },
+  embeddedAction: {
+    paddingHorizontal: 0, paddingVertical: 0,
+    minHeight: MenuDesign.rowMinHeight - MenuDesign.verticalPadding * 2,
   },
-  title: {
-    color: AppColors.text,
-    fontSize: AppSettingsUi.rowTitleFontSize,
-    fontWeight: "800",
-  },
-  textBlock: { flex: 1, gap: AppLayout.compactGap, minWidth: 0 },
+  textBlock: MenuStyles.textBlock,
   lastRow: { borderBottomWidth: 0 },
   pressed: { backgroundColor: AppColors.surfaceMuted },
   disabled: { opacity: AppSettingsUi.disabledRowOpacity },

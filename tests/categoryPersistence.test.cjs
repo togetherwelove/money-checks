@@ -155,18 +155,19 @@ test('category manager tabs protect unsaved order and disable changes during sav
     '../NativeSelectionSheet': { NativeSelectionSheet: 'Sheet' },
     react:h.react,'react/jsx-runtime':{jsx,jsxs:jsx},
     'react-native':{Modal:'Modal',Pressable:'Pressable',ScrollView:'ScrollView',Text:'Text',View:'View',StyleSheet:{create:s=>s},Alert:{alert:(...args)=>alerts.push(args)}},
-    '../AppIcons':{Feather:'Feather'},'./CategoryTypeTabs':{CategoryTypeTabs:'Tabs'},'../ActionButton':{ActionButton:'ActionButton'},'../ModalCloseButton':{ModalCloseButton:'ModalCloseButton'},
+    '../AppIcons':{Feather:'Feather'},'../entryComposer/EntryComposerHeader':{EntryComposerHeader:'Header'},'../ActionButton':{ActionButton:'ActionButton'},'../ModalCloseButton':{ModalCloseButton:'ModalCloseButton'},
     '../../constants/scroll':{},'../../constants/categoryCustomizer':load('src/constants/categoryCustomizer.ts',{}),
     '../../constants/categorySelector':{},'../../constants/colors':{AppColors:{}},'../../constants/layout':{AppLayout:{}},'../../constants/uiStyles':{},
   },{setTimeout:()=>1,clearTimeout:()=>{}});
   function nodes(root){return !root||typeof root!=='object'?[]:[root,...[root.props?.children].flat(Infinity).flatMap(nodes)];}
   let tree;const render=()=>{tree=h.render(()=>CategoryManageModal(props));return nodes(tree);};
-  let all=render();all.find(n=>n.type==='Tabs').props.onChange('income');assert.deepEqual(changes,['income']);changes.length=0;
-  all.find(n=>n.props?.label==='아래로').props.onPress();all=render();all.find(n=>n.type==='Tabs').props.onChange('income');
+  const header=()=>tree.props.header.props;
+  let all=render();assert.equal(header().actionDisabled,true);header().onSelectType('income');assert.deepEqual(changes,['income']);changes.length=0;
+  all.find(n=>n.props?.label==='아래로').props.onPress();all=render();header().onSelectType('income');
   assert.equal(alerts.length,1);assert.equal(changes.length,0);alerts[0][2][1].onPress();assert.deepEqual(changes,['income']);
-  const saveButton=all.find(n=>n.type==='Pressable' && n.props.children?.props?.children==='저장');saveButton.props.onPress();all=render();
-  assert.equal(all.find(n=>n.type==='Tabs').props.disabled,true);assert.equal(all.find(n=>n.type==='ActionButton').props.disabled,true);
-  save.resolve(false);await tick();all=render();assert.equal(all.find(n=>n.type==='Tabs').props.disabled,false);
+  assert.equal(header().actionDisabled,false);header().onAction();all=render();assert.equal(header().saving,true);
+  assert.equal(header().typeDisabled,true);assert.equal(all.find(n=>n.type==='ActionButton').props.disabled,true);
+  save.resolve(false);await tick();all=render();assert.equal(header().typeDisabled,false);
   props.entryType='income';props.categories=[{...category('salary'),type:'income'}];all=render();
-  assert.equal(all.find(n=>n.type==='Tabs').props.value,'income');assert.equal(all.filter(n=>n.props?.category).length,1);
+  assert.equal(header().type,'income');assert.equal(all.filter(n=>n.props?.category).length,1);
 });

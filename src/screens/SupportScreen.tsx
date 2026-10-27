@@ -1,25 +1,22 @@
-import { AppScrollBehavior } from "../constants/scroll";
-import { Feather } from "../components/AppIcons";
 import type { ReactNode } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable,ScrollView,StyleSheet,Text,View } from "react-native";
+import { Feather } from "../components/AppIcons";
+import { MenuStyles } from "../constants/menuStyles";
+import { AppScrollBehavior } from "../constants/scroll";
 
 import { AppFooterContentInset } from "../components/AppFooterContentInset";
 import { SupportPackageIcon } from "../components/SupportPackageIcon";
 import { AppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
+import {
+SupportMessages,
+SupportPackageCatalog,
+type SupportPackageIdentifier,
+SupportUi,
+} from "../constants/support";
 import { OneLineTextFitProps } from "../constants/textLayout";
 import {
-  SupportMessages,
-  SupportPackageCatalog,
-  type SupportPackageIdentifier,
-  SupportUi,
-} from "../constants/support";
-import {
-  CompactLabelTextStyle,
-  ListGroupRowStyle,
-  ListGroupStyle,
-  ResponsivePageContentStyle,
-  SupportingTextStyle,
+SupportingTextStyle
 } from "../constants/uiStyles";
 import type { SupportPackageSnapshot } from "../lib/subscription/supportClient";
 
@@ -96,22 +93,20 @@ export function SupportScreen({
 
 const styles = StyleSheet.create({
   sections: {
-    gap: SupportUi.contentGap,
+    gap: MenuStyles.sections.gap,
   },
   screen: {
     flex: 1,
     backgroundColor: AppColors.screenBackground,
   },
   content: {
-    ...ResponsivePageContentStyle,
-    paddingHorizontal: AppLayout.screenPadding,
-    paddingTop: AppLayout.screenTopPadding,
+    ...MenuStyles.content,
   },
   packageList: {
-    ...ListGroupStyle,
+    ...MenuStyles.group,
   },
   packageCard: {
-    ...ListGroupRowStyle,
+    ...MenuStyles.row,
     flexDirection: "row",
     alignItems: "center",
     gap: SupportUi.rowGap,
@@ -125,22 +120,9 @@ const styles = StyleSheet.create({
   pressedCard: {
     backgroundColor: AppColors.surfaceMuted,
   },
-  packageContent: {
-    flex: 1,
-    gap: AppLayout.compactGap,
-    minWidth: 0,
-  },
-  packageTitle: {
-    color: AppColors.text,
-    fontSize: SupportUi.titleFontSize,
-    fontWeight: "800",
-  },
-  supportLabel: {
-    ...CompactLabelTextStyle,
-    color: AppColors.mutedStrongText,
-    fontSize: SupportUi.subtitleFontSize,
-    fontWeight: "700",
-  },
+  packageContent: MenuStyles.textBlock,
+  packageTitle: MenuStyles.title,
+  supportLabel: MenuStyles.description,
   trailingBlock: {
     alignItems: "center",
     gap: AppLayout.compactGap,

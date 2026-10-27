@@ -5,8 +5,9 @@ import { LedgerBookManagementCopy } from "../constants/ledgerBookManagement";
 import type { SubscriptionTier } from "../constants/subscription";
 import { BottomContentInsetContext } from "../contexts/BottomContentInsetContext";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
-import { LedgerBookManagementContent } from "./LedgerBookManagementContent";
 import { BlockingOverlay } from "./BlockingOverlay";
+import { LedgerBookManagementContent } from "./LedgerBookManagementContent";
+import { LedgerBookManagementView } from "./LedgerBookManagementView";
 import { NativeSelectionSheet } from "./NativeSelectionSheet";
 
 type ShareProps = ComponentProps<typeof LedgerBookManagementContent>;
@@ -33,21 +34,7 @@ export function LedgerBookManagementSheet({ isOpen, onClose, onDismiss, state, .
   return <NativeSelectionSheet isOpen={isOpen} onClose={onClose} onDismiss={onDismiss}
     title={LedgerBookManagementCopy.listTitle} dismissible={!state.isBusy}>
     <BottomContentInsetContext.Provider value={AppLayout.cardContentPadding}>
-      <LedgerBookManagementContent {...props}
-        accessibleBooks={state.accessibleBooks} activeBook={state.activeBook}
-        onApproveJoinRequest={state.approveLedgerJoinRequest}
-        onCreateLedgerBook={state.createLedgerBook}
-        onDeleteActiveLedgerBook={state.deleteActiveLedgerBook}
-        onJoinSharedLedgerBook={state.joinSharedLedgerBookByCode}
-        onLeaveSharedLedgerBook={state.leaveSharedLedgerBook}
-        onPreviewJoinSharedLedgerBook={state.previewSharedLedgerBookJoinByCode}
-        onRejectJoinRequest={state.rejectLedgerJoinRequest}
-        onRemoveSharedLedgerMember={state.removeSharedLedgerMember}
-        onRenameActiveLedgerBook={state.renameActiveLedgerBook}
-        onSwitchLedgerBook={state.switchLedgerBook}
-        onTransferSharedLedgerOwnership={state.transferSharedLedgerOwnership}
-        pendingJoinRequestCountsByBookId={state.pendingJoinRequestCountsByBookId}
-        pendingJoinRequests={state.pendingJoinRequests} screenTitle={null} />
+      <LedgerBookManagementView {...props} state={state} />
     </BottomContentInsetContext.Provider>
     {state.isBusy ? <BlockingOverlay /> : null}
   </NativeSelectionSheet>;

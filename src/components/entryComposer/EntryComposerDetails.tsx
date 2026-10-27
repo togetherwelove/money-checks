@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { Keyboard, StyleSheet, Text, View } from "react-native";
 
-import { AppColors } from "../../constants/colors";
-import { EntryComposerCopy as Copy, EntryComposerUi as Ui } from "../../constants/entryComposer";
+import { EntryComposerCopy as Copy } from "../../constants/entryComposer";
 import { EntryRegistrationCopy } from "../../constants/entryRegistration";
-import { EntryDetailFieldStyle, EntryDetailLabelStyle, EntryDetailValueStyle, EntryDetailHintStyle, EntryDetailRowStyle } from "../../constants/entryDetailStyles";
+import { EntryDetailContainerStyle, EntryDetailFieldStyle, EntryDetailLabelStyle, EntryDetailValueStyle, EntryDetailHintStyle, EntryDetailRowStyle } from "../../constants/entryDetailStyles";
 import { formatInstallmentLabel } from "../../lib/installments";
 import type { useEntryComposer } from "../../hooks/useEntryComposer";
 import { EntryDateSelector } from "../EntryDateSelector";
@@ -45,7 +44,7 @@ export function EntryComposerDetails({ composer, editing = false, onConvert, sho
         members={members} selectedMemberId={draft.targetMemberId}
         onSelectMember={(member) => { update("targetMemberId", member.userId); update("targetMemberName", member.displayName); }}
       /></View> : null}
-      <View style={styles.card}>
+      <View style={[styles.card, styles.lastRow]}>
       <EntryPhotoAttachmentField attachments={draft.photoAttachments} onPickAttachments={() => { void pickPhotos(); }}
         onRemoveAttachment={(id) => update("photoAttachments", draft.photoAttachments.filter((photo) => (photo.id ?? photo.uri) !== id))} />
       </View>
@@ -54,8 +53,9 @@ export function EntryComposerDetails({ composer, editing = false, onConvert, sho
 }
 
 const styles = StyleSheet.create({
-  sections: { gap: Ui.sheetSectionGap },
-  card: { backgroundColor: AppColors.surfaceMuted, borderRadius: Ui.sheetCardRadius, padding: Ui.detailsPadding, gap: Ui.detailsSectionGap },
+  sections: { alignSelf: "stretch" },
+  card: EntryDetailContainerStyle,
+  lastRow: { borderBottomWidth: 0 },
   paymentInfo: EntryDetailFieldStyle,
   paymentRow: EntryDetailRowStyle,
   label: EntryDetailLabelStyle,

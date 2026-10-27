@@ -1,12 +1,8 @@
 import { StyleSheet, Text, View } from "react-native";
 
-import { AppColors } from "../../constants/colors";
+import { MenuStyles } from "../../constants/menuStyles";
 import { AppTextBreakProps } from "../../constants/textLayout";
-import {
-  CardTitleTextStyle,
-  SupportingTextStyle,
-  ActionSurfaceStyle,
-} from "../../constants/uiStyles";
+
 import type { AdTrackingPermissionState } from "../../lib/ads/trackingTransparency";
 import { ActionButton } from "../ActionButton";
 
@@ -66,21 +62,13 @@ function resolveAdTrackingStatusLabel(permissionState: AdTrackingPermissionState
 }
 
 const styles = StyleSheet.create({
-  card: {
-    ...ActionSurfaceStyle,
-    gap: 8,
-  },
-  title: CardTitleTextStyle,
+  card: MenuStyles.panel,
+  title: MenuStyles.sectionTitle,
   actionRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 8,
+    gap: MenuStyles.section.gap,
   },
-  status: {
-    color: AppColors.text,
-    flexShrink: 1,
-    fontSize: 13,
-    fontWeight: "700",
-  },
+  status: { ...MenuStyles.title, flexShrink: 1 },
 });

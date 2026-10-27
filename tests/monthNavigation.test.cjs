@@ -95,6 +95,8 @@ test("chart navigation updates its own month, leaving the calendar untouched", (
     "../components/AppBannerAd": { AppBannerAd: "Ad" },
     "../constants/colors": { AppColors: {} },
     "../constants/monthlyInsightCharts": { MonthlyInsightChartCopy: {} },
+    "../constants/uiStyles": { CompactLabelTextStyle: {} },
+    "../constants/textLayout": { CompactTextProps: {} },
   });
   const screen = ChartScreen({ state: {
     currentChartMonth: { scope: "periodic" }, visibleMonth: new Date(2026, 9, 1),
@@ -108,11 +110,11 @@ test("chart navigation updates its own month, leaving the calendar untouched", (
   assert.equal(chartMonth.getMonth(), 0);
 });
 
-test("calendar delegates to the native scroll viewport", () => {
+test("calendar delegates to the horizontal swipe viewport", () => {
   const { MonthCalendarPager } = loadComponent("src/components/MonthCalendarPager.native.tsx", {
     "@react-navigation/native": { useIsFocused: () => true },
     "react-native": { AppState: { currentState: "active" } },
-    "./monthCalendarPager/CalendarScrollViewport": { CalendarScrollViewport: "GestureViewport" },
+    "./monthCalendarPager/CalendarSwipeViewport": { CalendarSwipeViewport: "GestureViewport" },
   });
   const view = MonthCalendarPager({
     currentPage: { key: "2026-10", height: 100 },

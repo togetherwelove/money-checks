@@ -1,21 +1,22 @@
-import { Feather } from "../AppIcons";
-import { MenuView, type MenuAction } from "@react-native-menu/menu";
+import { MenuView,type MenuAction } from "@react-native-menu/menu";
 import { useMemo } from "react";
-import { Keyboard, Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
+import { Keyboard,Pressable,StyleSheet,Switch,Text,TextInput,View } from "react-native";
 import { AppSettingsUi } from "../../constants/appSettings";
+import { AppSettingsRowStyles } from "../../constants/appSettingsStyles";
 import { AppColors } from "../../constants/colors";
 import { CurrencyUnitLabels } from "../../constants/currency";
 import { AppTextBreakProps } from "../../constants/textLayout";
+import { Feather } from "../AppIcons";
 
 import { resolveDisplayCurrency } from "../../lib/currencyPreference";
 import {
-  NotificationThresholdAmountCopy,
-  NotificationUiCopy,
+NotificationThresholdAmountCopy,
+NotificationUiCopy,
 } from "../../notifications/config/notificationCopy";
 import { NotificationThresholdAmountInput } from "../../notifications/config/notificationThresholdLimits";
 import type {
-  NotificationThresholdKey,
-  NotificationThresholdPeriod,
+NotificationThresholdKey,
+NotificationThresholdPeriod,
 } from "../../notifications/domain/notificationEvents";
 import type { NotificationThresholdSettings } from "../../notifications/preferences/notificationPreferences";
 import { formatAmountInput } from "../../utils/amount";
@@ -25,6 +26,7 @@ type NotificationThresholdFieldProps = {
   onChangeValue: (value: string) => void;
   onToggleEnabled: (enabled: boolean) => void;
   settings: NotificationThresholdSettings;
+  embeddedInNativeRow?: boolean;
 };
 
 const ThresholdPeriodByKey = {
@@ -38,6 +40,7 @@ export function NotificationThresholdField({
   onChangeValue,
   onToggleEnabled,
   settings,
+  embeddedInNativeRow = false,
 }: NotificationThresholdFieldProps) {
   const currencyUnitLabel = CurrencyUnitLabels[resolveDisplayCurrency()];
   const periodActions = useMemo<MenuAction[]>(
@@ -55,7 +58,7 @@ export function NotificationThresholdField({
   const amountInputWidth = resolveAmountInputWidth(formattedAmountValue);
 
   return (
-    <View style={styles.field}>
+    <View style={[styles.field, embeddedInNativeRow && styles.embeddedField]}>
       <View style={styles.amountField}>
         <View style={styles.amountControl}>
           <MenuView
@@ -123,6 +126,7 @@ function resolveAmountInputWidth(value: string): number {
 }
 
 const styles = StyleSheet.create({
+  embeddedField: { minHeight: 0, paddingVertical: 0 },
   amountInput: {
     backgroundColor: "transparent",
     borderBottomColor: AppColors.border,
@@ -180,11 +184,7 @@ const styles = StyleSheet.create({
     minHeight: 36,
     paddingHorizontal: 0,
   },
-  periodText: {
-    color: AppColors.text,
-    fontSize: 13,
-    fontWeight: "800",
-  },
+  periodText: AppSettingsRowStyles.title,
   periodButtonPressed: {
     opacity: 0.72,
   },

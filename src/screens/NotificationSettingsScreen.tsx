@@ -1,17 +1,16 @@
 import type { ReactNode } from "react";
-import { Linking, StyleSheet } from "react-native";
+import { Linking,StyleSheet } from "react-native";
+import { MenuStyles } from "../constants/menuStyles";
 
-import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { AppFooterContentInset } from "../components/AppFooterContentInset";
+import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { NotificationSettingsCard } from "../components/accountScreen/NotificationSettingsCard";
 import { AppColors } from "../constants/colors";
-import { AppLayout } from "../constants/layout";
-import { ResponsivePageContentStyle } from "../constants/uiStyles";
 import type { NotificationPermissionState } from "../lib/notifications/pushNotifications";
 import type {
-  NotificationEventType,
-  NotificationThresholdKey,
-  NotificationThresholdPeriod,
+NotificationEventType,
+NotificationThresholdKey,
+NotificationThresholdPeriod,
 } from "../notifications/domain/notificationEvents";
 import type { NotificationPreferenceGroup } from "../notifications/preferences/notificationPreferences";
 
@@ -77,8 +76,6 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.screenBackground,
   },
   content: {
-    ...ResponsivePageContentStyle,
-    paddingHorizontal: AppLayout.screenPadding,
-    paddingTop: AppLayout.screenTopPadding,
+    ...MenuStyles.content,
   },
 });

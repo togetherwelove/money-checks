@@ -13,6 +13,7 @@ import {
   resolveTextScale,
 } from "../../constants/textLayout";
 import { useExpenseTextColor } from "../../contexts/ExpenseTextColorContext";
+import { CardTitleTextStyle, CompactLabelTextStyle, FormLabelTextStyle, SupportingTextStyle } from "../../constants/uiStyles";
 import { formatCurrency } from "../../utils/calendar";
 
 type MonthlyBreakdownItem = {
@@ -63,7 +64,7 @@ export function MonthlyBreakdownDonutChart({
 
   return (
     <View style={styles.section}>
-      <Text {...CompactTextProps} style={[styles.sectionTitle, semanticTextStyle]}>
+      <Text {...CompactTextProps} accessibilityRole="header" style={styles.sectionTitle}>
         {title}
       </Text>
       <View style={styles.content}>
@@ -79,7 +80,7 @@ export function MonthlyBreakdownDonutChart({
                 color: itemColorByKey.get(item.key) ?? AppChartColors[index % AppChartColors.length],
               }))} />
               <View pointerEvents="none" style={styles.chartCenter}>
-                <Text {...CompactTextProps} style={[styles.centerLabel, semanticTextStyle]}>
+                <Text {...CompactTextProps} style={styles.centerLabel}>
                   {centerLabel}
                 </Text>
                 <Text {...CompactTextProps} style={[styles.centerValue, semanticTextStyle]}>
@@ -91,7 +92,7 @@ export function MonthlyBreakdownDonutChart({
               contentContainerStyle={styles.selectedSummary}
               nestedScrollEnabled
               showsVerticalScrollIndicator={false}
-              style={styles.selectedSummaryList}
+              style={[styles.selectedSummaryList, shouldStackContent ? styles.stackedSummaryList : null]}
             >
               {visibleLegendItems.map((item) => (
                 <Pressable
@@ -125,7 +126,6 @@ export function MonthlyBreakdownDonutChart({
                     numberOfLines={1}
                     style={[
                       styles.selectedSummaryLabel,
-                      semanticTextStyle,
                       !item.isActive ? styles.selectedSummaryTextInactive : null,
                     ]}
                   >
@@ -147,7 +147,6 @@ export function MonthlyBreakdownDonutChart({
                       {...CompactTextProps}
                       style={[
                         styles.selectedSummaryShare,
-                        semanticTextStyle,
                         !item.isActive ? styles.selectedSummaryTextInactive : null,
                       ]}
                     >
@@ -171,9 +170,7 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   centerLabel: {
-    color: AppColors.mutedText,
-    fontSize: 11,
-    fontWeight: "600",
+    ...CompactLabelTextStyle,
   },
   centerValue: {
     color: AppColors.text,
@@ -186,6 +183,10 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   chartShell: {
+    alignSelf: "center",
+    width: MonthlyInsightChartLayout.donutSize,
+    height: MonthlyInsightChartLayout.donutSize,
+    overflow: "hidden",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -195,32 +196,26 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   emptyText: {
-    color: AppColors.mutedText,
-    fontSize: 12,
-    lineHeight: 18,
+    ...SupportingTextStyle,
   },
   section: {
     gap: 8,
   },
   sectionTitle: {
-    color: AppColors.text,
-    fontSize: 13,
-    fontWeight: "700",
+    ...CardTitleTextStyle,
   },
   selectedSummary: {
     gap: MonthlyInsightChartLayout.donutLegendGap,
   },
   selectedSummaryAmount: {
+    ...FormLabelTextStyle,
     color: AppColors.text,
-    fontSize: 11,
-    fontWeight: "700",
   },
   selectedSummaryLabel: {
+    ...FormLabelTextStyle,
     flex: 1,
     minWidth: 0,
     color: AppColors.text,
-    fontSize: 11,
-    fontWeight: "600",
   },
   selectedSummaryList: {
     flex: 1,
@@ -247,14 +242,11 @@ const styles = StyleSheet.create({
     backgroundColor: AppColors.surfaceMuted,
   },
   selectedSummaryShare: {
-    color: AppColors.mutedText,
-    fontSize: 10,
-    fontWeight: "700",
+    ...CompactLabelTextStyle,
     textAlign: "right",
     minWidth: 32,
   },
   selectedSummaryValueBlock: {
-    flexDirection: "row",
     alignItems: "flex-end",
     minWidth: 54,
   },
@@ -265,5 +257,9 @@ const styles = StyleSheet.create({
   stackedChartOverview: {
     alignItems: "stretch",
     flexDirection: "column",
+  },
+  stackedSummaryList: {
+    flex: 0,
+    width: "100%",
   },
 });

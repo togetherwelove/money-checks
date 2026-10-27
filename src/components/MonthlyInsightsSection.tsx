@@ -8,6 +8,7 @@ import {
   MonthlyInsightChartLayout,
 } from "../constants/monthlyInsightCharts";
 import { CompactTextProps } from "../constants/textLayout";
+import { FormLabelTextStyle } from "../constants/uiStyles";
 import { useLedgerCategoryIconMap } from "../hooks/useLedgerCategoryIconMap";
 import type { CategoryIconName } from "../types/category";
 import type { MonthlyInsights } from "../types/ledger";
@@ -390,9 +391,7 @@ const styles = StyleSheet.create({
     borderBottomColor: AppColors.primary,
   },
   segmentText: {
-    color: AppColors.mutedText,
-    fontSize: 12,
-    fontWeight: "700",
+    ...FormLabelTextStyle,
   },
   segmentTextSelected: {
     color: AppColors.primary,

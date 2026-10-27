@@ -5,7 +5,7 @@ import { type ReactNode, useCallback, useEffect, useRef, useState } from "react"
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import type { ScrollViewInstance } from "react-native";
 import type { LedgerEntryType } from "../../types/ledger";
-import { CategoryTypeTabs } from "./CategoryTypeTabs";
+import { EntryComposerHeader } from "../entryComposer/EntryComposerHeader";
 import { ActionButton } from "../ActionButton";
 
 import { CategoryCustomizerCopy } from "../../constants/categoryCustomizer";
@@ -179,8 +179,8 @@ export function CategoryManageModal({
   }, [clearPendingCategoryScroll, onClose]);
 
   const handlePressSave = useCallback(() => {
-    saveCategoryOrder();
-  }, [saveCategoryOrder]);
+    if (canSave) void saveCategoryOrder();
+  }, [canSave, saveCategoryOrder]);
 
   const handlePressMoveUp = useCallback(() => {
     moveSelectedCategory(-1);
@@ -199,9 +199,11 @@ export function CategoryManageModal({
   );
 
   return (
-    <NativeSelectionSheet isOpen={isOpen} onClose={closeWithoutSaving} dismissible={!saving} title={title}>
+    <NativeSelectionSheet isOpen={isOpen} onClose={closeWithoutSaving} dismissible={!saving} title={title}
+      header={<EntryComposerHeader type={entryType} onSelectType={changeEntryType}
+        typeDisabled={saving || isLoading} saving={saving} actionDisabled={!canSave}
+        actionLabel={CategoryCustomizerCopy.saveAction} onAction={handlePressSave} onClose={closeWithoutSaving} />}>
       <View style={styles.sheet}>
-          <CategoryTypeTabs value={entryType} disabled={saving || isLoading} onChange={changeEntryType} />
           <ActionButton label={CategoryCustomizerCopy.addAccessibilityLabel} onPress={onAdd} disabled={saving || isLoading} size="inline" />
           <ScrollView {...AppScrollBehavior}
             contentContainerStyle={styles.listContent}
@@ -236,15 +238,6 @@ export function CategoryManageModal({
           </View>
           {isLoading ? <Text style={SupportingTextStyle}>{CategoryCustomizerCopy.loadingCategories}</Text> : null}
           {saveError ? <Text style={styles.saveError}>{CategoryCustomizerCopy.saveError}</Text> : null}
-          <Pressable
-            disabled={!canSave}
-            onPress={handlePressSave}
-            style={[styles.saveButton, !canSave ? styles.disabledSaveButton : null]}
-          >
-            <Text style={[styles.saveButtonText, !canSave ? styles.disabledSaveButtonText : null]}>
-              저장
-            </Text>
-          </Pressable>
       </View>
       {creationModal}
     </NativeSelectionSheet>
@@ -393,24 +386,6 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   disabledMoveButtonText: {
-    color: AppColors.mutedText,
-  },
-  saveButton: {
-    minHeight: CATEGORY_MANAGE_ACTION_BUTTON_HEIGHT,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 14,
-    backgroundColor: AppColors.primary,
-  },
-  disabledSaveButton: {
-    backgroundColor: AppColors.surfaceStrong,
-  },
-  saveButtonText: {
-    color: AppColors.inverseText,
-    fontSize: 14,
-    fontWeight: "800",
-  },
-  disabledSaveButtonText: {
     color: AppColors.mutedText,
   },
 });

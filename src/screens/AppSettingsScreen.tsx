@@ -1,14 +1,17 @@
-import { CalendarSummaryBaseDayPickerModal } from "../components/appSettings/CalendarSummaryBaseDayPickerModal";
-import { Feather } from "../components/AppIcons";
 import { type ReactNode, useState } from "react";
-import { Linking, Pressable, StyleSheet, Switch, Text, View } from "react-native";
+import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import { Feather } from "../components/AppIcons";
+import { CalendarSummaryBaseDayPickerModal } from "../components/appSettings/CalendarSummaryBaseDayPickerModal";
+import { SettingsMenuLinks, type SettingsMenuLinksProps } from "../components/appSettings/SettingsMenuLinks";
+import { MenuStyles } from "../constants/menuStyles";
 
 import { AppFooterContentInset } from "../components/AppFooterContentInset";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { NotificationSettingsCard } from "../components/accountScreen/NotificationSettingsCard";
-import { SettingsValueSelector } from "../components/appSettings/SettingsValueSelector";
-import { ExpenseTextColorSelector } from "../components/appSettings/ExpenseTextColorSelector";
+import { CalendarHeatmapSetting } from "../components/appSettings/CalendarHeatmapSetting";
 import { CategoryAdditionSettings } from "../components/appSettings/CategoryAdditionSettings";
+import { ExpenseTextColorSelector } from "../components/appSettings/ExpenseTextColorSelector";
+import { SettingsValueSelector } from "../components/appSettings/SettingsValueSelector";
 import { AppSettingsCopy, AppSettingsUi } from "../constants/appSettings";
 import { AppSettingsRowStyles } from "../constants/appSettingsStyles";
 import {
@@ -17,16 +20,11 @@ import {
   CalendarSummaryModes,
 } from "../constants/calendarSummary";
 import { AppColors } from "../constants/colors";
-import { AppLayout } from "../constants/layout";
 import {
-  BrandPlusTextStyle,
-  CardTitleTextStyle,
   GroupedSectionStyle,
-  ListGroupStyle,
-  ResponsivePageContentStyle,
   SettingValueActionStyle,
   SettingValueTextStyle,
-  SupportingTextStyle,
+  SupportingTextStyle
 } from "../constants/uiStyles";
 import { useExpenseTextColor } from "../contexts/ExpenseTextColorContext";
 import type { NotificationPermissionState } from "../lib/notifications/pushNotifications";
@@ -39,6 +37,8 @@ import type {
 import type { NotificationPreferenceGroup } from "../notifications/preferences/notificationPreferences";
 
 export type AppSettingsScreenProps = {
+  menuSections: SettingsMenuLinksProps["sections"];
+  onSelectMenuItem: SettingsMenuLinksProps["onSelect"];
   activeBookId: string | null;
   activeBookName: string;
   canAddCategory: boolean;
@@ -56,6 +56,7 @@ export type AppSettingsScreenProps = {
   onChangeNotificationThreshold: (key: NotificationThresholdKey, value: string) => void;
   onChangeCalendarSummaryMode: (mode: CalendarSummaryMode) => void;
   onRequestNotificationPermission: () => Promise<boolean>;
+  onOpenSubscription: () => void;
   onToggleCalendarHeatmap: (isEnabled: boolean) => void;
   onToggleNotificationPreference: (
     eventTypes: NotificationEventType | readonly NotificationEventType[],
@@ -66,6 +67,8 @@ export type AppSettingsScreenProps = {
 };
 
 export function AppSettingsScreen({
+  menuSections,
+  onSelectMenuItem,
   activeBookId,
   activeBookName,
   canAddCategory,
@@ -84,12 +87,12 @@ export function AppSettingsScreen({
   onChangeCalendarSummaryMode,
   onRequestNotificationPermission,
   onToggleCalendarHeatmap,
+  onOpenSubscription,
   onToggleNotificationPreference,
   screenTitle,
   showNotificationSettings,
 }: AppSettingsScreenProps) {
   const expenseTextColor = useExpenseTextColor();
-  const isHeatmapSwitchEnabled = isPlusActive && isCalendarHeatmapEnabled;
   const [isSummaryBaseDayPickerOpen, setIsSummaryBaseDayPickerOpen] = useState(false);
   const isSelectedMonthSummaryMode = calendarSummaryMode === CalendarSummaryModes.selectedMonth;
   const handleOpenNotificationPermission = () => {
@@ -158,27 +161,12 @@ export function AppSettingsScreen({
                 onChange={expenseTextColor.updateMode}
               />
             </View>
-            <View
-              style={[
-                styles.settingCard,
-                styles.lastSettingCard,
-                !isPlusActive ? styles.disabledSettingCard : null,
-              ]}
-            >
+            <View style={[styles.settingCard, styles.lastSettingCard]}>
               <View style={styles.settingTextBlock}>
-                <View style={styles.settingTitleRow}>
-                  <Text style={styles.settingTitle}>{AppSettingsCopy.heatmapTitle}</Text>
-                  <Text style={styles.plusLabel}>{AppSettingsCopy.plusBadge}</Text>
-                </View>
-                <Text style={styles.settingDescription}>{AppSettingsCopy.heatmapDescription}</Text>
+                <CalendarHeatmapSetting isPlusActive={isPlusActive}
+                  isEnabled={isCalendarHeatmapEnabled} onToggle={onToggleCalendarHeatmap}
+                  onOpenSubscription={onOpenSubscription} />
               </View>
-              <Switch
-                disabled={!isPlusActive}
-                onValueChange={onToggleCalendarHeatmap}
-                thumbColor={isHeatmapSwitchEnabled ? AppColors.inverseText : AppColors.surface}
-                trackColor={{ false: AppColors.border, true: AppColors.primary }}
-                value={isHeatmapSwitchEnabled}
-              />
             </View>
           </View>
         </View>
@@ -204,6 +192,7 @@ export function AppSettingsScreen({
             </View>
           )}
         </View>
+        <SettingsMenuLinks sections={menuSections} onSelect={onSelectMenuItem} />
         <AppFooterContentInset />
       </View>
       <CalendarSummaryBaseDayPickerModal
@@ -224,10 +213,8 @@ const styles = StyleSheet.create({
     gap: AppSettingsUi.sectionSpacing,
   },
   content: {
-    ...ResponsivePageContentStyle,
+    ...MenuStyles.content,
     paddingBottom: AppSettingsUi.contentBottomPadding,
-    paddingHorizontal: AppSettingsUi.contentHorizontalPadding,
-    paddingTop: AppLayout.screenTopPadding,
   },
   screen: {
     flex: 1,
@@ -236,27 +223,14 @@ const styles = StyleSheet.create({
   section: {
     gap: AppSettingsUi.sectionGap,
   },
-  sectionTitle: CardTitleTextStyle,
-  disabledSettingCard: AppSettingsRowStyles.disabled,
-  plusLabel: {
-    ...BrandPlusTextStyle,
-    fontSize: 13,
-  },
+  sectionTitle: MenuStyles.sectionTitle,
   pressedSettingCard: AppSettingsRowStyles.pressed,
   settingCard: AppSettingsRowStyles.row,
-  settingListGroup: ListGroupStyle,
+  settingListGroup: MenuStyles.group,
   lastSettingCard: AppSettingsRowStyles.lastRow,
-  settingDescription: {
-    ...SupportingTextStyle,
-  },
+  settingDescription: AppSettingsRowStyles.description,
   settingTextBlock: AppSettingsRowStyles.textBlock,
   settingTitle: AppSettingsRowStyles.title,
-  settingTitleRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 6,
-    minWidth: 0,
-  },
   unsupportedCard: GroupedSectionStyle,
   unsupportedText: SupportingTextStyle,
 });

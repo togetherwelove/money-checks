@@ -1,9 +1,9 @@
-import { Alert, Pressable, StyleSheet, Switch, Text, View } from "react-native";
+import { Alert,Pressable,StyleSheet,Switch,Text,View } from "react-native";
 
 import { AppSettingsUi } from "../../constants/appSettings";
+import { AppSettingsRowStyles } from "../../constants/appSettingsStyles";
 import { AppColors } from "../../constants/colors";
 import { AppTextBreakProps } from "../../constants/textLayout";
-import { ListGroupRowStyle } from "../../constants/uiStyles";
 import { NotificationUiCopy } from "../../notifications/config/notificationCopy";
 import type { NotificationPreferenceItem } from "../../notifications/preferences/notificationPreferences";
 
@@ -62,7 +62,7 @@ export function NotificationPreferenceRow({
 
 const styles = StyleSheet.create({
   row: {
-    ...ListGroupRowStyle,
+    ...AppSettingsRowStyles.row,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -83,10 +83,8 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   label: {
-    color: AppColors.text,
+    ...AppSettingsRowStyles.title,
     flex: 1,
-    fontSize: 14,
-    fontWeight: "800",
     minWidth: 0,
   },
   helpButton: {

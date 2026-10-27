@@ -1,10 +1,8 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useEffect, useMemo, useState } from "react";
-import { StyleSheet, View } from "react-native";
-
-import { ModalActionRowStyle } from "../../constants/uiStyles";
+import { StyleSheet } from "react-native";
+import { CalendarPickerCopy } from "../../constants/modal";
 import { parseIsoDate, toIsoDate } from "../../utils/calendar";
-import { ActionButton } from "../ActionButton";
 import { CalendarPickerModalShell } from "./CalendarPickerModalShell";
 
 type NativeYearPickerModalProps = {
@@ -35,9 +33,14 @@ export function NativeYearPickerModal({
     <CalendarPickerModalShell
       isOpen={isOpen}
       onClose={onClose}
-      title="날짜 선택"
+      title={CalendarPickerCopy.title}
+      action={{ label: CalendarPickerCopy.applyAction, onPress: () => {
+        onSelectDate(toIsoDate(draftDate));
+        onClose();
+      } }}
     >
       <DateTimePicker
+        style={styles.wheel}
         display="spinner"
         mode="date"
         locale="ko-KR"
@@ -50,21 +53,8 @@ export function NativeYearPickerModal({
         }}
         value={draftDate}
       />
-      <View style={styles.actionRow}>
-        <ActionButton
-          label="적용"
-          onPress={() => {
-            onSelectDate(toIsoDate(draftDate));
-            onClose();
-          }}
-          size="inline"
-          variant="primary"
-        />
-      </View>
     </CalendarPickerModalShell>
   );
 }
 
-const styles = StyleSheet.create({
-  actionRow: ModalActionRowStyle,
-});
+const styles = StyleSheet.create({ wheel: { alignSelf: "center" } });

@@ -19,6 +19,28 @@ function withMemo(h) {
   } };
 }
 
+test('calendar date selection applies from the header and closes only on confirmation', () => {
+  const h = hooks(), selected = [];
+  let closed = 0;
+  const load = modules({
+    react: withMemo(h), 'react/jsx-runtime': { jsx, jsxs: jsx },
+    '@react-native-community/datetimepicker': 'DatePicker',
+    'react-native': { StyleSheet: { create: value => value } },
+    'src/components/calendarPicker/CalendarPickerModalShell.tsx': { CalendarPickerModalShell: 'Sheet' },
+  });
+  const { NativeYearPickerModal } = load('src/components/calendarPicker/NativeYearPickerModal.tsx');
+  const props = { isOpen: true, selectedDate: '2026-10-26', onClose: () => closed++, onSelectDate: value => selected.push(value) };
+  const render = () => h.render(() => NativeYearPickerModal(props));
+  let tree = render();
+  tree.props.children.props.onChange({}, new Date(2027, 1, 3));
+  tree = render();
+  assert.deepEqual(selected, []); assert.equal(closed, 0);
+  assert.equal(tree.props.action.label, '적용');
+  tree.props.action.onPress();
+  assert.deepEqual(selected, ['2027-02-03']); assert.equal(closed, 1);
+  h.unmount();
+});
+
 test('picker sheet keeps keyboard-aware scrolling inside the native sheet', () => {
   const load = modules({
     'react/jsx-runtime': { jsx, jsxs: jsx },
@@ -88,6 +110,7 @@ test('report range confirmation moves to the header and uses the current draft d
     'react/jsx-runtime': { jsx, jsxs: jsx },
     'react-native': { View: 'View', Text: 'Text', Pressable: 'Pressable', StyleSheet: { create: value => value } },
     '@react-native-community/datetimepicker': 'DatePicker',
+    'react-native': { StyleSheet: { create: value => value } },
     'src/components/NativePickerSheet.tsx': { NativePickerSheet: 'Sheet' },
     'src/components/annualReport/AnnualReportPeriodOptions.tsx': { AnnualReportPeriodOptions: 'Options' },
   });
@@ -113,6 +136,7 @@ test('standalone date selection confirms from the header and cancellation leaves
     'react-native': { View: 'View', Text: 'Text', Pressable: 'Pressable', Keyboard: { dismiss() {} }, StyleSheet: { create: value => value } },
     '@expo/vector-icons': { Feather: 'Icon' },
     '@react-native-community/datetimepicker': 'DatePicker',
+    'react-native': { StyleSheet: { create: value => value } },
     'src/components/NativePickerSheet.tsx': { NativePickerSheet: 'Sheet' },
     'src/components/EntryInlineDatePicker.tsx': { EntryInlineDatePicker: 'Calendar' },
   });

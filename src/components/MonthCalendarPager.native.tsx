@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useIsFocused } from "@react-navigation/native";
 import { AppState } from "react-native";
 
-import { CalendarScrollViewport } from "./monthCalendarPager/CalendarScrollViewport";
+import { CalendarSwipeViewport } from "./monthCalendarPager/CalendarSwipeViewport";
 import type { MonthCalendarPagerProps } from "./monthCalendarPager/monthCalendarPagerTypes";
 
 export function MonthCalendarPager(props: MonthCalendarPagerProps) {
@@ -32,8 +32,8 @@ export function MonthCalendarPager(props: MonthCalendarPagerProps) {
     setHeights((current) => current[key] === height ? current : { ...current, [key]: height });
   }, []);
   const active = isFocused && isAppActive;
-  // Reset the native scroll position after focus and geometry changes.
+  // Reset the native page after focus and geometry changes.
   const geometryKey = JSON.stringify(pages.map((page) => [page.key, page.height]));
-  return <CalendarScrollViewport {...props} geometryKey={geometryKey} active={active} resetRevision={foregroundRevision}
+  return <CalendarSwipeViewport {...props} geometryKey={geometryKey} active={active} resetRevision={foregroundRevision}
     pages={pages} onHeightChange={onHeightChange} />;
 }

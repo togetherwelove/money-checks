@@ -81,7 +81,9 @@ test('footer preview reuses the same import and dismissal actions above the meas
   const jsx = (type, props) => ({ type, props });
   const load = modules({
     'react/jsx-runtime': { jsx, jsxs: jsx },
-    'react-native': { View: 'View', StyleSheet: { create: value => value } },
+    react: { useState: value => [value, () => {}] },
+    'react-native': { Animated: { View: 'AnimatedView' }, StyleSheet: { create: value => value } },
+    'src/hooks/useClipboardExpansionAnimation.ts': { useClipboardExpansionAnimation: () => ({ interpolate: config => config }) },
     'src/components/entryComposer/ClipboardEntrySuggestion.tsx': { ClipboardEntrySuggestion: 'Preview' },
   });
   const { ClipboardSuggestionBanner } = load('src/components/ClipboardSuggestionBanner.tsx');
@@ -111,9 +113,9 @@ test('returning while data is loading defers clipboard detection until readiness
   let listener, removed = 0, reads = 0;
   const pending = { current: false };
   const context = vm.createContext({
-    isSignedInInteractionReady: false, pendingClipboardCheckRef: pending,
+    isSignedInInteractionReady: false, clipboardScope: "book", pendingClipboardCheckRef: pending,
     previousClipboardImportAppStateRef: { current: 'background' },
-    handleDetectClipboardSuggestion: () => reads++,
+    handleDetectClipboardSuggestion: () => { pending.current = false; reads++; },
     AppState: { currentState: 'active', addEventListener: (_event, callback) => {
       listener = callback; return { remove: () => removed++ };
     } },

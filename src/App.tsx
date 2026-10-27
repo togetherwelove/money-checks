@@ -1,5 +1,4 @@
-import { navigateToSingleInstanceStackScreen } from "./app/navigateToStackScreen";
-import { useSheetTransition } from "./hooks/useSheetTransition";
+import { FloatingEntryButton } from "./components/FloatingEntryButton";
 import {
   NavigationContainer,
   createNavigationContainerRef,
@@ -14,47 +13,51 @@ import {
   useRef,
   useState,
 } from "react";
-import { Alert, AppState, Keyboard, StatusBar, StyleSheet, Text, View } from "react-native";
+import { Alert, AppState, Keyboard, StatusBar, StyleSheet, View } from "react-native";
 import { RootSiblingParent } from "react-native-root-siblings";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { navigateToSingleInstanceStackScreen } from "./app/navigateToStackScreen";
+import { useSheetTransition } from "./hooks/useSheetTransition";
+import { LedgerBooksScreen } from "./screens/LedgerBooksScreen";
 
 import { SignedInTabNavigator } from "./app/SignedInTabNavigator";
 import {
-  type SignedInTabParamList,
   type SignedInStackScreen,
+  type SignedInTabParamList,
   isSignedInStackScreen,
 } from "./app/signedInNavigation";
-import { ClipboardSuggestionBanner } from "./components/ClipboardSuggestionBanner";
-import { createScopedClipboardReader } from "./lib/scopedClipboardReader";
-import { AppHeaderBookMenu } from "./components/AppHeaderBookMenu";
 import { AppNativeHeaderTitle } from "./components/AppNativeHeaderTitle";
-import { EntryComposer, type EntryComposerHandle } from "./components/entryComposer/EntryComposer";
-import { AppFloatingMenuButton } from "./components/AppFloatingMenuButton";
 import { BlockingOverlay } from "./components/BlockingOverlay";
-import { confirmInstallmentPrepayment } from "./components/installmentPrepaymentAlert";
+import { ClipboardSuggestionBanner } from "./components/ClipboardSuggestionBanner";
 import { LedgerBookManagementSheet } from "./components/LedgerBookManagementSheet";
 import { OnboardingTransitionScreen } from "./components/OnboardingTransitionScreen";
 import { SessionLoadingScreen } from "./components/SessionLoadingScreen";
 import { StartupErrorScreen } from "./components/StartupErrorScreen";
-import { AnnualReportRangePickerModal } from "./components/annualReport/AnnualReportRangePickerModal";
 import { NativeYearPickerModal } from "./components/calendarPicker/NativeYearPickerModal";
+import { AnnualReportRangePickerModal } from "./components/annualReport/AnnualReportRangePickerModal";
+import { EntryComposer, type EntryComposerHandle } from "./components/entryComposer/EntryComposer";
+import { confirmInstallmentPrepayment } from "./components/installmentPrepaymentAlert";
 import { AdInterstitialPlacement } from "./constants/ads";
+import { CardSmsClipboardCopy } from "./constants/cardSmsClipboard";
 import { AppColors } from "./constants/colors";
-import { AppLayout } from "./constants/layout";
 import { EntryRegistrationCopy } from "./constants/entryRegistration";
 import { InitialPermissionTiming } from "./constants/initialPermissions";
-import { formatYearLabel, formatMonthLabel } from "./constants/ledgerDisplay";
-import { FooterTabBarUi } from "./constants/menu";
+import { AppLayout } from "./constants/layout";
+import { formatMonthLabel, formatYearLabel } from "./constants/ledgerDisplay";
+import { FooterTabBarUi, FloatingEntryButtonUi } from "./constants/menu";
 import { AppMessages } from "./constants/messages";
 import { NotificationBadgeScopes } from "./constants/notificationBadges";
 import { SubscriptionMessages, SubscriptionTiers } from "./constants/subscription";
 import { SupportMessages, type SupportPackageIdentifier } from "./constants/support";
-import { ExpenseTextColorProvider } from "./contexts/ExpenseTextColorContext";
 import { BottomContentInsetContext } from "./contexts/BottomContentInsetContext";
+import { ExpenseTextColorProvider } from "./contexts/ExpenseTextColorContext";
 import { useAnnualLedgerReportAction } from "./hooks/useAnnualLedgerReportAction";
 import { useAuthOnboarding } from "./hooks/useAuthOnboarding";
 import { useCalendarHeatmapSetting } from "./hooks/useCalendarHeatmapSetting";
 import { useCalendarSummaryModeSetting } from "./hooks/useCalendarSummaryModeSetting";
+import { useDailyFirstEntryAd } from "./hooks/useDailyFirstEntryAd";
+import { useDismissStartupSplash } from "./hooks/useDismissStartupSplash";
+import { useEntryNotificationReads } from "./hooks/useEntryNotificationReads";
 import { useGoogleAuthRedirectCompletion } from "./hooks/useGoogleAuthRedirectCompletion";
 import { useLedgerNotifications } from "./hooks/useLedgerNotifications";
 import { useLedgerScreenState } from "./hooks/useLedgerScreenState";
@@ -64,13 +67,11 @@ import { useNotificationBadges } from "./hooks/useNotificationBadges";
 import { usePasswordRecoveryRedirect } from "./hooks/usePasswordRecoveryRedirect";
 import { useSubscriptionPlan } from "./hooks/useSubscriptionPlan";
 import { useSupabaseSession } from "./hooks/useSupabaseSession";
-import { useDismissStartupSplash } from "./hooks/useDismissStartupSplash";
 import { useSupportPackages } from "./hooks/useSupportPackages";
 import { applyAdTrackingPermissionToAdRequests } from "./lib/ads/adRequestOptions";
 import { preloadInterstitialAd, showInterstitialAd } from "./lib/ads/interstitialAd";
 import { ensureMobileAdsInitialized } from "./lib/ads/mobileAds";
 import { preloadRewardedInterstitialAd } from "./lib/ads/rewardedInterstitialAd";
-import { useDailyFirstEntryAd } from "./hooks/useDailyFirstEntryAd";
 import {
   type AdTrackingPermissionState,
   isAdTrackingPermissionSupported,
@@ -84,11 +85,6 @@ import { getAppScreenLabel } from "./lib/appScreenLabels";
 import { installAppTextDefaults } from "./lib/appTextDefaults";
 import { signOutFromApp } from "./lib/auth/signOut";
 import { resolveSessionAuthProvider, resolveSessionAuthProviderLabel } from "./lib/authProvider";
-
-// Keep the splash screen visible while we fetch resources
-SplashScreen.preventAutoHideAsync().catch(() => {
-  /* Ignore errors */
-});
 import {
   type CardSmsClipboardDraft,
   readCardSmsClipboardDraft,
@@ -96,13 +92,11 @@ import {
 import { type FooterTabScreen } from "./lib/footerTabs";
 import { scheduleIdleTask } from "./lib/idleScheduler";
 import { logAppError } from "./lib/logAppError";
-import { buildAppMenuSections } from "./lib/menuItems";
+import { buildSettingsMenuSections } from "./lib/menuItems";
 import { showNativeToast } from "./lib/nativeToast";
-import { CardSmsClipboardCopy } from "./constants/cardSmsClipboard";
-import { resolveNotificationActionRoute } from "./lib/notifications/notificationActions";
-import { sendEntrySaveNotifications } from "./lib/notifications/entrySaveNotifications";
 import { resolveEntryNotificationReadTarget } from "./lib/notifications/entryNotificationReads";
-import { useEntryNotificationReads } from "./hooks/useEntryNotificationReads";
+import { sendEntrySaveNotifications } from "./lib/notifications/entrySaveNotifications";
+import { resolveNotificationActionRoute } from "./lib/notifications/notificationActions";
 import {
   canMarkNotificationBadgeScopeRead,
   resolveBadgedBookIds,
@@ -114,6 +108,7 @@ import {
   syncOwnProfileDisplayNameIfMissing,
   updateOwnProfileDisplayName,
 } from "./lib/profiles";
+import { createScopedClipboardReader } from "./lib/scopedClipboardReader";
 import { openSubscriptionManagement } from "./lib/subscription/openSubscriptionManagement";
 import { isSubscriptionPurchaseCancelled } from "./lib/subscription/subscriptionError";
 import { registerLedgerWidgetNotificationSync } from "./lib/widgetNotificationSync";
@@ -128,6 +123,11 @@ import type { LedgerEntryDeleteScope } from "./types/ledgerEntryDeletion";
 import { getMonthKey, toIsoDate } from "./utils/calendar";
 import { canSubmitDraft, createDraft } from "./utils/ledgerEntries";
 import { resolveFallbackDisplayName } from "./utils/sessionDisplayName";
+
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync().catch(() => {
+  /* Ignore errors */
+});
 
 installAppTextDefaults();
 
@@ -209,6 +209,7 @@ function SignedInApp({ session }: { session: Session }) {
   const hasStartedInitialPermissionRequestRef = useRef(false);
   const permissionRequestTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingClipboardCheckRef = useRef(true);
+  const [clipboardCheckRevision, setClipboardCheckRevision] = useState(0);
   const previousClipboardImportAppStateRef = useRef(AppState.currentState);
   const lastReadNotificationBadgeScreenKeyRef = useRef<string | null>(null);
   const [currentScreen, setCurrentScreen] = useState<LedgerAppScreen>("calendar");
@@ -218,9 +219,8 @@ function SignedInApp({ session }: { session: Session }) {
   const setIsLedgerManagementOpen = ledgerManagementSheet.setOpen;
   const [footerHeight, setFooterHeight] = useState(0);
   const [clipboardBannerHeight, setClipboardBannerHeight] = useState(0);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isNicknameScreenReady, setIsNicknameScreenReady] = useState(false);
   const [isYearPickerOpen, setIsYearPickerOpen] = useState(false);
+  const [isNicknameScreenReady, setIsNicknameScreenReady] = useState(false);
   const [clipboardSuggestionDraft, setClipboardSuggestionDraft] = useState<CardSmsClipboardDraft | null>(
     null,
   );
@@ -322,10 +322,13 @@ function SignedInApp({ session }: { session: Session }) {
     !ledgerState.isBusy;
   const isSignedInInteractionReady = isSignedInNavigationReady && !ledgerState.isLoading;
   const isClipboardBannerVisible = Boolean(clipboardSuggestionDraft && isSignedInInteractionReady &&
-    !composerSheet.isPresented && !isEntrySheetOpen && !ledgerManagementSheet.isPresented && !isMenuOpen);
+    !composerSheet.isPresented && !isEntrySheetOpen && !ledgerManagementSheet.isPresented);
+  const showsFloatingEntryButton =
+    (currentScreen === "calendar" || currentScreen === "all-entries" || currentScreen === "charts" || isClipboardBannerVisible) &&
+    !isEntrySheetOpen && !composerSheet.isPresented && !ledgerManagementSheet.isPresented;
   const markEntryNotificationsRead = useEntryNotificationReads(
     isSignedInInteractionReady && currentScreen === "calendar" &&
-      !isEntrySheetOpen && !isLedgerManagementOpen && !isMenuOpen,
+      !isEntrySheetOpen && !isLedgerManagementOpen,
     ledgerState,
     notificationBadges.refresh,
   );
@@ -456,11 +459,6 @@ function SignedInApp({ session }: { session: Session }) {
 
   const navigateToStackScreen = useCallback(
     (screen: Exclude<LedgerAppScreen, "calendar" | "entry">) => {
-      if (screen === "share") {
-        Keyboard.dismiss();
-        setIsLedgerManagementOpen(true);
-        return;
-      }
       if (!navigationRef.isReady()) {
         return;
       }
@@ -493,6 +491,7 @@ function SignedInApp({ session }: { session: Session }) {
   );
 
   const clipboardScopeRef = useRef<string | null>(null);
+  const clipboardDetectionMountedRef = useRef(true);
   const clipboardScope = isSignedInInteractionReady && !ledgerState.isReadOnlyDueToPlanLimit
     ? ledgerState.activeBook?.id ?? null : null;
   clipboardScopeRef.current = clipboardScope;
@@ -511,7 +510,12 @@ function SignedInApp({ session }: { session: Session }) {
 
   useEffect(() => {
     setClipboardSuggestionDraft(null);
+    if (clipboardScope) pendingClipboardCheckRef.current = true;
   }, [clipboardScope]);
+  useEffect(() => {
+    clipboardDetectionMountedRef.current = true;
+    return () => { clipboardDetectionMountedRef.current = false; };
+  }, []);
   useEffect(() => {
     Keyboard.dismiss();
     setIsComposerVisible(false);
@@ -521,7 +525,7 @@ function SignedInApp({ session }: { session: Session }) {
   const { ensureAdBeforeSave } = useDailyFirstEntryAd({
     userId: session.user.id,
     bookId: ledgerState.activeBook?.id ?? null,
-    isReady: isMobileAdsReady && isSignedInInteractionReady && !isMenuOpen && !isLedgerManagementOpen,
+    isReady: isMobileAdsReady && isSignedInInteractionReady && !isLedgerManagementOpen,
     isSubscriptionLoading: subscription.isLoading,
     isFree: subscription.currentTier === SubscriptionTiers.free,
   });
@@ -610,11 +614,14 @@ function SignedInApp({ session }: { session: Session }) {
   }, [handleOpenCardSmsClipboardDraft, readAvailableCardSmsClipboardDraft]);
 
   const handleDetectClipboardSuggestion = useCallback(async () => {
+    const scope = clipboardScopeRef.current;
     if (
+      !scope ||
       AppState.currentState !== "active" ||
       !isSignedInInteractionReady ||
       ledgerState.isReadOnlyDueToPlanLimit ||
       navigationRef.getCurrentRoute()?.name === "entry-sheet" ||
+      composerVisibleRef.current ||
       clipboardSuggestionDraft ||
       entryComposerRef.current?.isBusy() ||
       clipboardReadInFlightRef.current
@@ -622,16 +629,23 @@ function SignedInApp({ session }: { session: Session }) {
       return;
     }
 
+    pendingClipboardCheckRef.current = false;
     clipboardReadInFlightRef.current = true;
     try {
-      const scope = clipboardScopeRef.current;
-      if (!scope) return;
       const clipboardDraft = await readAvailableCardSmsClipboardDraft();
+      if (!clipboardDetectionMountedRef.current) return;
+      if (AppState.currentState !== "active") {
+        pendingClipboardCheckRef.current = true;
+        return;
+      }
       if (scope !== clipboardScopeRef.current || !clipboardDraft || entryComposerRef.current?.isBusy() ||
         JSON.stringify(clipboardDraft) === lastHandledClipboardRef.current) return;
       setClipboardSuggestionDraft(clipboardDraft);
     } finally {
       clipboardReadInFlightRef.current = false;
+      if (clipboardDetectionMountedRef.current && pendingClipboardCheckRef.current && clipboardScopeRef.current && AppState.currentState === "active") {
+        setClipboardCheckRevision(revision => revision + 1);
+      }
     }
   }, [
     clipboardSuggestionDraft,
@@ -642,13 +656,12 @@ function SignedInApp({ session }: { session: Session }) {
   ]);
 
   useEffect(() => {
-    if (!pendingClipboardCheckRef.current || !isSignedInInteractionReady || AppState.currentState !== "active") {
+    if (!pendingClipboardCheckRef.current || !clipboardScope || !isSignedInInteractionReady || AppState.currentState !== "active") {
       return;
     }
 
-    pendingClipboardCheckRef.current = false;
     void handleDetectClipboardSuggestion();
-  }, [handleDetectClipboardSuggestion, isSignedInInteractionReady]);
+  }, [handleDetectClipboardSuggestion, isSignedInInteractionReady, clipboardScope, clipboardCheckRevision, composerSheet.isPresented, isEntrySheetOpen]);
 
   useEffect(() => {
     if (isSignedInInteractionReady) {
@@ -669,7 +682,6 @@ function SignedInApp({ session }: { session: Session }) {
 
       pendingClipboardCheckRef.current = true;
       if (!isSignedInInteractionReady) return;
-      pendingClipboardCheckRef.current = false;
       void handleDetectClipboardSuggestion();
     });
 
@@ -707,7 +719,7 @@ function SignedInApp({ session }: { session: Session }) {
   const handleOpenSubscription = useCallback(() => {
     navigateToStackScreen("subscription");
   }, [navigateToStackScreen]);
-  const menuSections = useMemo(() => buildAppMenuSections({
+  const menuSections = useMemo(() => buildSettingsMenuSections({
     showAnnualReportDownload: Boolean(annualReport.bookName),
   }), [annualReport.bookName]);
   const footerBadgedScreens = useMemo<FooterTabScreen[]>(() => {
@@ -739,7 +751,7 @@ function SignedInApp({ session }: { session: Session }) {
   useEffect(() => {
     const activeBook = ledgerState.activeBook;
     const targetScope =
-      isLedgerManagementOpen
+      (isLedgerManagementOpen || currentScreen === "share")
         ? NotificationBadgeScopes.joinRequests
         : currentScreen === "all-entries"
           ? NotificationBadgeScopes.ledgerEntries
@@ -784,12 +796,9 @@ function SignedInApp({ session }: { session: Session }) {
   ]);
 
   const handleOpenYearPicker = () => {
-    if (currentScreen !== "calendar") {
-      return;
-    }
-
-    setIsYearPickerOpen(true);
+    if (currentScreen === "calendar") setIsYearPickerOpen(true);
   };
+
   const handleCompleteNicknameOnboarding = async (displayName: string) => {
     try {
       const savedDisplayName = await updateOwnProfileDisplayName(session.user.id, displayName);
@@ -1247,29 +1256,6 @@ function SignedInApp({ session }: { session: Session }) {
     />
   );
 
-  const renderHeaderActions = () => (
-    <View style={styles.headerActions}>
-      <AppHeaderBookMenu bookName={ledgerState.activeBook?.name}
-        hasBadge={footerBadgedScreens.includes("share")}
-        disabled={!isSignedInInteractionReady || isEntrySheetOpen || composerSheet.isPresented || ledgerManagementSheet.isPresented}
-        onSwitch={() => { Keyboard.dismiss(); setIsLedgerManagementOpen(true); }} />
-        <AppFloatingMenuButton inline
-          onClose={() => setIsMenuOpen(false)}
-          onOpen={() => { Keyboard.dismiss(); setIsMenuOpen(true); }}
-          onSelectAction={(action) => {
-            setIsMenuOpen(false);
-            if (action === "annual-report-download") {
-              void annualReport.handleDownloadReport();
-            }
-          }}
-          onSelectItem={(targetScreen) => {
-            setIsMenuOpen(false);
-            navigateToStackScreen(targetScreen);
-          }}
-          sections={menuSections}
-        />
-    </View>
-  );
 
   if (authOnboarding.isLoading) {
     return (
@@ -1306,7 +1292,8 @@ function SignedInApp({ session }: { session: Session }) {
   return (
     <ExpenseTextColorProvider>
       <BottomContentInsetContext.Provider value={FooterTabBarUi.contentBottomGap + (appPlatform.os === "web" ? 0 : footerHeight)
-        + (isClipboardBannerVisible ? clipboardBannerHeight + AppLayout.compactGap : 0)}>
+        + (isClipboardBannerVisible ? clipboardBannerHeight + FloatingEntryButtonUi.footerGap
+          : showsFloatingEntryButton ? FloatingEntryButtonUi.size + FloatingEntryButtonUi.footerGap : 0)}>
       <View onLayout={onSignedInLayout} style={styles.container}>
       <StatusBar barStyle="dark-content" />
       <SafeAreaView edges={["left", "right"]} style={styles.bodySafeArea}>
@@ -1322,7 +1309,6 @@ function SignedInApp({ session }: { session: Session }) {
               <SignedInTabNavigator
                 disabled={!isSignedInNavigationReady || isEntrySheetOpen || composerSheet.isPresented || ledgerManagementSheet.isPresented}
                 badges={footerBadgedScreens}
-                onOpenEntry={() => { void handleOpenEntry(); }}
                 onFooterHeightChange={setFooterHeight}
                 accountProviderLabel={accountProviderLabel}
                 adTrackingPermissionState={adTrackingPermissionState}
@@ -1370,7 +1356,21 @@ function SignedInApp({ session }: { session: Session }) {
                 onToggleNotificationPreference={notifications.updatePreference}
                 plusPriceLabel={subscription.plusPriceLabel}
                 renderScreenTitle={renderScreenTitle}
-                renderHeaderActions={renderHeaderActions}
+                menuSections={menuSections}
+                onSelectMenuItem={(item) => {
+                  Keyboard.dismiss();
+                  if ("action" in item) void annualReport.handleDownloadReport();
+                  else navigateToStackScreen(item.targetScreen);
+                }}
+                renderLedgerBooks={() => <LedgerBooksScreen
+                  state={ledgerState} badgedBookIds={badgedLedgerBookIds}
+                  onOpenSubscription={handleOpenSubscription}
+                  onBeforeCopyShareCode={handleBeforeCopyShareCode}
+                  onBeforeSendJoinRequest={handleBeforeSendJoinRequest}
+                  onSendPendingJoinRequestNotification={notifications.sendPendingJoinRequestNotification}
+                  onSendPushNotificationToBookMembers={notifications.sendPushNotificationToBookMembers}
+                  onSendPushNotificationToUsers={notifications.sendPushNotificationToUsers}
+                  subscriptionTier={subscription.currentTier} userId={session.user.id} /> }
                 showAdTrackingPermissionCard={showAdTrackingPermissionCard}
                 showNotificationSettings={notifications.showNotificationSettings}
                 showsBannerAd={showsAdMobAds}
@@ -1381,6 +1381,13 @@ function SignedInApp({ session }: { session: Session }) {
                 userId={session.user.id}
               />
             </NavigationContainer>
+            {showsFloatingEntryButton ? (
+              <FloatingEntryButton
+                bottomInset={footerHeight}
+                expanded={isClipboardBannerVisible}
+                disabled={!isSignedInNavigationReady}
+                onPress={() => { void handleOpenEntry(); }} />
+            ) : null}
           </View>
 
 
@@ -1587,7 +1594,6 @@ function extractLedgerSaveErrorText(error: unknown): string {
 }
 
 const styles = StyleSheet.create({
-  headerActions: { flexDirection: "row", alignItems: "center" },
   gestureRoot: {
     flex: 1,
   },

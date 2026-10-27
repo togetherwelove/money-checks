@@ -448,6 +448,7 @@ for (const saved of [false, true]) test(`sheet completes only after a successful
 test("native sheet focuses the amount after presentation and respects the input lock", () => {
   for (const disabled of [false, true]) {
     const ui = mountComposer({}, disabled, { sheet: { visible: true, onClose() {} } });
+    assert.equal(ui.nodes[0].props.requiresCloseConfirmation, false);
     let focused = 0;
     const form = ui.nodes.find(node => node.props.inputRef);
     form.props.inputRef.current = { focus() { focused++; } };
@@ -455,6 +456,42 @@ test("native sheet focuses the amount after presentation and respects the input 
     assert.equal(focused, disabled ? 0 : 1);
     ui.unmount();
   }
+});
+
+test("clipboard import focuses content after the sheet is presented and a later normal open focuses amount", () => {
+  const sheet = { visible: true, onClose() {} };
+  const ui = mountComposer({}, false, { sheet });
+  let amountFocus = 0, contentFocus = 0;
+  const form = ui.nodes.find(node => node.props.contentInputRef);
+  form.props.inputRef.current = { focus() { amountFocus++; }, blur() {} };
+  form.props.contentInputRef.current = { focus() { contentFocus++; }, blur() {} };
+  ui.handle.importDraft(imported); ui.render();
+  assert.equal(contentFocus, 0);
+  ui.nodes[0].props.onShow();
+  assert.equal(contentFocus, 1); assert.equal(amountFocus, 0);
+  sheet.visible = false; ui.render(); ui.flushEffects();
+  sheet.visible = true; ui.render();
+  ui.nodes[0].props.onShow();
+  assert.equal(amountFocus, 1);
+  ui.unmount();
+});
+
+test("importing into an open sheet focuses content only after replacement is accepted", () => {
+  const ui = mountComposer({ amount: "500", content: "Original" });
+  let contentFocus = 0;
+  ui.nodes.find(node => node.props.contentInputRef).props.contentInputRef.current = {
+    focus() { contentFocus++; }, blur() {},
+  };
+  ui.nodes[0].props.onShow();
+  ui.handle.importDraft(imported);
+  assert.equal(contentFocus, 0);
+  ui.alerts[0][2].find(button => button.style === "cancel").onPress?.();
+  assert.equal(contentFocus, 0);
+  ui.handle.importDraft(imported);
+  ui.alerts[1][2].find(button => button.style === "destructive").onPress();
+  assert.equal(contentFocus, 1);
+  assert.equal(ui.draft.content, imported.content);
+  ui.unmount();
 });
 
 test("gesture dismissal waits for discard confirmation, preserves cancelled input, and clears focus when confirmed", () => {
@@ -521,6 +558,7 @@ test("header close dismisses an empty draft immediately but asks before discardi
   assert.equal(closed, 1);
   assert.equal(empty.alerts.length, 0);
   const ui = mountComposer(imported, false, { sheet });
+  assert.equal(ui.nodes[0].props.requiresCloseConfirmation, true);
   const original = ui.draft;
   const close = () => ui.nodes[0].props.header.props.onClose();
   close(); close();

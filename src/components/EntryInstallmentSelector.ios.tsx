@@ -1,7 +1,6 @@
-import { Button, Host, HStack, Menu, Spacer, Text } from "@expo/ui/swift-ui";
-import { buttonStyle } from "@expo/ui/swift-ui/modifiers";
-import { Keyboard, StyleSheet } from "react-native";
-import { EntryComposerUi } from "../constants/entryComposer";
+import { Button } from "@expo/ui/swift-ui";
+import { Keyboard } from "react-native";
+import { NativeEntryDetailMenu } from "./entryComposer/NativeEntryDetailMenu";
 import { EntryRegistrationCopy } from "../constants/entryRegistration";
 import { InstallmentPickerConfig as Config, InstallmentPickerCopy } from "../constants/installmentPicker";
 import { formatInstallmentLabel } from "../lib/installments";
@@ -14,16 +13,12 @@ export function EntryInstallmentSelector({ installmentMonths, onRequestCustom, o
   onRequestCustom: () => void;
   onSelectInstallmentMonths: (months: number) => void;
 }) {
-  return <Host style={styles.row}>
-    <Menu label={<HStack><Text>{EntryRegistrationCopy.paymentMethodLabel}</Text><Spacer /><Text>{formatInstallmentLabel(installmentMonths)}</Text></HStack>}
-      modifiers={[buttonStyle("plain")]}>
+  return <NativeEntryDetailMenu label={EntryRegistrationCopy.paymentMethodLabel}
+    value={formatInstallmentLabel(installmentMonths)}>
       {presetMonths.map(months => <Button key={months} label={formatInstallmentLabel(months)}
         systemImage={months === installmentMonths ? "checkmark" : undefined}
         onPress={() => { Keyboard.dismiss(); onSelectInstallmentMonths(months); }} />)}
       <Button label={InstallmentPickerCopy.customLabel} systemImage={installmentMonths > Config.presetMaxMonths ? "checkmark" : undefined}
         onPress={() => { Keyboard.dismiss(); onRequestCustom(); }} />
-    </Menu>
-  </Host>;
+  </NativeEntryDetailMenu>;
 }
-
-const styles = StyleSheet.create({ row: { height: EntryComposerUi.fieldHeight } });

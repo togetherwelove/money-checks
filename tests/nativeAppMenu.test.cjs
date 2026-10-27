@@ -63,3 +63,12 @@ test('native menu reports opening and dismissal, and routes navigation and downl
   menu.props.onPressAction({ nativeEvent: { event: 'unknown' } });
   assert.deepEqual(events, []);
 });
+
+test('settings exposes every former menu action without a recursive settings link', () => {
+  const { buildSettingsMenuSections } = modules({})('src/lib/menuItems.ts');
+  const items = buildSettingsMenuSections({ showAnnualReportDownload: true }).flatMap(section => section.items);
+  assert.deepEqual(Array.from(items.filter(item => 'targetScreen' in item), item => item.targetScreen).sort(),
+    ['account', 'contact-support', 'help', 'subscription', 'support']);
+  assert.equal(items.filter(item => item.action === 'annual-report-download').length, 1);
+  assert.equal(buildSettingsMenuSections({ showAnnualReportDownload: false }).flatMap(section => section.items).some(item => item.action), false);
+});

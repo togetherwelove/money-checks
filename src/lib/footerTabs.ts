@@ -1,11 +1,13 @@
 import { AppMessages } from "../constants/messages";
 import type { LedgerAppScreen } from "../types/app";
+import { getAppScreenLabel } from "./appScreenLabels";
 
-export type FooterTabScreen = "all-entries" | "calendar" | "charts" | "entry" | "share";
+export type FooterTabScreen = "all-entries" | "calendar" | "charts" | "entry" | "share" | "app-settings";
 
 type RegularFooterTabItem = {
-  activeIcon: "book-open-page-variant" | "calendar-month" | "chart-pie" | "inbox" | "plus-circle";
+  activeIcon: "cog" | "book-open-page-variant" | "calendar-month" | "chart-pie" | "inbox" | "plus-circle";
   inactiveIcon:
+    | "cog-outline"
     | "book-open-page-variant-outline"
     | "calendar-month-outline"
     | "chart-pie-outline"
@@ -54,9 +56,10 @@ export function buildFooterTabs(): FooterTabItem[] {
     {
       activeIcon: "book-open-page-variant",
       inactiveIcon: "book-open-page-variant-outline",
-      label: AppMessages.shareTitle,
+      label: getAppScreenLabel("share"),
       targetScreen: "share",
     },
+    { activeIcon: "cog", inactiveIcon: "cog-outline", label: getAppScreenLabel("app-settings"), targetScreen: "app-settings" },
   ];
 }
 
@@ -66,6 +69,7 @@ export function isFooterTabScreen(screen: LedgerAppScreen): screen is FooterTabS
     screen === "all-entries" ||
     screen === "entry" ||
     screen === "charts" ||
-    screen === "share"
+    screen === "share" ||
+    screen === "app-settings"
   );
 }
