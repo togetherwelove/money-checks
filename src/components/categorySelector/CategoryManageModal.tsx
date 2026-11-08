@@ -1,3 +1,4 @@
+import { MenuView } from "@react-native-menu/menu";
 import { NativeSelectionSheet } from "../NativeSelectionSheet";
 import { AppScrollBehavior } from "../../constants/scroll";
 import { Feather } from "../AppIcons";
@@ -8,7 +9,7 @@ import type { LedgerEntryType } from "../../types/ledger";
 import { EntryComposerHeader } from "../entryComposer/EntryComposerHeader";
 import { ActionButton } from "../ActionButton";
 
-import { CategoryCustomizerCopy } from "../../constants/categoryCustomizer";
+import { CategoryContextMenuCopy, CategoryCustomizerCopy } from "../../constants/categoryCustomizer";
 import {
   CATEGORY_MANAGE_ACTION_BUTTON_HEIGHT,
   CATEGORY_MANAGE_MOVE_BUTTON_ICON_SIZE,
@@ -22,7 +23,15 @@ import { AppLayout } from "../../constants/layout";
 import { SupportingTextStyle } from "../../constants/uiStyles";
 import type { CategoryDefinition } from "../../types/category";
 
+const CategoryMenuActions = [
+  { id: "edit", title: CategoryContextMenuCopy.editAction, image: "pencil" },
+  { id: "delete", title: CategoryCustomizerCopy.deleteAction, image: "trash", attributes: { destructive: true } },
+];
+
 type CategoryManageModalProps = {
+  onEdit?: (category: CategoryDefinition) => void;
+  onDelete?: (category: CategoryDefinition) => void;
+  isBusy?: boolean;
   entryType: LedgerEntryType;
   onChangeEntryType: (type: LedgerEntryType) => void;
   onAdd: () => void;
@@ -39,6 +48,9 @@ export function CategoryManageModal({
   entryType,
   onChangeEntryType,
   onAdd,
+  onEdit,
+  onDelete,
+  isBusy = false,
   creationModal,
   title = CategoryCustomizerCopy.manageModalTitle,
   isLoading = false,
@@ -125,9 +137,9 @@ export function CategoryManageModal({
   );
   const canMoveUp = selectedIndex > 0;
   const canMoveDown = selectedIndex >= 0 && selectedIndex < orderedCategories.length - 1;
-  const canSave = !isLoading && !saving && !areCategoryOrdersEqual(categories, orderedCategories);
+  const canSave = !isLoading && !isBusy && !saving && !areCategoryOrdersEqual(categories, orderedCategories);
   function changeEntryType(nextType: LedgerEntryType) {
-    if (nextType === entryType || savingRef.current || isLoading) return;
+    if (nextType === entryType || savingRef.current || isBusy || isLoading) return;
     if (!canSave) { onChangeEntryType(nextType); return; }
     Alert.alert(CategoryCustomizerCopy.discardOrderTitle, CategoryCustomizerCopy.discardOrderMessage, [
       { text: CategoryCustomizerCopy.keepEditingAction, style: "cancel" },
@@ -137,7 +149,7 @@ export function CategoryManageModal({
 
   const moveSelectedCategory = useCallback(
     (direction: -1 | 1) => {
-      if (savingRef.current || isLoading) return;
+      if (savingRef.current || isBusy || isLoading) return;
       if (selectedIndex < 0) {
         return;
       }
@@ -153,11 +165,11 @@ export function CategoryManageModal({
       setOrderedCategories(nextCategories);
       scheduleCategoryScroll(nextIndex, direction);
     },
-    [isLoading, orderedCategories, scheduleCategoryScroll, selectedIndex],
+    [isBusy, isLoading, orderedCategories, scheduleCategoryScroll, selectedIndex],
   );
 
   const saveCategoryOrder = useCallback(async () => {
-    if (savingRef.current) return;
+    if (savingRef.current || isBusy) return;
     savingRef.current = true;
     setSaving(true);
     setSaveError(false);
@@ -170,13 +182,13 @@ export function CategoryManageModal({
       savingRef.current = false;
       setSaving(false);
     }
-  }, [onChangeOrder, onClose, orderedCategories]);
+  }, [isBusy, onChangeOrder, onClose, orderedCategories]);
 
   const closeWithoutSaving = useCallback(() => {
-    if (savingRef.current) return;
+    if (savingRef.current || isBusy) return;
     clearPendingCategoryScroll();
     onClose();
-  }, [clearPendingCategoryScroll, onClose]);
+  }, [clearPendingCategoryScroll, isBusy, onClose]);
 
   const handlePressSave = useCallback(() => {
     if (canSave) void saveCategoryOrder();
@@ -199,12 +211,12 @@ export function CategoryManageModal({
   );
 
   return (
-    <NativeSelectionSheet isOpen={isOpen} onClose={closeWithoutSaving} dismissible={!saving} title={title}
+    <NativeSelectionSheet isOpen={isOpen} onClose={closeWithoutSaving} dismissible={!saving && !isBusy} title={title}
       header={<EntryComposerHeader type={entryType} onSelectType={changeEntryType}
-        typeDisabled={saving || isLoading} saving={saving} actionDisabled={!canSave}
+        typeDisabled={saving || isBusy || isLoading} saving={saving} actionDisabled={!canSave}
         actionLabel={CategoryCustomizerCopy.saveAction} onAction={handlePressSave} onClose={closeWithoutSaving} />}>
       <View style={styles.sheet}>
-          <ActionButton label={CategoryCustomizerCopy.addAccessibilityLabel} onPress={onAdd} disabled={saving || isLoading} size="inline" />
+          <ActionButton label={CategoryCustomizerCopy.addAccessibilityLabel} onPress={onAdd} disabled={saving || isBusy || isLoading} size="inline" />
           <ScrollView {...AppScrollBehavior}
             contentContainerStyle={styles.listContent}
             onLayout={(event) => {
@@ -215,6 +227,8 @@ export function CategoryManageModal({
           >
             {!isLoading && orderedCategories.map((category) => (
               <CategoryManageRow
+                onEdit={saving || isBusy || isLoading ? undefined : onEdit}
+                onDelete={saving || isBusy || isLoading ? undefined : onDelete}
                 category={category}
                 isSelected={category.id === selectedCategoryId}
                 key={category.id}
@@ -224,13 +238,13 @@ export function CategoryManageModal({
           </ScrollView>
           <View style={styles.moveActionRow}>
             <CategoryMoveButton
-              disabled={saving || !canMoveUp}
+              disabled={saving || isBusy || !canMoveUp}
               iconName="arrow-up"
               label={CategoryCustomizerCopy.moveUpAction}
               onPress={handlePressMoveUp}
             />
             <CategoryMoveButton
-              disabled={saving || !canMoveDown}
+              disabled={saving || isBusy || !canMoveDown}
               iconName="arrow-down"
               label={CategoryCustomizerCopy.moveDownAction}
               onPress={handlePressMoveDown}
@@ -273,13 +287,17 @@ function CategoryManageRow({
   category,
   isSelected,
   onPress,
+  onEdit,
+  onDelete,
 }: {
+  onEdit?: (category: CategoryDefinition) => void;
+  onDelete?: (category: CategoryDefinition) => void;
   category: CategoryDefinition;
   isSelected: boolean;
   onPress: () => void;
 }) {
-  return (
-    <Pressable onPress={onPress} style={[styles.row, isSelected ? styles.selectedRow : null]}>
+  const content = (
+    <View pointerEvents="none" style={[styles.row, isSelected ? styles.selectedRow : null]}>
       <View style={styles.categoryMeta}>
         <Feather
           color={isSelected ? AppColors.primary : AppColors.mutedText}
@@ -293,8 +311,15 @@ function CategoryManageRow({
           {category.label}
         </Text>
       </View>
-    </Pressable>
+    </View>
   );
+  return <Pressable onPress={onPress}>
+    {onEdit || onDelete ? <MenuView actions={CategoryMenuActions} shouldOpenOnLongPress
+      onPressAction={({ nativeEvent }) => {
+        if (nativeEvent.event === "edit") onEdit?.(category);
+        if (nativeEvent.event === "delete") onDelete?.(category);
+      }}>{content}</MenuView> : content}
+  </Pressable>;
 }
 
 function CategoryMoveButton({

@@ -8,6 +8,7 @@ function navigator(onDismissKeyboard = () => {}, props = {}, os = "ios") {
     "Account",
     "AllEntries",
     "AllMenu",
+    "Assets",
     "AppSettings",
     "Chart",
     "EntryNativeSheet",
@@ -60,11 +61,11 @@ test("every regular screen has one native header; primary tabs omit back and chi
     assert.equal(options.headerTitleAlign, "center");
     assert.equal(
       options.headerBackVisible,
-      !["calendar", "all-entries", "charts", "all-menu"].includes(name),
+      !["calendar", "all-entries", "charts", "assets", "all-menu"].includes(name),
     );
     assert.equal(
       options.gestureEnabled,
-      !["calendar", "all-entries", "charts", "all-menu"].includes(name),
+      !["calendar", "all-entries", "charts", "assets", "all-menu"].includes(name),
     );
     assert.equal(options.freezeOnBlur, false);
     assert.equal(options.fullScreenGestureEnabled, false);
@@ -76,7 +77,7 @@ test("every regular screen has one native header; primary tabs omit back and chi
 test("iOS and Android headers leave entry creation to the transaction list", () => {
   for (const os of ["ios", "android"]) {
     const tree = navigator(undefined, {}, os);
-    for (const name of ["calendar", "all-entries", "charts", "all-menu"]) {
+    for (const name of ["calendar", "all-entries", "charts", "assets", "all-menu"]) {
       const options = tree.props.screenOptions({ route: { name } });
       assert.equal(options.headerRight, undefined);
       assert.equal(options.unstable_headerRightItems, undefined);
@@ -99,7 +100,7 @@ test("book sharing remains a child screen rendered by the shared management view
 test("footer destinations switch without stack animations while child screens and sheets retain theirs", () => {
   const tree = navigator();
   const options = (name) => tree.props.screenOptions({ route: { name } });
-  for (const name of ["calendar", "all-entries", "charts", "all-menu"]) {
+  for (const name of ["calendar", "all-entries", "charts", "assets", "all-menu"]) {
     assert.equal(options(name).animation, "none");
   }
   for (const name of ["help", "help-faq", "account", "subscription", "share"]) {
@@ -140,7 +141,7 @@ test("footer tabs contain only destinations and block navigation when disabled",
   const tabs = wrapper.props.children.props;
   assert.deepEqual(
     Array.from(tabs.tabs, (x) => x.targetScreen),
-    ["calendar", "all-entries", "charts", "all-menu"],
+    ["calendar", "all-entries", "charts", "assets", "all-menu"],
   );
   assert.equal(tabs.activeScreen, null);
   tabs.onSelectTab("charts");

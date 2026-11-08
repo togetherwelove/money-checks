@@ -1,4 +1,5 @@
 export type LedgerAppScreen =
+  | "assets"
   | "account"
   | "all-entries"
   | "all-menu"

@@ -4,12 +4,14 @@ import type { LedgerAppScreen } from "../types/app";
 export type SignedInStackScreen = Exclude<LedgerAppScreen, "entry">;
 export type PrimaryStackScreen = keyof typeof PrimaryTabRoutes;
 export const PrimaryTabRoutes = {
+  assets: "assets-tab",
   calendar: "calendar-tab",
   "all-entries": "entries-tab",
   charts: "charts-tab",
   "all-menu": "settings-tab",
 } as const;
 export type SignedInTabParamList = {
+  "assets-tab": NavigatorScreenParams<SignedInStackParamList> | undefined;
   "calendar-tab": NavigatorScreenParams<SignedInStackParamList> | undefined;
   "entries-tab": NavigatorScreenParams<SignedInStackParamList> | undefined;
   "charts-tab": NavigatorScreenParams<SignedInStackParamList> | undefined;
@@ -17,6 +19,7 @@ export type SignedInTabParamList = {
 };
 
 export type SignedInStackParamList = {
+  assets: undefined;
   account: undefined;
   "all-entries": undefined;
   "all-menu": undefined;
@@ -39,6 +42,7 @@ export function isSignedInStackScreen(value: string | undefined): value is Signe
   }
 
   return (
+    value === "assets" ||
     value === "account" ||
     value === "all-entries" ||
     value === "all-menu" ||

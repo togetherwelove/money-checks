@@ -1,6 +1,6 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
-const { modules, currencyMock } = require("./annualReportHelpers.cjs");
+const { modules, currencyMock, hooks } = require("./annualReportHelpers.cjs");
 const jsx = (type, props) => ({ type, props });
 const nodes = (node) =>
   Array.isArray(node)
@@ -26,12 +26,16 @@ const controls = Object.fromEntries(
     "Chart",
   ].map((name) => [name, name]),
 );
+const chartState = hooks();
 const load = modules({
+  react: chartState.react,
+  "src/components/monthlyInsights/TrendChartTooltip.tsx": { TrendChartTooltip: "Tooltip" },
   "src/components/AppIcons.tsx": { Feather: "Icon" },
   "react/jsx-runtime": { jsx, jsxs: jsx },
   "react-native": {
     StyleSheet: { create: (value) => value },
     Text: "RNText",
+    Pressable: "Pressable",
     View: "View",
     Platform: { Version: 26 },
     Keyboard: { dismiss() {} },
@@ -42,7 +46,7 @@ const load = modules({
     createNativeBottomTabNavigator: () => ({ Navigator: "Tabs", Screen: "Tab" }),
   },
   "src/app/SignedInStackNavigator.tsx": { SignedInStackNavigator: "Stack" },
-  "react-native-svg": { __esModule: true, default: "Svg", Circle: "Circle", G: "G" },
+  "react-native-svg": { __esModule: true, default: "Svg", Circle: "Circle", G: "G", Line: "Line" },
   "src/lib/currencyPreference.ts": currencyMock,
   "@expo/ui/swift-ui/modifiers": Object.fromEntries(
     [
@@ -176,30 +180,62 @@ test("iOS donut preserves legend-assigned colors and proportions with no visible
   assert.equal(slices[1].props.strokeDashoffset, -filled[1]);
 });
 
-test("iOS trend preserves both series, monthly labels and proportional bar heights", () => {
-  const { MonthlyTrendBarChart } = load(
-    "src/components/monthlyInsights/MonthlyTrendBarChart.ios.tsx",
+test("iOS trend preserves both series, monthly labels and proportional line positions", () => {
+  const { MonthlyTrendLineChart } = load(
+    "src/components/monthlyInsights/MonthlyTrendLineChart.ios.tsx",
   );
-  const tree = MonthlyTrendBarChart({
+  const props = {
     trendMonths: [
-      { monthLabel: "Jan", incomeAmount: 100, expenseAmount: 30 },
-      { monthLabel: "Feb", incomeAmount: 200, expenseAmount: 50 },
+      { key: "jan", monthLabel: "Jan", incomeAmount: 100, expenseAmount: 30 },
+      { key: "feb", monthLabel: "Feb", incomeAmount: 200, expenseAmount: 50 },
     ],
-  });
-  const bars = nodes(tree).filter(
-    (node) => typeof node.type === "function" && "amount" in node.props,
+  };
+  const render = () => chartState.render(() => MonthlyTrendLineChart(props));
+  const tree = render();
+  const series = nodes(tree).filter(
+    (node) => typeof node.type === "function" && "amountKey" in node.props,
   );
   assert.deepEqual(
-    Array.from(bars, (bar) => bar.props.amount),
-    [100, 30, 200, 50],
+    series.map((node) => node.props.amountKey),
+    ["incomeAmount", "expenseAmount"],
   );
-  assert.equal(bars[0].props.color, bars[2].props.color);
-  assert.equal(bars[1].props.color, bars[3].props.color);
-  assert.notEqual(bars[0].props.color, bars[1].props.color);
-  const heights = bars.map((bar) => bar.type(bar.props).props.style[1].height);
-  assert.equal(heights[2] / heights[0], 2);
+  assert.notEqual(series[0].props.color, series[1].props.color);
+  const points = series.map((node) =>
+    nodes(node.type(node.props)).filter((item) => item.type === "Circle"),
+  );
+  const lines = series.map((node) =>
+    nodes(node.type(node.props)).filter((item) => item.type === "Line"),
+  );
+  assert.equal(points[0].length, 2);
+  assert.equal(lines[0].length, 1);
+  assert.equal(points[0][0].props.cx, "25%");
+  assert.equal(points[0][1].props.cx, "75%");
+  const height = load("src/constants/monthlyInsightCharts.ts").MonthlyInsightChartLayout
+    .trendLineHeight;
+  assert.equal((height - points[0][1].props.cy) / (height - points[0][0].props.cy), 2);
+  assert.equal(lines[0][0].props.y1, points[0][0].props.cy);
+  assert.equal(lines[0][0].props.y2, points[0][1].props.cy);
   assert.ok(nodes(tree).some((node) => node.props.children === "Jan"));
   assert.ok(nodes(tree).some((node) => node.props.children === "Feb"));
+  const touchColumns = nodes(tree).filter((node) => node.type === "Pressable");
+  assert.equal(touchColumns.length, 2);
+  touchColumns[1].props.onPress();
+  let selected = render();
+  const tooltip = nodes(selected).find((node) => node.type === "Tooltip");
+  assert.equal(tooltip.props.point.incomeAmount, 200);
+  assert.equal(tooltip.props.point.expenseAmount, 50);
+  assert.equal(
+    nodes(selected).find(
+      (node) => node.type === "Pressable" && node.props.accessibilityLabel === "Feb",
+    ).props.accessibilityState.selected,
+    true,
+  );
+  touchColumns[1].props.onPress();
+  assert.equal(
+    nodes(render()).some((node) => node.type === "Tooltip"),
+    false,
+  );
+  chartState.unmount();
 });
 
 test("member menu keeps identity with duplicate names and does not replace a missing selection", () => {

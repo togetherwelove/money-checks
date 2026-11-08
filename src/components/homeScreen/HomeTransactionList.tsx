@@ -1,8 +1,8 @@
-import { ActivityIndicator, ScrollView, StyleSheet, type ScrollViewInstance } from "react-native";
+import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, type ScrollViewInstance } from "react-native";
 import type { ReactNode } from "react";
 
 import { AppColors } from "../../constants/colors";
-import { AppScrollBehavior } from "../../constants/scroll";
+import { RefreshableScrollBehavior } from "../../constants/scroll";
 import { useEntryAppendScroll } from "../../hooks/useEntryAppendScroll";
 import { HomeScreenUi } from "../../constants/home";
 import type { LedgerEntry } from "../../types/ledger";
@@ -16,6 +16,8 @@ type HomeTransactionListProps = {
   activeBookId: string | null;
   entries: LedgerEntry[];
   isLoading: boolean;
+  isRefreshing: boolean;
+  onRefresh: () => Promise<void>;
   selectedDate: string;
   onDeleteEntry: LedgerEntryDeleteHandler;
   onDuplicateEntry: (entry: LedgerEntry) => void;
@@ -28,6 +30,8 @@ export function HomeTransactionList({
   activeBookId,
   entries,
   isLoading,
+  isRefreshing,
+  onRefresh,
   selectedDate,
   onDeleteEntry,
   onDuplicateEntry,
@@ -42,7 +46,10 @@ export function HomeTransactionList({
   );
   return (
     <ScrollView
-      {...AppScrollBehavior}
+      {...RefreshableScrollBehavior}
+      refreshControl={
+        <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={AppColors.primary} colors={[AppColors.primary]} />
+      }
       ref={scroll.ref}
       onLayout={scroll.onLayout}
       onContentSizeChange={scroll.onContentSizeChange}

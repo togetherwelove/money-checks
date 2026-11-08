@@ -13,8 +13,12 @@ import { formatAmountInput, sanitizeAmountValue } from "../../utils/amount";
 import { CategorySelector } from "../CategorySelector";
 import { EntryDateSelector } from "../EntryDateSelector";
 import { EntryComposerDetails } from "./EntryComposerDetails";
+import { EntryAssetLinkFields } from "./EntryAssetLinkFields";
+import { AssetLinkConfig } from "../../constants/assetLink";
+import { ONE_TIME_INSTALLMENT_MONTHS } from "../../utils/ledgerEntries";
 
 type Props = {
+  visible: boolean;
   composer: ReturnType<typeof useEntryComposer>;
   bookId: string | null;
   disabled: boolean;
@@ -23,6 +27,7 @@ type Props = {
   contentInputRef?: RefObject<TextInputInstance | null>;
   onChangeText?: () => void;
   onConvert?: () => void;
+  editingEntryId?: string;
 };
 
 const textActionHitSlop = {
@@ -30,7 +35,7 @@ const textActionHitSlop = {
   bottom: (Ui.fieldHeight - Ui.sheetTextFieldHeight) / 2,
 };
 
-export function EntryComposerForm({ composer, bookId, disabled, editing, inputRef, contentInputRef: providedContentInputRef, onChangeText, onConvert }: Props) {
+export function EntryComposerForm({ visible, composer, bookId, disabled, editing, inputRef, contentInputRef: providedContentInputRef, onChangeText, onConvert, editingEntryId }: Props) {
   const { draft, update } = composer;
   const fallbackContentInputRef = useRef<TextInputInstance>(null);
   const contentInputRef = providedContentInputRef ?? fallbackContentInputRef;
@@ -85,10 +90,12 @@ export function EntryComposerForm({ composer, bookId, disabled, editing, inputRe
       })}
       <CategorySelector title={EntryRegistrationCopy.categoryLabel} bookId={bookId} categories={CATEGORY_OPTIONS[draft.type]} entryType={draft.type}
         selectedCategoryId={draft.categoryId} onSelectCategory={category => {
+          if (!editing && category?.id === AssetLinkConfig.loanCategoryId) update("installmentMonths", ONE_TIME_INSTALLMENT_MONTHS);
           update("category", category?.label ?? "");
           update("categoryId", category?.id ?? "");
         }} />
       <View style={styles.detailsSection}>
+        <EntryAssetLinkFields composer={composer} bookId={bookId} visible={visible} disabled={disabled} editingEntryId={editingEntryId} />
         <Text accessibilityRole="header" style={styles.label}>{Copy.details}</Text>
         <EntryComposerDetails composer={composer} editing={editing} onConvert={onConvert} showDate={false} />
       </View>

@@ -28,6 +28,7 @@ export function buildLedgerEntriesFromDraft(draft: LedgerEntryDraft): LedgerEntr
     return [
       {
         id: "",
+        ...(draft.assetLink ? { assetLink: draft.assetLink } : {}),
         date: draft.date,
         type: draft.type,
         amount,

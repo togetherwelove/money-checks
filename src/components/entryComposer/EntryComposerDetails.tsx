@@ -13,6 +13,7 @@ import { EntryPhotoAttachmentField } from "../EntryPhotoAttachmentField";
 import { InstallmentPickerModal } from "../InstallmentPickerModal";
 import { ActionButton } from "../ActionButton";
 import { InstallmentConversionCopy } from "../../constants/installmentConversion";
+import { AssetLinkConfig } from "../../constants/assetLink";
 
 export function EntryComposerDetails({ composer, editing = false, onConvert, showDate = true }: {
   composer: ReturnType<typeof useEntryComposer>; editing?: boolean; onConvert?: () => void;
@@ -25,7 +26,7 @@ export function EntryComposerDetails({ composer, editing = false, onConvert, sho
       {showDate ? <View style={styles.card}>
         <EntryDateSelector selectedDate={draft.date} onSelectDate={(date) => update("date", date)} />
       </View> : null}
-      <View style={styles.card}>
+      {draft.categoryId !== AssetLinkConfig.loanCategoryId ? <View style={styles.card}>
       {editing ? <View style={styles.paymentInfo}>
         <View style={styles.paymentRow}>
           <Text style={styles.label}>{EntryRegistrationCopy.paymentMethodLabel}</Text>
@@ -39,7 +40,7 @@ export function EntryComposerDetails({ composer, editing = false, onConvert, sho
       }} />}
       <InstallmentPickerModal isOpen={installmentOpen} installmentMonths={draft.installmentMonths}
         onClose={() => setInstallmentOpen(false)} onSelectInstallmentMonths={(months) => update("installmentMonths", months)} />
-      </View>
+      </View> : null}
       {members.length > 1 ? <View style={styles.card}><EntryTargetMemberSelector
         members={members} selectedMemberId={draft.targetMemberId}
         onSelectMember={(member) => { update("targetMemberId", member.userId); update("targetMemberName", member.displayName); }}

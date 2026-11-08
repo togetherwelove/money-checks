@@ -8,6 +8,7 @@ import { showNativeToast } from "../lib/nativeToast";
 import type { LedgerEntryDraft } from "../types/ledger";
 import type { LedgerBookMember } from "../types/ledgerBookMember";
 import { createDraft } from "../utils/ledgerEntries";
+import { AssetLinkConfig } from "../constants/assetLink";
 
 export function useEntryComposer(bookId: string | null, selectedDate: string, userId: string) {
   const [draft, setDraft] = useState(() => createDraft(selectedDate, userId));
@@ -41,7 +42,14 @@ export function useEntryComposer(bookId: string | null, selectedDate: string, us
   }, [selectedDate]);
 
   const update = <K extends keyof LedgerEntryDraft>(field: K, value: LedgerEntryDraft[K]) => {
-    setDraft((current) => ({ ...current, [field]: value }));
+    setDraft((current) => {
+      let assetLink = current.assetLink;
+      if ((field === "categoryId" && value !== AssetLinkConfig.loanCategoryId) || (field === "type" && value !== "expense")) {
+        if (assetLink?.loanAssetId) assetLink = { ...assetLink, loanAssetId: null, principal: "0", fee: "0" };
+      }
+      if (field === "installmentMonths" && Number(value) > 1) assetLink = undefined;
+      return { ...current, ...(assetLink !== current.assetLink ? { assetLink } : {}), [field]: value };
+    });
   };
   const pickPhotos = async () => {
     const remaining = ENTRY_PHOTO_LIMIT - draft.photoAttachments.length;
@@ -62,5 +70,5 @@ export function useEntryComposer(bookId: string | null, selectedDate: string, us
     const member = members.find((item) => item.userId === userId) ?? members[0];
     setDraft({ ...createDraft(selectedDate, member?.userId ?? userId), targetMemberName: member?.displayName });
   };
-  return { draft, members, pickPhotos, setDraft, update, reset };
+  return { draft, members, pickPhotos, setDraft, update, reset, userId };
 }

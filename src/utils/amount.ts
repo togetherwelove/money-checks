@@ -101,7 +101,7 @@ function sanitizeDecimalAmountValue(value: string, maxFractionDigits: number): s
   return `${integerPart || "0"}${AMOUNT_DECIMAL_SEPARATOR}${fractionPart}`;
 }
 
-function formatDecimalAmountInput(value: string, currency: AppCurrency): string {
+export function formatDecimalAmountInput(value: string, currency: AppCurrency): string {
   const [integerPart = "0", fractionPart] = value.split(AMOUNT_DECIMAL_SEPARATOR);
   const formattedInteger = formatAmountNumber(Number(integerPart || "0"), currency);
   if (fractionPart === undefined) {

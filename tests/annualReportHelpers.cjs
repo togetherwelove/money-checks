@@ -5,6 +5,8 @@ const ts = require('typescript');
 
 function modules(overrides = {}) {
   overrides = {
+    'decimal.js': require('decimal.js'),
+    'src/components/entryComposer/EntryAssetLinkFields.tsx': { EntryAssetLinkFields: () => null },
     'src/components/monthCalendarPager/calendarLayout.ts': { CALENDAR_DAYS_PER_WEEK: 7, CALENDAR_WEEK_ROWS: 6 },
     ...overrides,
   };
@@ -13,7 +15,7 @@ function modules(overrides = {}) {
   function load(name) {
     const file = path.resolve(root, name);
     const key = path.relative(root, file).replaceAll('\\', '/');
-    if (key in overrides) return overrides[key];
+    if (key in overrides && overrides[key] !== undefined) return overrides[key];
     if (cache.has(file)) return cache.get(file);
     if (file.endsWith('.json')) return JSON.parse(fs.readFileSync(file, 'utf8'));
     const exports = {};

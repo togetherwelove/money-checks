@@ -1,12 +1,15 @@
 import type { LedgerAppScreen } from "../types/app";
 import { HelpCopy } from "../constants/help";
+import { AppMessages } from "../constants/messages";
+import { AssetCopy } from "../constants/assets";
 
 export const AppScreenLabels: Record<LedgerAppScreen, string> = {
+  assets: AssetCopy.title,
   account: "계정",
   "all-entries": "전체 내역",
-  "all-menu": "전체",
+  "all-menu": "메뉴",
   "app-settings": "화면·표시 설정",
-  calendar: "가계부 달력",
+  calendar: AppMessages.calendarTab,
   charts: "차트",
   "contact-support": "개발자 문의",
   entry: "입출금 등록",

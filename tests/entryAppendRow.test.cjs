@@ -49,15 +49,26 @@ test('loading and unavailable ledger states block entry creation', () => {
     assert.deepEqual(ui.calls, []);
   }
 });
-test('the append row follows existing entries and precedes the footer safe area, including an empty list', () => {
+test('pull-to-refresh preserves append placement for empty and populated lists and forwards refresh state and actions', async () => {
   const { HomeTransactionList } = load('src/components/homeScreen/HomeTransactionList.tsx');
   const append = jsx('Append', {});
+  let refreshCalls = 0;
+  const onRefresh = async () => { refreshCalls++; };
   for (const entries of [[], [{ id: 'entry' }]]) {
-    const tree = HomeTransactionList({ entries, entryAppend: append, isLoading: false });
-    assert.equal(tree.props.refreshControl, undefined);
-    assert.equal(tree.props.bounces, false);
-    assert.equal(tree.props.children[0].type, 'List');
-    assert.equal(tree.props.children[1], append);
-    assert.equal(tree.props.children[2].type, 'Inset');
+    for (const isRefreshing of [false, true]) {
+      const callsBeforeRender = refreshCalls;
+      const tree = HomeTransactionList({ entries, entryAppend: append, isLoading: false, isRefreshing, onRefresh });
+      assert.equal(refreshCalls, callsBeforeRender);
+      assert.equal(tree.props.refreshControl.type, 'Refresh');
+      assert.equal(tree.props.refreshControl.props.refreshing, isRefreshing);
+      assert.equal(tree.props.refreshControl.props.onRefresh, onRefresh);
+      assert.equal(tree.props.bounces, true);
+      assert.equal(tree.props.alwaysBounceVertical, true);
+      assert.equal(tree.props.children[0].type, 'List');
+      assert.equal(tree.props.children[1], append);
+      assert.equal(tree.props.children[2].type, 'Inset');
+      await tree.props.refreshControl.props.onRefresh();
+      assert.equal(refreshCalls, callsBeforeRender + 1);
+    }
   }
 });

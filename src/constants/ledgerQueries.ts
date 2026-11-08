@@ -16,7 +16,7 @@ export const LedgerRealtimeConfig = {
 } as const;
 
 export const LedgerEntrySelectColumns = {
-  attachmentCleanup: ["id", "installment_group_id"].join(","),
+  attachmentCleanup: ["id", "installment_group_id", "metadata"].join(","),
   list: [
     "book_id",
     "id",

@@ -32,6 +32,7 @@ export const CategoryCustomizerCopy = {
   } as const;
 
 export const CategoryContextMenuCopy = {
+    loanDeleteBlocked: "대출이 등록되어 있어 삭제할 수 없어요.",
     deleteConfirmMessage: "이 분류를 삭제할까요?",
     deleteConfirmTitle: "분류 삭제",
     editAction: "수정",

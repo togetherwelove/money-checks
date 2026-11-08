@@ -1,5 +1,7 @@
 import { type MenuAction, MenuView, type NativeActionEvent } from "@react-native-menu/menu";
 import { useMemo, useState } from "react";
+import { AssetLinkConfig } from "../constants/assetLink";
+import { hasLedgerBookLoans } from "../lib/ledgerBookCategories";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 
 import {
@@ -291,7 +293,8 @@ export function CategorySelector({
     setIsCreateModalOpen(true);
   }
 
-  function confirmDeleteCategory(category: CategoryDefinition) {
+  async function confirmDeleteCategory(category: CategoryDefinition) {
+    if (!(await canDeleteCategory(category))) return;
     Alert.alert(
       CategoryContextMenuCopy.deleteConfirmTitle,
       CategoryContextMenuCopy.deleteConfirmMessage,
@@ -309,7 +312,19 @@ export function CategorySelector({
     );
   }
 
+  async function canDeleteCategory(category: CategoryDefinition): Promise<boolean> {
+    if (category.id !== AssetLinkConfig.loanCategoryId || !bookId) return true;
+    try {
+      if (!(await hasLedgerBookLoans(bookId))) return true;
+      Alert.alert(CategoryContextMenuCopy.deleteConfirmTitle, CategoryContextMenuCopy.loanDeleteBlocked);
+    } catch {
+      Alert.alert(CategoryCustomizerCopy.saveError);
+    }
+    return false;
+  }
+
   async function deleteCategory(category: CategoryDefinition) {
+    if (!(await canDeleteCategory(category))) return;
     if (category.source === "custom") {
       const saved = await saveCustomCategories(
         customCategories.filter((customCategory) => customCategory.id !== category.id),

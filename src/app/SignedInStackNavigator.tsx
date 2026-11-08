@@ -25,6 +25,7 @@ import type { NotificationPreferenceGroup } from "../notifications/preferences/n
 import { AccountScreen } from "../screens/AccountScreen";
 import { AllEntriesScreen } from "../screens/AllEntriesScreen";
 import { AllMenuScreen } from "../screens/AllMenuScreen";
+import { AssetsScreen } from "../screens/AssetsScreen";
 import { AppSettingsScreen } from "../screens/AppSettingsScreen";
 import { ChartScreen } from "../screens/ChartScreen";
 import { EntryNativeSheetScreen } from "../screens/EntryNativeSheetScreen";
@@ -203,6 +204,7 @@ export function SignedInStackNavigator({
       }}
     >
       <Stack.Screen name="share">{renderLedgerBooks}</Stack.Screen>
+      <Stack.Screen name="assets">{() => <AssetsScreen key={`${userId}:${ledgerState.activeBook?.id}`} userId={userId} bookId={ledgerState.activeBook?.id ?? null} />}</Stack.Screen>
       <Stack.Screen name="calendar">
         {() => (
           <HomeScreen

@@ -13,7 +13,7 @@ import { useLedgerCategoryIconMap } from "../hooks/useLedgerCategoryIconMap";
 import type { CategoryIconName } from "../types/category";
 import type { MonthlyInsights } from "../types/ledger";
 import { MonthlyBreakdownDonutChart } from "./monthlyInsights/MonthlyBreakdownDonutChart";
-import { MonthlyTrendBarChart } from "./monthlyInsights/MonthlyTrendBarChart";
+import { MonthlyTrendLineChart } from "./monthlyInsights/MonthlyTrendLineChart";
 
 type MonthlyInsightsSectionProps = {
   activeBookId?: string | null;
@@ -138,10 +138,7 @@ export function MonthlyInsightsSection({
       }),
     );
   }, [incomeBreakdownFilterKey, incomeBreakdownItemsSignature]);
-  const activeBreakdownItems = buildActiveBreakdownItems(
-    breakdownItems,
-    disabledBreakdownItemKeys,
-  );
+  const activeBreakdownItems = buildActiveBreakdownItems(breakdownItems, disabledBreakdownItemKeys);
   const activeIncomeBreakdownItems = buildActiveBreakdownItems(
     incomeBreakdownItems,
     disabledIncomeBreakdownItemKeys,
@@ -157,7 +154,7 @@ export function MonthlyInsightsSection({
     <View style={styles.section}>
       {scope === "periodic" ? (
         <View style={styles.chartContent}>
-          <MonthlyTrendBarChart
+          <MonthlyTrendLineChart
             title={
               insights.comparisonBasis === "period"
                 ? MonthlyInsightChartCopy.periodTrendTitle
@@ -317,9 +314,7 @@ function buildDefaultDisabledBreakdownItemKeys(items: BreakdownItem[]): string[]
 
 function buildBreakdownItemsSignature(items: BreakdownItem[]): string {
   return items
-    .map((item) =>
-      [item.key, item.amount].join(BREAKDOWN_ITEM_SIGNATURE_VALUE_SEPARATOR),
-    )
+    .map((item) => [item.key, item.amount].join(BREAKDOWN_ITEM_SIGNATURE_VALUE_SEPARATOR))
     .join(BREAKDOWN_ITEM_SIGNATURE_SEPARATOR);
 }
 

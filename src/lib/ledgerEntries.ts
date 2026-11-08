@@ -20,6 +20,8 @@ import {
 } from "./ledgerEntryPhotoAttachments";
 import { createPerformanceTrace } from "./performanceTrace";
 import { supabase } from "./supabase";
+import { deleteAssetLinkedEntry } from "./deleteAssetLinkedEntry";
+import { AssetLinkConfig } from "../constants/assetLink";
 
 const LEDGER_TABLE = "ledger_entries";
 const GET_ENRICHED_LEDGER_ENTRIES_FUNCTION = "get_enriched_ledger_entries";
@@ -191,8 +193,7 @@ async function fetchEnrichedLedgerEntryRows(
         })
       : supabase.rpc(GET_ENRICHED_LEDGER_ENTRIES_V2_FUNCTION, {
           ...commonRpcParams,
-          category_filters:
-            params.categoryIds.length > 0 ? [...new Set(params.categoryIds)] : null,
+          category_filters: params.categoryIds.length > 0 ? [...new Set(params.categoryIds)] : null,
         });
   const { data, error } = await query.returns<EnrichedLedgerEntryRow[]>();
 
@@ -282,30 +283,33 @@ export async function insertLedgerEntries(
     photoCount: entries[0]?.photoAttachments.length ?? 0,
     step: "insert_ledger_entries",
   });
-  const { data, error } = await supabase
-    .from(LEDGER_TABLE)
-    .insert(
-      entries.map((entry) => ({
-        book_id: bookId,
-        user_id: userId,
-        source_type: DEFAULT_SOURCE_TYPE,
-        entry_type: entry.type,
-        occurred_on: entry.date,
-        amount: entry.amount,
-        content: entry.content,
-        currency: entry.currency ?? resolveDisplayCurrency(),
-        category: entry.category,
-        category_id: entry.categoryId,
-        metadata: buildLedgerEntryMetadata(
-          entry.targetMemberId ?? userId,
-          entry.installmentStatus,
-        ),
-        installment_group_id: entry.installmentGroupId ?? null,
-        installment_months: entry.installmentMonths ?? null,
-        installment_order: entry.installmentOrder ?? null,
-        note: entry.note,
-      })),
-    )
+  const payload = entries.map((entry) => ({
+    ...(entry.assetLink?.requestId ? { id: entry.assetLink.requestId } : {}),
+    book_id: bookId,
+    user_id: userId,
+    source_type: DEFAULT_SOURCE_TYPE,
+    entry_type: entry.type,
+    occurred_on: entry.date,
+    amount: entry.amount,
+    content: entry.content,
+    currency: entry.currency ?? resolveDisplayCurrency(),
+    category: entry.category,
+    category_id: entry.categoryId,
+    metadata: buildLedgerEntryMetadata(
+      entry.targetMemberId ?? userId,
+      entry.installmentStatus,
+      entry.assetLink,
+    ),
+    installment_group_id: entry.installmentGroupId ?? null,
+    installment_months: entry.installmentMonths ?? null,
+    installment_order: entry.installmentOrder ?? null,
+    note: entry.note,
+  }));
+  const table = supabase.from(LEDGER_TABLE);
+  const write = entries.some((entry) => entry.assetLink?.requestId)
+    ? table.upsert(payload, { onConflict: "id" })
+    : table.insert(payload);
+  const { data, error } = await write
     .select(LedgerEntrySelectColumns.list)
     .returns<LedgerEntryRow[]>();
 
@@ -359,6 +363,7 @@ export async function updateLedgerEntry(
       metadata: buildLedgerEntryMetadata(
         entry.targetMemberId ?? entry.authorId ?? "",
         entry.installmentStatus,
+        entry.assetLink,
       ),
       note: entry.note,
     })
@@ -389,12 +394,16 @@ export async function deleteLedgerEntry(entryId: string): Promise<void> {
     .from(LEDGER_TABLE)
     .select(LedgerEntrySelectColumns.attachmentCleanup)
     .eq("id", entryId)
-    .returns<Pick<LedgerEntryRow, "id" | "installment_group_id">[]>();
+    .returns<Pick<LedgerEntryRow, "id" | "installment_group_id" | "metadata">[]>();
 
   if (entryRowsError) {
     throw entryRowsError;
   }
 
+  if (entryRows?.some((row) => row.metadata?.[AssetLinkConfig.metadataKey])) {
+    await deleteAssetLinkedEntry(entryId);
+    return;
+  }
   await deleteLedgerEntryPhotoAttachmentsForEntries(entryRows ?? []);
 
   const { error } = await supabase.from(LEDGER_TABLE).delete().eq("id", entryId);
@@ -448,9 +457,10 @@ async function mapEnrichedLedgerEntries(
   const receiptFileRows = options.includePhotoAttachments
     ? rows.flatMap((row) => normalizeEnrichedPhotoAttachmentRows(row.photo_attachments))
     : [];
-  const signedUrlMap = options.includePhotoSignedUrls === false
-    ? new Map<string, string>()
-    : await createLedgerEntryPhotoSignedUrlMap(receiptFileRows);
+  const signedUrlMap =
+    options.includePhotoSignedUrls === false
+      ? new Map<string, string>()
+      : await createLedgerEntryPhotoSignedUrlMap(receiptFileRows);
 
   return rows.map((row) => ({
     ...mapLedgerEntryRow(row, resolveAuthorDisplayName(row)),

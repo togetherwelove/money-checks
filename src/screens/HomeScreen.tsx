@@ -147,6 +147,8 @@ export function HomeScreen({
             activeBookId={state.activeBook?.id ?? null}
             entries={selectedEntries}
             isLoading={isLoadingSelectedDateEntries}
+            isRefreshing={isRefreshing}
+            onRefresh={onRefreshLedger}
             selectedDate={selectedDate}
             onDeleteEntry={onDeleteSelectedEntry}
             onDuplicateEntry={onDuplicateEntry}

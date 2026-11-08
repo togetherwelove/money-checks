@@ -8,6 +8,8 @@ export const AppColors = {
   surface: "#ffffff",
   surfaceStrong: "#eef1f0",
   surfaceMuted: "#f7f8f7",
+  assetTint: "#f2f7f4",
+  debtTint: "#fcf4f1",
   primary: "#235347",
   accent: "#c96c50",
   income: "#198754",

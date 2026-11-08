@@ -182,13 +182,13 @@ for (const suffix of ["", ".ios"]) {
   });
 }
 
-test("all menu replaces only the final tab and retains the transaction list label and tab identity", () => {
+test("the final tab is labeled menu and retains the transaction list label and tab identity", () => {
   const load = modules();
   const { NativeBottomNavigationTabs } = load("src/constants/nativeBottomNavigation.ts");
   const { buildFooterTabs } = load("src/lib/footerTabs.ts");
   const { PrimaryTabRoutes } = load("src/app/signedInNavigation.ts");
   assert.equal(NativeBottomNavigationTabs.at(-1).screen, "all-menu");
-  assert.equal(NativeBottomNavigationTabs.at(-1).label, "전체");
+  assert.equal(NativeBottomNavigationTabs.at(-1).label, "메뉴");
   assert.equal(NativeBottomNavigationTabs[1].label, "전체 내역");
   assert.equal(buildFooterTabs().at(-1).targetScreen, "all-menu");
   assert.equal(PrimaryTabRoutes["all-menu"], "settings-tab");

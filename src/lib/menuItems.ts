@@ -19,7 +19,7 @@ type AppMenuItemDisplay = {
 export type AppMenuNavigationItem = AppMenuItemDisplay & {
   targetScreen: Exclude<
     LedgerAppScreen,
-    "all-entries" | "all-menu" | "calendar" | "charts" | "entry"
+    "all-entries" | "all-menu" | "calendar" | "charts" | "entry" | "assets"
   >;
 };
 

@@ -10,7 +10,7 @@ import { useLedgerCategories } from "../../hooks/useLedgerCategories";
 import { createDuplicateEntryDraft } from "../../utils/duplicateLedgerEntry";
 import { showNativeToast } from "../../lib/nativeToast";
 import type { LedgerEntry, LedgerEntryDraft } from "../../types/ledger";
-import { canSubmitDraft, createDraftFromEntry } from "../../utils/ledgerEntries";
+import { createDraftFromEntry } from "../../utils/ledgerEntries";
 import { getEntryComposerInvalidField, hasEntryComposerChanges, hasEntryComposerValues } from "../../utils/entryComposer";
 import { EntryComposerPanel } from "./EntryComposerPanel";
 import { EntryComposerSheet } from "./EntryComposerSheet";
@@ -54,6 +54,8 @@ export function EntryComposer({ ref, sheet, onDismissClipboard, bookId, selected
   const duplicationContext = useRef({ selectedDate, members: composer.members, categories });
   duplicationContext.current = { selectedDate, members: composer.members, categories };
   const { draft, setDraft } = composer;
+  const canLinkAssets = composer.members.some(member => member.userId === userId);
+  const requireLoan = composer.members.length === 0 || (composer.members.length === 1 && canLinkAssets);
   const discardAlertOpen = useRef(false);
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
@@ -61,7 +63,7 @@ export function EntryComposer({ ref, sheet, onDismissClipboard, bookId, selected
   const contentInputRef = useRef<TextInputInstance>(null);
   const focusTargetRef = useRef(inputRef);
   const locked = disabled || saving;
-  const hasInput = Boolean(draft.amount || draft.content || draft.note || draft.categoryId || draft.photoAttachments.length);
+  const hasInput = Boolean(draft.assetLink?.cashAssetId || draft.assetLink?.loanAssetId || draft.amount || draft.content || draft.note || draft.categoryId || draft.photoAttachments.length);
   const defaultMemberId = composer.members.find(member => member.userId === userId)?.userId
     ?? composer.members[0]?.userId ?? userId;
   const hasCloseValues = sourceEntry
@@ -205,7 +207,7 @@ export function EntryComposer({ ref, sheet, onDismissClipboard, bookId, selected
     }
   };
   const save = async () => {
-    if (locked || savingRef.current || getEntryComposerInvalidField(draft)) return;
+    if (locked || savingRef.current || getEntryComposerInvalidField(draft, requireLoan)) return;
     savingRef.current = true;
     setSaving(true);
     Keyboard.dismiss();
@@ -236,6 +238,8 @@ export function EntryComposer({ ref, sheet, onDismissClipboard, bookId, selected
           onConverted?.();
         }} /> : null}
       <EntryComposerForm composer={composer} bookId={bookId} disabled={locked}
+        visible={sheet.visible}
+        editingEntryId={sourceEntry?.id}
         editing={Boolean(sourceEntry)} inputRef={inputRef} contentInputRef={contentInputRef} onChangeText={onDismissClipboard}
         onConvert={sourceEntry?.installmentGroupId && sourceEntry.type === "expense" && sourceEntry.installmentStatus !== InstallmentStatuses.prepaid
           ? () => setConversionOpen(true) : undefined} />
@@ -249,8 +253,8 @@ export function EntryComposer({ ref, sheet, onDismissClipboard, bookId, selected
     }}
     onClose={requestClose} header={<EntryComposerHeader type={draft.type}
       typeDisabled={locked}
-      onSelectType={type => { if (!locked && type !== draft.type) setDraft(current => ({ ...current, type, category: "", categoryId: "" })); }}
-      saving={saving} actionDisabled={locked || !canSubmitDraft(draft)}
+      onSelectType={type => { if (!locked && type !== draft.type) { composer.update("type", type); composer.update("category", ""); composer.update("categoryId", ""); } }}
+      saving={saving} actionDisabled={locked || Boolean(getEntryComposerInvalidField(draft, requireLoan))}
       actionLabel={saving ? Copy.saving : sourceEntry ? Copy.saveEdit : Copy.save}
       onAction={save} onClose={requestClose} />}>{content}</EntryComposerSheet>;
 }

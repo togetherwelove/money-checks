@@ -152,6 +152,7 @@ test('category manager tabs protect unsaved order and disable changes during sav
   const jsx=(type,props)=>({type,props});
   const props={entryType:'expense',onChangeEntryType:value=>changes.push(value),onAdd:()=>added++,creationModal:{type:'CreateModal',props:{}},categories:[category('first'),category('second')],isOpen:true,onClose:()=>{},onChangeOrder:()=>save.promise};
   const {CategoryManageModal}=load('src/components/categorySelector/CategoryManageModal.tsx',{
+    '@react-native-menu/menu':{MenuView:'MenuView'},
     '../NativeSelectionSheet': { NativeSelectionSheet: 'Sheet' },
     react:h.react,'react/jsx-runtime':{jsx,jsxs:jsx},
     'react-native':{Modal:'Modal',Pressable:'Pressable',ScrollView:'ScrollView',Text:'Text',View:'View',StyleSheet:{create:s=>s},Alert:{alert:(...args)=>alerts.push(args)}},
@@ -170,4 +171,18 @@ test('category manager tabs protect unsaved order and disable changes during sav
   save.resolve(false);await tick();all=render();assert.equal(header().typeDisabled,false);
   props.entryType='income';props.categories=[{...category('salary'),type:'income'}];all=render();
   assert.equal(header().type,'income');assert.equal(all.filter(n=>n.props?.category).length,1);
+  const edited=[],deleted=[];
+  props.onEdit=value=>edited.push(value.id);props.onDelete=value=>deleted.push(value.id);
+  props.categories=[category('first'),category('second')];all=render();
+  const rowNode=all.find(n=>n.props?.category?.id==='second');
+  const row=rowNode.type(rowNode.props);
+  assert.equal(row.type,'Pressable');
+  row.props.onPress();all=render();
+  assert.equal(all.find(n=>n.props?.label===load('src/constants/categoryCustomizer.ts',{}).CategoryCustomizerCopy.moveDownAction).props.disabled,true);
+  const menu=row.props.children;
+  assert.equal(menu.type,'MenuView');assert.equal(menu.props.shouldOpenOnLongPress,true);
+  assert.equal(menu.props.children.props.pointerEvents,'none');
+  menu.props.onPressAction({nativeEvent:{event:'edit'}});
+  menu.props.onPressAction({nativeEvent:{event:'delete'}});
+  assert.deepEqual(edited,['second']);assert.deepEqual(deleted,['second']);
 });

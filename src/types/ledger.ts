@@ -1,4 +1,5 @@
 import type { InstallmentStatus } from "../constants/installments";
+import type { EntryAssetLink } from "./assetLink";
 
 export type LedgerEntryType = "income" | "expense";
 
@@ -12,6 +13,7 @@ export type LedgerEntryPhotoAttachment = {
 };
 
 export type LedgerEntry = {
+  assetLink?: EntryAssetLink;
   authorId?: string;
   authorHasBookAccess?: boolean;
   authorName?: string;
@@ -38,6 +40,7 @@ export type LedgerEntry = {
 };
 
 export type LedgerEntryDraft = {
+  assetLink?: EntryAssetLink;
   date: string;
   type: LedgerEntryType;
   amount: string;

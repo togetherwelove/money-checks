@@ -33,10 +33,20 @@ export type LedgerBookCategoryCustomization = {
   systemCategoryLabelOverrides: Record<string, string>;
 };
 
+export async function hasLedgerBookLoans(bookId: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc("has_ledger_book_loans", { p_book: bookId });
+  if (error) throw error;
+  return data === true;
+}
+
 export async function fetchLedgerBookCategoryCustomization(
   bookId: string,
   entryType: LedgerEntryType,
 ): Promise<LedgerBookCategoryCustomization> {
+  if (entryType === "expense") {
+    const { error } = await supabase.rpc("ensure_loan_repayment_category", { p_book: bookId });
+    if (error) throw error;
+  }
   const { data, error } = await supabase
     .from(LEDGER_BOOK_CATEGORY_CUSTOMIZATIONS_TABLE)
     .select("book_id, category_id, entry_type, icon_name, is_hidden, is_system, label, sort_order")

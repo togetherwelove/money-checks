@@ -1,12 +1,15 @@
 import {
   resolveLedgerEntryInstallmentStatus,
   resolveLedgerEntryTargetMemberId,
+  resolveEntryAssetLink,
 } from "../lib/ledgerEntryMetadata";
 import type { LedgerEntry } from "../types/ledger";
 import type { LedgerEntryRow } from "../types/supabase";
 
 export function mapLedgerEntryRow(row: LedgerEntryRow, authorName?: string): LedgerEntry {
+  const assetLink = resolveEntryAssetLink(row);
   return {
+    ...(assetLink ? { assetLink } : {}),
     authorId: row.user_id ?? undefined,
     authorName,
     createdAt: row.created_at,

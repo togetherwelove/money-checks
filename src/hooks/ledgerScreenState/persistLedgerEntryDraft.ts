@@ -69,6 +69,7 @@ export async function persistLedgerEntryDraft(
       content: draftToSave.content.trim(),
       category: draftToSave.category.trim(),
       categoryId: draftToSave.categoryId.trim(),
+      assetLink: draftToSave.assetLink,
       note: draftToSave.note.trim(),
       photoAttachments: draftToSave.photoAttachments,
       sourceType: "manual",

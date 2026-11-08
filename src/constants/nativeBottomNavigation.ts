@@ -1,5 +1,6 @@
 import { getAppScreenLabel } from "../lib/appScreenLabels";
 import { AppMessages } from "./messages";
+import { AssetCopy } from "./assets";
 
 export const NativeBottomNavigationUi = { badgeDot: " " } as const;
 
@@ -7,10 +8,10 @@ export const NativeBottomNavigationTabs = [
   {
     screen: "calendar",
     label: AppMessages.calendarTab,
-    symbol: "calendar",
-    selectedSymbol: "calendar",
-    icon: "calendar-month-outline",
-    selectedIcon: "calendar-month",
+    symbol: "house",
+    selectedSymbol: "house.fill",
+    icon: "home-outline",
+    selectedIcon: "home",
   },
   {
     screen: "all-entries",
@@ -29,11 +30,19 @@ export const NativeBottomNavigationTabs = [
     selectedIcon: "chart-pie",
   },
   {
+    screen: "assets",
+    label: AssetCopy.title,
+    symbol: "building.columns",
+    selectedSymbol: "building.columns.fill",
+    icon: "bank-outline",
+    selectedIcon: "bank",
+  },
+  {
     screen: "all-menu",
     label: getAppScreenLabel("all-menu"),
-    symbol: "square.grid.2x2",
-    selectedSymbol: "square.grid.2x2.fill",
-    icon: "view-grid-outline",
-    selectedIcon: "view-grid",
+    symbol: "line.3.horizontal",
+    selectedSymbol: "line.3.horizontal",
+    icon: "menu",
+    selectedIcon: "menu",
   },
 ] as const;
