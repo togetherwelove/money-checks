@@ -1,11 +1,13 @@
+import { createThemeValue } from "../../lib/appTheme";
+import { useAppTheme } from "../../hooks/useAppTheme";
 import { useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 
-import { AppColors } from "../../constants/colors";
+import { getAppColors } from "../../constants/colors";
 import { AccountDeletionMessages } from "../../constants/accountDeletion";
 import {
-  CompactLabelTextStyle,
-  FormInputTextStyle,
+  getCompactLabelTextStyle,
+  getFormInputTextStyle,
   StatusMessageTextStyle,
 } from "../../constants/uiStyles";
 import { deleteOwnAccount } from "../../lib/auth/deleteAccount";
@@ -18,6 +20,8 @@ type DeleteAccountModalProps = {
 };
 
 export function DeleteAccountModal({ isOpen, onClose }: DeleteAccountModalProps) {
+  const styles = getStyles();
+  useAppTheme();
   const [confirmText, setConfirmText] = useState("");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -51,35 +55,39 @@ export function DeleteAccountModal({ isOpen, onClose }: DeleteAccountModalProps)
   };
 
   return (
-    <NativePickerSheet isOpen={isOpen} onClose={handleClose} dismissible={!isDeleting} title={AccountDeletionMessages.confirmTitle}>
-            <Text style={styles.warning}>
-              계정 삭제 시 프로필, 가계부 기록, 참여 정보가 완전히 삭제돼요. 이 작업은 되돌릴 수
-              없어요.
-            </Text>
-            <Text style={styles.label}>확인 문구</Text>
-            <TextInput
-              editable={!isDeleting}
-              onChangeText={(value) => {
-                setConfirmText(value);
-                if (statusMessage) {
-                  setStatusMessage(null);
-                }
-              }}
-              placeholder="'삭제'를 입력하면 계정이 완전히 삭제돼요."
-              style={styles.input}
-              value={confirmText}
-            />
-            {statusMessage ? <Text style={styles.status}>{statusMessage}</Text> : null}
-            <View style={styles.actionRow}>
-              <ActionButton
-                disabled={!isReadyToDelete || isDeleting}
-                label="계정 삭제"
-                loading={isDeleting}
-                onPress={handleDeleteAccount}
-                size="inline"
-                variant="destructive"
-              />
-            </View>
+    <NativePickerSheet
+      isOpen={isOpen}
+      onClose={handleClose}
+      dismissible={!isDeleting}
+      title={AccountDeletionMessages.confirmTitle}
+    >
+      <Text style={styles.warning}>
+        계정 삭제 시 프로필, 가계부 기록, 참여 정보가 완전히 삭제돼요. 이 작업은 되돌릴 수 없어요.
+      </Text>
+      <Text style={styles.label}>확인 문구</Text>
+      <TextInput
+        editable={!isDeleting}
+        onChangeText={(value) => {
+          setConfirmText(value);
+          if (statusMessage) {
+            setStatusMessage(null);
+          }
+        }}
+        placeholder="'삭제'를 입력하면 계정이 완전히 삭제돼요."
+        style={styles.input}
+        value={confirmText}
+      />
+      {statusMessage ? <Text style={styles.status}>{statusMessage}</Text> : null}
+      <View style={styles.actionRow}>
+        <ActionButton
+          disabled={!isReadyToDelete || isDeleting}
+          label="계정 삭제"
+          loading={isDeleting}
+          onPress={handleDeleteAccount}
+          size="inline"
+          variant="destructive"
+        />
+      </View>
     </NativePickerSheet>
   );
 }
@@ -92,22 +100,24 @@ function resolveDeleteErrorMessage(error: unknown): string {
   return "계정을 삭제하지 못했어요. 잠시 후 다시 시도해 주세요.";
 }
 
-const styles = StyleSheet.create({
-  warning: {
-    color: AppColors.expense,
-    fontSize: 12,
-    lineHeight: 18,
-    fontWeight: "700",
-  },
-  label: CompactLabelTextStyle,
-  input: FormInputTextStyle,
-  status: {
-    color: AppColors.expense,
-    ...StatusMessageTextStyle,
-  },
-  actionRow: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 8,
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    warning: {
+      color: getAppColors().expense,
+      fontSize: 12,
+      lineHeight: 18,
+      fontWeight: "700",
+    },
+    label: getCompactLabelTextStyle(),
+    input: getFormInputTextStyle(),
+    status: {
+      color: getAppColors().expense,
+      ...StatusMessageTextStyle,
+    },
+    actionRow: {
+      flexDirection: "row",
+      justifyContent: "flex-end",
+      gap: 8,
+    },
+  }),
+);

@@ -1,3 +1,5 @@
+import { createThemeValue } from "../../lib/appTheme";
+import { useAppTheme } from "../../hooks/useAppTheme";
 import { AppScrollBehavior } from "../../constants/scroll";
 import { Feather } from "../AppIcons";
 import { useMemo } from "react";
@@ -10,9 +12,9 @@ import {
   AllEntriesFilterUi,
   formatAllEntriesEntryTypeFilterLabel,
 } from "../../constants/allEntries";
-import { AppColors } from "../../constants/colors";
+import { getAppColors } from "../../constants/colors";
 import { AppLayout } from "../../constants/layout";
-import { FormInputTextStyle } from "../../constants/uiStyles";
+import { getFormInputTextStyle } from "../../constants/uiStyles";
 import type { CategoryDefinition } from "../../types/category";
 import { countAllEntriesFilters } from "../../lib/allEntriesFilters";
 
@@ -39,6 +41,8 @@ export function AllEntriesFilterBar({
   searchQuery,
   selectedCategoryIds,
 }: AllEntriesFilterBarProps) {
+  const styles = getStyles();
+  useAppTheme();
   const filterCount = countAllEntriesFilters(entryTypeFilter, selectedCategoryIds);
   const hasActiveFilters = searchQuery.trim().length > 0 || filterCount > 0;
   const categoryLabelById = useMemo(
@@ -65,7 +69,11 @@ export function AllEntriesFilterBar({
           onPress={onOpenFilter}
           style={({ pressed }) => [styles.filterButton, pressed ? styles.pressed : null]}
         >
-          <Feather color={AppColors.primary} name="sliders" size={AllEntriesFilterUi.iconSize} />
+          <Feather
+            color={getAppColors().primary}
+            name="sliders"
+            size={AllEntriesFilterUi.iconSize}
+          />
           <Text style={styles.filterButtonLabel}>{AllEntriesFilterCopy.filterLabel}</Text>
           {filterCount > 0 ? (
             <View style={styles.filterBadge}>
@@ -78,7 +86,8 @@ export function AllEntriesFilterBar({
       {hasActiveFilters ? (
         <View style={styles.activeFilterRow}>
           {filterCount > 0 ? (
-            <ScrollView {...AppScrollBehavior}
+            <ScrollView
+              {...AppScrollBehavior}
               contentContainerStyle={styles.activeFilterContent}
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -109,7 +118,7 @@ export function AllEntriesFilterBar({
             style={({ pressed }) => [styles.resetButton, pressed ? styles.pressed : null]}
           >
             <Feather
-              color={AppColors.primary}
+              color={getAppColors().primary}
               name="rotate-ccw"
               size={AllEntriesFilterUi.iconSize}
             />
@@ -122,6 +131,8 @@ export function AllEntriesFilterBar({
 }
 
 function ActiveFilterChip({ label, onRemove }: { label: string; onRemove: () => void }) {
+  const styles = getStyles();
+  useAppTheme();
   return (
     <Pressable
       accessibilityLabel={`${label} ${AllEntriesFilterCopy.removeFilterAccessibilitySuffix}`}
@@ -133,7 +144,7 @@ function ActiveFilterChip({ label, onRemove }: { label: string; onRemove: () => 
         {label}
       </Text>
       <Feather
-        color={AppColors.primary}
+        color={getAppColors().primary}
         name="x"
         size={AllEntriesFilterUi.activeFilterChipIconSize}
       />
@@ -141,101 +152,103 @@ function ActiveFilterChip({ label, onRemove }: { label: string; onRemove: () => 
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    alignItems: "flex-start",
-    gap: AppLayout.compactGap,
-  },
-  searchRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: AppLayout.compactGap,
-  },
-  searchInput: {
-    ...FormInputTextStyle,
-    flex: 1,
-    minWidth: 0,
-  },
-  filterButton: {
-    alignItems: "center",
-    alignSelf: "stretch",
-    backgroundColor: FormInputTextStyle.backgroundColor,
-    borderColor: FormInputTextStyle.borderColor,
-    borderRadius: FormInputTextStyle.borderRadius,
-    borderWidth: FormInputTextStyle.borderWidth,
-    flexDirection: "row",
-    gap: AppLayout.compactGap,
-    justifyContent: "center",
-    minHeight: FormInputTextStyle.minHeight,
-    paddingHorizontal: FormInputTextStyle.paddingHorizontal,
-    paddingVertical: FormInputTextStyle.paddingVertical,
-  },
-  filterButtonLabel: {
-    color: AppColors.primary,
-    fontSize: FormInputTextStyle.fontSize,
-    fontWeight: FormInputTextStyle.fontWeight,
-    lineHeight: FormInputTextStyle.lineHeight,
-  },
-  filterBadge: {
-    alignItems: "center",
-    backgroundColor: AppColors.primary,
-    borderRadius: AllEntriesFilterUi.badgeMinimumSize / 2,
-    justifyContent: "center",
-    minHeight: AllEntriesFilterUi.badgeMinimumSize,
-    minWidth: AllEntriesFilterUi.badgeMinimumSize,
-    paddingHorizontal: AppLayout.compactGap,
-  },
-  filterBadgeLabel: {
-    color: AppColors.inverseText,
-    fontSize: AllEntriesFilterUi.badgeFontSize,
-    fontWeight: "800",
-  },
-  activeFilterList: {
-    flexGrow: 0,
-    flexShrink: 1,
-    maxWidth: "100%",
-  },
-  activeFilterRow: {
-    alignItems: "center",
-    alignSelf: "stretch",
-    flexDirection: "row",
-    gap: AppLayout.compactGap,
-    justifyContent: "flex-end",
-  },
-  activeFilterContent: {
-    gap: AppLayout.compactGap,
-    paddingRight: AppLayout.screenPadding,
-  },
-  activeFilterChip: {
-    alignItems: "center",
-    backgroundColor: AppColors.surfaceStrong,
-    borderColor: AppColors.primary,
-    borderRadius: AllEntriesFilterUi.categoryChipRadius,
-    borderWidth: StyleSheet.hairlineWidth,
-    flexDirection: "row",
-    gap: AppLayout.compactGap,
-    minHeight: AllEntriesFilterUi.activeFilterChipHeight,
-    paddingHorizontal: AllEntriesFilterUi.activeFilterChipHorizontalPadding,
-  },
-  activeFilterChipLabel: {
-    color: AppColors.primary,
-    fontSize: AllEntriesFilterUi.activeFilterChipLabelFontSize,
-    fontWeight: "700",
-    maxWidth: "100%",
-  },
-  resetButton: {
-    alignItems: "center",
-    flexDirection: "row",
-    flexShrink: 0,
-    gap: AppLayout.compactGap,
-    minHeight: AllEntriesFilterUi.activeFilterChipHeight,
-  },
-  resetLabel: {
-    color: AppColors.primary,
-    fontSize: AllEntriesFilterUi.resetLabelFontSize,
-    fontWeight: "700",
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    container: {
+      alignItems: "flex-start",
+      gap: AppLayout.compactGap,
+    },
+    searchRow: {
+      alignItems: "center",
+      flexDirection: "row",
+      gap: AppLayout.compactGap,
+    },
+    searchInput: {
+      ...getFormInputTextStyle(),
+      flex: 1,
+      minWidth: 0,
+    },
+    filterButton: {
+      alignItems: "center",
+      alignSelf: "stretch",
+      backgroundColor: getFormInputTextStyle().backgroundColor,
+      borderColor: getFormInputTextStyle().borderColor,
+      borderRadius: getFormInputTextStyle().borderRadius,
+      borderWidth: getFormInputTextStyle().borderWidth,
+      flexDirection: "row",
+      gap: AppLayout.compactGap,
+      justifyContent: "center",
+      minHeight: getFormInputTextStyle().minHeight,
+      paddingHorizontal: getFormInputTextStyle().paddingHorizontal,
+      paddingVertical: getFormInputTextStyle().paddingVertical,
+    },
+    filterButtonLabel: {
+      color: getAppColors().primary,
+      fontSize: getFormInputTextStyle().fontSize,
+      fontWeight: getFormInputTextStyle().fontWeight,
+      lineHeight: getFormInputTextStyle().lineHeight,
+    },
+    filterBadge: {
+      alignItems: "center",
+      backgroundColor: getAppColors().primary,
+      borderRadius: AllEntriesFilterUi.badgeMinimumSize / 2,
+      justifyContent: "center",
+      minHeight: AllEntriesFilterUi.badgeMinimumSize,
+      minWidth: AllEntriesFilterUi.badgeMinimumSize,
+      paddingHorizontal: AppLayout.compactGap,
+    },
+    filterBadgeLabel: {
+      color: getAppColors().onPrimary,
+      fontSize: AllEntriesFilterUi.badgeFontSize,
+      fontWeight: "800",
+    },
+    activeFilterList: {
+      flexGrow: 0,
+      flexShrink: 1,
+      maxWidth: "100%",
+    },
+    activeFilterRow: {
+      alignItems: "center",
+      alignSelf: "stretch",
+      flexDirection: "row",
+      gap: AppLayout.compactGap,
+      justifyContent: "flex-end",
+    },
+    activeFilterContent: {
+      gap: AppLayout.compactGap,
+      paddingRight: AppLayout.screenPadding,
+    },
+    activeFilterChip: {
+      alignItems: "center",
+      backgroundColor: getAppColors().surfaceStrong,
+      borderColor: getAppColors().primary,
+      borderRadius: AllEntriesFilterUi.categoryChipRadius,
+      borderWidth: StyleSheet.hairlineWidth,
+      flexDirection: "row",
+      gap: AppLayout.compactGap,
+      minHeight: AllEntriesFilterUi.activeFilterChipHeight,
+      paddingHorizontal: AllEntriesFilterUi.activeFilterChipHorizontalPadding,
+    },
+    activeFilterChipLabel: {
+      color: getAppColors().primary,
+      fontSize: AllEntriesFilterUi.activeFilterChipLabelFontSize,
+      fontWeight: "700",
+      maxWidth: "100%",
+    },
+    resetButton: {
+      alignItems: "center",
+      flexDirection: "row",
+      flexShrink: 0,
+      gap: AppLayout.compactGap,
+      minHeight: AllEntriesFilterUi.activeFilterChipHeight,
+    },
+    resetLabel: {
+      color: getAppColors().primary,
+      fontSize: AllEntriesFilterUi.resetLabelFontSize,
+      fontWeight: "700",
+    },
+    pressed: {
+      opacity: 0.7,
+    },
+  }),
+);

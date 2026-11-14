@@ -1,4 +1,3 @@
-
 export const NotificationThresholdAmountInput = {
   characterWidth: 9,
   horizontalPadding: 4,

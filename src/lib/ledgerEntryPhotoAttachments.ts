@@ -10,10 +10,7 @@ import type {
   ReceiptFileRow,
 } from "../types/supabase";
 import { logAppWarning } from "./logAppError";
-import {
-  mapUploadedReceiptFileAttachment,
-  uploadReceiptFiles,
-} from "./ledgerEntryPhotoUpload";
+import { mapUploadedReceiptFileAttachment, uploadReceiptFiles } from "./ledgerEntryPhotoUpload";
 import { supabase } from "./supabase";
 
 const LEDGER_ENTRY_ATTACHMENTS_TABLE = "ledger_entry_attachments";

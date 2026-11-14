@@ -1,18 +1,35 @@
+import { createThemeValue } from "../lib/appTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
-import { AppColors } from "../constants/colors";
+import { getAppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import { AppMessages } from "../constants/messages";
-import { SupportingTextStyle } from "../constants/uiStyles";
+import { getSupportingTextStyle } from "../constants/uiStyles";
 
 export function ScreenLoadingOverlay() {
-  return <View style={styles.overlay} accessibilityState={{ busy: true }} accessibilityLiveRegion="polite">
-    <ActivityIndicator color={AppColors.primary} />
-    <Text style={SupportingTextStyle}>{AppMessages.ledgerLoading}</Text>
-  </View>;
+  const styles = getStyles();
+  useAppTheme();
+  return (
+    <View
+      style={styles.overlay}
+      accessibilityState={{ busy: true }}
+      accessibilityLiveRegion="polite"
+    >
+      <ActivityIndicator color={getAppColors().primary} />
+      <Text style={getSupportingTextStyle()}>{AppMessages.ledgerLoading}</Text>
+    </View>
+  );
 }
 
-const styles = StyleSheet.create({
-  overlay: { ...StyleSheet.absoluteFill, backgroundColor: AppColors.screenBackground,
-    alignItems: "center", justifyContent: "center", gap: AppLayout.cardGap },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    overlay: {
+      ...StyleSheet.absoluteFill,
+      backgroundColor: getAppColors().screenBackground,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: AppLayout.cardGap,
+    },
+  }),
+);

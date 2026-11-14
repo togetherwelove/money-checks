@@ -17,8 +17,10 @@ export async function markEntryNotificationsRead(
 export function resolveEntryNotificationReadTarget(data: Record<string, unknown> | undefined) {
   if (
     data?.badgeKind !== NotificationBadgeKinds.ledgerEntry ||
-    typeof data.badgeBookId !== "string" || !data.badgeBookId ||
-    typeof data.badgeEntryId !== "string" || !data.badgeEntryId
+    typeof data.badgeBookId !== "string" ||
+    !data.badgeBookId ||
+    typeof data.badgeEntryId !== "string" ||
+    !data.badgeEntryId
   ) {
     return null;
   }

@@ -1,3 +1,5 @@
 {
-  "appIconBackground": "#F3EBD4"
+  "appIconBackground": "#F3EBD4",
+  "developmentAppIconBackground": "#DFECE5",
+  "darkScreenBackground": "#121816"
 }

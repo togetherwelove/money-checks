@@ -18,39 +18,43 @@ type KeyboardAwareScrollViewProps = PropsWithChildren<{
   style?: StyleProp<ViewStyle>;
 }>;
 
-export const KeyboardAwareScrollView = forwardRef<
-  ScrollViewInstance,
-  KeyboardAwareScrollViewProps
->(function KeyboardAwareScrollView(
-  {
-    centerContent = false,
-    children,
-    contentContainerStyle,
-    extraScrollHeight = 0,
-    fillAvailableHeight = true,
-    refreshControl,
-    scrollEnabled = true,
-    showsVerticalScrollIndicator = true,
-    style,
+export const KeyboardAwareScrollView = forwardRef<ScrollViewInstance, KeyboardAwareScrollViewProps>(
+  function KeyboardAwareScrollView(
+    {
+      centerContent = false,
+      children,
+      contentContainerStyle,
+      extraScrollHeight = 0,
+      fillAvailableHeight = true,
+      refreshControl,
+      scrollEnabled = true,
+      showsVerticalScrollIndicator = true,
+      style,
+    },
+    ref,
+  ) {
+    return (
+      <ScrollView
+        {...AppScrollBehavior}
+        ref={ref}
+        automaticallyAdjustKeyboardInsets
+        contentContainerStyle={[
+          centerContent && styles.centerContent,
+          extraScrollHeight > 0 && { paddingBottom: extraScrollHeight },
+          contentContainerStyle,
+        ]}
+        keyboardDismissMode={KeyboardLayout.dismissMode}
+        keyboardShouldPersistTaps={KeyboardLayout.persistTaps}
+        refreshControl={refreshControl}
+        scrollEnabled={scrollEnabled}
+        showsVerticalScrollIndicator={showsVerticalScrollIndicator}
+        style={[fillAvailableHeight ? styles.scroll : null, style]}
+      >
+        {children}
+      </ScrollView>
+    );
   },
-  ref,
-) {
-  return (
-    <ScrollView {...AppScrollBehavior}
-      ref={ref}
-      automaticallyAdjustKeyboardInsets
-      contentContainerStyle={[centerContent && styles.centerContent, extraScrollHeight > 0 && { paddingBottom: extraScrollHeight }, contentContainerStyle]}
-      keyboardDismissMode={KeyboardLayout.dismissMode}
-      keyboardShouldPersistTaps={KeyboardLayout.persistTaps}
-      refreshControl={refreshControl}
-      scrollEnabled={scrollEnabled}
-      showsVerticalScrollIndicator={showsVerticalScrollIndicator}
-      style={[fillAvailableHeight ? styles.scroll : null, style]}
-    >
-      {children}
-    </ScrollView>
-  );
-});
+);
 
 const styles = StyleSheet.create({
   scroll: {

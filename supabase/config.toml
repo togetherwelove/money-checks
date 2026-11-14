@@ -157,6 +157,8 @@ additional_redirect_urls = [
   "https://127.0.0.1:3000",
   "moneychecks://auth/callback",
   "moneychecks://password-reset",
+  "moneychecks-dev://auth/callback",
+  "moneychecks-dev://password-reset",
   "https://money-checks-password-reset.expo.app/password-reset",
 ]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).

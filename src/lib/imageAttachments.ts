@@ -5,6 +5,7 @@ import {
   ENTRY_PHOTO_COMPRESSION_QUALITY,
   ENTRY_PHOTO_MAX_PIXEL_LENGTH,
 } from "../constants/entryPhotos";
+import { persistEntryDraftPhoto } from "./entryComposerDraftStorage";
 
 type ImageAttachment = {
   fileName: string;
@@ -44,10 +45,12 @@ async function normalizeImageAttachment(
     format: SaveFormat.JPEG,
   });
 
+  const fileName = resolveJpegFileName(asset.fileName, index);
+  const uri = await persistEntryDraftPhoto(result.uri, fileName);
   return {
-    fileName: resolveJpegFileName(asset.fileName, index),
+    fileName,
     mimeType: "image/jpeg",
-    uri: result.uri,
+    uri,
   };
 }
 

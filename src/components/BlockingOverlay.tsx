@@ -1,20 +1,26 @@
+import { createThemeValue } from "../lib/appTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 
-import { AppColors } from "../constants/colors";
+import { getAppColors } from "../constants/colors";
 
 export function BlockingOverlay() {
+  const styles = getStyles();
+  useAppTheme();
   return (
     <View pointerEvents="auto" style={styles.overlay}>
-      <ActivityIndicator color={AppColors.primary} size="large" />
+      <ActivityIndicator color={getAppColors().primary} size="large" />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    ...StyleSheet.absoluteFill,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: AppColors.overlay,
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    overlay: {
+      ...StyleSheet.absoluteFill,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: getAppColors().overlay,
+    },
+  }),
+);

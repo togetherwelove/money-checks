@@ -1,6 +1,6 @@
 import { StyleSheet } from "react-native";
 
-import { CalendarDayUi } from "../../constants/calendarDay";
+import { getCalendarDayUi } from "../../constants/calendarDay";
 import { AppTextScale, resolveTextScale } from "../../constants/textLayout";
 import type { CalendarDay } from "../../types/ledger";
 
@@ -23,7 +23,7 @@ export const CALENDAR_DAY_NUMBER_HEIGHT =
   CALENDAR_DAY_NUMBER_BORDER_WIDTH * 2;
 const CALENDAR_MAX_AMOUNT_LINE_COUNT = 2;
 export const CALENDAR_AMOUNT_SPACE_HEIGHT =
-  CALENDAR_MAX_AMOUNT_LINE_COUNT * CalendarDayUi.amountLineHeight +
+  CALENDAR_MAX_AMOUNT_LINE_COUNT * getCalendarDayUi().amountLineHeight +
   CALENDAR_AMOUNT_PADDING_VERTICAL * 2;
 
 export const CALENDAR_MAX_HEIGHT =
@@ -35,10 +35,7 @@ export const CALENDAR_MAX_HEIGHT =
   resolveCalendarWeekDividerHeight(CALENDAR_WEEK_ROWS) +
   CALENDAR_BOTTOM_BORDER_CLIP_PADDING;
 
-export function resolveCalendarWeekHeight(
-  _week: readonly CalendarDay[],
-  fontScale = 1,
-): number {
+export function resolveCalendarWeekHeight(_week: readonly CalendarDay[], fontScale = 1): number {
   return resolveCalendarWeekHeightForAmountLineCount(
     CALENDAR_MAX_AMOUNT_LINE_COUNT,
     resolveTextScale(fontScale, AppTextScale.compact),
@@ -56,7 +53,7 @@ function resolveCalendarWeekHeightForAmountLineCount(
   const amountBlockHeight =
     amountLineCount > 0
       ? CALENDAR_DAY_CONTENT_GAP +
-        amountLineCount * CalendarDayUi.amountLineHeight * fontScale +
+        amountLineCount * getCalendarDayUi().amountLineHeight * fontScale +
         CALENDAR_AMOUNT_PADDING_VERTICAL * 2
       : CALENDAR_DAY_CONTENT_GAP + CALENDAR_AMOUNT_SPACE_HEIGHT;
 

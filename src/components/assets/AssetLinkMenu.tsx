@@ -1,9 +1,10 @@
+import { useAppTheme } from "../../hooks/useAppTheme";
 import { MenuView } from "@react-native-menu/menu";
 import { Keyboard, Pressable, Text, View } from "react-native";
-import { AssetStyles as styles } from "../../constants/assetStyles";
+import { getAssetStyles } from "../../constants/assetStyles";
 import { AssetLinkCopy as Copy } from "../../constants/assetLink";
 import { AppSettingsUi } from "../../constants/appSettings";
-import { AppColors } from "../../constants/colors";
+import { getAppColors } from "../../constants/colors";
 import { Feather } from "../AppIcons";
 
 export function AssetLinkMenu({
@@ -19,10 +20,11 @@ export function AssetLinkMenu({
   onChange: (id: string | null) => void;
   disabled?: boolean;
 }) {
+  useAppTheme();
   const selected = options.find((option) => option.id === value);
   return (
-    <View style={styles.section}>
-      <Text style={styles.label}>{label}</Text>
+    <View style={getAssetStyles().section}>
+      <Text style={getAssetStyles().label}>{label}</Text>
       <MenuView
         actions={[
           { id: "none", title: Copy.none, state: !value ? "on" : "off" },
@@ -43,15 +45,15 @@ export function AssetLinkMenu({
           accessibilityRole="button"
           accessibilityLabel={label}
           accessibilityValue={{ text: selected?.name ?? (value ? Copy.unavailable : Copy.none) }}
-          style={styles.row}
+          style={getAssetStyles().row}
         >
-          <Text style={[styles.text, styles.grow]}>
+          <Text style={[getAssetStyles().text, getAssetStyles().grow]}>
             {selected?.name ?? (value ? Copy.unavailable : Copy.none)}
           </Text>
           <Feather
             name="chevron-down"
             size={AppSettingsUi.selectionChevronIconSize}
-            color={AppColors.primary}
+            color={getAppColors().primary}
           />
         </Pressable>
       </MenuView>

@@ -1,3 +1,5 @@
+import { createThemeValue } from "../lib/appTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
 import { type ReactNode, useCallback, useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
@@ -13,7 +15,7 @@ import {
   type CalendarSummaryMode,
   formatSelectedDateEntryCount,
 } from "../constants/calendarSummary";
-import { AppColors } from "../constants/colors";
+import { getAppColors } from "../constants/colors";
 import { MonthlySummaryUi } from "../constants/home";
 import { AppLayout } from "../constants/layout";
 import { formatMonthLabel, formatYearLabel } from "../constants/ledgerDisplay";
@@ -23,11 +25,34 @@ import type { LedgerEntryDeleteHandler } from "../types/ledgerEntryDeletion";
 import type { InstallmentPrepaymentHandler } from "../types/installmentTransactions";
 import { addMonths, parseIsoDate, startOfMonth, toIsoDate } from "../utils/calendar";
 
-import { formatSummarySelectedDate, resolveDisplayedSummary } from "../utils/homeSummary";
+import {
+  formatSummarySelectedDate,
+  resolveDisplayedSummary,
+  type HomeSummaryState,
+} from "../utils/homeSummary";
+
+export type HomeScreenState = HomeSummaryState &
+  Pick<
+    LedgerScreenState,
+    | "errorMessage"
+    | "isLoadingSelectedDateEntries"
+    | "isRefreshing"
+    | "refreshLedger"
+    | "isReadOnlyDueToPlanLimit"
+    | "selectedDate"
+    | "selectedEntries"
+    | "visibleMonth"
+    | "handleSelectDate"
+    | "currentMonthPage"
+    | "nextMonthPage"
+    | "previousMonthPage"
+    | "activeBook"
+  >;
 
 type HomeScreenProps = {
   calendarSummaryMode: CalendarSummaryMode;
   onDeleteSelectedEntry: LedgerEntryDeleteHandler;
+  onAddFrequentEntry?: (entry: LedgerEntry) => void;
   onDuplicateEntry: (entry: LedgerEntry) => void;
   onEditSelectedEntry: (entry: LedgerEntry) => void;
   onPrepayInstallmentEntry: InstallmentPrepaymentHandler;
@@ -35,13 +60,14 @@ type HomeScreenProps = {
   screenTitle: (label: string) => ReactNode;
   isCalendarHeatmapEnabled: boolean;
   showsBannerAd: boolean;
-  state: LedgerScreenState;
+  state: HomeScreenState;
   entryAppend?: ReactNode;
 };
 
 export function HomeScreen({
   calendarSummaryMode,
   onDeleteSelectedEntry,
+  onAddFrequentEntry,
   onDuplicateEntry,
   onEditSelectedEntry,
   onPrepayInstallmentEntry,
@@ -52,6 +78,8 @@ export function HomeScreen({
   state,
   entryAppend,
 }: HomeScreenProps) {
+  const styles = getStyles();
+  useAppTheme();
   const todayIsoDate = toIsoDate(new Date());
   const {
     errorMessage,
@@ -134,9 +162,7 @@ export function HomeScreen({
               </Text>
               {!errorMessage ? (
                 <Text style={styles.selectedDateCount}>
-                  {formatSelectedDateEntryCount(
-                    isLoadingSelectedDateEntries || state.isLoading ? null : selectedEntries.length,
-                  )}
+                  {formatSelectedDateEntryCount(selectedEntries.length)}
                 </Text>
               ) : null}
             </View>
@@ -147,10 +173,10 @@ export function HomeScreen({
             activeBookId={state.activeBook?.id ?? null}
             entries={selectedEntries}
             isLoading={isLoadingSelectedDateEntries}
-            isRefreshing={isRefreshing}
             onRefresh={onRefreshLedger}
             selectedDate={selectedDate}
             onDeleteEntry={onDeleteSelectedEntry}
+            onAddFrequentEntry={onAddFrequentEntry}
             onDuplicateEntry={onDuplicateEntry}
             onEditEntry={onEditSelectedEntry}
             onPrepayInstallmentEntry={onPrepayInstallmentEntry}
@@ -183,61 +209,66 @@ function moveMonth(
   onSelectDate(toIsoDate(startOfMonth(targetDate)));
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: AppColors.screenBackground,
-  },
-  screenContent: {
-    flex: 1,
-    paddingTop: AppLayout.compactGap,
-  },
-  calendarAdSection: {
-    gap: AppLayout.calendarGap,
-  },
-  transactionSection: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderColor: AppColors.border,
-  },
-  adPanel: { flexShrink: 0 },
-  selectedDateHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: AppLayout.cardContentPadding,
-    paddingVertical: AppLayout.cardGap,
-    gap: AppLayout.compactGap,
-  },
-  selectedDateLabel: {
-    flexShrink: 1,
-    color: AppColors.text,
-    fontSize: MonthlySummaryUi.dateLabelFontSize,
-    fontWeight: "700",
-  },
-  selectedDateCount: { color: AppColors.mutedText, fontSize: MonthlySummaryUi.dateLabelFontSize },
-  transactionSummaryPanel: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: AppColors.border,
-    paddingVertical: AppLayout.compactGap,
-    paddingHorizontal: AppLayout.screenPadding,
-  },
-  error: {
-    color: AppColors.expense,
-    fontSize: 12,
-  },
-  errorRetry: {
-    gap: 2,
-    alignItems: "flex-start",
-  },
-  errorRetryPressed: {
-    opacity: 0.7,
-  },
-  errorRetryDisabled: {
-    opacity: 0.5,
-  },
-  errorRetryLabel: {
-    color: AppColors.primary,
-    fontSize: 12,
-    fontWeight: "700",
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: getAppColors().screenBackground,
+    },
+    screenContent: {
+      flex: 1,
+      paddingTop: AppLayout.compactGap,
+    },
+    calendarAdSection: {
+      gap: AppLayout.calendarGap,
+    },
+    transactionSection: {
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderColor: getAppColors().border,
+    },
+    adPanel: { flexShrink: 0 },
+    selectedDateHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: AppLayout.cardContentPadding,
+      paddingVertical: AppLayout.cardGap,
+      gap: AppLayout.compactGap,
+    },
+    selectedDateLabel: {
+      flexShrink: 1,
+      color: getAppColors().text,
+      fontSize: MonthlySummaryUi.dateLabelFontSize,
+      fontWeight: "700",
+    },
+    selectedDateCount: {
+      color: getAppColors().mutedText,
+      fontSize: MonthlySummaryUi.dateLabelFontSize,
+    },
+    transactionSummaryPanel: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderColor: getAppColors().border,
+      paddingVertical: AppLayout.compactGap,
+      paddingHorizontal: AppLayout.screenPadding,
+    },
+    error: {
+      color: getAppColors().expense,
+      fontSize: 12,
+    },
+    errorRetry: {
+      gap: 2,
+      alignItems: "flex-start",
+    },
+    errorRetryPressed: {
+      opacity: 0.7,
+    },
+    errorRetryDisabled: {
+      opacity: 0.5,
+    },
+    errorRetryLabel: {
+      color: getAppColors().primary,
+      fontSize: 12,
+      fontWeight: "700",
+    },
+  }),
+);

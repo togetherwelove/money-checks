@@ -1,6 +1,10 @@
 import { AdEventType, InterstitialAd, TestIds } from "react-native-google-mobile-ads";
 
-import { type AdInterstitialPlacementKey, AdMobInterstitialConfig, InterstitialAdTiming } from "../../constants/ads";
+import {
+  type AdInterstitialPlacementKey,
+  AdMobInterstitialConfig,
+  InterstitialAdTiming,
+} from "../../constants/ads";
 import { logAppError, logAppWarning } from "../logAppError";
 import { resolveAdMobAdUnitId } from "./adUnitId";
 import { logAdMobLoadError } from "./adMobLoadError";
@@ -42,7 +46,9 @@ export async function showInterstitialAd(
     }
     if (!interstitialAd || !isInterstitialLoaded) {
       logAppWarning("AdMob", "Interstitial ad not ready", {
-        isLoaded: isInterstitialLoaded, placement, step: "show_interstitial_ad",
+        isLoaded: isInterstitialLoaded,
+        placement,
+        step: "show_interstitial_ad",
       });
       return false;
     }
@@ -67,14 +73,18 @@ export async function showInterstitialAd(
 
 function waitForInterstitialDismissal(currentInterstitialAd: InterstitialAd) {
   let finish: (closed: boolean) => void = () => {};
-  const promise = new Promise<boolean>(resolve => {
+  const promise = new Promise<boolean>((resolve) => {
     finish = (closed) => {
       closeDisposer();
       errorDisposer();
       resolve(closed);
     };
-    const closeDisposer = currentInterstitialAd.addAdEventListener(AdEventType.CLOSED, () => finish(true));
-    const errorDisposer = currentInterstitialAd.addAdEventListener(AdEventType.ERROR, () => finish(false));
+    const closeDisposer = currentInterstitialAd.addAdEventListener(AdEventType.CLOSED, () =>
+      finish(true),
+    );
+    const errorDisposer = currentInterstitialAd.addAdEventListener(AdEventType.ERROR, () =>
+      finish(false),
+    );
   });
   return { promise, cancel: () => finish(false) };
 }

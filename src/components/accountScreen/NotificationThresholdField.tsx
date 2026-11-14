@@ -1,22 +1,25 @@
-import { MenuView,type MenuAction } from "@react-native-menu/menu";
+import { FixedColors } from "../../constants/fixedColors";
+import { createThemeValue } from "../../lib/appTheme";
+import { useAppTheme } from "../../hooks/useAppTheme";
+import { MenuView, type MenuAction } from "@react-native-menu/menu";
 import { useMemo } from "react";
-import { Keyboard,Pressable,StyleSheet,Switch,Text,TextInput,View } from "react-native";
+import { Keyboard, Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import { AppSettingsUi } from "../../constants/appSettings";
-import { AppSettingsRowStyles } from "../../constants/appSettingsStyles";
-import { AppColors } from "../../constants/colors";
+import { getAppSettingsRowStyles } from "../../constants/appSettingsStyles";
+import { getAppColors } from "../../constants/colors";
 import { CurrencyUnitLabels } from "../../constants/currency";
 import { AppTextBreakProps } from "../../constants/textLayout";
 import { Feather } from "../AppIcons";
 
 import { resolveDisplayCurrency } from "../../lib/currencyPreference";
 import {
-NotificationThresholdAmountCopy,
-NotificationUiCopy,
+  NotificationThresholdAmountCopy,
+  NotificationUiCopy,
 } from "../../notifications/config/notificationCopy";
 import { NotificationThresholdAmountInput } from "../../notifications/config/notificationThresholdLimits";
 import type {
-NotificationThresholdKey,
-NotificationThresholdPeriod,
+  NotificationThresholdKey,
+  NotificationThresholdPeriod,
 } from "../../notifications/domain/notificationEvents";
 import type { NotificationThresholdSettings } from "../../notifications/preferences/notificationPreferences";
 import { formatAmountInput } from "../../utils/amount";
@@ -42,13 +45,16 @@ export function NotificationThresholdField({
   settings,
   embeddedInNativeRow = false,
 }: NotificationThresholdFieldProps) {
+  const styles = getStyles();
+  useAppTheme();
   const currencyUnitLabel = CurrencyUnitLabels[resolveDisplayCurrency()];
   const periodActions = useMemo<MenuAction[]>(
-    () => settings.periodOptions.map((option) => ({
-      id: option.key,
-      title: option.label,
-      state: option.key === settings.selectedKey ? "on" : "off",
-    })),
+    () =>
+      settings.periodOptions.map((option) => ({
+        id: option.key,
+        title: option.label,
+        state: option.key === settings.selectedKey ? "on" : "off",
+      })),
     [settings.periodOptions, settings.selectedKey],
   );
   const selectedPeriodOption =
@@ -80,7 +86,11 @@ export function NotificationThresholdField({
               ]}
             >
               <Text style={styles.periodText}>{selectedPeriodOption?.label}</Text>
-              <Feather color={AppColors.mutedStrongText} name="chevron-down" size={AppSettingsUi.selectionChevronIconSize} />
+              <Feather
+                color={getAppColors().mutedStrongText}
+                name="chevron-down"
+                size={AppSettingsUi.selectionChevronIconSize}
+              />
             </Pressable>
           </MenuView>
           <View style={styles.amountRow}>
@@ -104,8 +114,8 @@ export function NotificationThresholdField({
         </View>
         <Switch
           onValueChange={onToggleEnabled}
-          thumbColor={settings.enabled ? AppColors.inverseText : AppColors.surface}
-          trackColor={{ false: AppColors.border, true: AppColors.primary }}
+          thumbColor={settings.enabled ? FixedColors.white : getAppColors().surface}
+          trackColor={{ false: getAppColors().border, true: getAppColors().primary }}
           value={settings.enabled}
         />
       </View>
@@ -125,67 +135,69 @@ function resolveAmountInputWidth(value: string): number {
   );
 }
 
-const styles = StyleSheet.create({
-  embeddedField: { minHeight: 0, paddingVertical: 0 },
-  amountInput: {
-    backgroundColor: "transparent",
-    borderBottomColor: AppColors.border,
-    borderBottomWidth: 1,
-    borderCurve: "continuous",
-    borderRadius: 0,
-    color: AppColors.text,
-    fontSize: 14,
-    fontWeight: "600",
-    minHeight: 36,
-    paddingHorizontal: NotificationThresholdAmountInput.horizontalPadding,
-    paddingVertical: 4,
-  },
-  amountControl: {
-    alignItems: "center",
-    flexDirection: "row",
-    flexShrink: 1,
-    flexWrap: "wrap",
-    gap: 12,
-    minWidth: 0,
-  },
-  amountRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 4,
-  },
-  amountSuffix: {
-    color: AppColors.text,
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  currency: {
-    color: AppColors.mutedText,
-    fontSize: 12,
-    fontWeight: "600",
-    paddingEnd: 4,
-  },
-  field: {
-    gap: 10,
-    minHeight: AppSettingsUi.rowMinHeight,
-    paddingVertical: 10,
-  },
-  amountField: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  periodButton: {
-    alignItems: "center",
-    alignSelf: "flex-start",
-    flexDirection: "row",
-    gap: 2,
-    minHeight: 36,
-    paddingHorizontal: 0,
-  },
-  periodText: AppSettingsRowStyles.title,
-  periodButtonPressed: {
-    opacity: 0.72,
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    embeddedField: { minHeight: 0, paddingVertical: 0 },
+    amountInput: {
+      backgroundColor: "transparent",
+      borderBottomColor: getAppColors().border,
+      borderBottomWidth: 1,
+      borderCurve: "continuous",
+      borderRadius: 0,
+      color: getAppColors().text,
+      fontSize: 14,
+      fontWeight: "600",
+      minHeight: 36,
+      paddingHorizontal: NotificationThresholdAmountInput.horizontalPadding,
+      paddingVertical: 4,
+    },
+    amountControl: {
+      alignItems: "center",
+      flexDirection: "row",
+      flexShrink: 1,
+      flexWrap: "wrap",
+      gap: 12,
+      minWidth: 0,
+    },
+    amountRow: {
+      alignItems: "center",
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 4,
+    },
+    amountSuffix: {
+      color: getAppColors().text,
+      fontSize: 13,
+      fontWeight: "700",
+    },
+    currency: {
+      color: getAppColors().mutedText,
+      fontSize: 12,
+      fontWeight: "600",
+      paddingEnd: 4,
+    },
+    field: {
+      gap: 10,
+      minHeight: AppSettingsUi.rowMinHeight,
+      paddingVertical: 10,
+    },
+    amountField: {
+      alignItems: "center",
+      flexDirection: "row",
+      justifyContent: "space-between",
+      gap: 12,
+    },
+    periodButton: {
+      alignItems: "center",
+      alignSelf: "flex-start",
+      flexDirection: "row",
+      gap: 2,
+      minHeight: 36,
+      paddingHorizontal: 0,
+    },
+    periodText: getAppSettingsRowStyles().title,
+    periodButtonPressed: {
+      opacity: 0.72,
+    },
+  }),
+);

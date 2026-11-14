@@ -1,6 +1,8 @@
-import { type ReactNode,useState } from "react";
-import { Image,ScrollView,StyleSheet,Text,TextInput,View } from "react-native";
-import { MenuStyles } from "../constants/menuStyles";
+import { createThemeValue } from "../lib/appTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
+import { type ReactNode, useState } from "react";
+import { Image, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { getMenuStyles } from "../constants/menuStyles";
 import { AppScrollBehavior } from "../constants/scroll";
 
 import { ActionButton } from "../components/ActionButton";
@@ -8,17 +10,17 @@ import { AppFooterContentInset } from "../components/AppFooterContentInset";
 import { IconActionButton } from "../components/IconActionButton";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { TextLinkButton } from "../components/TextLinkButton";
-import { AppColors } from "../constants/colors";
+import { getAppColors } from "../constants/colors";
 import {
-FormInputTextStyle,
-FormMultilineInputTextStyle,
-SupportingTextStyle
+  getFormInputTextStyle,
+  getFormMultilineInputTextStyle,
+  getSupportingTextStyle,
 } from "../constants/uiStyles";
 import { showNativeToast } from "../lib/nativeToast";
 import {
-type SupportAttachment,
-composeSupportMail,
-pickSupportAttachments,
+  type SupportAttachment,
+  composeSupportMail,
+  pickSupportAttachments,
 } from "../lib/supportContact";
 
 type SupportContactScreenProps = {
@@ -27,6 +29,8 @@ type SupportContactScreenProps = {
 };
 
 export function SupportContactScreen({ email, screenTitle }: SupportContactScreenProps) {
+  const styles = getStyles();
+  useAppTheme();
   const [attachments, setAttachments] = useState<SupportAttachment[]>([]);
   const [messageBody, setMessageBody] = useState("");
   const [subject, setSubject] = useState("");
@@ -103,12 +107,11 @@ export function SupportContactScreen({ email, screenTitle }: SupportContactScree
                 size="compact"
               />
             </View>
-            <Text style={styles.attachmentCount}>
-              {`첨부 ${attachments.length}개`}
-            </Text>
+            <Text style={styles.attachmentCount}>{`첨부 ${attachments.length}개`}</Text>
           </View>
           {attachments.length > 0 ? (
-            <ScrollView {...AppScrollBehavior}
+            <ScrollView
+              {...AppScrollBehavior}
               horizontal
               showsHorizontalScrollIndicator={false}
               style={styles.attachmentList}
@@ -134,75 +137,73 @@ export function SupportContactScreen({ email, screenTitle }: SupportContactScree
             </ScrollView>
           ) : null}
         </View>
-        <ActionButton
-          label="메일 전송하기"
-          onPress={handleSendSupportMail}
-          variant="primary"
-        />
+        <ActionButton label="메일 전송하기" onPress={handleSendSupportMail} variant="primary" />
       </View>
       <AppFooterContentInset />
     </KeyboardAwareScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: AppColors.screenBackground,
-  },
-  content: {
-    ...MenuStyles.content,
-    flexGrow: 1,
-  },
-  card: {
-    ...MenuStyles.panel,
-  },
-  fieldGroup: {
-    gap: MenuStyles.textBlock.gap,
-  },
-  label: MenuStyles.title,
-  input: FormInputTextStyle,
-  bodyInput: {
-    ...FormMultilineInputTextStyle,
-    minHeight: 144,
-  },
-  emailValue: {
-    ...SupportingTextStyle,
-    color: AppColors.text,
-    fontWeight: "700",
-  },
-  attachmentHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-  },
-  attachmentHeaderInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  attachmentCount: {
-    ...SupportingTextStyle,
-    flexShrink: 1,
-  },
-  attachmentList: {
-    marginHorizontal: -2,
-  },
-  attachmentCard: {
-    width: 104,
-    marginHorizontal: 2,
-    gap: 4,
-  },
-  attachmentImage: {
-    width: "100%",
-    height: 104,
-    borderRadius: 8,
-    backgroundColor: AppColors.surfaceMuted,
-  },
-  attachmentName: {
-    color: AppColors.text,
-    fontSize: 11,
-    fontWeight: "600",
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: getAppColors().screenBackground,
+    },
+    content: {
+      ...getMenuStyles().content,
+      flexGrow: 1,
+    },
+    card: {
+      ...getMenuStyles().panel,
+    },
+    fieldGroup: {
+      gap: getMenuStyles().textBlock.gap,
+    },
+    label: getMenuStyles().title,
+    input: getFormInputTextStyle(),
+    bodyInput: {
+      ...getFormMultilineInputTextStyle(),
+      minHeight: 144,
+    },
+    emailValue: {
+      ...getSupportingTextStyle(),
+      color: getAppColors().text,
+      fontWeight: "700",
+    },
+    attachmentHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 8,
+    },
+    attachmentHeaderInfo: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    attachmentCount: {
+      ...getSupportingTextStyle(),
+      flexShrink: 1,
+    },
+    attachmentList: {
+      marginHorizontal: -2,
+    },
+    attachmentCard: {
+      width: 104,
+      marginHorizontal: 2,
+      gap: 4,
+    },
+    attachmentImage: {
+      width: "100%",
+      height: 104,
+      borderRadius: 8,
+      backgroundColor: getAppColors().surfaceMuted,
+    },
+    attachmentName: {
+      color: getAppColors().text,
+      fontSize: 11,
+      fontWeight: "600",
+    },
+  }),
+);

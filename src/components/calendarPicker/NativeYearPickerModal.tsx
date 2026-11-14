@@ -34,10 +34,13 @@ export function NativeYearPickerModal({
       isOpen={isOpen}
       onClose={onClose}
       title={CalendarPickerCopy.title}
-      action={{ label: CalendarPickerCopy.applyAction, onPress: () => {
-        onSelectDate(toIsoDate(draftDate));
-        onClose();
-      } }}
+      action={{
+        label: CalendarPickerCopy.applyAction,
+        onPress: () => {
+          onSelectDate(toIsoDate(draftDate));
+          onClose();
+        },
+      }}
     >
       <DateTimePicker
         style={styles.wheel}

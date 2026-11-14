@@ -1,20 +1,25 @@
-import { MenuStyles } from "./menuStyles";
-import { AppColors } from "./colors";
+import { createThemeValue } from "../lib/appTheme";
+import { getMenuStyles } from "./menuStyles";
+import { getAppColors } from "./colors";
 import type { TextStyle, ViewStyle } from "react-native";
 
 import { EntryComposerUi } from "./entryComposer";
 import { AppLayout } from "./layout";
 
-export const EntryDetailLabelStyle: TextStyle = MenuStyles.title;
-export const EntryDetailValueStyle: TextStyle = {
-  ...MenuStyles.title,
-  fontWeight: "600",
-  color: AppColors.primary,
-};
-export const EntryDetailHintStyle: TextStyle = {
-  ...MenuStyles.description,
-  fontWeight: "400",
-};
+export const getEntryDetailLabelStyle = createThemeValue((): TextStyle => getMenuStyles().title);
+export const getEntryDetailValueStyle = createThemeValue(
+  (): TextStyle => ({
+    ...getMenuStyles().title,
+    fontWeight: "600",
+    color: getAppColors().primary,
+  }),
+);
+export const getEntryDetailHintStyle = createThemeValue(
+  (): TextStyle => ({
+    ...getMenuStyles().description,
+    fontWeight: "400",
+  }),
+);
 export const EntryDetailRowStyle: ViewStyle = {
   minHeight: EntryComposerUi.fieldHeight,
   flexDirection: "row",
@@ -24,8 +29,10 @@ export const EntryDetailRowStyle: ViewStyle = {
 };
 export const EntryDetailFieldStyle: ViewStyle = { gap: AppLayout.compactGap };
 
-export const EntryDetailContainerStyle: ViewStyle = {
-  paddingVertical: EntryComposerUi.detailsRowVerticalPadding,
-  borderBottomWidth: MenuStyles.row.borderBottomWidth,
-  borderBottomColor: AppColors.border,
-};
+export const getEntryDetailContainerStyle = createThemeValue(
+  (): ViewStyle => ({
+    paddingVertical: EntryComposerUi.detailsRowVerticalPadding,
+    borderBottomWidth: getMenuStyles().row.borderBottomWidth,
+    borderBottomColor: getAppColors().border,
+  }),
+);

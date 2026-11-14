@@ -23,8 +23,16 @@ export const SubscriptionConfig = {
 } as const;
 
 export const RevenueCatConfig = {
+  useTestStore: process.env.EXPO_PUBLIC_APP_VARIANT === "development",
+  testPublicApiKey: process.env.EXPO_PUBLIC_REVENUECAT_TEST_API_KEY ?? "",
+  testKeyPrefix: "test_",
   iosPublicApiKey: process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY ?? "",
   publicApiKey: process.env.EXPO_PUBLIC_REVENUECAT_API_KEY ?? "",
+} as const;
+
+export const RevenueCatConfigurationErrors = {
+  invalidTestKey: "RevenueCat Test Store requires a test_ SDK key.",
+  testKeyInProduction: "RevenueCat Test Store keys cannot be used in the production app.",
 } as const;
 
 export const SubscriptionMessages = {

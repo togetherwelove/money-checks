@@ -1,4 +1,3 @@
-
 export const EntryRegistrationCopy = {
   amountClearAccessibilityLabel: "금액 지우기",
   amountRequiredError: "금액을 입력해 주세요.",

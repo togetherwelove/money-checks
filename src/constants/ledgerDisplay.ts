@@ -1,4 +1,3 @@
-
 const LEDGER_DISPLAY_LOCALE = "ko-KR";
 
 export const DEFAULT_MEMBER_DISPLAY_NAME = "사용자";

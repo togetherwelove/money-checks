@@ -80,7 +80,17 @@ test("iOS and Android headers leave entry creation to the transaction list", () 
     for (const name of ["calendar", "all-entries", "charts", "assets", "all-menu"]) {
       const options = tree.props.screenOptions({ route: { name } });
       assert.equal(options.headerRight, undefined);
-      assert.equal(options.unstable_headerRightItems, undefined);
+      if (name === "calendar") {
+        const items = options.unstable_headerRightItems({});
+        assert.deepEqual(
+          Array.from(items, (item) => item.label),
+          ["오늘"],
+        );
+        assert.equal(items[0].type, "button");
+        assert.equal(items[0].icon, undefined);
+      } else {
+        assert.equal(options.unstable_headerRightItems, undefined);
+      }
     }
   }
 });
@@ -152,11 +162,33 @@ test("footer tabs contain only destinations and block navigation when disabled",
   assert.deepEqual(selected, ["charts"]);
 });
 
-test("all regular headers omit both menu and entry buttons", () => {
+test("non-calendar headers omit both menu and entry buttons", () => {
   const tree = navigator();
   for (const screen of tree.props.children) {
+    if (screen.props.name === "calendar") continue;
     const options = tree.props.screenOptions({ route: { name: screen.props.name } });
     assert.equal(options.headerRight, undefined);
     assert.equal(options.unstable_headerRightItems, undefined);
   }
+});
+
+test("home today action selects the current local date and stays disabled when already selected", () => {
+  const { toIsoDate } = modules()("src/utils/calendar.ts");
+  const today = toIsoDate(new Date());
+  const selected = [];
+  const button = (date) =>
+    navigator(undefined, {
+      ledgerState: { selectedDate: date },
+      onSelectCalendarDate: (value) => selected.push(value),
+    })
+      .props.screenOptions({ route: { name: "calendar" } })
+      .unstable_headerRightItems({})[0];
+  const active = button("2000-01-01");
+  assert.equal(active.disabled, false);
+  active.onPress();
+  assert.deepEqual(selected, [today]);
+  const inactive = button(today);
+  assert.equal(inactive.disabled, true);
+  inactive.onPress();
+  assert.deepEqual(selected, [today]);
 });

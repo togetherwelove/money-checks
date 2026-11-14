@@ -1,10 +1,10 @@
-import { AppColors } from "../../constants/colors";
+import { LightColors } from "../../constants/colorPalettes";
 
 export const ReportSheetStyle = { date: 3, header: 4, text: 5, label: 6 } as const;
 
 export function buildReportStylesXml() {
-  const primary = AppColors.primary.replace("#", "");
-  const inverse = AppColors.inverseText.replace("#", "");
+  const primary = LightColors.primary.replace("#", "");
+  const inverse = LightColors.onPrimary.replace("#", "");
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
 <numFmts count="1"><numFmt numFmtId="164" formatCode="yyyy-mm-dd"/></numFmts>

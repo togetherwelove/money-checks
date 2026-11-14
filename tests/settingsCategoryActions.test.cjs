@@ -7,26 +7,50 @@ function setup() {
   const alerts = [];
   const writes = [];
   let hasLoans = false;
-  const category = { id: "custom-category-loan-repayment", label: "상환", iconName: "circle", source: "custom", type: "expense" };
+  const category = {
+    id: "custom-category-loan-repayment",
+    label: "상환",
+    iconName: "circle",
+    source: "custom",
+    type: "expense",
+  };
   const customization = {
-    customCategories: [category], categoryOrderIds: [], hiddenSystemCategoryIds: [],
-    systemCategoryIconOverrides: {}, systemCategoryLabelOverrides: {},
-    saveCustomCategories: async (next) => { writes.push(next); return true; },
+    customCategories: [category],
+    categoryOrderIds: [],
+    hiddenSystemCategoryIds: [],
+    systemCategoryIconOverrides: {},
+    systemCategoryLabelOverrides: {},
+    saveCustomCategories: async (next) => {
+      writes.push(next);
+      return true;
+    },
     saveHiddenSystemCategoryIds: (next) => writes.push(next),
   };
   const jsx = (type, props) => ({ type, props });
   const load = modules({
-    react: host.react, "react/jsx-runtime": { jsx, jsxs: jsx },
+    react: host.react,
+    "react/jsx-runtime": { jsx, jsxs: jsx },
     "react-native": { Alert: { alert: (...args) => alerts.push(args) } },
     "src/hooks/useCustomCategories.ts": { useCustomCategories: () => customization },
     "src/lib/ledgerBookCategories.ts": { hasLedgerBookLoans: async () => hasLoans },
     "src/components/categorySelector/CategoryManageModal.tsx": { CategoryManageModal: "Manager" },
-    "src/components/appSettings/SettingsCategoryCreateModal.tsx": { SettingsCategoryCreateModal: "Editor" },
+    "src/components/appSettings/SettingsCategoryCreateModal.tsx": {
+      SettingsCategoryCreateModal: "Editor",
+    },
   });
-  const { SettingsCategoryOrderModal } = load("src/components/appSettings/SettingsCategoryOrderModal.tsx");
-  return { category, alerts, writes, customization,
-    loans: (value) => { hasLoans = value; },
-    render: () => host.render(() => SettingsCategoryOrderModal({ bookId: "book", onClose() {} })).props,
+  const { SettingsCategoryOrderModal } = load(
+    "src/components/appSettings/SettingsCategoryOrderModal.tsx",
+  );
+  return {
+    category,
+    alerts,
+    writes,
+    customization,
+    loans: (value) => {
+      hasLoans = value;
+    },
+    render: () =>
+      host.render(() => SettingsCategoryOrderModal({ bookId: "book", onClose() {} })).props,
   };
 }
 
@@ -69,18 +93,41 @@ test("editing a custom category preserves its id and retains input on save failu
   let closed = false;
   let saved;
   let succeeds = false;
-  const category = { id: "custom-category-loan-repayment", label: "상환", iconName: "circle", source: "custom", type: "expense" };
+  const category = {
+    id: "custom-category-loan-repayment",
+    label: "상환",
+    iconName: "circle",
+    source: "custom",
+    type: "expense",
+  };
   const categories = {
-    customCategories: [category], systemCategoryLabelOverrides: {},
-    saveCustomCategories: async (next) => { saved = next; return succeeds; },
+    customCategories: [category],
+    systemCategoryLabelOverrides: {},
+    saveCustomCategories: async (next) => {
+      saved = next;
+      return succeeds;
+    },
   };
   const jsx = (type, props) => ({ type, props });
   const load = modules({
-    react: host.react, "react/jsx-runtime": { jsx, jsxs: jsx },
+    react: host.react,
+    "react/jsx-runtime": { jsx, jsxs: jsx },
     "src/components/categorySelector/CategoryCreateModal.tsx": { CategoryCreateModal: "Form" },
   });
-  const { SettingsCategoryCreateModal } = load("src/components/appSettings/SettingsCategoryCreateModal.tsx");
-  const render = () => host.render(() => SettingsCategoryCreateModal({ category, categories, entryType: "expense", onClose: () => { closed = true; } })).props;
+  const { SettingsCategoryCreateModal } = load(
+    "src/components/appSettings/SettingsCategoryCreateModal.tsx",
+  );
+  const render = () =>
+    host.render(() =>
+      SettingsCategoryCreateModal({
+        category,
+        categories,
+        entryType: "expense",
+        onClose: () => {
+          closed = true;
+        },
+      }),
+    ).props;
   assert.equal(render().label, "상환");
   render().onChangeLabel("대출 원금");
   render().onChangeIcon("credit-card");

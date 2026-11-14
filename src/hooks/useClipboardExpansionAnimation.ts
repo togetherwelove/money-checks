@@ -12,12 +12,16 @@ export function useClipboardExpansionAnimation(expanded: boolean) {
       animation = Animated.timing(progress, {
         toValue: expanded ? 1 : 0,
         duration: reduceMotion ? 0 : ClipboardPromptUi.animationDurationMs,
-        easing: Easing.out(Easing.cubic), useNativeDriver: true,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
       });
       animation.start();
     };
     void AccessibilityInfo.isReduceMotionEnabled().then(start, () => start(false));
-    return () => { active = false; animation?.stop(); };
+    return () => {
+      active = false;
+      animation?.stop();
+    };
   }, [expanded, progress]);
   return progress;
 }

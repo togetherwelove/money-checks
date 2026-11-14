@@ -1,9 +1,10 @@
+import { useAppTheme } from "../../hooks/useAppTheme";
 import { Pressable, Text, TextInput, View } from "react-native";
 import { AssetLinkCopy as Copy, LoanRepaymentMethods } from "../../constants/assetLink";
 import { AssetConfig } from "../../constants/assets";
 import { formatDecimalAmountInput } from "../../utils/amount";
 import { AssetCopy } from "../../constants/assets";
-import { AssetStyles as styles } from "../../constants/assetStyles";
+import { getAssetStyles } from "../../constants/assetStyles";
 import { useAssetLinkOptions } from "../../hooks/useAssetLinkOptions";
 import type { AssetDraft } from "../../types/asset";
 import { EntryDateSelector } from "../EntryDateSelector";
@@ -23,12 +24,13 @@ export function LoanSettingsFields({
   bookId?: string;
   shared?: boolean;
 }) {
+  useAppTheme();
   const { portfolio, error, retry } = useAssetLinkOptions(bookId);
   return (
-    <View style={styles.section}>
-      <Text style={styles.title}>{Copy.settings}</Text>
-      <Text style={styles.label}>{Copy.paymentQuestion}</Text>
-      <View style={styles.wrap}>
+    <View style={getAssetStyles().section}>
+      <Text style={getAssetStyles().title}>{Copy.settings}</Text>
+      <Text style={getAssetStyles().label}>{Copy.paymentQuestion}</Text>
+      <View style={getAssetStyles().wrap}>
         {LoanRepaymentMethods.map((method) => (
           <Pressable
             key={method.id}
@@ -40,12 +42,15 @@ export function LoanSettingsFields({
               if (method.id === "annuity" && draft.monthlyPayment === undefined)
                 update("monthlyPayment", "");
             }}
-            style={[styles.chip, (draft.repayment || "manual") === method.id && styles.selected]}
+            style={[
+              getAssetStyles().chip,
+              (draft.repayment || "manual") === method.id && getAssetStyles().selected,
+            ]}
           >
             <Text
               style={[
-                styles.text,
-                (draft.repayment || "manual") === method.id && styles.selectedText,
+                getAssetStyles().text,
+                (draft.repayment || "manual") === method.id && getAssetStyles().selectedText,
               ]}
             >
               {method.label}
@@ -53,7 +58,7 @@ export function LoanSettingsFields({
           </Pressable>
         ))}
       </View>
-      <Text style={styles.hint}>
+      <Text style={getAssetStyles().hint}>
         {
           (
             LoanRepaymentMethods.find((method) => method.id === draft.repayment) ??
@@ -71,13 +76,13 @@ export function LoanSettingsFields({
                 : []),
             ] as const
           ).map((field) => (
-            <View key={field.key} style={styles.section}>
-              <Text style={styles.label}>{field.label}</Text>
+            <View key={field.key} style={getAssetStyles().section}>
+              <Text style={getAssetStyles().label}>{field.label}</Text>
               <TextInput
                 accessibilityLabel={field.label}
                 editable={!disabled}
                 keyboardType="decimal-pad"
-                style={styles.input}
+                style={getAssetStyles().input}
                 value={formatDecimalAmountInput(
                   draft[field.key as "rate" | "monthlyPayment"] ?? "",
                   AssetConfig.currency,
@@ -96,8 +101,8 @@ export function LoanSettingsFields({
                   { key: "maturity", label: Copy.maturity },
                 ] as const
               ).map((field) => (
-                <View key={field.key} style={styles.section}>
-                  <Text style={styles.label}>{field.label}</Text>
+                <View key={field.key} style={getAssetStyles().section}>
+                  <Text style={getAssetStyles().label}>{field.label}</Text>
                   <View pointerEvents={disabled ? "none" : "auto"}>
                     <EntryDateSelector
                       inline
@@ -114,7 +119,7 @@ export function LoanSettingsFields({
       ) : null}
       {error ? (
         <Pressable accessibilityRole="button" onPress={retry}>
-          <Text style={styles.error}>
+          <Text style={getAssetStyles().error}>
             {Copy.loadError}
             {Copy.retry}
           </Text>
@@ -129,7 +134,7 @@ export function LoanSettingsFields({
         )}
         onChange={(id) => update("defaultCashAssetId", id ?? "")}
       />
-      <Text style={styles.hint}>{Copy.estimate}</Text>
+      <Text style={getAssetStyles().hint}>{Copy.estimate}</Text>
     </View>
   );
 }

@@ -1,5 +1,6 @@
+import { useAppTheme } from "../../hooks/useAppTheme";
 import { Text, View } from "react-native";
-import { MenuStyles } from "../../constants/menuStyles";
+import { getMenuStyles } from "../../constants/menuStyles";
 import type { AppMenuItem, AppMenuSection } from "../../lib/menuItems";
 import { getAppMenuItemId } from "../../lib/menuItems";
 import { SettingsActionRow } from "./SettingsActionRow";
@@ -10,14 +11,15 @@ export type SettingsMenuLinksProps = {
 };
 
 export function SettingsMenuLinks({ sections, onSelect }: SettingsMenuLinksProps) {
+  useAppTheme();
   return (
-    <View style={MenuStyles.sections}>
+    <View style={getMenuStyles().sections}>
       {sections.map((section) => (
-        <View key={section.label} style={MenuStyles.section}>
-          <Text accessibilityRole="header" style={MenuStyles.sectionTitle}>
+        <View key={section.label} style={getMenuStyles().section}>
+          <Text accessibilityRole="header" style={getMenuStyles().sectionTitle}>
             {section.label}
           </Text>
-          <View style={MenuStyles.group}>
+          <View style={getMenuStyles().group}>
             {section.items.map((item, index) => (
               <SettingsActionRow
                 key={getAppMenuItemId(item)}

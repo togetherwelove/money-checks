@@ -1,7 +1,4 @@
-import {
-  ONNURI_MESSAGE_HEADER_PATTERN,
-  ONNURI_PAYMENT_PATTERN,
-} from "../constants/onnuriPayment";
+import { ONNURI_MESSAGE_HEADER_PATTERN, ONNURI_PAYMENT_PATTERN } from "../constants/onnuriPayment";
 
 const ISO_DATE_MONTH_OFFSET = 1;
 const BROADCAST_PREFIX_PATTERN = /^\[[^\]]+\]\s*/;
@@ -184,9 +181,7 @@ function resolveBlockedAmountIndex(line: string): number | null {
 
 function buildMerchantCandidates(lines: readonly string[]): MerchantCandidate[] {
   const candidates: MerchantCandidate[] = [];
-  const transactionDateLineIndex = lines.findIndex((line) =>
-    TRANSACTION_DATE_PATTERN.test(line),
-  );
+  const transactionDateLineIndex = lines.findIndex((line) => TRANSACTION_DATE_PATTERN.test(line));
   const dateLineMerchantName =
     transactionDateLineIndex >= 0 ? cleanMerchantName(lines[transactionDateLineIndex]) : "";
   const shouldPrioritizePostDateLine = !isValidMerchantCandidate(dateLineMerchantName);

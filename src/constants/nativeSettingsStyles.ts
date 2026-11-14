@@ -1,3 +1,4 @@
+import { createThemeValue } from "../lib/appTheme";
 import {
   background,
   fixedSize,
@@ -6,33 +7,35 @@ import {
   frame,
   listRowBackground,
   listRowInsets,
+  listRowSeparator,
   listSectionSpacing,
   listStyle,
   scrollContentBackground,
 } from "@expo/ui/swift-ui/modifiers";
-import { AppColors } from "./colors";
+import { getAppColors } from "./colors";
 import { MenuDesign } from "./menuDesign";
 
-export const NativeSettingsStyles = {
+export const getNativeSettingsStyles = createThemeValue(() => ({
+  footer: [listRowSeparator("hidden"), listRowBackground(getAppColors().screenBackground)],
   list: [
     listStyle("plain"),
     scrollContentBackground("hidden"),
-    background(AppColors.screenBackground),
+    background(getAppColors().screenBackground),
     listSectionSpacing("compact"),
   ],
   title: [
     font({ size: MenuDesign.titleFontSize, weight: "bold" }),
-    foregroundStyle(AppColors.text),
+    foregroundStyle(getAppColors().text),
     frame({ minHeight: MenuDesign.titleLineHeight, alignment: "leading" }),
   ],
   description: [
     font({ size: MenuDesign.descriptionFontSize }),
-    foregroundStyle(AppColors.mutedText),
+    foregroundStyle(getAppColors().mutedText),
     fixedSize({ horizontal: false, vertical: true }),
     frame({ minHeight: MenuDesign.descriptionLineHeight, alignment: "leading" }),
   ],
   row: [
-    listRowBackground(AppColors.screenBackground),
+    listRowBackground(getAppColors().screenBackground),
     listRowInsets({
       top: MenuDesign.verticalPadding,
       bottom: MenuDesign.verticalPadding,
@@ -43,6 +46,6 @@ export const NativeSettingsStyles = {
   ],
   sectionTitle: [
     font({ size: MenuDesign.sectionFontSize, weight: "bold" }),
-    foregroundStyle(AppColors.mutedText),
+    foregroundStyle(getAppColors().mutedText),
   ],
-};
+}));

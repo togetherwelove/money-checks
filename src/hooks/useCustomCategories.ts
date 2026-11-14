@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CategorySaveSession } from "../lib/categorySaveSession";
 
-import {
-  CATEGORY_SHARED_REFRESH_DEBOUNCE_MS,
-} from "../constants/categorySelector";
+import { CATEGORY_SHARED_REFRESH_DEBOUNCE_MS } from "../constants/categorySelector";
 import {
   loadStoredCategoryOrderIds,
   loadStoredCustomCategories,
@@ -87,7 +85,9 @@ export function useCustomCategories(
     setHiddenSystemCategoryIds(loadStoredHiddenSystemCategoryIds(type, storageScope));
     setSystemCategoryIconOverrides(loadStoredSystemCategoryIconOverrides(type, storageScope));
     setSystemCategoryLabelOverrides(loadStoredSystemCategoryLabelOverrides(type, storageScope));
-    return () => { session.active = false; };
+    return () => {
+      session.active = false;
+    };
   }, [storageScope, type, session]);
 
   useEffect(() => {
@@ -218,7 +218,12 @@ export function useCustomCategories(
       try {
         await session.write(async () => {
           if (bookId) {
-            await replaceLedgerBookCustomCategories(bookId, type, nextStoredCategories, latestCategoryOrderIdsRef.current);
+            await replaceLedgerBookCustomCategories(
+              bookId,
+              type,
+              nextStoredCategories,
+              latestCategoryOrderIdsRef.current,
+            );
           }
           saveStoredCustomCategories(type, nextStoredCategories, storageScope);
           if (session.active) {
@@ -228,7 +233,11 @@ export function useCustomCategories(
         });
         return session.active;
       } catch (error) {
-        logLedgerBookCategorySyncError(error, { bookId, step: "save_shared_custom_categories", type });
+        logLedgerBookCategorySyncError(error, {
+          bookId,
+          step: "save_shared_custom_categories",
+          type,
+        });
         return false;
       } finally {
         if (session.active) setIsSavingCategories(false);
@@ -321,8 +330,12 @@ export function useCustomCategories(
       return await session.write(async () => {
         if (!session.active) return false;
         if (bookId) {
-          await replaceLedgerBookCustomCategories(bookId, type,
-            toStoredCustomCategories(latestCustomCategoriesRef.current), nextCategoryOrderIds);
+          await replaceLedgerBookCustomCategories(
+            bookId,
+            type,
+            toStoredCustomCategories(latestCustomCategoriesRef.current),
+            nextCategoryOrderIds,
+          );
           await replaceLedgerBookSystemCategoryCustomizations(bookId, type, {
             categoryOrderIds: nextCategoryOrderIds,
             hiddenSystemCategoryIds: latestHiddenSystemCategoryIdsRef.current,

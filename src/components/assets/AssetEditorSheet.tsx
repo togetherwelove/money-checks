@@ -1,7 +1,8 @@
+import { useAppTheme } from "../../hooks/useAppTheme";
 import { useRef, useState } from "react";
 import { Alert, Pressable, Switch, Text, View } from "react-native";
 import { AssetCopy as Copy, AssetKinds } from "../../constants/assets";
-import { AssetStyles as styles } from "../../constants/assetStyles";
+import { getAssetStyles } from "../../constants/assetStyles";
 import { savePersonalAsset, deletePersonalAsset } from "../../lib/personalAssets";
 import type { AssetValuation, PersonalAsset } from "../../types/asset";
 import {
@@ -37,6 +38,7 @@ export function AssetEditorSheet({
   bookId: string;
   movements?: AssetMovement[];
 }) {
+  useAppTheme();
   const [initial] = useState(() =>
     editableLoanSettings(
       asset && history[0]
@@ -107,22 +109,30 @@ export function AssetEditorSheet({
             }
       }
     >
-      <KeyboardAwareScrollView contentContainerStyle={styles.content}>
-        <View style={styles.section} pointerEvents={saving ? "none" : "auto"}>
-          <Text style={styles.label}>{Copy.kind}</Text>
+      <KeyboardAwareScrollView contentContainerStyle={getAssetStyles().content}>
+        <View style={getAssetStyles().section} pointerEvents={saving ? "none" : "auto"}>
+          <Text style={getAssetStyles().label}>{Copy.kind}</Text>
           {asset ? (
-            <Text style={styles.title}>{assetKind(asset.kind).label}</Text>
+            <Text style={getAssetStyles().title}>{assetKind(asset.kind).label}</Text>
           ) : (
-            <View style={styles.wrap}>
+            <View style={getAssetStyles().wrap}>
               {AssetKinds.map((kind) => (
                 <Pressable
                   key={kind.id}
                   accessibilityRole="radio"
                   accessibilityState={{ checked: kind.id === draft.kind }}
                   onPress={() => setDraft((value) => ({ ...value, kind: kind.id }))}
-                  style={[styles.chip, kind.id === draft.kind && styles.selected]}
+                  style={[
+                    getAssetStyles().chip,
+                    kind.id === draft.kind && getAssetStyles().selected,
+                  ]}
                 >
-                  <Text style={[styles.text, kind.id === draft.kind && styles.selectedText]}>
+                  <Text
+                    style={[
+                      getAssetStyles().text,
+                      kind.id === draft.kind && getAssetStyles().selectedText,
+                    ]}
+                  >
                     {kind.label}
                   </Text>
                 </Pressable>
@@ -143,8 +153,8 @@ export function AssetEditorSheet({
             expanded={expanded}
             onToggleDetails={() => setExpanded((value) => !value)}
           />
-          <View style={styles.row}>
-            <Text style={styles.label}>{Copy.shareWithMembers}</Text>
+          <View style={getAssetStyles().row}>
+            <Text style={getAssetStyles().label}>{Copy.shareWithMembers}</Text>
             <Switch
               accessibilityLabel={Copy.shareWithMembers}
               value={shared}
@@ -152,43 +162,45 @@ export function AssetEditorSheet({
               onValueChange={setShared}
             />
           </View>
-          <Text style={styles.hint}>{shared ? Copy.sharingHint : Copy.private}</Text>
-          {readOnly ? <Text style={styles.hint}>{Copy.sharedReadOnly}</Text> : null}
+          <Text style={getAssetStyles().hint}>{shared ? Copy.sharingHint : Copy.private}</Text>
+          {readOnly ? <Text style={getAssetStyles().hint}>{Copy.sharedReadOnly}</Text> : null}
           {asset && (asset.kind === "cash" || asset.kind === "loan") ? (
-            <Text style={styles.hint}>{AssetLinkCopy.baseline}</Text>
+            <Text style={getAssetStyles().hint}>{AssetLinkCopy.baseline}</Text>
           ) : null}
         </View>
         {validation && validation !== Copy.invalid && dirty ? (
-          <Text style={styles.error}>{validation}</Text>
+          <Text style={getAssetStyles().error}>{validation}</Text>
         ) : null}
         {error ? (
-          <Text accessibilityRole="alert" style={styles.error}>
+          <Text accessibilityRole="alert" style={getAssetStyles().error}>
             {error}
           </Text>
         ) : null}
         {history.length ? (
-          <View style={styles.section}>
-            <Text style={styles.title}>{Copy.history}</Text>
-            <Text style={styles.hint}>{Copy.historyHint}</Text>
+          <View style={getAssetStyles().section}>
+            <Text style={getAssetStyles().title}>{Copy.history}</Text>
+            <Text style={getAssetStyles().hint}>{Copy.historyHint}</Text>
             {history.map((value) => (
-              <View key={value.id} style={styles.row}>
-                <Text style={styles.hint}>
+              <View key={value.id} style={getAssetStyles().row}>
+                <Text style={getAssetStyles().hint}>
                   {value.valued_on}
                   {Copy.separator}
                   {Copy.manual}
                 </Text>
-                <Text style={styles.text}>{formatAssetAmount(Number(value.amount))}</Text>
+                <Text style={getAssetStyles().text}>{formatAssetAmount(Number(value.amount))}</Text>
               </View>
             ))}
           </View>
         ) : null}
         {movements.length ? (
-          <View style={styles.section}>
-            <Text style={styles.title}>{AssetLinkCopy.movementHistory}</Text>
+          <View style={getAssetStyles().section}>
+            <Text style={getAssetStyles().title}>{AssetLinkCopy.movementHistory}</Text>
             {movements.map((movement) => (
-              <View key={movement.entry_id} style={styles.row}>
-                <Text style={styles.hint}>{movement.occurred_on}</Text>
-                <Text style={styles.text}>{formatAssetAmount(Number(movement.amount))}</Text>
+              <View key={movement.entry_id} style={getAssetStyles().row}>
+                <Text style={getAssetStyles().hint}>{movement.occurred_on}</Text>
+                <Text style={getAssetStyles().text}>
+                  {formatAssetAmount(Number(movement.amount))}
+                </Text>
               </View>
             ))}
           </View>
@@ -197,7 +209,7 @@ export function AssetEditorSheet({
           <Pressable
             accessibilityRole="button"
             disabled={saving || readOnly}
-            style={styles.row}
+            style={getAssetStyles().row}
             onPress={() =>
               Alert.alert(Copy.deleteTitle, Copy.deleteMessage, [
                 { text: Copy.cancel, style: "cancel" },
@@ -211,7 +223,7 @@ export function AssetEditorSheet({
               ])
             }
           >
-            <Text style={styles.delete}>{Copy.delete}</Text>
+            <Text style={getAssetStyles().delete}>{Copy.delete}</Text>
           </Pressable>
         ) : null}
       </KeyboardAwareScrollView>

@@ -4,8 +4,7 @@ export const CalendarSummaryModes = {
   selectedMonth: "selected-month",
 } as const;
 
-export type CalendarSummaryMode =
-  (typeof CalendarSummaryModes)[keyof typeof CalendarSummaryModes];
+export type CalendarSummaryMode = (typeof CalendarSummaryModes)[keyof typeof CalendarSummaryModes];
 
 export const CalendarSummaryBaseDay = {
   unselected: 0,
@@ -33,13 +32,12 @@ export const CalendarSummaryLabels = {
   all: "전체 기간",
   balance: "잔액",
   changePeriod: "집계 기간 변경",
-  loadingCount: "불러오는 중",
   expense: "지출",
   income: "수입",
   monthly: "월간 요약",
   selectedMonthPrompt: "기준일을 선택하지 않았습니다",
 } as const;
 
-export function formatSelectedDateEntryCount(count: number | null): string {
-  return count === null ? CalendarSummaryLabels.loadingCount : `${count}건`;
+export function formatSelectedDateEntryCount(count: number): string {
+  return `${count}건`;
 }

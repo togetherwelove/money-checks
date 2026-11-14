@@ -1,4 +1,5 @@
-import { MenuView } from "@react-native-menu/menu";
+import { createThemeValue } from "../../lib/appTheme";
+import { useAppTheme } from "../../hooks/useAppTheme";
 import { NativeSelectionSheet } from "../NativeSelectionSheet";
 import { AppScrollBehavior } from "../../constants/scroll";
 import { Feather } from "../AppIcons";
@@ -9,24 +10,23 @@ import type { LedgerEntryType } from "../../types/ledger";
 import { EntryComposerHeader } from "../entryComposer/EntryComposerHeader";
 import { ActionButton } from "../ActionButton";
 
-import { CategoryContextMenuCopy, CategoryCustomizerCopy } from "../../constants/categoryCustomizer";
+import { CategoryCustomizerCopy } from "../../constants/categoryCustomizer";
 import {
   CATEGORY_MANAGE_ACTION_BUTTON_HEIGHT,
   CATEGORY_MANAGE_MOVE_BUTTON_ICON_SIZE,
-  CATEGORY_MANAGE_ROW_GAP,
-  CATEGORY_MANAGE_ROW_HEIGHT,
-  CATEGORY_MANAGE_ROW_ICON_SIZE,
   CATEGORY_MANAGE_SCROLL_SETTLE_DELAY_MS,
 } from "../../constants/categorySelector";
-import { AppColors } from "../../constants/colors";
+import { getAppColors } from "../../constants/colors";
 import { AppLayout } from "../../constants/layout";
-import { SupportingTextStyle } from "../../constants/uiStyles";
+import { getSupportingTextStyle } from "../../constants/uiStyles";
 import type { CategoryDefinition } from "../../types/category";
-
-const CategoryMenuActions = [
-  { id: "edit", title: CategoryContextMenuCopy.editAction, image: "pencil" },
-  { id: "delete", title: CategoryCustomizerCopy.deleteAction, image: "trash", attributes: { destructive: true } },
-];
+import {
+  resolveCategoryGridHeight,
+  resolveCategoryGridMetrics,
+  resolveCategoryGridPosition,
+  resolveCategoryGridScrollY,
+} from "../../lib/categoryGrid";
+import { CategoryManageTile } from "./CategoryManageTile";
 
 type CategoryManageModalProps = {
   onEdit?: (category: CategoryDefinition) => void;
@@ -59,6 +59,8 @@ export function CategoryManageModal({
   onClose,
   onChangeOrder,
 }: CategoryManageModalProps) {
+  const styles = getStyles();
+  useAppTheme();
   const savingRef = useRef(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
@@ -70,6 +72,10 @@ export function CategoryManageModal({
   );
   const listScrollRef = useRef<ScrollViewInstance | null>(null);
   const listViewportHeightRef = useRef(0);
+  const listScrollYRef = useRef(0);
+  const [gridWidth, setGridWidth] = useState(0);
+  const { cellSize, columns } = resolveCategoryGridMetrics(gridWidth);
+  const gridHeight = resolveCategoryGridHeight(orderedCategories.length, cellSize, columns);
   const pendingScrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wasOpenRef = useRef(false);
 
@@ -83,17 +89,23 @@ export function CategoryManageModal({
   }, []);
 
   const scheduleCategoryScroll = useCallback(
-    (categoryIndex: number, direction: -1 | 1) => {
+    (categoryIndex: number) => {
       clearPendingCategoryScroll();
       pendingScrollTimeoutRef.current = setTimeout(() => {
         pendingScrollTimeoutRef.current = null;
         listScrollRef.current?.scrollTo({
           animated: true,
-          y: resolveCategoryScrollY(categoryIndex, direction, listViewportHeightRef.current),
+          y: resolveCategoryGridScrollY(
+            categoryIndex,
+            cellSize,
+            columns,
+            listScrollYRef.current,
+            listViewportHeightRef.current,
+          ),
         });
       }, CATEGORY_MANAGE_SCROLL_SETTLE_DELAY_MS);
     },
-    [clearPendingCategoryScroll],
+    [cellSize, columns, clearPendingCategoryScroll],
   );
 
   useEffect(() => {
@@ -130,21 +142,32 @@ export function CategoryManageModal({
     );
   }, [categories, clearPendingCategoryScroll, isOpen, isLoading, entryType]);
 
-  useEffect(() => clearPendingCategoryScroll, [clearPendingCategoryScroll]);
+  useEffect(() => clearPendingCategoryScroll, [cellSize, columns, clearPendingCategoryScroll]);
 
   const selectedIndex = orderedCategories.findIndex(
     (category) => category.id === selectedCategoryId,
   );
-  const canMoveUp = selectedIndex > 0;
-  const canMoveDown = selectedIndex >= 0 && selectedIndex < orderedCategories.length - 1;
-  const canSave = !isLoading && !isBusy && !saving && !areCategoryOrdersEqual(categories, orderedCategories);
+  const canMovePrevious = selectedIndex > 0;
+  const canMoveNext = selectedIndex >= 0 && selectedIndex < orderedCategories.length - 1;
+  const canSave =
+    !isLoading && !isBusy && !saving && !areCategoryOrdersEqual(categories, orderedCategories);
   function changeEntryType(nextType: LedgerEntryType) {
     if (nextType === entryType || savingRef.current || isBusy || isLoading) return;
-    if (!canSave) { onChangeEntryType(nextType); return; }
-    Alert.alert(CategoryCustomizerCopy.discardOrderTitle, CategoryCustomizerCopy.discardOrderMessage, [
-      { text: CategoryCustomizerCopy.keepEditingAction, style: "cancel" },
-      { text: CategoryCustomizerCopy.switchTabAction, onPress: () => onChangeEntryType(nextType) },
-    ]);
+    if (!canSave) {
+      onChangeEntryType(nextType);
+      return;
+    }
+    Alert.alert(
+      CategoryCustomizerCopy.discardOrderTitle,
+      CategoryCustomizerCopy.discardOrderMessage,
+      [
+        { text: CategoryCustomizerCopy.keepEditingAction, style: "cancel" },
+        {
+          text: CategoryCustomizerCopy.switchTabAction,
+          onPress: () => onChangeEntryType(nextType),
+        },
+      ],
+    );
   }
 
   const moveSelectedCategory = useCallback(
@@ -163,7 +186,7 @@ export function CategoryManageModal({
       const [movingCategory] = nextCategories.splice(selectedIndex, 1);
       nextCategories.splice(nextIndex, 0, movingCategory);
       setOrderedCategories(nextCategories);
-      scheduleCategoryScroll(nextIndex, direction);
+      scheduleCategoryScroll(nextIndex);
     },
     [isBusy, isLoading, orderedCategories, scheduleCategoryScroll, selectedIndex],
   );
@@ -194,11 +217,11 @@ export function CategoryManageModal({
     if (canSave) void saveCategoryOrder();
   }, [canSave, saveCategoryOrder]);
 
-  const handlePressMoveUp = useCallback(() => {
+  const handlePressMovePrevious = useCallback(() => {
     moveSelectedCategory(-1);
   }, [moveSelectedCategory]);
 
-  const handlePressMoveDown = useCallback(() => {
+  const handlePressMoveNext = useCallback(() => {
     moveSelectedCategory(1);
   }, [moveSelectedCategory]);
 
@@ -211,65 +234,87 @@ export function CategoryManageModal({
   );
 
   return (
-    <NativeSelectionSheet isOpen={isOpen} onClose={closeWithoutSaving} dismissible={!saving && !isBusy} title={title}
-      header={<EntryComposerHeader type={entryType} onSelectType={changeEntryType}
-        typeDisabled={saving || isBusy || isLoading} saving={saving} actionDisabled={!canSave}
-        actionLabel={CategoryCustomizerCopy.saveAction} onAction={handlePressSave} onClose={closeWithoutSaving} />}>
+    <NativeSelectionSheet
+      isOpen={isOpen}
+      onClose={closeWithoutSaving}
+      dismissible={!saving && !isBusy}
+      title={title}
+      header={
+        <EntryComposerHeader
+          type={entryType}
+          onSelectType={changeEntryType}
+          typeDisabled={saving || isBusy || isLoading}
+          saving={saving}
+          actionDisabled={!canSave}
+          actionLabel={CategoryCustomizerCopy.saveAction}
+          onAction={handlePressSave}
+          onClose={closeWithoutSaving}
+        />
+      }
+    >
       <View style={styles.sheet}>
-          <ActionButton label={CategoryCustomizerCopy.addAccessibilityLabel} onPress={onAdd} disabled={saving || isBusy || isLoading} size="inline" />
-          <ScrollView {...AppScrollBehavior}
-            contentContainerStyle={styles.listContent}
-            onLayout={(event) => {
-              listViewportHeightRef.current = event.nativeEvent.layout.height;
-            }}
-            ref={listScrollRef}
-            showsVerticalScrollIndicator
+        <ActionButton
+          label={CategoryCustomizerCopy.addAccessibilityLabel}
+          onPress={onAdd}
+          disabled={saving || isBusy || isLoading}
+          size="inline"
+        />
+        <ScrollView
+          {...AppScrollBehavior}
+          style={styles.list}
+          onLayout={(event) => {
+            listViewportHeightRef.current = event.nativeEvent.layout.height;
+          }}
+          ref={listScrollRef}
+          onScroll={(event) => {
+            listScrollYRef.current = event.nativeEvent.contentOffset.y;
+          }}
+          showsVerticalScrollIndicator
+        >
+          <View
+            style={{ height: isLoading ? 0 : gridHeight }}
+            onLayout={(event) => setGridWidth(event.nativeEvent.layout.width)}
           >
-            {!isLoading && orderedCategories.map((category) => (
-              <CategoryManageRow
-                onEdit={saving || isBusy || isLoading ? undefined : onEdit}
-                onDelete={saving || isBusy || isLoading ? undefined : onDelete}
-                category={category}
-                isSelected={category.id === selectedCategoryId}
-                key={category.id}
-                onPress={() => selectCategory(category.id)}
-              />
-            ))}
-          </ScrollView>
-          <View style={styles.moveActionRow}>
-            <CategoryMoveButton
-              disabled={saving || isBusy || !canMoveUp}
-              iconName="arrow-up"
-              label={CategoryCustomizerCopy.moveUpAction}
-              onPress={handlePressMoveUp}
-            />
-            <CategoryMoveButton
-              disabled={saving || isBusy || !canMoveDown}
-              iconName="arrow-down"
-              label={CategoryCustomizerCopy.moveDownAction}
-              onPress={handlePressMoveDown}
-            />
+            {!isLoading &&
+              orderedCategories.map((category, index) => (
+                <CategoryManageTile
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  disabled={saving || isBusy || isLoading}
+                  category={category}
+                  cellSize={cellSize}
+                  position={resolveCategoryGridPosition(index, cellSize, columns)}
+                  isSelected={category.id === selectedCategoryId}
+                  key={category.id}
+                  onPress={() => selectCategory(category.id)}
+                />
+              ))}
           </View>
-          {isLoading ? <Text style={SupportingTextStyle}>{CategoryCustomizerCopy.loadingCategories}</Text> : null}
-          {saveError ? <Text style={styles.saveError}>{CategoryCustomizerCopy.saveError}</Text> : null}
+        </ScrollView>
+        <View style={styles.moveActionRow}>
+          <CategoryMoveButton
+            disabled={saving || isBusy || isLoading || !canMovePrevious}
+            iconName="arrow-left"
+            label={CategoryCustomizerCopy.movePreviousAction}
+            onPress={handlePressMovePrevious}
+          />
+          <CategoryMoveButton
+            disabled={saving || isBusy || isLoading || !canMoveNext}
+            iconName="arrow-right"
+            label={CategoryCustomizerCopy.moveNextAction}
+            onPress={handlePressMoveNext}
+          />
+        </View>
+        {isLoading ? (
+          <Text style={getSupportingTextStyle()}>{CategoryCustomizerCopy.loadingCategories}</Text>
+        ) : null}
+        {saveError ? (
+          <Text style={styles.saveError}>{CategoryCustomizerCopy.saveError}</Text>
+        ) : null}
       </View>
       {creationModal}
     </NativeSelectionSheet>
   );
-}
-
-function resolveCategoryScrollY(
-  categoryIndex: number,
-  direction: -1 | 1,
-  viewportHeight: number,
-): number {
-  const rowSpan = CATEGORY_MANAGE_ROW_HEIGHT + CATEGORY_MANAGE_ROW_GAP;
-  if (direction > 0 || viewportHeight <= 0) {
-    return categoryIndex * rowSpan;
-  }
-
-  const rowBottomWithMargin = categoryIndex * rowSpan + CATEGORY_MANAGE_ROW_HEIGHT + rowSpan;
-  return Math.max(0, rowBottomWithMargin - viewportHeight);
 }
 
 function areCategoryOrdersEqual(
@@ -283,45 +328,6 @@ function areCategoryOrdersEqual(
   return currentCategories.every((category, index) => category.id === nextCategories[index]?.id);
 }
 
-function CategoryManageRow({
-  category,
-  isSelected,
-  onPress,
-  onEdit,
-  onDelete,
-}: {
-  onEdit?: (category: CategoryDefinition) => void;
-  onDelete?: (category: CategoryDefinition) => void;
-  category: CategoryDefinition;
-  isSelected: boolean;
-  onPress: () => void;
-}) {
-  const content = (
-    <View pointerEvents="none" style={[styles.row, isSelected ? styles.selectedRow : null]}>
-      <View style={styles.categoryMeta}>
-        <Feather
-          color={isSelected ? AppColors.primary : AppColors.mutedText}
-          name={category.iconName}
-          size={CATEGORY_MANAGE_ROW_ICON_SIZE}
-        />
-        <Text
-          numberOfLines={1}
-          style={[styles.categoryLabel, isSelected ? styles.selectedCategoryLabel : null]}
-        >
-          {category.label}
-        </Text>
-      </View>
-    </View>
-  );
-  return <Pressable onPress={onPress}>
-    {onEdit || onDelete ? <MenuView actions={CategoryMenuActions} shouldOpenOnLongPress
-      onPressAction={({ nativeEvent }) => {
-        if (nativeEvent.event === "edit") onEdit?.(category);
-        if (nativeEvent.event === "delete") onDelete?.(category);
-      }}>{content}</MenuView> : content}
-  </Pressable>;
-}
-
 function CategoryMoveButton({
   disabled,
   iconName,
@@ -329,18 +335,22 @@ function CategoryMoveButton({
   onPress,
 }: {
   disabled: boolean;
-  iconName: "arrow-down" | "arrow-up";
+  iconName: "arrow-left" | "arrow-right";
   label: string;
   onPress: () => void;
 }) {
+  const styles = getStyles();
+  useAppTheme();
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={onPress}
       style={[styles.moveButton, disabled ? styles.disabledMoveButton : null]}
     >
       <Feather
-        color={disabled ? AppColors.mutedText : AppColors.inverseText}
+        color={disabled ? getAppColors().mutedText : getAppColors().onPrimary}
         name={iconName}
         size={CATEGORY_MANAGE_MOVE_BUTTON_ICON_SIZE}
       />
@@ -351,66 +361,35 @@ function CategoryMoveButton({
   );
 }
 
-const styles = StyleSheet.create({
-  saveError: { ...SupportingTextStyle, color: AppColors.expense },
-  sheet: { flex: 1, padding: AppLayout.cardContentPadding, gap: AppLayout.cardGap },
-  listContent: {
-    gap: CATEGORY_MANAGE_ROW_GAP,
-  },
-  row: {
-    minHeight: CATEGORY_MANAGE_ROW_HEIGHT,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: AppColors.border,
-    borderRadius: 14,
-    backgroundColor: AppColors.background,
-  },
-  selectedRow: {
-    borderColor: AppColors.primary,
-    backgroundColor: AppColors.surfaceStrong,
-  },
-  categoryMeta: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  categoryLabel: {
-    flex: 1,
-    color: AppColors.text,
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  selectedCategoryLabel: {
-    color: AppColors.primary,
-  },
-  moveActionRow: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  moveButton: {
-    flex: 1,
-    minHeight: CATEGORY_MANAGE_ACTION_BUTTON_HEIGHT,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    borderRadius: 14,
-    backgroundColor: AppColors.primary,
-  },
-  disabledMoveButton: {
-    backgroundColor: AppColors.surfaceStrong,
-  },
-  moveButtonText: {
-    color: AppColors.inverseText,
-    fontSize: 14,
-    fontWeight: "800",
-  },
-  disabledMoveButtonText: {
-    color: AppColors.mutedText,
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    saveError: { ...getSupportingTextStyle(), color: getAppColors().expense },
+    sheet: { flex: 1, padding: AppLayout.cardContentPadding, gap: AppLayout.cardGap },
+    list: { flex: 1 },
+    moveActionRow: {
+      flexDirection: "row",
+      gap: AppLayout.cardGap,
+    },
+    moveButton: {
+      flex: 1,
+      minHeight: CATEGORY_MANAGE_ACTION_BUTTON_HEIGHT,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: AppLayout.compactGap,
+      borderRadius: AppLayout.groupRadius,
+      backgroundColor: getAppColors().primary,
+    },
+    disabledMoveButton: {
+      backgroundColor: getAppColors().surfaceStrong,
+    },
+    moveButtonText: {
+      color: getAppColors().onPrimary,
+      fontSize: 14,
+      fontWeight: "800",
+    },
+    disabledMoveButtonText: {
+      color: getAppColors().mutedText,
+    },
+  }),
+);

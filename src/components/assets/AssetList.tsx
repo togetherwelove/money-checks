@@ -1,9 +1,10 @@
+import { useAppTheme } from "../../hooks/useAppTheme";
 import { Pressable, Text, View } from "react-native";
 import { Feather } from "../AppIcons";
 import { AppSettingsUi } from "../../constants/appSettings";
 import { AssetConfig, AssetCopy as Copy } from "../../constants/assets";
-import { AssetStyles as styles } from "../../constants/assetStyles";
-import { AppColors } from "../../constants/colors";
+import { getAssetStyles } from "../../constants/assetStyles";
+import { getAppColors } from "../../constants/colors";
 import { AssetLinkCopy } from "../../constants/assetLink";
 import type { AssetPortfolio, PersonalAsset } from "../../types/asset";
 import {
@@ -22,6 +23,7 @@ export function AssetList({
   portfolio: AssetPortfolio;
   onSelect: (asset: PersonalAsset) => void;
 }) {
+  useAppTheme();
   const active = portfolio.assets
     .filter((asset) => !asset.deleted_on)
     .sort(
@@ -30,7 +32,7 @@ export function AssetList({
         left.name.localeCompare(right.name, AssetConfig.locale),
     );
   return (
-    <View style={styles.section}>
+    <View style={getAssetStyles().section}>
       {active.map((asset) => {
         const value = latestValuation(portfolio.valuations, asset.id);
         const activity = assetActivity(portfolio, asset.id);
@@ -40,25 +42,25 @@ export function AssetList({
             accessibilityRole="button"
             accessibilityLabel={`${asset.name}${Copy.separator}${Copy.view}`}
             style={({ pressed }) => [
-              styles.card,
-              styles.assetCard,
-              isAssetDebt(asset.kind) ? styles.debtTint : styles.assetTint,
-              pressed && styles.assetCardPressed,
+              getAssetStyles().card,
+              getAssetStyles().assetCard,
+              isAssetDebt(asset.kind) ? getAssetStyles().debtTint : getAssetStyles().assetTint,
+              pressed && getAssetStyles().assetCardPressed,
             ]}
             onPress={() => onSelect(asset)}
           >
-            <View style={[styles.row, styles.assetHeadingRow]}>
-              <Text style={[styles.text, styles.grow]}>{asset.name}</Text>
-              <Text style={styles.title}>
+            <View style={[getAssetStyles().row, getAssetStyles().assetHeadingRow]}>
+              <Text style={[getAssetStyles().text, getAssetStyles().grow]}>{asset.name}</Text>
+              <Text style={getAssetStyles().title}>
                 {formatAssetAmount(assetBalance(portfolio, asset.id))}
               </Text>
               <Feather
                 name="chevron-right"
                 size={AppSettingsUi.selectionChevronIconSize}
-                color={AppColors.primary}
+                color={getAppColors().primary}
               />
             </View>
-            <Text style={styles.hint}>
+            <Text style={getAssetStyles().hint}>
               {assetKind(asset.kind).label}
               {Copy.separator}
               {asset.is_shared ? Copy.shared : Copy.private}
@@ -70,7 +72,7 @@ export function AssetList({
                 ? `${Copy.separator}${Copy.share} ${value?.details.share}${Copy.percent}`
                 : ""}
             </Text>
-            <Text style={styles.hint}>
+            <Text style={getAssetStyles().hint}>
               {asset.kind === "cash" || asset.kind === "loan" || asset.kind === "other-debt"
                 ? Copy.balanceOn
                 : Copy.recordedOn}

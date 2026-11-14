@@ -1,20 +1,26 @@
+import { createThemeValue } from "../lib/appTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 
-import { AppColors } from "../constants/colors";
+import { getAppColors } from "../constants/colors";
 
 export function OnboardingTransitionScreen() {
+  const styles = getStyles();
+  useAppTheme();
   return (
     <View style={styles.screen}>
-      <ActivityIndicator color={AppColors.primary} size="small" />
+      <ActivityIndicator color={getAppColors().primary} size="small" />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: AppColors.screenBackground,
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: getAppColors().screenBackground,
+    },
+  }),
+);

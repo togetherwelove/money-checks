@@ -87,8 +87,16 @@ export function addAnnualReportXlsxCharts(bytes: Uint8Array, report: AnnualRepor
 
   const categoryLayout = getCategorySummaryLayout(report);
   upsertTextEntry(entryMap, "xl/charts/chart1.xml", buildMonthlyChartXml(report));
-  upsertTextEntry(entryMap, "xl/charts/chart2.xml", buildExpenseCategoryChartXml(categoryLayout, report));
-  upsertTextEntry(entryMap, "xl/charts/chart3.xml", buildIncomeCategoryChartXml(categoryLayout, report));
+  upsertTextEntry(
+    entryMap,
+    "xl/charts/chart2.xml",
+    buildExpenseCategoryChartXml(categoryLayout, report),
+  );
+  upsertTextEntry(
+    entryMap,
+    "xl/charts/chart3.xml",
+    buildIncomeCategoryChartXml(categoryLayout, report),
+  );
   upsertTextEntry(entryMap, "xl/charts/chart4.xml", buildMemberChartXml(report));
 
   return writeStoredZipEntries([...entryMap.values()]);
@@ -121,11 +129,16 @@ function buildMonthlyChartXml(report: AnnualReportData) {
   });
 }
 
-function buildExpenseCategoryChartXml(layout: ReturnType<typeof getCategorySummaryLayout>, report: AnnualReportData) {
+function buildExpenseCategoryChartXml(
+  layout: ReturnType<typeof getCategorySummaryLayout>,
+  report: AnnualReportData,
+) {
   const sheetName = AnnualReportCopy.expenseCategorySheetName;
 
   return buildBarChartXml({
-    categories: report.expenseCategories.length ? report.expenseCategories.map((row) => row.category) : [AnnualReportCopy.emptyCategoryLabels.expense],
+    categories: report.expenseCategories.length
+      ? report.expenseCategories.map((row) => row.category)
+      : [AnnualReportCopy.emptyCategoryLabels.expense],
     axisIds: [ExpenseCategoryChartCategoryAxisId, ExpenseCategoryChartValueAxisId],
     barDirection: "bar",
     categoriesRange: buildSheetRange(
@@ -138,7 +151,9 @@ function buildExpenseCategoryChartXml(layout: ReturnType<typeof getCategorySumma
     series: [
       {
         title: AnnualReportCopy.typeLabels.expense,
-        values: report.expenseCategories.length ? report.expenseCategories.map((row) => row.amount) : [0],
+        values: report.expenseCategories.length
+          ? report.expenseCategories.map((row) => row.amount)
+          : [0],
         titleCell: buildSheetRange(
           sheetName,
           "B",
@@ -159,11 +174,16 @@ function buildExpenseCategoryChartXml(layout: ReturnType<typeof getCategorySumma
   });
 }
 
-function buildIncomeCategoryChartXml(layout: ReturnType<typeof getCategorySummaryLayout>, report: AnnualReportData) {
+function buildIncomeCategoryChartXml(
+  layout: ReturnType<typeof getCategorySummaryLayout>,
+  report: AnnualReportData,
+) {
   const sheetName = AnnualReportCopy.incomeCategorySheetName;
 
   return buildBarChartXml({
-    categories: report.incomeCategories.length ? report.incomeCategories.map((row) => row.category) : [AnnualReportCopy.emptyCategoryLabels.income],
+    categories: report.incomeCategories.length
+      ? report.incomeCategories.map((row) => row.category)
+      : [AnnualReportCopy.emptyCategoryLabels.income],
     axisIds: [IncomeCategoryChartCategoryAxisId, IncomeCategoryChartValueAxisId],
     barDirection: "bar",
     categoriesRange: buildSheetRange(
@@ -176,7 +196,9 @@ function buildIncomeCategoryChartXml(layout: ReturnType<typeof getCategorySummar
     series: [
       {
         title: AnnualReportCopy.typeLabels.income,
-        values: report.incomeCategories.length ? report.incomeCategories.map((row) => row.amount) : [0],
+        values: report.incomeCategories.length
+          ? report.incomeCategories.map((row) => row.amount)
+          : [0],
         titleCell: buildSheetRange(
           sheetName,
           "B",
@@ -342,7 +364,12 @@ function buildBarChartXml({
     )}<c:axId val="${categoryAxisId}"/><c:axId val="${valueAxisId}"/></c:barChart><c:catAx><c:axId val="${categoryAxisId}"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:axPos val="${barDirection === "col" ? "b" : "l"}"/><c:tickLblPos val="nextTo"/><c:crossAx val="${valueAxisId}"/><c:crosses val="autoZero"/><c:auto val="1"/><c:lblAlgn val="ctr"/><c:lblOffset val="100"/></c:catAx><c:valAx><c:axId val="${valueAxisId}"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:axPos val="${barDirection === "col" ? "l" : "b"}"/><c:majorGridlines/><c:numFmt formatCode="#,##0" sourceLinked="0"/><c:tickLblPos val="nextTo"/><c:crossAx val="${categoryAxisId}"/><c:crosses val="autoZero"/><c:crossBetween val="between"/></c:valAx></c:plotArea><c:legend><c:legendPos val="b"/><c:layout/></c:legend><c:plotVisOnly val="1"/></c:chart></c:chartSpace>`;
 }
 
-function buildSeriesXml(index: number, series: SeriesReference, categoriesRange: string, categories: string[]) {
+function buildSeriesXml(
+  index: number,
+  series: SeriesReference,
+  categoriesRange: string,
+  categories: string[],
+) {
   return `<c:ser><c:idx val="${index}"/><c:order val="${index}"/><c:tx><c:strRef><c:f>${escapeXml(series.titleCell)}</c:f>${buildChartStringCache([series.title])}</c:strRef></c:tx><c:cat><c:strRef><c:f>${escapeXml(categoriesRange)}</c:f>${buildChartStringCache(categories)}</c:strRef></c:cat><c:val><c:numRef><c:f>${escapeXml(series.valueRange)}</c:f>${buildChartNumberCache(series.values)}</c:numRef></c:val></c:ser>`;
 }
 

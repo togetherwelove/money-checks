@@ -1,3 +1,4 @@
+const { getThemeTestMock } = require("./themeTestMocks.cjs");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -28,6 +29,8 @@ function loadComponent(file, dependencies) {
   vm.runInNewContext(outputText, {
     exports,
     require: (name) => {
+      const themeMock = getThemeTestMock(name);
+      if (themeMock) return themeMock;
       if (name.endsWith("/constants/scroll")) return loadComponent("src/constants/scroll.ts", {});
       const dependency = dependencies[name] ?? common[name];
       if (!dependency) throw new Error(`Unexpected dependency: ${name}`);
@@ -39,19 +42,26 @@ function loadComponent(file, dependencies) {
 
 function createPager(isFocused = true) {
   const moves = [];
-  const { ChartMonthPager } = loadComponent("src/components/chartScreen/ChartMonthPager.native.tsx", {
-    "@react-navigation/native": { useIsFocused: () => isFocused },
-    "react-native-pager-view": "PagerView",
-    "./ChartMonthPageContent": { ChartMonthPageContent: "Page" },
-  });
+  const { ChartMonthPager } = loadComponent(
+    "src/components/chartScreen/ChartMonthPager.native.tsx",
+    {
+      "@react-navigation/native": { useIsFocused: () => isFocused },
+      "react-native-pager-view": "PagerView",
+      "./ChartMonthPageContent": { ChartMonthPageContent: "Page" },
+    },
+  );
   const pager = ChartMonthPager({
-    currentMonth: { key: "2026-10" }, previousMonth: {}, nextMonth: {},
-    onMoveMonth: (offset) => moves.push(offset), renderScreenTitle: () => null,
+    currentMonth: { key: "2026-10" },
+    previousMonth: {},
+    nextMonth: {},
+    onMoveMonth: (offset) => moves.push(offset),
+    renderScreenTitle: () => null,
   });
   return {
     moves,
     select: (position) => pager.props.onPageSelected({ nativeEvent: { position } }),
-    scroll: (pageScrollState) => pager.props.onPageScrollStateChanged({ nativeEvent: { pageScrollState } }),
+    scroll: (pageScrollState) =>
+      pager.props.onPageScrollStateChanged({ nativeEvent: { pageScrollState } }),
   };
 }
 
@@ -93,17 +103,24 @@ test("chart navigation updates its own month, leaving the calendar untouched", (
     "../components/chartScreen/ChartMonthPager": { ChartMonthPager: "Pager" },
     "../components/chartScreen/ChartMonthPageContent": { ChartMonthPageContent: "Page" },
     "../components/AppBannerAd": { AppBannerAd: "Ad" },
-    "../constants/colors": { AppColors: {} },
+    "../constants/colors": { getAppColors: () => ({}) },
     "../constants/monthlyInsightCharts": { MonthlyInsightChartCopy: {} },
-    "../constants/uiStyles": { CompactLabelTextStyle: {} },
+    "../constants/uiStyles": { getCompactLabelTextStyle: () => ({}) },
     "../constants/textLayout": { CompactTextProps: {} },
   });
-  const screen = ChartScreen({ state: {
-    currentChartMonth: { scope: "periodic" }, visibleMonth: new Date(2026, 9, 1),
-    visibleChartMonth: new Date(2026, 11, 1),
-    setVisibleMonth: () => { calendarWrites++; },
-    setVisibleChartMonth: (date) => { chartMonth = date; },
-  } });
+  const screen = ChartScreen({
+    state: {
+      currentChartMonth: { scope: "periodic" },
+      visibleMonth: new Date(2026, 9, 1),
+      visibleChartMonth: new Date(2026, 11, 1),
+      setVisibleMonth: () => {
+        calendarWrites++;
+      },
+      setVisibleChartMonth: (date) => {
+        chartMonth = date;
+      },
+    },
+  });
   screen.props.children[1].props.children[1].props.onMoveMonth(1);
   assert.equal(calendarWrites, 0);
   assert.equal(chartMonth.getFullYear(), 2027);

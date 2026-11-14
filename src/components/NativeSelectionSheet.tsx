@@ -1,14 +1,32 @@
+import { createThemeValue } from "../lib/appTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
 import { useEffect, useRef, type ReactNode } from "react";
 import { Platform, StyleSheet } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { RootSiblingParent } from "react-native-root-siblings";
-import { AppColors } from "../constants/colors";
+import { getAppColors } from "../constants/colors";
 import { ComposerBlockingModal } from "./ComposerBlockingModal";
 import { EntryComposerHeader } from "./entryComposer/EntryComposerHeader";
 
-export type SheetHeaderAction = { label: string; onPress: () => void; disabled?: boolean; loading?: boolean };
+export type SheetHeaderAction = {
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+  loading?: boolean;
+};
 
-export function NativeSelectionSheet({ children, isOpen, onClose, onShow, onDismiss, title, dismissible = true, requiresCloseConfirmation = false, header, action }: {
+export function NativeSelectionSheet({
+  children,
+  isOpen,
+  onClose,
+  onShow,
+  onDismiss,
+  title,
+  dismissible = true,
+  requiresCloseConfirmation = false,
+  header,
+  action,
+}: {
   children: ReactNode;
   isOpen: boolean;
   onClose: () => void;
@@ -20,6 +38,8 @@ export function NativeSelectionSheet({ children, isOpen, onClose, onShow, onDism
   header?: ReactNode;
   action?: SheetHeaderAction;
 }) {
+  const styles = getStyles();
+  useAppTheme();
   const wasOpen = useRef(isOpen);
   useEffect(() => {
     const closed = wasOpen.current && !isOpen;
@@ -37,15 +57,31 @@ export function NativeSelectionSheet({ children, isOpen, onClose, onShow, onDism
       presentationStyle="formSheet"
       // Confirm pending input before dismissal; ordinary sheets follow the native gesture.
       allowSwipeDismissal={canDismiss && !requiresCloseConfirmation}
-      onRequestClose={() => { if (canDismiss) onClose(); }}
+      onRequestClose={() => {
+        if (canDismiss) onClose();
+      }}
     >
       <RootSiblingParent inactive={!isOpen}>
         <SafeAreaProvider>
           <SafeAreaView edges={["top", "bottom", "left", "right"]} style={styles.sheet}>
-            {header ?? <EntryComposerHeader title={title} saving={!canDismiss}
-              onClose={() => { if (canDismiss) onClose(); }}
-              actionLabel={action?.label} actionDisabled={action?.disabled}
-              onAction={action ? () => { if (canDismiss && !action.disabled) action.onPress(); } : undefined} />}
+            {header ?? (
+              <EntryComposerHeader
+                title={title}
+                saving={!canDismiss}
+                onClose={() => {
+                  if (canDismiss) onClose();
+                }}
+                actionLabel={action?.label}
+                actionDisabled={action?.disabled}
+                onAction={
+                  action
+                    ? () => {
+                        if (canDismiss && !action.disabled) action.onPress();
+                      }
+                    : undefined
+                }
+              />
+            )}
             {children}
           </SafeAreaView>
         </SafeAreaProvider>
@@ -54,6 +90,8 @@ export function NativeSelectionSheet({ children, isOpen, onClose, onShow, onDism
   );
 }
 
-const styles = StyleSheet.create({
-  sheet: { flex: 1, backgroundColor: AppColors.surface },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    sheet: { flex: 1, backgroundColor: getAppColors().surface },
+  }),
+);

@@ -1,14 +1,16 @@
+import { createThemeValue } from "../../lib/appTheme";
+import { useAppTheme } from "../../hooks/useAppTheme";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 
 import { AuthRequirements } from "../../constants/authRequirements";
-import { AppColors } from "../../constants/colors";
+import { getAppColors } from "../../constants/colors";
 import { EmailAuthCopy, EmailSignUpOtpUi } from "../../constants/emailAuth";
 import {
-  FormInputTextStyle,
-  FormLabelTextStyle,
-  InsetBoxStyle,
+  getFormInputTextStyle,
+  getFormLabelTextStyle,
+  getInsetBoxStyle,
   StatusMessageTextStyle,
-  ActionSurfaceStyle,
+  getActionSurfaceStyle,
 } from "../../constants/uiStyles";
 import { ActionButton } from "../ActionButton";
 import { TextLinkButton } from "../TextLinkButton";
@@ -40,6 +42,8 @@ export function EmailSignUpOtpCard({
   submitting = false,
   token,
 }: EmailSignUpOtpCardProps) {
+  const styles = getStyles();
+  useAppTheme();
   const normalizedToken = token.trim();
   const canSubmit =
     normalizedToken.length === AuthRequirements.emailOtpLength && /^\d+$/.test(normalizedToken);
@@ -102,55 +106,57 @@ export function EmailSignUpOtpCard({
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    ...ActionSurfaceStyle,
-    gap: 12,
-  },
-  header: {
-    gap: 4,
-  },
-  title: {
-    color: AppColors.text,
-    fontSize: 20,
-    fontWeight: "800",
-  },
-  subtitle: {
-    color: AppColors.mutedStrongText,
-    fontSize: 13,
-    lineHeight: 20,
-  },
-  emailBox: {
-    ...InsetBoxStyle,
-    gap: 4,
-  },
-  emailLabel: {
-    color: AppColors.mutedText,
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  emailValue: {
-    color: AppColors.text,
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  fieldGroup: {
-    gap: 6,
-  },
-  label: FormLabelTextStyle,
-  input: FormInputTextStyle,
-  actionGroup: {
-    gap: EmailSignUpOtpUi.actionGroupGap,
-  },
-  secondaryActionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    flexWrap: "wrap",
-    gap: EmailSignUpOtpUi.secondaryActionGap,
-  },
-  status: {
-    color: AppColors.primary,
-    ...StatusMessageTextStyle,
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    card: {
+      ...getActionSurfaceStyle(),
+      gap: 12,
+    },
+    header: {
+      gap: 4,
+    },
+    title: {
+      color: getAppColors().text,
+      fontSize: 20,
+      fontWeight: "800",
+    },
+    subtitle: {
+      color: getAppColors().mutedStrongText,
+      fontSize: 13,
+      lineHeight: 20,
+    },
+    emailBox: {
+      ...getInsetBoxStyle(),
+      gap: 4,
+    },
+    emailLabel: {
+      color: getAppColors().mutedText,
+      fontSize: 11,
+      fontWeight: "700",
+    },
+    emailValue: {
+      color: getAppColors().text,
+      fontSize: 15,
+      fontWeight: "600",
+    },
+    fieldGroup: {
+      gap: 6,
+    },
+    label: getFormLabelTextStyle(),
+    input: getFormInputTextStyle(),
+    actionGroup: {
+      gap: EmailSignUpOtpUi.actionGroupGap,
+    },
+    secondaryActionRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      flexWrap: "wrap",
+      gap: EmailSignUpOtpUi.secondaryActionGap,
+    },
+    status: {
+      color: getAppColors().primary,
+      ...StatusMessageTextStyle,
+    },
+  }),
+);

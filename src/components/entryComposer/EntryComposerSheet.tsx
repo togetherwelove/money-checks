@@ -15,11 +15,27 @@ type Props = {
 };
 
 // EntryComposer owns the draft outside the modal's mount/unmount lifecycle.
-export function EntryComposerSheet({ children, visible, saving, requiresCloseConfirmation = false, onClose, onShow, onDismiss, header }: Props) {
+export function EntryComposerSheet({
+  children,
+  visible,
+  saving,
+  requiresCloseConfirmation = false,
+  onClose,
+  onShow,
+  onDismiss,
+  header,
+}: Props) {
   return (
-    <NativeSelectionSheet isOpen={visible} dismissible={!saving}
+    <NativeSelectionSheet
+      isOpen={visible}
+      dismissible={!saving}
       requiresCloseConfirmation={requiresCloseConfirmation}
-      onClose={onClose} onShow={onShow} onDismiss={onDismiss} title={EntryComposerCopy.sheetTitle} header={header}>
+      onClose={onClose}
+      onShow={onShow}
+      onDismiss={onDismiss}
+      title={EntryComposerCopy.sheetTitle}
+      header={header}
+    >
       <KeyboardAwareScrollView>{children}</KeyboardAwareScrollView>
     </NativeSelectionSheet>
   );

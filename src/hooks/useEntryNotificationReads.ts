@@ -13,33 +13,44 @@ export function useEntryNotificationReads(
   refreshBadges: () => Promise<void>,
 ) {
   const activeReadsRef = useRef(new Set<string>());
-  const markEntriesRead = useCallback(async (bookId: string, entryIds: readonly string[]) => {
-    if (entryIds.length === 0) return;
-    const readKey = JSON.stringify([bookId, ...entryIds]);
-    if (activeReadsRef.current.has(readKey)) return;
-    activeReadsRef.current.add(readKey);
-    try {
-      await markEntryNotificationsRead(bookId, entryIds);
-      await refreshBadges();
-      await dismissPresentedNotificationBadges(bookId, NotificationBadgeScopes.ledgerEntries, entryIds);
-    } catch (error) {
-      logAppError("NotificationBadges", error, {
-        bookId,
-        step: "mark_entry_notifications_read",
-      });
-    } finally {
-      activeReadsRef.current.delete(readKey);
-    }
-  }, [refreshBadges]);
+  const markEntriesRead = useCallback(
+    async (bookId: string, entryIds: readonly string[]) => {
+      if (entryIds.length === 0) return;
+      const readKey = JSON.stringify([bookId, ...entryIds]);
+      if (activeReadsRef.current.has(readKey)) return;
+      activeReadsRef.current.add(readKey);
+      try {
+        await markEntryNotificationsRead(bookId, entryIds);
+        await refreshBadges();
+        await dismissPresentedNotificationBadges(
+          bookId,
+          NotificationBadgeScopes.ledgerEntries,
+          entryIds,
+        );
+      } catch (error) {
+        logAppError("NotificationBadges", error, {
+          bookId,
+          step: "mark_entry_notifications_read",
+        });
+      } finally {
+        activeReadsRef.current.delete(readKey);
+      }
+    },
+    [refreshBadges],
+  );
 
   const bookId = state.activeBook?.id;
   const { selectedDate, selectedEntries, isLoadingSelectedDateEntries, errorMessage } = state;
   useEffect(() => {
     const readDisplayedEntries = () => {
       if (
-        AppState.currentState !== "active" || !isCalendarVisible || !bookId ||
-        isLoadingSelectedDateEntries || errorMessage
-      ) return;
+        AppState.currentState !== "active" ||
+        !isCalendarVisible ||
+        !bookId ||
+        isLoadingSelectedDateEntries ||
+        errorMessage
+      )
+        return;
       const entryIds = selectedEntries
         .filter((entry) => entry.date === selectedDate)
         .map((entry) => entry.id);
@@ -48,7 +59,15 @@ export function useEntryNotificationReads(
     readDisplayedEntries();
     const subscription = AppState.addEventListener("change", readDisplayedEntries);
     return () => subscription.remove();
-  }, [bookId, isCalendarVisible, errorMessage, isLoadingSelectedDateEntries, markEntriesRead, selectedDate, selectedEntries]);
+  }, [
+    bookId,
+    isCalendarVisible,
+    errorMessage,
+    isLoadingSelectedDateEntries,
+    markEntriesRead,
+    selectedDate,
+    selectedEntries,
+  ]);
 
   return markEntriesRead;
 }

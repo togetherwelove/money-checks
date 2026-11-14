@@ -1,8 +1,9 @@
+import { useAppTheme } from "../../hooks/useAppTheme";
 import ConfirmHcaptcha from "@hcaptcha/react-native-hcaptcha";
 import { forwardRef, useImperativeHandle, useRef } from "react";
 import type { WebViewMessageEvent } from "react-native-webview";
 
-import { AppColors } from "../../constants/colors";
+import { getAppColors } from "../../constants/colors";
 
 const HCAPTCHA_BASE_URL = "https://hcaptcha.com";
 const HCAPTCHA_SITE_KEY = process.env.EXPO_PUBLIC_HCAPTCHA_SITE_KEY ?? "";
@@ -24,6 +25,7 @@ type PendingCaptchaRequest = {
 
 export const SignUpCaptchaChallenge = forwardRef<SignUpCaptchaChallengeHandle>(
   function SignUpCaptchaChallenge(_, ref) {
+    const colorScheme = useAppTheme();
     const captchaRef = useRef<ConfirmHcaptcha>(null);
     const pendingRequestRef = useRef<PendingCaptchaRequest | null>(null);
 
@@ -53,7 +55,9 @@ export const SignUpCaptchaChallenge = forwardRef<SignUpCaptchaChallengeHandle>(
         return;
       }
 
-      pendingRequest.reject(result.error ?? new Error("CAPTCHA 인증에 실패했어요. 다시 시도해 주세요."));
+      pendingRequest.reject(
+        result.error ?? new Error("CAPTCHA 인증에 실패했어요. 다시 시도해 주세요."),
+      );
     };
 
     const handleCaptchaMessage = (event: CaptchaMessageEvent) => {
@@ -82,13 +86,13 @@ export const SignUpCaptchaChallenge = forwardRef<SignUpCaptchaChallengeHandle>(
     return (
       <ConfirmHcaptcha
         ref={captchaRef}
-        backgroundColor={AppColors.background}
+        backgroundColor={getAppColors().background}
         baseUrl={HCAPTCHA_BASE_URL}
         languageCode="ko"
         onMessage={handleCaptchaMessage}
         siteKey={HCAPTCHA_SITE_KEY}
         size="invisible"
-        theme="light"
+        theme={colorScheme}
       />
     );
   },

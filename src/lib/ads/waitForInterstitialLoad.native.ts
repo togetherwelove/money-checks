@@ -3,7 +3,7 @@ import { AdEventType, type InterstitialAd } from "react-native-google-mobile-ads
 import { InterstitialAdTiming } from "../../constants/ads";
 
 export function waitForInterstitialLoad(ad: InterstitialAd): Promise<boolean> {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     const finish = (loaded: boolean) => {
       clearTimeout(timer);
       removeLoaded();

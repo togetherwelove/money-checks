@@ -1,19 +1,22 @@
+import { createThemeValue } from "../../lib/appTheme";
+import { useAppTheme } from "../../hooks/useAppTheme";
 import { AppScrollBehavior } from "../../constants/scroll";
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { BreakdownDonutGraphic } from "./BreakdownDonutGraphic";
 
-import { AppChartColors, AppColors } from "../../constants/colors";
+import { getAppChartColors, getAppColors } from "../../constants/colors";
 import {
   MonthlyInsightChartCopy,
   MonthlyInsightChartLayout,
 } from "../../constants/monthlyInsightCharts";
-import {
-  AppTextScale,
-  CompactTextProps,
-  resolveTextScale,
-} from "../../constants/textLayout";
+import { AppTextScale, CompactTextProps, resolveTextScale } from "../../constants/textLayout";
 import { useExpenseTextColor } from "../../contexts/ExpenseTextColorContext";
-import { CardTitleTextStyle, CompactLabelTextStyle, FormLabelTextStyle, SupportingTextStyle } from "../../constants/uiStyles";
+import {
+  getCardTitleTextStyle,
+  getCompactLabelTextStyle,
+  getFormLabelTextStyle,
+  getSupportingTextStyle,
+} from "../../constants/uiStyles";
 import { formatCurrency } from "../../utils/calendar";
 
 type MonthlyBreakdownItem = {
@@ -46,6 +49,8 @@ export function MonthlyBreakdownDonutChart({
   title,
   variant,
 }: MonthlyBreakdownDonutChartProps) {
+  const styles = getStyles();
+  useAppTheme();
   const { fontScale, width: windowWidth } = useWindowDimensions();
   const compactFontScale = resolveTextScale(fontScale, AppTextScale.compact);
   const shouldStackContent =
@@ -53,12 +58,11 @@ export function MonthlyBreakdownDonutChart({
   const expenseTextStyle = useExpenseTextColor().textStyle;
   const semanticTextStyle = variant === "expense" ? expenseTextStyle : null;
   const totalAmount = items.reduce((sum, item) => sum + item.amount, 0);
-  const visibleLegendItems =
-    legendItems ?? items.map((item) => ({ ...item, isActive: true }));
+  const visibleLegendItems = legendItems ?? items.map((item) => ({ ...item, isActive: true }));
   const itemColorByKey = new Map(
     visibleLegendItems.map((item, index) => [
       item.key,
-      AppChartColors[index % AppChartColors.length],
+      getAppChartColors()[index % getAppChartColors().length],
     ]),
   );
 
@@ -70,15 +74,17 @@ export function MonthlyBreakdownDonutChart({
       <View style={styles.content}>
         {visibleLegendItems.length ? (
           <View
-            style={[
-              styles.chartOverview,
-              shouldStackContent ? styles.stackedChartOverview : null,
-            ]}
+            style={[styles.chartOverview, shouldStackContent ? styles.stackedChartOverview : null]}
           >
             <View style={styles.chartShell}>
-              <BreakdownDonutGraphic items={items.map((item, index) => ({ ...item,
-                color: itemColorByKey.get(item.key) ?? AppChartColors[index % AppChartColors.length],
-              }))} />
+              <BreakdownDonutGraphic
+                items={items.map((item, index) => ({
+                  ...item,
+                  color:
+                    itemColorByKey.get(item.key) ??
+                    getAppChartColors()[index % getAppChartColors().length],
+                }))}
+              />
               <View pointerEvents="none" style={styles.chartCenter}>
                 <Text {...CompactTextProps} style={styles.centerLabel}>
                   {centerLabel}
@@ -88,11 +94,15 @@ export function MonthlyBreakdownDonutChart({
                 </Text>
               </View>
             </View>
-            <ScrollView {...AppScrollBehavior}
+            <ScrollView
+              {...AppScrollBehavior}
               contentContainerStyle={styles.selectedSummary}
               nestedScrollEnabled
               showsVerticalScrollIndicator={false}
-              style={[styles.selectedSummaryList, shouldStackContent ? styles.stackedSummaryList : null]}
+              style={[
+                styles.selectedSummaryList,
+                shouldStackContent ? styles.stackedSummaryList : null,
+              ]}
             >
               {visibleLegendItems.map((item) => (
                 <Pressable
@@ -116,8 +126,8 @@ export function MonthlyBreakdownDonutChart({
                       styles.selectedSummaryDot,
                       {
                         backgroundColor: item.isActive
-                          ? (itemColorByKey.get(item.key) ?? AppChartColors[0])
-                          : AppColors.surfaceStrong,
+                          ? (itemColorByKey.get(item.key) ?? getAppChartColors()[0])
+                          : getAppColors().surfaceStrong,
                       },
                     ]}
                   />
@@ -158,108 +168,112 @@ export function MonthlyBreakdownDonutChart({
             </ScrollView>
           </View>
         ) : (
-          <Text {...CompactTextProps} style={styles.emptyText}>{emptyMessage}</Text>
+          <Text {...CompactTextProps} style={styles.emptyText}>
+            {emptyMessage}
+          </Text>
         )}
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  content: {
-    gap: 14,
-  },
-  centerLabel: {
-    ...CompactLabelTextStyle,
-  },
-  centerValue: {
-    color: AppColors.text,
-    fontSize: 15,
-    fontWeight: "800",
-  },
-  chartCenter: {
-    position: "absolute",
-    alignItems: "center",
-    gap: 2,
-  },
-  chartShell: {
-    alignSelf: "center",
-    width: MonthlyInsightChartLayout.donutSize,
-    height: MonthlyInsightChartLayout.donutSize,
-    overflow: "hidden",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  chartOverview: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  emptyText: {
-    ...SupportingTextStyle,
-  },
-  section: {
-    gap: 8,
-  },
-  sectionTitle: {
-    ...CardTitleTextStyle,
-  },
-  selectedSummary: {
-    gap: MonthlyInsightChartLayout.donutLegendGap,
-  },
-  selectedSummaryAmount: {
-    ...FormLabelTextStyle,
-    color: AppColors.text,
-  },
-  selectedSummaryLabel: {
-    ...FormLabelTextStyle,
-    flex: 1,
-    minWidth: 0,
-    color: AppColors.text,
-  },
-  selectedSummaryList: {
-    flex: 1,
-    maxHeight: MonthlyInsightChartLayout.donutSize,
-    minWidth: 0,
-  },
-  selectedSummaryDot: {
-    borderRadius: MonthlyInsightChartLayout.donutLegendDotSize / 2,
-    height: MonthlyInsightChartLayout.donutLegendDotSize,
-    width: MonthlyInsightChartLayout.donutLegendDotSize,
-  },
-  selectedSummaryRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 6,
-    minHeight: MonthlyInsightChartLayout.donutLegendRowMinHeight,
-    paddingHorizontal: MonthlyInsightChartLayout.donutLegendRowPaddingHorizontal,
-  },
-  selectedSummaryRowInactive: {
-    opacity: MonthlyInsightChartLayout.donutLegendInactiveOpacity,
-  },
-  selectedSummaryRowPressed: {
-    backgroundColor: AppColors.surfaceMuted,
-  },
-  selectedSummaryShare: {
-    ...CompactLabelTextStyle,
-    textAlign: "right",
-    minWidth: 32,
-  },
-  selectedSummaryValueBlock: {
-    alignItems: "flex-end",
-    minWidth: 54,
-  },
-  selectedSummaryTextInactive: {
-    color: AppColors.mutedStrongText,
-    textDecorationLine: "line-through",
-  },
-  stackedChartOverview: {
-    alignItems: "stretch",
-    flexDirection: "column",
-  },
-  stackedSummaryList: {
-    flex: 0,
-    width: "100%",
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    content: {
+      gap: 14,
+    },
+    centerLabel: {
+      ...getCompactLabelTextStyle(),
+    },
+    centerValue: {
+      color: getAppColors().text,
+      fontSize: 15,
+      fontWeight: "800",
+    },
+    chartCenter: {
+      position: "absolute",
+      alignItems: "center",
+      gap: 2,
+    },
+    chartShell: {
+      alignSelf: "center",
+      width: MonthlyInsightChartLayout.donutSize,
+      height: MonthlyInsightChartLayout.donutSize,
+      overflow: "hidden",
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    chartOverview: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    emptyText: {
+      ...getSupportingTextStyle(),
+    },
+    section: {
+      gap: 8,
+    },
+    sectionTitle: {
+      ...getCardTitleTextStyle(),
+    },
+    selectedSummary: {
+      gap: MonthlyInsightChartLayout.donutLegendGap,
+    },
+    selectedSummaryAmount: {
+      ...getFormLabelTextStyle(),
+      color: getAppColors().text,
+    },
+    selectedSummaryLabel: {
+      ...getFormLabelTextStyle(),
+      flex: 1,
+      minWidth: 0,
+      color: getAppColors().text,
+    },
+    selectedSummaryList: {
+      flex: 1,
+      maxHeight: MonthlyInsightChartLayout.donutSize,
+      minWidth: 0,
+    },
+    selectedSummaryDot: {
+      borderRadius: MonthlyInsightChartLayout.donutLegendDotSize / 2,
+      height: MonthlyInsightChartLayout.donutLegendDotSize,
+      width: MonthlyInsightChartLayout.donutLegendDotSize,
+    },
+    selectedSummaryRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 6,
+      minHeight: MonthlyInsightChartLayout.donutLegendRowMinHeight,
+      paddingHorizontal: MonthlyInsightChartLayout.donutLegendRowPaddingHorizontal,
+    },
+    selectedSummaryRowInactive: {
+      opacity: MonthlyInsightChartLayout.donutLegendInactiveOpacity,
+    },
+    selectedSummaryRowPressed: {
+      backgroundColor: getAppColors().surfaceMuted,
+    },
+    selectedSummaryShare: {
+      ...getCompactLabelTextStyle(),
+      textAlign: "right",
+      minWidth: 32,
+    },
+    selectedSummaryValueBlock: {
+      alignItems: "flex-end",
+      minWidth: 54,
+    },
+    selectedSummaryTextInactive: {
+      color: getAppColors().mutedStrongText,
+      textDecorationLine: "line-through",
+    },
+    stackedChartOverview: {
+      alignItems: "stretch",
+      flexDirection: "column",
+    },
+    stackedSummaryList: {
+      flex: 0,
+      width: "100%",
+    },
+  }),
+);

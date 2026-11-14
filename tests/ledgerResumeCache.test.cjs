@@ -9,25 +9,45 @@ const may = new Date("2026-05-01T00:00:00Z");
 const flush = () => new Promise(setImmediate);
 
 function mount(loadMonths) {
-  const states = [], refs = [];
-  let stateIndex = 0, refIndex = 0, effects = [], resync;
+  const states = [],
+    refs = [];
+  let stateIndex = 0,
+    refIndex = 0,
+    effects = [],
+    resync;
   const mocks = {
     react: {
       useState: (initial) => {
         const index = stateIndex++;
-        if (!(index in states)) states[index] = index === 0
-          ? { book: { "2026-06": [{ id: "deleted-while-away" }], "2026-10": [] } } : initial;
-        return [states[index], (value) => { states[index] = typeof value === "function" ? value(states[index]) : value; }];
+        if (!(index in states))
+          states[index] =
+            index === 0
+              ? { book: { "2026-06": [{ id: "deleted-while-away" }], "2026-10": [] } }
+              : initial;
+        return [
+          states[index],
+          (value) => {
+            states[index] = typeof value === "function" ? value(states[index]) : value;
+          },
+        ];
       },
-      useRef: (initial) => { const index = refIndex++; return refs[index] ??= { current: initial }; },
-      useMemo: (fn) => fn(), useCallback: (fn) => fn, useEffect: (fn) => effects.push(fn),
+      useRef: (initial) => {
+        const index = refIndex++;
+        return (refs[index] ??= { current: initial });
+      },
+      useMemo: (fn) => fn(),
+      useCallback: (fn) => fn,
+      useEffect: (fn) => effects.push(fn),
     },
     "../../constants/ledgerDisplay": {},
     "../../constants/ledgerQueries": { LedgerQueryConfig: {}, LedgerRealtimeConfig: {} },
     "../../constants/messages": { AppMessages: { ledgerError: "load failed" } },
     "../../lib/ledgerEntryMetadata": {},
     "../../lib/ledgerEntryRealtime": {
-      subscribeToLedgerEntryChanges: (options) => { resync = options.onResync; return () => {}; },
+      subscribeToLedgerEntryChanges: (options) => {
+        resync = options.onResync;
+        return () => {};
+      },
     },
     "../../lib/logAppError": { logAppError: () => {} },
     "../../lib/performanceTrace": { createPerformanceTrace: () => () => {} },
@@ -45,13 +65,22 @@ function mount(loadMonths) {
       setMonthEntriesInCache: (cache, month, entries) => ({ ...cache, [monthKey(month)]: entries }),
     },
   };
-  const { modules } = require('./annualReportHelpers.cjs');
-  const overrides = Object.fromEntries(Object.entries(mocks).map(([name, value]) => [
-    name.startsWith('.') ? path.relative(process.cwd(), path.resolve('src/hooks/ledgerScreenState', name + '.ts')).replaceAll('\\', '/') : name, value,
-  ]));
-  const exports = modules(overrides)('src/hooks/ledgerScreenState/useLedgerEntries.ts');
+  const { modules } = require("./annualReportHelpers.cjs");
+  const overrides = Object.fromEntries(
+    Object.entries(mocks).map(([name, value]) => [
+      name.startsWith(".")
+        ? path
+            .relative(process.cwd(), path.resolve("src/hooks/ledgerScreenState", name + ".ts"))
+            .replaceAll("\\", "/")
+        : name,
+      value,
+    ]),
+  );
+  const exports = modules(overrides)("src/hooks/ledgerScreenState/useLedgerEntries.ts");
   const render = () => {
-    stateIndex = 0; refIndex = 0; effects = [];
+    stateIndex = 0;
+    refIndex = 0;
+    effects = [];
     return exports.useLedgerEntries("book", october, null);
   };
   render();
@@ -77,9 +106,13 @@ test("resume invalidates old months and revisiting reloads changed/deleted entri
 
 test("pre-resume chart request cannot restore stale cache after refresh", async () => {
   let finishOldRequest;
-  const instance = mount(async (_, months) => monthKey(months[0]) === "2026-05"
-    ? new Promise((resolve) => { finishOldRequest = resolve; })
-    : { "2026-10": [{ id: "fresh" }] });
+  const instance = mount(async (_, months) =>
+    monthKey(months[0]) === "2026-05"
+      ? new Promise((resolve) => {
+          finishOldRequest = resolve;
+        })
+      : { "2026-10": [{ id: "fresh" }] },
+  );
   const oldRequest = instance.render().preloadChartEntries(may);
   instance.resume();
   await flush();
@@ -89,10 +122,13 @@ test("pre-resume chart request cannot restore stale cache after refresh", async 
 });
 
 test("concurrent chart preparations share the request and keep loading local until it completes", async () => {
-  let finish, calls = 0;
+  let finish,
+    calls = 0;
   const instance = mount(async () => {
     calls++;
-    return new Promise(resolve => { finish = resolve; });
+    return new Promise((resolve) => {
+      finish = resolve;
+    });
   });
   const first = instance.render().preloadChartEntries(may);
   const second = instance.render().preloadChartEntries(may);
@@ -102,14 +138,18 @@ test("concurrent chart preparations share the request and keep loading local unt
   finish({ "2026-05": [{ id: "chart-data" }] });
   await Promise.all([first, second]);
   assert.equal(instance.render().isLoadingChartEntries, false);
-  assert.equal(instance.render().entryCache["2026-05"][0].id, 'chart-data');
+  assert.equal(instance.render().entryCache["2026-05"][0].id, "chart-data");
 });
 
 test("overlapping resumes keep newest response and failed refresh remains retryable", async () => {
-  let finishFirst, calls = 0;
+  let finishFirst,
+    calls = 0;
   const instance = mount(async () => {
     calls++;
-    if (calls === 1) return new Promise((resolve) => { finishFirst = resolve; });
+    if (calls === 1)
+      return new Promise((resolve) => {
+        finishFirst = resolve;
+      });
     if (calls === 2) throw new Error("offline");
     return { "2026-10": [{ id: "latest" }] };
   });

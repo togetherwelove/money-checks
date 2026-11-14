@@ -1,12 +1,14 @@
+import { createThemeValue } from "../../lib/appTheme";
+import { useAppTheme } from "../../hooks/useAppTheme";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 
-import { AppColors } from "../../constants/colors";
+import { getAppColors } from "../../constants/colors";
 import { EmailAuthCopy } from "../../constants/emailAuth";
 import {
-  FormInputTextStyle,
-  FormLabelTextStyle,
+  getFormInputTextStyle,
+  getFormLabelTextStyle,
   StatusMessageTextStyle,
-  ActionSurfaceStyle,
+  getActionSurfaceStyle,
 } from "../../constants/uiStyles";
 import { ActionButton } from "../ActionButton";
 
@@ -25,6 +27,8 @@ export function PasswordResetRequestCard({
   onSubmit,
   statusMessage,
 }: PasswordResetRequestCardProps) {
+  const styles = getStyles();
+  useAppTheme();
   const canSubmit = Boolean(email.trim());
 
   return (
@@ -68,29 +72,31 @@ export function PasswordResetRequestCard({
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    ...ActionSurfaceStyle,
-    gap: 12,
-  },
-  header: {
-    gap: 4,
-  },
-  subtitle: {
-    color: AppColors.mutedStrongText,
-    fontSize: 13,
-    lineHeight: 20,
-  },
-  fieldGroup: {
-    gap: 6,
-  },
-  label: FormLabelTextStyle,
-  input: FormInputTextStyle,
-  actionGroup: {
-    gap: 8,
-  },
-  status: {
-    color: AppColors.primary,
-    ...StatusMessageTextStyle,
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    card: {
+      ...getActionSurfaceStyle(),
+      gap: 12,
+    },
+    header: {
+      gap: 4,
+    },
+    subtitle: {
+      color: getAppColors().mutedStrongText,
+      fontSize: 13,
+      lineHeight: 20,
+    },
+    fieldGroup: {
+      gap: 6,
+    },
+    label: getFormLabelTextStyle(),
+    input: getFormInputTextStyle(),
+    actionGroup: {
+      gap: 8,
+    },
+    status: {
+      color: getAppColors().primary,
+      ...StatusMessageTextStyle,
+    },
+  }),
+);

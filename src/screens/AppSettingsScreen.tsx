@@ -1,8 +1,12 @@
+import { ThemeSettings, ThemeModeOptions } from "../constants/theme";
+import { getThemeMode, setThemeMode } from "../lib/appTheme";
+import { createThemeValue } from "../lib/appTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
 import { type ReactNode, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Feather } from "../components/AppIcons";
 import { CalendarSummaryBaseDayPickerModal } from "../components/appSettings/CalendarSummaryBaseDayPickerModal";
-import { MenuStyles } from "../constants/menuStyles";
+import { getMenuStyles } from "../constants/menuStyles";
 
 import { AppFooterContentInset } from "../components/AppFooterContentInset";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
@@ -10,14 +14,14 @@ import { CalendarHeatmapSetting } from "../components/appSettings/CalendarHeatma
 import { ExpenseTextColorSelector } from "../components/appSettings/ExpenseTextColorSelector";
 import { SettingsValueSelector } from "../components/appSettings/SettingsValueSelector";
 import { AppSettingsCopy, AppSettingsUi } from "../constants/appSettings";
-import { AppSettingsRowStyles } from "../constants/appSettingsStyles";
+import { getAppSettingsRowStyles } from "../constants/appSettingsStyles";
 import {
   type CalendarSummaryMode,
   CalendarSummaryModeOptions,
   CalendarSummaryModes,
 } from "../constants/calendarSummary";
-import { AppColors } from "../constants/colors";
-import { SettingValueActionStyle, SettingValueTextStyle } from "../constants/uiStyles";
+import { getAppColors } from "../constants/colors";
+import { SettingValueActionStyle, getSettingValueTextStyle } from "../constants/uiStyles";
 import { useExpenseTextColor } from "../contexts/ExpenseTextColorContext";
 
 export type AppSettingsScreenProps = {
@@ -43,6 +47,8 @@ export function AppSettingsScreen({
   onToggleCalendarHeatmap,
   screenTitle,
 }: AppSettingsScreenProps) {
+  const styles = getStyles();
+  useAppTheme();
   const expenseTextColor = useExpenseTextColor();
   const [isSummaryBaseDayPickerOpen, setIsSummaryBaseDayPickerOpen] = useState(false);
   const isSelectedMonthSummaryMode = calendarSummaryMode === CalendarSummaryModes.selectedMonth;
@@ -53,6 +59,16 @@ export function AppSettingsScreen({
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{AppSettingsCopy.featureSectionTitle}</Text>
           <View style={styles.settingListGroup}>
+            <View style={styles.settingCard}>
+              <View style={styles.settingTextBlock}>
+                <Text style={styles.settingTitle}>{ThemeSettings.title}</Text>
+              </View>
+              <SettingsValueSelector
+                value={getThemeMode()}
+                options={ThemeModeOptions}
+                onChange={setThemeMode}
+              />
+            </View>
             <View style={styles.settingCard}>
               <View style={styles.settingTextBlock}>
                 <Text style={styles.settingTitle}>{AppSettingsCopy.summaryModeTitle}</Text>
@@ -79,13 +95,13 @@ export function AppSettingsScreen({
                   <Text style={styles.settingTitle}>{AppSettingsCopy.summaryBaseDayTitle}</Text>
                 </View>
                 <View style={SettingValueActionStyle}>
-                  <Text style={SettingValueTextStyle}>
+                  <Text style={getSettingValueTextStyle()}>
                     {calendarSummaryBaseDay
                       ? `${calendarSummaryBaseDay}일`
                       : AppSettingsCopy.summaryBaseDayPlaceholder}
                   </Text>
                   <Feather
-                    color={AppColors.mutedStrongText}
+                    color={getAppColors().mutedStrongText}
                     name="chevron-down"
                     size={AppSettingsUi.selectionChevronIconSize}
                   />
@@ -131,27 +147,29 @@ export function AppSettingsScreen({
   );
 }
 
-const styles = StyleSheet.create({
-  sections: {
-    gap: AppSettingsUi.sectionSpacing,
-  },
-  content: {
-    ...MenuStyles.content,
-    paddingBottom: AppSettingsUi.contentBottomPadding,
-  },
-  screen: {
-    flex: 1,
-    backgroundColor: AppColors.screenBackground,
-  },
-  section: {
-    gap: AppSettingsUi.sectionGap,
-  },
-  sectionTitle: MenuStyles.sectionTitle,
-  pressedSettingCard: AppSettingsRowStyles.pressed,
-  settingCard: AppSettingsRowStyles.row,
-  settingListGroup: MenuStyles.group,
-  lastSettingCard: AppSettingsRowStyles.lastRow,
-  settingDescription: AppSettingsRowStyles.description,
-  settingTextBlock: AppSettingsRowStyles.textBlock,
-  settingTitle: AppSettingsRowStyles.title,
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    sections: {
+      gap: AppSettingsUi.sectionSpacing,
+    },
+    content: {
+      ...getMenuStyles().content,
+      paddingBottom: AppSettingsUi.contentBottomPadding,
+    },
+    screen: {
+      flex: 1,
+      backgroundColor: getAppColors().screenBackground,
+    },
+    section: {
+      gap: AppSettingsUi.sectionGap,
+    },
+    sectionTitle: getMenuStyles().sectionTitle,
+    pressedSettingCard: getAppSettingsRowStyles().pressed,
+    settingCard: getAppSettingsRowStyles().row,
+    settingListGroup: getMenuStyles().group,
+    lastSettingCard: getAppSettingsRowStyles().lastRow,
+    settingDescription: getAppSettingsRowStyles().description,
+    settingTextBlock: getAppSettingsRowStyles().textBlock,
+    settingTitle: getAppSettingsRowStyles().title,
+  }),
+);

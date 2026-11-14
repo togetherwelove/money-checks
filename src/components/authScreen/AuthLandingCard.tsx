@@ -1,7 +1,9 @@
+import { createThemeValue } from "../../lib/appTheme";
+import { useAppTheme } from "../../hooks/useAppTheme";
 import { StyleSheet, Text, View } from "react-native";
 
-import { AppColors } from "../../constants/colors";
-import { ActionSurfaceStyle } from "../../constants/uiStyles";
+import { getAppColors } from "../../constants/colors";
+import { getActionSurfaceStyle } from "../../constants/uiStyles";
 import { ActionButton } from "../ActionButton";
 import { AppleSignInButton } from "./AppleSignInButton";
 import { GoogleSignInButton } from "./GoogleSignInButton";
@@ -19,6 +21,8 @@ export function AuthLandingCard({
   onEmailSignUp,
   onGoogleSignIn = null,
 }: AuthLandingCardProps) {
+  const styles = getStyles();
+  useAppTheme();
   const hasSocialSignIn = Boolean(onGoogleSignIn || onAppleSignIn);
 
   return (
@@ -52,28 +56,30 @@ export function AuthLandingCard({
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    ...ActionSurfaceStyle,
-    gap: 16,
-  },
-  actionGroup: {
-    gap: 10,
-  },
-  dividerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingVertical: 2,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: AppColors.border,
-  },
-  dividerLabel: {
-    color: AppColors.mutedText,
-    fontSize: 12,
-    fontWeight: "700",
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    card: {
+      ...getActionSurfaceStyle(),
+      gap: 16,
+    },
+    actionGroup: {
+      gap: 10,
+    },
+    dividerRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      paddingVertical: 2,
+    },
+    dividerLine: {
+      flex: 1,
+      height: 1,
+      backgroundColor: getAppColors().border,
+    },
+    dividerLabel: {
+      color: getAppColors().mutedText,
+      fontSize: 12,
+      fontWeight: "700",
+    },
+  }),
+);

@@ -3,7 +3,10 @@ import { supabase } from "./supabase";
 
 const CONVERT_FUNCTION = "convert_installment_to_one_time";
 
-export function previewInstallmentConversion(entries: readonly LedgerEntry[], paidIds: readonly string[]) {
+export function previewInstallmentConversion(
+  entries: readonly LedgerEntry[],
+  paidIds: readonly string[],
+) {
   const paid = new Set(paidIds);
   const remaining = entries.filter((entry) => !paid.has(entry.id));
   return {

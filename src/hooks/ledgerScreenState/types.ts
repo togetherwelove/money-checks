@@ -84,12 +84,12 @@ export type LedgerScreenState = {
   visibleChartMonth: Date;
   switchLedgerBook: (bookId: string) => Promise<boolean>;
   visibleMonth: Date;
-  handleDeleteEntry: (
-    entry: LedgerEntry,
-    scope: LedgerEntryDeleteScope,
-  ) => Promise<LedgerEntry[]>;
+  handleDeleteEntry: (entry: LedgerEntry, scope: LedgerEntryDeleteScope) => Promise<LedgerEntry[]>;
   handleEditEntry: (entry: LedgerEntry) => void;
-  handleSaveEntry: (newDraft?: LedgerEntryDraft, sourceEntry?: LedgerEntry) => Promise<LedgerEntry[]>;
+  handleSaveEntry: (
+    newDraft?: LedgerEntryDraft,
+    sourceEntry?: LedgerEntry,
+  ) => Promise<LedgerEntry[]>;
   prepayInstallmentEntry: (
     entry: LedgerEntry,
     prepaymentDate: string,

@@ -107,10 +107,12 @@ export function useAuthOnboarding({
 
   const step = useMemo(
     () =>
-      isLoading || errorMessage ? null : resolveAuthOnboardingStep({
-        hasCompletedNicknameOnboarding,
-        hasResolvedDisplayName: Boolean(profileDisplayName),
-      }),
+      isLoading || errorMessage
+        ? null
+        : resolveAuthOnboardingStep({
+            hasCompletedNicknameOnboarding,
+            hasResolvedDisplayName: Boolean(profileDisplayName),
+          }),
     [hasCompletedNicknameOnboarding, profileDisplayName, isLoading, errorMessage],
   );
 

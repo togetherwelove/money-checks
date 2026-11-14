@@ -1,6 +1,8 @@
+import { createThemeValue } from "../lib/appTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { AppColors } from "../constants/colors";
+import { getAppColors } from "../constants/colors";
 import { EntryTypeToggleUi } from "../constants/entryRegistration";
 import { CompactTextProps } from "../constants/textLayout";
 import { useExpenseTextColor } from "../contexts/ExpenseTextColorContext";
@@ -15,7 +17,14 @@ type EntryTypeToggleButtonProps = {
 
 const ENTRY_DIRECTION_ORDER: LedgerEntryType[] = ["expense", "income"];
 
-export function EntryTypeToggleButton({ disabled = false, dimWhenDisabled = true, onSelectType, selectedType }: EntryTypeToggleButtonProps) {
+export function EntryTypeToggleButton({
+  disabled = false,
+  dimWhenDisabled = true,
+  onSelectType,
+  selectedType,
+}: EntryTypeToggleButtonProps) {
+  const styles = getStyles();
+  useAppTheme();
   const expenseTextStyle = useExpenseTextColor().textStyle;
 
   return (
@@ -55,43 +64,45 @@ export function EntryTypeToggleButton({ disabled = false, dimWhenDisabled = true
   );
 }
 
-const styles = StyleSheet.create({
-  disabledContainer: { backgroundColor: AppColors.surfaceStrong },
-  container: {
-    alignItems: "center",
-    alignSelf: "stretch",
-    flexDirection: "row",
-    minHeight: EntryTypeToggleUi.containerHeight,
-    paddingHorizontal: 0,
-  },
-  option: {
-    alignItems: "center",
-    alignSelf: "stretch",
-    borderBottomColor: AppColors.transparent,
-    borderBottomWidth: EntryTypeToggleUi.indicatorHeight,
-    flex: 1,
-    justifyContent: "center",
-    minWidth: EntryTypeToggleUi.optionMinWidth,
-    paddingHorizontal: EntryTypeToggleUi.optionPaddingHorizontal,
-  },
-  activeExpenseOption: {
-    borderBottomColor: AppColors.expense,
-  },
-  activeIncomeOption: {
-    borderBottomColor: AppColors.income,
-  },
-  optionLabel: {
-    color: AppColors.mutedText,
-    marginHorizontal: EntryTypeToggleUi.labelMarginHorizontal,
-    fontSize: EntryTypeToggleUi.labelFontSize,
-    fontWeight: "700",
-    lineHeight: EntryTypeToggleUi.labelLineHeight,
-  },
-  activeLabel: {
-    fontWeight: "800",
-  },
-  activeIncomeLabel: {
-    color: AppColors.income,
-    fontWeight: "800",
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    disabledContainer: { backgroundColor: getAppColors().surfaceStrong },
+    container: {
+      alignItems: "center",
+      alignSelf: "stretch",
+      flexDirection: "row",
+      minHeight: EntryTypeToggleUi.containerHeight,
+      paddingHorizontal: 0,
+    },
+    option: {
+      alignItems: "center",
+      alignSelf: "stretch",
+      borderBottomColor: getAppColors().transparent,
+      borderBottomWidth: EntryTypeToggleUi.indicatorHeight,
+      flex: 1,
+      justifyContent: "center",
+      minWidth: EntryTypeToggleUi.optionMinWidth,
+      paddingHorizontal: EntryTypeToggleUi.optionPaddingHorizontal,
+    },
+    activeExpenseOption: {
+      borderBottomColor: getAppColors().expense,
+    },
+    activeIncomeOption: {
+      borderBottomColor: getAppColors().income,
+    },
+    optionLabel: {
+      color: getAppColors().mutedText,
+      marginHorizontal: EntryTypeToggleUi.labelMarginHorizontal,
+      fontSize: EntryTypeToggleUi.labelFontSize,
+      fontWeight: "700",
+      lineHeight: EntryTypeToggleUi.labelLineHeight,
+    },
+    activeLabel: {
+      fontWeight: "800",
+    },
+    activeIncomeLabel: {
+      color: getAppColors().income,
+      fontWeight: "800",
+    },
+  }),
+);

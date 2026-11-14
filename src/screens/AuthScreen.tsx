@@ -1,5 +1,9 @@
+import { createThemeValue } from "../lib/appTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
 import { useEffect, useRef, useState } from "react";
-import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import { BackHandler, Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import { GuestCopy } from "../constants/guest";
+import { TextLinkButton } from "../components/TextLinkButton";
 
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { AuthLandingCard } from "../components/authScreen/AuthLandingCard";
@@ -10,7 +14,7 @@ import {
   SignUpCaptchaChallenge as AuthCaptchaChallenge,
   type SignUpCaptchaChallengeHandle as AuthCaptchaChallengeHandle,
 } from "../components/authScreen/SignUpCaptchaChallenge";
-import { AppColors } from "../constants/colors";
+import { getAppColors } from "../constants/colors";
 import { EmailAuthCopy } from "../constants/emailAuth";
 import { KeyboardLayout } from "../constants/keyboard";
 import { AppLayout } from "../constants/layout";
@@ -40,6 +44,7 @@ import { SignUpScreen } from "./SignUpScreen";
 
 type AuthScreenProps = {
   initialErrorMessage?: string | null;
+  onClose?: () => void;
 };
 
 type AuthScreenMode =
@@ -50,7 +55,9 @@ type AuthScreenMode =
   | "social-agreement";
 type SocialSignInProvider = "apple" | "google";
 
-export function AuthScreen({ initialErrorMessage = null }: AuthScreenProps) {
+export function AuthScreen({ initialErrorMessage = null, onClose }: AuthScreenProps) {
+  const styles = getStyles();
+  useAppTheme();
   const [email, setEmail] = useState("");
   const [hasAgreedToSocialPrivacy, setHasAgreedToSocialPrivacy] = useState(false);
   const [hasAgreedToSocialTerms, setHasAgreedToSocialTerms] = useState(false);
@@ -59,6 +66,17 @@ export function AuthScreen({ initialErrorMessage = null }: AuthScreenProps) {
     useState<SocialSignInProvider | null>(null);
   const [screen, setScreen] = useState<AuthScreenMode>("landing");
   const [isEmailSignInSubmitting, setIsEmailSignInSubmitting] = useState(false);
+  const [isSocialSubmitting, setIsSocialSubmitting] = useState(false);
+  const [isSignUpBusy, setIsSignUpBusy] = useState(false);
+  const isAuthBusy = isEmailSignInSubmitting || isSocialSubmitting || isSignUpBusy;
+  useEffect(() => {
+    if (!onClose) return;
+    const listener = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (!isAuthBusy) onClose();
+      return true;
+    });
+    return () => listener.remove();
+  }, [onClose, isAuthBusy]);
   const captchaChallengeRef = useRef<AuthCaptchaChallengeHandle>(null);
   const showAppleSignIn = canUseAppleSignIn();
   const showGoogleSignIn = canUseGoogleSignIn();
@@ -149,27 +167,45 @@ export function AuthScreen({ initialErrorMessage = null }: AuthScreenProps) {
   };
 
   const handleBackFromSocialAgreement = () => {
+    if (isSocialSubmitting) return;
     setPendingSocialSignInProvider(null);
     setHasAgreedToSocialTerms(false);
     setHasAgreedToSocialPrivacy(false);
     setScreen("landing");
   };
 
-  const handleContinueSocialSignIn = () => {
-    if (pendingSocialSignInProvider === "google") {
-      void handleGoogleSignIn();
-      return;
-    }
+  const handleContinueSocialSignIn = async () => {
+    if (isSocialSubmitting) return;
+    setIsSocialSubmitting(true);
+    try {
+      if (pendingSocialSignInProvider === "google") {
+        await handleGoogleSignIn();
+        return;
+      }
 
-    if (pendingSocialSignInProvider === "apple") {
-      void handleAppleSignIn();
+      if (pendingSocialSignInProvider === "apple") {
+        await handleAppleSignIn();
+      }
+    } finally {
+      setIsSocialSubmitting(false);
     }
   };
+
+  const mainLink = onClose ? (
+    <TextLinkButton
+      align="center"
+      label={GuestCopy.closeAuth}
+      onPress={onClose}
+      disabled={isAuthBusy}
+    />
+  ) : null;
 
   return (
     <>
       {screen === "sign-up" ? (
         <SignUpScreen
+          footer={mainLink}
+          onBusyChange={setIsSignUpBusy}
           onBackToSignIn={() => {
             setPassword("");
             setScreen("landing");
@@ -277,6 +313,7 @@ export function AuthScreen({ initialErrorMessage = null }: AuthScreenProps) {
           <View style={styles.supportCard}>
             <Text style={styles.supportLabel}>{EmailAuthCopy.legalConsentNotice}</Text>
           </View>
+          {mainLink}
           <AuthCaptchaChallenge ref={captchaChallengeRef} />
         </KeyboardAwareScrollView>
       )}
@@ -309,63 +346,65 @@ function resolveAuthScreenTitle(
   return EmailAuthCopy.signIn.title;
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: AppColors.screenBackground,
-  },
-  content: {
-    ...ResponsivePageContentStyle,
-    flexGrow: 1,
-    padding: AppLayout.screenPadding,
-    gap: 16,
-    justifyContent: "center",
-  },
-  heroSection: {
-    gap: 8,
-    paddingHorizontal: 8,
-    marginBottom: 4,
-  },
-  brand: {
-    color: AppColors.mutedText,
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 0.4,
-  },
-  title: {
-    color: AppColors.text,
-    fontSize: 28,
-    fontWeight: "800",
-  },
-  titleHighlight: {
-    color: AppColors.primary,
-  },
-  subtitle: {
-    color: AppColors.mutedText,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  supportCard: {
-    alignItems: "center",
-    paddingHorizontal: 8,
-  },
-  backLinkButton: {
-    alignSelf: "center",
-    paddingVertical: 4,
-  },
-  disabledBackLinkButton: {
-    opacity: 0.45,
-  },
-  backLinkText: {
-    color: AppColors.mutedStrongText,
-    fontSize: 13,
-    fontWeight: "700",
-    textDecorationLine: "underline",
-  },
-  supportLabel: {
-    color: AppColors.mutedStrongText,
-    fontSize: 11,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: getAppColors().screenBackground,
+    },
+    content: {
+      ...ResponsivePageContentStyle,
+      flexGrow: 1,
+      padding: AppLayout.screenPadding,
+      gap: 16,
+      justifyContent: "center",
+    },
+    heroSection: {
+      gap: 8,
+      paddingHorizontal: 8,
+      marginBottom: 4,
+    },
+    brand: {
+      color: getAppColors().mutedText,
+      fontSize: 12,
+      fontWeight: "700",
+      letterSpacing: 0.4,
+    },
+    title: {
+      color: getAppColors().text,
+      fontSize: 28,
+      fontWeight: "800",
+    },
+    titleHighlight: {
+      color: getAppColors().primary,
+    },
+    subtitle: {
+      color: getAppColors().mutedText,
+      fontSize: 14,
+      lineHeight: 20,
+    },
+    supportCard: {
+      alignItems: "center",
+      paddingHorizontal: 8,
+    },
+    backLinkButton: {
+      alignSelf: "center",
+      paddingVertical: 4,
+    },
+    disabledBackLinkButton: {
+      opacity: 0.45,
+    },
+    backLinkText: {
+      color: getAppColors().mutedStrongText,
+      fontSize: 13,
+      fontWeight: "700",
+      textDecorationLine: "underline",
+    },
+    supportLabel: {
+      color: getAppColors().mutedStrongText,
+      fontSize: 11,
+      fontWeight: "600",
+      textAlign: "center",
+    },
+  }),
+);

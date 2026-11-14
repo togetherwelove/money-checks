@@ -1,23 +1,23 @@
+import { createThemeValue } from "../lib/appTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
 import type { ReactNode } from "react";
-import { Pressable,ScrollView,StyleSheet,Text,View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Feather } from "../components/AppIcons";
-import { MenuStyles } from "../constants/menuStyles";
+import { getMenuStyles } from "../constants/menuStyles";
 import { AppScrollBehavior } from "../constants/scroll";
 
 import { AppFooterContentInset } from "../components/AppFooterContentInset";
 import { SupportPackageIcon } from "../components/SupportPackageIcon";
-import { AppColors } from "../constants/colors";
+import { getAppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import {
-SupportMessages,
-SupportPackageCatalog,
-type SupportPackageIdentifier,
-SupportUi,
+  SupportMessages,
+  getSupportPackageCatalog,
+  type SupportPackageIdentifier,
+  SupportUi,
 } from "../constants/support";
 import { OneLineTextFitProps } from "../constants/textLayout";
-import {
-SupportingTextStyle
-} from "../constants/uiStyles";
+import { getSupportingTextStyle } from "../constants/uiStyles";
 import type { SupportPackageSnapshot } from "../lib/subscription/supportClient";
 
 type SupportScreenProps = {
@@ -33,12 +33,14 @@ export function SupportScreen({
   packages,
   screenTitle,
 }: SupportScreenProps) {
+  const styles = getStyles();
+  useAppTheme();
   return (
     <ScrollView {...AppScrollBehavior} contentContainerStyle={styles.content} style={styles.screen}>
       {screenTitle}
       <View style={styles.sections}>
         <View style={styles.packageList}>
-          {SupportPackageCatalog.map((item, index) => {
+          {getSupportPackageCatalog().map((item, index) => {
             const matchingPackage = packages.find(
               (currentPackage) => currentPackage.identifier === item.identifier,
             );
@@ -52,7 +54,7 @@ export function SupportScreen({
                 onPress={() => onPurchasePackage(item.identifier)}
                 style={({ pressed }) => [
                   styles.packageCard,
-                  index === SupportPackageCatalog.length - 1 ? styles.lastPackageCard : null,
+                  index === getSupportPackageCatalog().length - 1 ? styles.lastPackageCard : null,
                   pressed && !isDisabled ? styles.pressedCard : null,
                   isDisabled ? styles.disabledCard : null,
                 ]}
@@ -72,7 +74,7 @@ export function SupportScreen({
                       {priceLabel}
                     </Text>
                     <Feather
-                      color={AppColors.mutedStrongText}
+                      color={getAppColors().mutedStrongText}
                       name="chevron-right"
                       size={SupportUi.actionIconSize}
                     />
@@ -83,7 +85,9 @@ export function SupportScreen({
           })}
         </View>
         {packages.length === 0 && !isLoading ? (
-          <Text style={styles.unavailableDescription}>{SupportMessages.unavailableDescription}</Text>
+          <Text style={styles.unavailableDescription}>
+            {SupportMessages.unavailableDescription}
+          </Text>
         ) : null}
         <AppFooterContentInset />
       </View>
@@ -91,56 +95,58 @@ export function SupportScreen({
   );
 }
 
-const styles = StyleSheet.create({
-  sections: {
-    gap: MenuStyles.sections.gap,
-  },
-  screen: {
-    flex: 1,
-    backgroundColor: AppColors.screenBackground,
-  },
-  content: {
-    ...MenuStyles.content,
-  },
-  packageList: {
-    ...MenuStyles.group,
-  },
-  packageCard: {
-    ...MenuStyles.row,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: SupportUi.rowGap,
-  },
-  lastPackageCard: {
-    borderBottomWidth: 0,
-  },
-  disabledCard: {
-    opacity: 0.45,
-  },
-  pressedCard: {
-    backgroundColor: AppColors.surfaceMuted,
-  },
-  packageContent: MenuStyles.textBlock,
-  packageTitle: MenuStyles.title,
-  supportLabel: MenuStyles.description,
-  trailingBlock: {
-    alignItems: "center",
-    gap: AppLayout.compactGap,
-    flexShrink: 0,
-  },
-  actionHintRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: AppLayout.compactGap,
-  },
-  priceLabel: {
-    color: AppColors.text,
-    fontSize: SupportUi.priceLabelFontSize,
-    fontWeight: "800",
-  },
-  unavailableDescription: {
-    ...SupportingTextStyle,
-    color: AppColors.mutedStrongText,
-    textAlign: "center",
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    sections: {
+      gap: getMenuStyles().sections.gap,
+    },
+    screen: {
+      flex: 1,
+      backgroundColor: getAppColors().screenBackground,
+    },
+    content: {
+      ...getMenuStyles().content,
+    },
+    packageList: {
+      ...getMenuStyles().group,
+    },
+    packageCard: {
+      ...getMenuStyles().row,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: SupportUi.rowGap,
+    },
+    lastPackageCard: {
+      borderBottomWidth: 0,
+    },
+    disabledCard: {
+      opacity: 0.45,
+    },
+    pressedCard: {
+      backgroundColor: getAppColors().surfaceMuted,
+    },
+    packageContent: getMenuStyles().textBlock,
+    packageTitle: getMenuStyles().title,
+    supportLabel: getMenuStyles().description,
+    trailingBlock: {
+      alignItems: "center",
+      gap: AppLayout.compactGap,
+      flexShrink: 0,
+    },
+    actionHintRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: AppLayout.compactGap,
+    },
+    priceLabel: {
+      color: getAppColors().text,
+      fontSize: SupportUi.priceLabelFontSize,
+      fontWeight: "800",
+    },
+    unavailableDescription: {
+      ...getSupportingTextStyle(),
+      color: getAppColors().mutedStrongText,
+      textAlign: "center",
+    },
+  }),
+);

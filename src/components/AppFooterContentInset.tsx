@@ -10,10 +10,11 @@ export function AppFooterContentInset() {
   const { fontScale } = useWindowDimensions();
   const contentInset = useContext(BottomContentInsetContext);
   const height =
-    contentInset ?? (safeAreaInsets.bottom +
-    FooterTabBarUi.barBottomInset +
-    resolveFooterTabBarHeight(fontScale) +
-    FooterTabBarUi.contentBottomGap);
+    contentInset ??
+    safeAreaInsets.bottom +
+      FooterTabBarUi.barBottomInset +
+      resolveFooterTabBarHeight(fontScale) +
+      FooterTabBarUi.contentBottomGap;
 
   return <View pointerEvents="none" style={[styles.inset, { height }]} />;
 }

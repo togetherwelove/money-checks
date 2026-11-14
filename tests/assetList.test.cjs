@@ -8,7 +8,7 @@ test("asset list puts shared assets first, sorts names across kinds and opens th
     "react/jsx-runtime": { jsx, jsxs: jsx },
     "react-native": { Pressable: "Button", Text: "Text", View: "View" },
     "src/components/AppIcons.tsx": { Feather: "Icon" },
-    "src/constants/assetStyles.ts": { AssetStyles: {} },
+    "src/constants/assetStyles.ts": { getAssetStyles: () => ({}) },
   })("src/components/assets/AssetList.tsx");
   const assets = [
     { id: "private", name: "A", kind: "cash", is_shared: false },

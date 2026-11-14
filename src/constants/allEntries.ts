@@ -6,9 +6,7 @@ export const AllEntriesEntryTypeFilters = {
   income: "income",
 } as const;
 
-export type AllEntriesEntryTypeFilter =
-  | LedgerEntryType
-  | typeof AllEntriesEntryTypeFilters.all;
+export type AllEntriesEntryTypeFilter = LedgerEntryType | typeof AllEntriesEntryTypeFilters.all;
 
 export const AllEntriesEntryTypeFilterOptions: readonly {
   label: string;
@@ -66,13 +64,9 @@ export function formatAllEntriesApplyLabel(filterCount: number): string {
 }
 
 export function formatAllEntriesEntryTypeFilterLabel(
-  entryTypeFilter: Exclude<
-    AllEntriesEntryTypeFilter,
-    typeof AllEntriesEntryTypeFilters.all
-  >,
+  entryTypeFilter: Exclude<AllEntriesEntryTypeFilter, typeof AllEntriesEntryTypeFilters.all>,
 ): string {
   return (
-    AllEntriesEntryTypeFilterOptions.find((option) => option.value === entryTypeFilter)?.label ??
-    ""
+    AllEntriesEntryTypeFilterOptions.find((option) => option.value === entryTypeFilter)?.label ?? ""
   );
 }

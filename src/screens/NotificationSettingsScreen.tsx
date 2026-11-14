@@ -1,11 +1,13 @@
+import { createThemeValue } from "../lib/appTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
 import type { ReactNode } from "react";
 import { Linking, StyleSheet, Text } from "react-native";
-import { MenuStyles } from "../constants/menuStyles";
+import { getMenuStyles } from "../constants/menuStyles";
 
 import { AppFooterContentInset } from "../components/AppFooterContentInset";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { NotificationSettingsCard } from "../components/accountScreen/NotificationSettingsCard";
-import { AppColors } from "../constants/colors";
+import { getAppColors } from "../constants/colors";
 import { PushNotificationCopy } from "../notifications/config/pushNotificationCopy";
 import type { NotificationPermissionState } from "../lib/notifications/pushNotifications";
 import type {
@@ -45,6 +47,8 @@ export function NotificationSettingsScreen({
   onToggleNotificationPreference,
   screenTitle,
 }: NotificationSettingsScreenProps) {
+  const styles = getStyles();
+  useAppTheme();
   const handleOpenNotificationPermission = () => {
     if (notificationPermissionState === "default") {
       void onRequestNotificationPermission();
@@ -70,19 +74,23 @@ export function NotificationSettingsScreen({
           statusMessage={notificationStatusMessage}
         />
       ) : (
-        <Text style={MenuStyles.description}>{PushNotificationCopy.permissionUnsupported}</Text>
+        <Text style={getMenuStyles().description}>
+          {PushNotificationCopy.permissionUnsupported}
+        </Text>
       )}
       <AppFooterContentInset />
     </KeyboardAwareScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: AppColors.screenBackground,
-  },
-  content: {
-    ...MenuStyles.content,
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: getAppColors().screenBackground,
+    },
+    content: {
+      ...getMenuStyles().content,
+    },
+  }),
+);

@@ -1,42 +1,32 @@
-import { type ReactNode,useEffect,useState } from "react";
-import {
-Alert,
-Keyboard,
-ScrollView,
-StyleSheet,
-Text,
-TextInput,
-View,
-} from "react-native";
-import { MenuStyles } from "../constants/menuStyles";
+import { createThemeValue } from "../lib/appTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
+import { type ReactNode, useEffect, useState } from "react";
+import { Alert, Keyboard, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { getMenuStyles } from "../constants/menuStyles";
 import { AppScrollBehavior } from "../constants/scroll";
 
 import { ActionButton } from "../components/ActionButton";
 import { AppFooterContentInset } from "../components/AppFooterContentInset";
 import { TextLinkButton } from "../components/TextLinkButton";
-import { AccountVersionFooter } from "../components/accountScreen/AccountVersionFooter";
 import { AdTrackingPermissionCard } from "../components/accountScreen/AdTrackingPermissionCard";
 import { DeleteAccountModal } from "../components/accountScreen/DeleteAccountModal";
 import { showDeleteSubscriptionWarning } from "../components/accountScreen/showDeleteSubscriptionWarning";
-import { AppColors } from "../constants/colors";
+import { getAppColors } from "../constants/colors";
 import { KeyboardLayout } from "../constants/keyboard";
 import { AppMessages } from "../constants/messages";
 import {
-SubscriptionMessages,
-type SubscriptionTier,
-SubscriptionTiers,
+  SubscriptionMessages,
+  type SubscriptionTier,
+  SubscriptionTiers,
 } from "../constants/subscription";
-import {
-BrandPlusTextStyle,
-UnderlineFormInputTextStyle
-} from "../constants/uiStyles";
+import { getBrandPlusTextStyle, getUnderlineFormInputTextStyle } from "../constants/uiStyles";
 import type { BusyTaskTracker } from "../hooks/ledgerScreenState/types";
 import type { AdTrackingPermissionState } from "../lib/ads/trackingTransparency";
 import { isApplePrivateRelayEmail } from "../lib/auth/applePrivateRelayEmail";
 import { signOutFromApp } from "../lib/auth/signOut";
 import { showNativeToast } from "../lib/nativeToast";
-import { fetchOwnProfileDisplayName,updateOwnProfileDisplayName } from "../lib/profiles";
-import { isValidDisplayName,normalizeDisplayNameCandidate } from "../utils/displayName";
+import { fetchOwnProfileDisplayName, updateOwnProfileDisplayName } from "../lib/profiles";
+import { isValidDisplayName, normalizeDisplayNameCandidate } from "../utils/displayName";
 
 type AccountScreenProps = {
   accountProviderLabel: string;
@@ -69,6 +59,8 @@ export function AccountScreen({
   trackBlockingTask,
   userId,
 }: AccountScreenProps) {
+  const styles = getStyles();
+  useAppTheme();
   const [displayName, setDisplayName] = useState(fallbackDisplayName);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isSavingDisplayName, setIsSavingDisplayName] = useState(false);
@@ -153,17 +145,19 @@ export function AccountScreen({
 
   const handleOpenDeleteFlow = () => {
     if (subscriptionTier === SubscriptionTiers.plus) {
-      showDeleteSubscriptionWarning(handleOpenSubscriptionManagement, () => setIsDeleteModalOpen(true));
+      showDeleteSubscriptionWarning(handleOpenSubscriptionManagement, () =>
+        setIsDeleteModalOpen(true),
+      );
       return;
     }
 
     setIsDeleteModalOpen(true);
   };
 
-
   return (
     <>
-      <ScrollView {...AppScrollBehavior}
+      <ScrollView
+        {...AppScrollBehavior}
         contentContainerStyle={styles.content}
         keyboardDismissMode={KeyboardLayout.dismissMode}
         keyboardShouldPersistTaps={KeyboardLayout.persistTaps}
@@ -215,7 +209,7 @@ export function AccountScreen({
               }}
               onSubmitEditing={handlePressSaveDisplayName}
               placeholder={fallbackDisplayName || AppMessages.accountNicknamePlaceholder}
-              placeholderTextColor={AppColors.mutedText}
+              placeholderTextColor={getAppColors().mutedText}
               returnKeyType="done"
               style={styles.inlineInput}
               submitBehavior="blurAndSubmit"
@@ -241,14 +235,9 @@ export function AccountScreen({
               />
             </View>
             <View style={styles.deleteActionRow}>
-              <TextLinkButton
-                label="계정 삭제"
-                onPress={handleOpenDeleteFlow}
-                tone="destructive"
-              />
+              <TextLinkButton label="계정 삭제" onPress={handleOpenDeleteFlow} tone="destructive" />
             </View>
           </View>
-          <AccountVersionFooter />
           <AppFooterContentInset />
         </View>
       </ScrollView>
@@ -258,6 +247,8 @@ export function AccountScreen({
 }
 
 function AccountEmailValue({ email }: { email: string }) {
+  const styles = getStyles();
+  useAppTheme();
   const isPrivateRelayEmail = isApplePrivateRelayEmail(email);
 
   return (
@@ -283,6 +274,8 @@ function InfoRow({
   label: string;
   value: ReactNode;
 }) {
+  const styles = getStyles();
+  useAppTheme();
   return (
     <View style={styles.infoRow}>
       <Text style={styles.label}>{label}</Text>
@@ -294,62 +287,64 @@ function InfoRow({
   );
 }
 
-const styles = StyleSheet.create({
-  sections: {
-    gap: MenuStyles.sections.gap,
-  },
-  screen: {
-    flex: 1,
-    backgroundColor: AppColors.screenBackground,
-  },
-  content: {
-    ...MenuStyles.content,
-  },
-  card: {
-    ...MenuStyles.panel,
-  },
-  cardTitle: MenuStyles.sectionTitle,
-  infoRow: {
-    gap: 4,
-    paddingVertical: 4,
-  },
-  label: MenuStyles.description,
-  inlineInput: {
-    ...UnderlineFormInputTextStyle,
-  },
-  value: {
-    color: AppColors.text,
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  plusLabelText: {
-    ...BrandPlusTextStyle,
-  },
-  privateRelayBadge: {
-    backgroundColor: AppColors.surfaceStrong,
-    borderColor: AppColors.border,
-    borderRadius: 8,
-    borderWidth: 1,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-  },
-  privateRelayBadgeText: {
-    color: AppColors.primary,
-    fontSize: 11,
-    fontWeight: "800",
-    lineHeight: 14,
-  },
-  valueRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  actionRow: {
-    paddingTop: 2,
-  },
-  deleteActionRow: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    sections: {
+      gap: getMenuStyles().sections.gap,
+    },
+    screen: {
+      flex: 1,
+      backgroundColor: getAppColors().screenBackground,
+    },
+    content: {
+      ...getMenuStyles().content,
+    },
+    card: {
+      ...getMenuStyles().panel,
+    },
+    cardTitle: getMenuStyles().sectionTitle,
+    infoRow: {
+      gap: 4,
+      paddingVertical: 4,
+    },
+    label: getMenuStyles().description,
+    inlineInput: {
+      ...getUnderlineFormInputTextStyle(),
+    },
+    value: {
+      color: getAppColors().text,
+      fontSize: 14,
+      fontWeight: "700",
+    },
+    plusLabelText: {
+      ...getBrandPlusTextStyle(),
+    },
+    privateRelayBadge: {
+      backgroundColor: getAppColors().surfaceStrong,
+      borderColor: getAppColors().border,
+      borderRadius: 8,
+      borderWidth: 1,
+      paddingHorizontal: 7,
+      paddingVertical: 3,
+    },
+    privateRelayBadgeText: {
+      color: getAppColors().primary,
+      fontSize: 11,
+      fontWeight: "800",
+      lineHeight: 14,
+    },
+    valueRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      flexWrap: "wrap",
+      gap: 8,
+    },
+    actionRow: {
+      paddingTop: 2,
+    },
+    deleteActionRow: {
+      flexDirection: "row",
+      justifyContent: "flex-end",
+    },
+  }),
+);

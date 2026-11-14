@@ -9,18 +9,33 @@ import { getAdRequestOptions } from "../lib/ads/adRequestOptions";
 import { logAppError } from "../lib/logAppError";
 
 export function useNativeAdCache(enabled: boolean) {
-  const cache = useMemo(() => new NativeAdCache<NativeAd>(async (slotIndex) => {
-    const unitId = resolveAdMobAdUnitId(AdMobNativeConfig, TestIds.NATIVE);
-    if (!unitId) return null;
-    try {
-      return await NativeAd.createForAdRequest(unitId, {
-        ...getAdRequestOptions(), adChoicesPlacement: NativeAdChoicesPlacement.TOP_RIGHT,
-      });
-    } catch (error) {
-      logAppError("AdMob", error, { platform: Platform.OS, slotIndex, step: "load_native_ad", unitId });
-      return null;
-    }
-  }, Config.maxIdleAds, Config.lifetimeMs, Config.retryMs), [enabled]);
+  const cache = useMemo(
+    () =>
+      new NativeAdCache<NativeAd>(
+        async (slotIndex) => {
+          const unitId = resolveAdMobAdUnitId(AdMobNativeConfig, TestIds.NATIVE);
+          if (!unitId) return null;
+          try {
+            return await NativeAd.createForAdRequest(unitId, {
+              ...getAdRequestOptions(),
+              adChoicesPlacement: NativeAdChoicesPlacement.TOP_RIGHT,
+            });
+          } catch (error) {
+            logAppError("AdMob", error, {
+              platform: Platform.OS,
+              slotIndex,
+              step: "load_native_ad",
+              unitId,
+            });
+            return null;
+          }
+        },
+        Config.maxIdleAds,
+        Config.lifetimeMs,
+        Config.retryMs,
+      ),
+    [enabled],
+  );
   useEffect(() => () => cache.dispose(), [cache]);
   return cache;
 }

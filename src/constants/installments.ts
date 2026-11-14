@@ -10,8 +10,7 @@ export const InstallmentMetadataKeys = {
   status: "installment_status",
 } as const;
 
-export type InstallmentStatus =
-  (typeof InstallmentStatuses)[keyof typeof InstallmentStatuses];
+export type InstallmentStatus = (typeof InstallmentStatuses)[keyof typeof InstallmentStatuses];
 
 export const InstallmentStatusBadgeUi = {
   borderRadius: 999,

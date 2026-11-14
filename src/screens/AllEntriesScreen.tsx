@@ -1,3 +1,5 @@
+import { createThemeValue } from "../lib/appTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
 import { useNativeAdCache } from "../hooks/useNativeAdCache";
 import { NativeAdCacheConfig } from "../constants/nativeAdCache";
 import { type ReactNode, useDeferredValue, useEffect, useMemo, useState } from "react";
@@ -23,10 +25,11 @@ import {
   AllEntriesFilterCopy,
 } from "../constants/allEntries";
 import { CATEGORY_OPTIONS } from "../constants/categories";
-import { AppColors } from "../constants/colors";
+import { getAppColors } from "../constants/colors";
 import { RefreshableScrollBehavior, EntryListScrollUi } from "../constants/scroll";
 import { AppLayout } from "../constants/layout";
 import { useAllLedgerEntries } from "../hooks/useAllLedgerEntries";
+import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { useLedgerCategories } from "../hooks/useLedgerCategories";
 import { useLedgerCategoryIconMap } from "../hooks/useLedgerCategoryIconMap";
 import { resolveAllEntriesQueryCategoryIds } from "../lib/allEntriesFilters";
@@ -42,7 +45,9 @@ import type { InstallmentPrepaymentHandler } from "../types/installmentTransacti
 
 type AllEntriesScreenProps = {
   activeBook: LedgerBook | null;
+  entryAppend?: ReactNode;
   onDeleteEntry: LedgerEntryDeleteHandler;
+  onAddFrequentEntry?: (entry: LedgerEntry) => void;
   onDuplicateEntry: (entry: LedgerEntry) => void;
   onEditEntry: (entry: LedgerEntry) => void;
   onPrepayInstallmentEntry: InstallmentPrepaymentHandler;
@@ -52,13 +57,17 @@ type AllEntriesScreenProps = {
 
 export function AllEntriesScreen({
   activeBook,
+  entryAppend,
   onDeleteEntry,
+  onAddFrequentEntry,
   onDuplicateEntry,
   onEditEntry,
   onPrepayInstallmentEntry,
   screenTitle,
   showsNativeAds,
 }: AllEntriesScreenProps) {
+  const styles = getStyles();
+  useAppTheme();
   const nativeAdCache = useNativeAdCache(showsNativeAds);
   const [searchQuery, setSearchQuery] = useState("");
   const [entryTypeFilter, setEntryTypeFilter] = useState<AllEntriesEntryTypeFilter>(
@@ -107,6 +116,8 @@ export function AllEntriesScreen({
     deferredSearchQuery.length > 0 ||
     entryTypeFilter !== AllEntriesEntryTypeFilters.all ||
     selectedCategoryIds.length > 0;
+  // This callback changes with the book and query, clearing any previous pull indicator.
+  const { isPullRefreshing, onPullRefresh } = usePullToRefresh(refreshEntries, refreshEntries);
   const feedItems = useMemo(() => {
     if (showsNativeAds) {
       return buildAllEntriesFeedItems(entries);
@@ -152,45 +163,48 @@ export function AllEntriesScreen({
         {...RefreshableScrollBehavior}
         refreshControl={
           <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={refreshEntries}
-            tintColor={AppColors.primary}
-            colors={[AppColors.primary]}
+            refreshing={isPullRefreshing}
+            onRefresh={onPullRefresh}
+            tintColor={getAppColors().primary}
+            colors={[getAppColors().primary]}
           />
         }
         contentContainerStyle={entries.length === 0 ? styles.emptyContent : styles.listContent}
         data={feedItems}
         keyExtractor={(item) => item.key}
         ListHeaderComponent={
-          errorMessage ? (
-            <View style={styles.controls}>
-              <Pressable
-                accessibilityRole="button"
-                disabled={isRefreshing}
-                onPress={() => {
-                  if (isRefreshing) {
-                    return;
-                  }
+          <>
+            {entryAppend}
+            {errorMessage ? (
+              <View style={styles.controls}>
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={isRefreshing}
+                  onPress={() => {
+                    if (isRefreshing) {
+                      return;
+                    }
 
-                  void refreshEntries();
-                }}
-                style={({ pressed }) => [
-                  styles.errorRetry,
-                  pressed && !isRefreshing ? styles.errorRetryPressed : null,
-                  isRefreshing ? styles.errorRetryDisabled : null,
-                ]}
-              >
-                <Text style={styles.error}>{errorMessage}</Text>
-                <Text style={styles.errorRetryLabel}>재시도</Text>
-              </Pressable>
-            </View>
-          ) : undefined
+                    void refreshEntries();
+                  }}
+                  style={({ pressed }) => [
+                    styles.errorRetry,
+                    pressed && !isRefreshing ? styles.errorRetryPressed : null,
+                    isRefreshing ? styles.errorRetryDisabled : null,
+                  ]}
+                >
+                  <Text style={styles.error}>{errorMessage}</Text>
+                  <Text style={styles.errorRetryLabel}>재시도</Text>
+                </Pressable>
+              </View>
+            ) : null}
+          </>
         }
         ListEmptyComponent={
-          isRefreshing ? (
+          isRefreshing && !isPullRefreshing ? (
             <View style={styles.emptyState}>
               <ActivityIndicator
-                color={AppColors.primary}
+                color={getAppColors().primary}
                 accessibilityLabel={AllEntriesFilterCopy.loadingLabel}
               />
               <Text style={styles.emptyHint}>{AllEntriesFilterCopy.loadingLabel}</Text>
@@ -239,6 +253,7 @@ export function AllEntriesScreen({
               onDeleteEntry={(entry) => {
                 showLedgerEntryDeleteAlert(entry, handleDeleteEntry);
               }}
+              onAddFrequentEntry={onAddFrequentEntry}
               onDuplicateEntry={onDuplicateEntry}
               onEditEntry={onEditEntry}
               onPrepayInstallmentEntry={(entry) => {
@@ -287,72 +302,74 @@ export function AllEntriesScreen({
   }
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: AppColors.screenBackground,
-    paddingTop: AppLayout.compactGap,
-  },
-  header: {
-    paddingBottom: AppLayout.cardGap,
-  },
-  title: {
-    paddingHorizontal: AppLayout.screenPadding,
-  },
-  controls: {
-    gap: AppLayout.cardGap,
-    paddingHorizontal: AppLayout.screenPadding,
-  },
-  list: {
-    flex: 1,
-  },
-  listContent: {
-    paddingBottom: 24,
-  },
-  emptyContent: {
-    flexGrow: 1,
-  },
-  emptyState: {
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 180,
-    gap: 6,
-  },
-  loadingMoreState: {
-    alignItems: "center",
-    paddingVertical: 12,
-  },
-  loadingMoreLabel: {
-    color: AppColors.mutedText,
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  emptyTitle: {
-    color: AppColors.text,
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  emptyHint: {
-    color: AppColors.mutedText,
-    fontSize: 12,
-  },
-  error: {
-    color: AppColors.expense,
-    fontSize: 12,
-  },
-  errorRetry: {
-    gap: 2,
-    alignItems: "flex-start",
-  },
-  errorRetryPressed: {
-    opacity: 0.7,
-  },
-  errorRetryDisabled: {
-    opacity: 0.5,
-  },
-  errorRetryLabel: {
-    color: AppColors.primary,
-    fontSize: 12,
-    fontWeight: "700",
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: getAppColors().screenBackground,
+      paddingTop: AppLayout.compactGap,
+    },
+    header: {
+      paddingBottom: AppLayout.cardGap,
+    },
+    title: {
+      paddingHorizontal: AppLayout.screenPadding,
+    },
+    controls: {
+      gap: AppLayout.cardGap,
+      paddingHorizontal: AppLayout.screenPadding,
+    },
+    list: {
+      flex: 1,
+    },
+    listContent: {
+      paddingBottom: 24,
+    },
+    emptyContent: {
+      flexGrow: 1,
+    },
+    emptyState: {
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: 180,
+      gap: 6,
+    },
+    loadingMoreState: {
+      alignItems: "center",
+      paddingVertical: 12,
+    },
+    loadingMoreLabel: {
+      color: getAppColors().mutedText,
+      fontSize: 12,
+      fontWeight: "600",
+    },
+    emptyTitle: {
+      color: getAppColors().text,
+      fontSize: 14,
+      fontWeight: "700",
+    },
+    emptyHint: {
+      color: getAppColors().mutedText,
+      fontSize: 12,
+    },
+    error: {
+      color: getAppColors().expense,
+      fontSize: 12,
+    },
+    errorRetry: {
+      gap: 2,
+      alignItems: "flex-start",
+    },
+    errorRetryPressed: {
+      opacity: 0.7,
+    },
+    errorRetryDisabled: {
+      opacity: 0.5,
+    },
+    errorRetryLabel: {
+      color: getAppColors().primary,
+      fontSize: 12,
+      fontWeight: "700",
+    },
+  }),
+);

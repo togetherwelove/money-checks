@@ -156,7 +156,8 @@ export function useEntryClipboard({
     if (!scope) return;
     const clipboardDraft = await readAvailableCardSmsClipboardDraft();
     if (scope !== clipboardScopeRef.current) return;
-    if (clipboardDraft && JSON.stringify(clipboardDraft) === lastHandledClipboardRef.current) return;
+    if (clipboardDraft && JSON.stringify(clipboardDraft) === lastHandledClipboardRef.current)
+      return;
     setClipboardSuggestionDraft(clipboardDraft);
   }, [
     handleReadOnlyEditBlocked,
@@ -165,7 +166,6 @@ export function useEntryClipboard({
     navigateToEntryFromCalendar,
     readAvailableCardSmsClipboardDraft,
   ]);
-
 
   const handleDetectClipboardSuggestion = useCallback(async () => {
     const scope = clipboardScopeRef.current;

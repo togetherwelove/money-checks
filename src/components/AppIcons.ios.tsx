@@ -10,10 +10,23 @@ type Props = {
   accessibilityLabel?: string;
 };
 
-export function Feather({ name, size = SystemIconUi.size, color, style, accessibilityLabel }: Props) {
+export function Feather({
+  name,
+  size = SystemIconUi.size,
+  color,
+  style,
+  accessibilityLabel,
+}: Props) {
   const symbol = SystemIcons[name as keyof typeof SystemIcons] ?? "square.grid.2x2";
-  return <SymbolView name={symbol} size={size} tintColor={color} accessibilityLabel={accessibilityLabel}
-    style={[{ width: size, height: size }, StyleSheet.flatten(style)]} />;
+  return (
+    <SymbolView
+      name={symbol}
+      size={size}
+      tintColor={color}
+      accessibilityLabel={accessibilityLabel}
+      style={[{ width: size, height: size }, StyleSheet.flatten(style)]}
+    />
+  );
 }
 
 export const MaterialCommunityIcons = Feather;

@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
-import { AppColors } from "../constants/colors";
+import { getAppColors } from "../constants/colors";
 import { FooterTabBarUi } from "../constants/menu";
 import { NativeBottomNavigationTabs } from "../constants/nativeBottomNavigation";
 
@@ -17,15 +17,29 @@ export const getCachedNativeBottomNavigationIcons = () => cachedIcons;
 export function loadNativeBottomNavigationIcons() {
   if (cachedIcons) return Promise.resolve(cachedIcons);
   if (pendingIcons) return pendingIcons;
-  pendingIcons = Promise.all(NativeBottomNavigationTabs.map(async tab => {
-    const [normal, selected] = await Promise.all([
-      MaterialCommunityIcons.getImageSource(tab.icon, FooterTabBarUi.iconSize, AppColors.text),
-      MaterialCommunityIcons.getImageSource(tab.selectedIcon, FooterTabBarUi.iconSize, AppColors.text),
-    ]);
-    return { normal, selected };
-  })).then(tabs => {
-    cachedIcons = { tabs };
-    return cachedIcons;
-  }).finally(() => { pendingIcons = undefined; });
+  pendingIcons = Promise.all(
+    NativeBottomNavigationTabs.map(async (tab) => {
+      const [normal, selected] = await Promise.all([
+        MaterialCommunityIcons.getImageSource(
+          tab.icon,
+          FooterTabBarUi.iconSize,
+          getAppColors().text,
+        ),
+        MaterialCommunityIcons.getImageSource(
+          tab.selectedIcon,
+          FooterTabBarUi.iconSize,
+          getAppColors().text,
+        ),
+      ]);
+      return { normal, selected };
+    }),
+  )
+    .then((tabs) => {
+      cachedIcons = { tabs };
+      return cachedIcons;
+    })
+    .finally(() => {
+      pendingIcons = undefined;
+    });
   return pendingIcons;
 }

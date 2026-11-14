@@ -1,8 +1,11 @@
-import { Alert,Pressable,StyleSheet,Switch,Text,View } from "react-native";
+import { FixedColors } from "../../constants/fixedColors";
+import { createThemeValue } from "../../lib/appTheme";
+import { useAppTheme } from "../../hooks/useAppTheme";
+import { Alert, Pressable, StyleSheet, Switch, Text, View } from "react-native";
 
 import { AppSettingsUi } from "../../constants/appSettings";
-import { AppSettingsRowStyles } from "../../constants/appSettingsStyles";
-import { AppColors } from "../../constants/colors";
+import { getAppSettingsRowStyles } from "../../constants/appSettingsStyles";
+import { getAppColors } from "../../constants/colors";
 import { AppTextBreakProps } from "../../constants/textLayout";
 import { NotificationUiCopy } from "../../notifications/config/notificationCopy";
 import type { NotificationPreferenceItem } from "../../notifications/preferences/notificationPreferences";
@@ -20,6 +23,8 @@ export function NotificationPreferenceRow({
   item,
   onToggle,
 }: NotificationPreferenceRowProps) {
+  const styles = getStyles();
+  useAppTheme();
   const handlePressHelp = () => {
     if (!item.helpMessage) {
       return;
@@ -51,8 +56,8 @@ export function NotificationPreferenceRow({
       <View style={styles.switchWrap}>
         <Switch
           onValueChange={onToggle}
-          thumbColor={item.enabled ? AppColors.inverseText : AppColors.surface}
-          trackColor={{ false: AppColors.border, true: AppColors.primary }}
+          thumbColor={item.enabled ? FixedColors.white : getAppColors().surface}
+          trackColor={{ false: getAppColors().border, true: getAppColors().primary }}
           value={item.enabled}
         />
       </View>
@@ -60,51 +65,53 @@ export function NotificationPreferenceRow({
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    ...AppSettingsRowStyles.row,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-    minHeight: AppSettingsUi.rowMinHeight,
-  },
-  lastRow: {
-    borderBottomWidth: 0,
-  },
-  textBlock: {
-    flex: 1,
-    minWidth: 0,
-  },
-  labelRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 6,
-    minWidth: 0,
-  },
-  label: {
-    ...AppSettingsRowStyles.title,
-    flex: 1,
-    minWidth: 0,
-  },
-  helpButton: {
-    alignItems: "center",
-    borderColor: AppColors.mutedStrongText,
-    borderRadius: HELP_ICON_SIZE / 2,
-    borderWidth: 1,
-    height: HELP_ICON_SIZE,
-    justifyContent: "center",
-    flexShrink: 0,
-    width: HELP_ICON_SIZE,
-  },
-  helpText: {
-    color: AppColors.mutedStrongText,
-    fontSize: 12,
-    fontWeight: "800",
-    lineHeight: 14,
-  },
-  switchWrap: {
-    alignItems: "flex-end",
-    flexShrink: 0,
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    row: {
+      ...getAppSettingsRowStyles().row,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 12,
+      minHeight: AppSettingsUi.rowMinHeight,
+    },
+    lastRow: {
+      borderBottomWidth: 0,
+    },
+    textBlock: {
+      flex: 1,
+      minWidth: 0,
+    },
+    labelRow: {
+      alignItems: "center",
+      flexDirection: "row",
+      gap: 6,
+      minWidth: 0,
+    },
+    label: {
+      ...getAppSettingsRowStyles().title,
+      flex: 1,
+      minWidth: 0,
+    },
+    helpButton: {
+      alignItems: "center",
+      borderColor: getAppColors().mutedStrongText,
+      borderRadius: HELP_ICON_SIZE / 2,
+      borderWidth: 1,
+      height: HELP_ICON_SIZE,
+      justifyContent: "center",
+      flexShrink: 0,
+      width: HELP_ICON_SIZE,
+    },
+    helpText: {
+      color: getAppColors().mutedStrongText,
+      fontSize: 12,
+      fontWeight: "800",
+      lineHeight: 14,
+    },
+    switchWrap: {
+      alignItems: "flex-end",
+      flexShrink: 0,
+    },
+  }),
+);

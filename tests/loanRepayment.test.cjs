@@ -193,7 +193,7 @@ test("loan selection fills calculated amounts and the configured account while k
     "react/jsx-runtime": { jsx, jsxs: jsx },
     "expo-crypto": { randomUUID: () => "request" },
     "react-native": { Pressable: "Button", Text: "Text", TextInput: "Input", View: "View" },
-    "src/constants/assetStyles.ts": { AssetStyles: {} },
+    "src/constants/assetStyles.ts": { getAssetStyles: () => ({}) },
     "src/hooks/useAssetLinkOptions.ts": {
       useAssetLinkOptions: () => ({ portfolio: options, error: false, retry() {} }),
     },

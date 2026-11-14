@@ -5,7 +5,10 @@ import { SafeAreaView } from "react-native-screens/experimental";
 
 // Measure the tab controller's actual safe area without shrinking the content
 // that remains visible behind its translucent bar.
-export function NativeTabScene({ children, onBottomInsetChange }: {
+export function NativeTabScene({
+  children,
+  onBottomInsetChange,
+}: {
   children: ReactNode;
   onBottomInsetChange: (inset: number) => void;
 }) {
@@ -17,13 +20,24 @@ export function NativeTabScene({ children, onBottomInsetChange }: {
       onBottomInsetChange(height - safeHeight);
     }
   }, [focused, height, safeHeight, onBottomInsetChange]);
-  return <View style={styles.fill} onLayout={event => setHeight(event.nativeEvent.layout.height)}>
-    {children}
-    <SafeAreaView pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
-      edges={{ bottom: true }} insetType="all" style={StyleSheet.absoluteFill}>
-      <View style={styles.fill} onLayout={event => setSafeHeight(event.nativeEvent.layout.height)} />
-    </SafeAreaView>
-  </View>;
+  return (
+    <View style={styles.fill} onLayout={(event) => setHeight(event.nativeEvent.layout.height)}>
+      {children}
+      <SafeAreaView
+        pointerEvents="none"
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        edges={{ bottom: true }}
+        insetType="all"
+        style={StyleSheet.absoluteFill}
+      >
+        <View
+          style={styles.fill}
+          onLayout={(event) => setSafeHeight(event.nativeEvent.layout.height)}
+        />
+      </SafeAreaView>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({ fill: { flex: 1 } });

@@ -1,3 +1,5 @@
+import { createThemeValue } from "../../lib/appTheme";
+import { useAppTheme } from "../../hooks/useAppTheme";
 import { NativeSelectionSheet } from "../NativeSelectionSheet";
 import { AppScrollBehavior } from "../../constants/scroll";
 import { Feather } from "../AppIcons";
@@ -12,7 +14,7 @@ import {
   AllEntriesFilterUi,
   formatAllEntriesApplyLabel,
 } from "../../constants/allEntries";
-import { AppColors } from "../../constants/colors";
+import { getAppColors } from "../../constants/colors";
 import { AppLayout } from "../../constants/layout";
 import {
   countAllEntriesFilters,
@@ -40,6 +42,8 @@ export function AllEntriesFilterSheet({
   onClose,
   selectedCategoryIds,
 }: AllEntriesFilterSheetProps) {
+  const styles = getStyles();
+  useAppTheme();
   const [draftEntryTypeFilter, setDraftEntryTypeFilter] =
     useState<AllEntriesEntryTypeFilter>(entryTypeFilter);
   const [draftCategoryIds, setDraftCategoryIds] = useState<string[]>([...selectedCategoryIds]);
@@ -170,6 +174,8 @@ function CategoryGroup({
   title: string;
   type: LedgerEntryType;
 }) {
+  const styles = getStyles();
+  useAppTheme();
   return (
     <View style={styles.categoryGroup}>
       <Text accessibilityRole="header" style={styles.categoryGroupTitle}>
@@ -187,7 +193,7 @@ function CategoryGroup({
               style={[styles.categoryChip, selected ? styles.selectedOption : null]}
             >
               <Feather
-                color={selected ? AppColors.inverseText : resolveCategoryColor(type)}
+                color={selected ? getAppColors().onPrimary : resolveCategoryColor(type)}
                 name={category.iconName}
                 size={AllEntriesFilterUi.categoryIconSize}
               />
@@ -206,98 +212,100 @@ function CategoryGroup({
 }
 
 function resolveCategoryColor(type: LedgerEntryType): string {
-  return type === "income" ? AppColors.income : AppColors.expense;
+  return type === "income" ? getAppColors().income : getAppColors().expense;
 }
 
-const styles = StyleSheet.create({
-  scroll: { flex: 1 },
-  typeFilterRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: AppLayout.cardGap,
-    paddingTop: AppLayout.cardGap,
-    paddingHorizontal: AppLayout.cardContentPadding,
-    flexShrink: 0,
-  },
-  resetButton: {
-    justifyContent: "center",
-    minHeight: AllEntriesFilterUi.filterButtonMinimumHeight,
-    flexShrink: 0,
-  },
-  resetLabel: {
-    color: AppColors.primary,
-    fontSize: AllEntriesFilterUi.resetLabelFontSize,
-    fontWeight: "700",
-  },
-  scrollContent: {
-    gap: AppLayout.cardContentPadding,
-    paddingTop: AppLayout.cardGap,
-    paddingBottom: AppLayout.cardContentPadding,
-    paddingHorizontal: AppLayout.cardContentPadding,
-  },
-  section: {
-    gap: AppLayout.cardGap,
-  },
-  typeOptions: {
-    backgroundColor: AppColors.surfaceStrong,
-    borderRadius: AllEntriesFilterUi.categoryChipRadius,
-    flexDirection: "row",
-    flex: 1,
-    minWidth: 0,
-    padding: AppLayout.compactGap,
-  },
-  typeOption: {
-    alignItems: "center",
-    borderRadius: AllEntriesFilterUi.categoryChipRadius,
-    flex: 1,
-    justifyContent: "center",
-    minHeight: AllEntriesFilterUi.typeOptionMinimumHeight,
-  },
-  typeOptionLabel: {
-    color: AppColors.mutedText,
-    fontSize: AllEntriesFilterUi.typeOptionFontSize,
-    fontWeight: "700",
-  },
-  selectedOption: {
-    backgroundColor: AppColors.primary,
-    borderColor: AppColors.primary,
-  },
-  selectedOptionLabel: {
-    color: AppColors.inverseText,
-  },
-  categoryGroup: {
-    gap: AppLayout.compactGap,
-  },
-  categoryGroupTitle: {
-    color: AppColors.mutedStrongText,
-    fontSize: AllEntriesFilterUi.sectionLabelFontSize,
-    fontWeight: "700",
-  },
-  categoryGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: AppLayout.compactGap,
-  },
-  categoryChip: {
-    alignItems: "center",
-    backgroundColor: AppColors.surface,
-    borderColor: AppColors.border,
-    borderRadius: AllEntriesFilterUi.categoryChipRadius,
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: AppLayout.compactGap,
-    maxWidth: "100%",
-    minHeight: AllEntriesFilterUi.categoryChipMinimumHeight,
-    paddingHorizontal: AllEntriesFilterUi.categoryChipHorizontalPadding,
-  },
-  categoryChipLabel: {
-    color: AppColors.text,
-    flexShrink: 1,
-    fontSize: AllEntriesFilterUi.categoryLabelFontSize,
-    fontWeight: "700",
-    maxWidth: "100%",
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    scroll: { flex: 1 },
+    typeFilterRow: {
+      alignItems: "center",
+      flexDirection: "row",
+      gap: AppLayout.cardGap,
+      paddingTop: AppLayout.cardGap,
+      paddingHorizontal: AppLayout.cardContentPadding,
+      flexShrink: 0,
+    },
+    resetButton: {
+      justifyContent: "center",
+      minHeight: AllEntriesFilterUi.filterButtonMinimumHeight,
+      flexShrink: 0,
+    },
+    resetLabel: {
+      color: getAppColors().primary,
+      fontSize: AllEntriesFilterUi.resetLabelFontSize,
+      fontWeight: "700",
+    },
+    scrollContent: {
+      gap: AppLayout.cardContentPadding,
+      paddingTop: AppLayout.cardGap,
+      paddingBottom: AppLayout.cardContentPadding,
+      paddingHorizontal: AppLayout.cardContentPadding,
+    },
+    section: {
+      gap: AppLayout.cardGap,
+    },
+    typeOptions: {
+      backgroundColor: getAppColors().surfaceStrong,
+      borderRadius: AllEntriesFilterUi.categoryChipRadius,
+      flexDirection: "row",
+      flex: 1,
+      minWidth: 0,
+      padding: AppLayout.compactGap,
+    },
+    typeOption: {
+      alignItems: "center",
+      borderRadius: AllEntriesFilterUi.categoryChipRadius,
+      flex: 1,
+      justifyContent: "center",
+      minHeight: AllEntriesFilterUi.typeOptionMinimumHeight,
+    },
+    typeOptionLabel: {
+      color: getAppColors().mutedText,
+      fontSize: AllEntriesFilterUi.typeOptionFontSize,
+      fontWeight: "700",
+    },
+    selectedOption: {
+      backgroundColor: getAppColors().primary,
+      borderColor: getAppColors().primary,
+    },
+    selectedOptionLabel: {
+      color: getAppColors().onPrimary,
+    },
+    categoryGroup: {
+      gap: AppLayout.compactGap,
+    },
+    categoryGroupTitle: {
+      color: getAppColors().mutedStrongText,
+      fontSize: AllEntriesFilterUi.sectionLabelFontSize,
+      fontWeight: "700",
+    },
+    categoryGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: AppLayout.compactGap,
+    },
+    categoryChip: {
+      alignItems: "center",
+      backgroundColor: getAppColors().surface,
+      borderColor: getAppColors().border,
+      borderRadius: AllEntriesFilterUi.categoryChipRadius,
+      borderWidth: 1,
+      flexDirection: "row",
+      gap: AppLayout.compactGap,
+      maxWidth: "100%",
+      minHeight: AllEntriesFilterUi.categoryChipMinimumHeight,
+      paddingHorizontal: AllEntriesFilterUi.categoryChipHorizontalPadding,
+    },
+    categoryChipLabel: {
+      color: getAppColors().text,
+      flexShrink: 1,
+      fontSize: AllEntriesFilterUi.categoryLabelFontSize,
+      fontWeight: "700",
+      maxWidth: "100%",
+    },
+    pressed: {
+      opacity: 0.7,
+    },
+  }),
+);

@@ -1,14 +1,16 @@
+import { createThemeValue } from "../lib/appTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
 import { type MutableRefObject, useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { AppColors } from "../constants/colors";
+import { getAppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import {
   MonthlyInsightChartCopy,
   MonthlyInsightChartLayout,
 } from "../constants/monthlyInsightCharts";
 import { CompactTextProps } from "../constants/textLayout";
-import { FormLabelTextStyle } from "../constants/uiStyles";
+import { getFormLabelTextStyle } from "../constants/uiStyles";
 import { useLedgerCategoryIconMap } from "../hooks/useLedgerCategoryIconMap";
 import type { CategoryIconName } from "../types/category";
 import type { MonthlyInsights } from "../types/ledger";
@@ -58,6 +60,8 @@ export function MonthlyInsightsSection({
   insights,
   scope = "periodic",
 }: MonthlyInsightsSectionProps) {
+  const styles = getStyles();
+  useAppTheme();
   const categoryIconByKey = useLedgerCategoryIconMap(activeBookId);
   const [breakdownMode, setBreakdownMode] = useState<BreakdownMode>("category");
   const [disabledItemKeysByChart, setDisabledItemKeysByChart] = useState<
@@ -344,6 +348,8 @@ function SegmentButton({
   label: string;
   onPress: () => void;
 }) {
+  const styles = getStyles();
+  useAppTheme();
   return (
     <Pressable
       accessibilityRole="button"
@@ -361,41 +367,43 @@ function SegmentButton({
   );
 }
 
-const styles = StyleSheet.create({
-  breakdownSection: {
-    gap: 10,
-  },
-  chartContent: {
-    paddingHorizontal: AppLayout.screenPadding,
-  },
-  separatedBreakdownSection: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: AppColors.border,
-    paddingTop: AppLayout.cardGap,
-  },
-  segmentButton: {
-    flex: 1,
-    borderBottomWidth: MonthlyInsightChartLayout.segmentIndicatorHeight,
-    borderBottomColor: AppColors.transparent,
-    paddingVertical: 8,
-    alignItems: "center",
-  },
-  segmentButtonSelected: {
-    borderBottomColor: AppColors.primary,
-  },
-  segmentText: {
-    ...FormLabelTextStyle,
-  },
-  segmentTextSelected: {
-    color: AppColors.primary,
-  },
-  segmentedControl: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: AppColors.border,
-    flexDirection: "row",
-    paddingHorizontal: AppLayout.screenPadding,
-  },
-  section: {
-    gap: AppLayout.cardGap,
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    breakdownSection: {
+      gap: 10,
+    },
+    chartContent: {
+      paddingHorizontal: AppLayout.screenPadding,
+    },
+    separatedBreakdownSection: {
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: getAppColors().border,
+      paddingTop: AppLayout.cardGap,
+    },
+    segmentButton: {
+      flex: 1,
+      borderBottomWidth: MonthlyInsightChartLayout.segmentIndicatorHeight,
+      borderBottomColor: getAppColors().transparent,
+      paddingVertical: 8,
+      alignItems: "center",
+    },
+    segmentButtonSelected: {
+      borderBottomColor: getAppColors().primary,
+    },
+    segmentText: {
+      ...getFormLabelTextStyle(),
+    },
+    segmentTextSelected: {
+      color: getAppColors().primary,
+    },
+    segmentedControl: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: getAppColors().border,
+      flexDirection: "row",
+      paddingHorizontal: AppLayout.screenPadding,
+    },
+    section: {
+      gap: AppLayout.cardGap,
+    },
+  }),
+);

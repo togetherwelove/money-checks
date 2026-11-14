@@ -1,6 +1,8 @@
+import { createThemeValue } from "../../lib/appTheme";
+import { useAppTheme } from "../../hooks/useAppTheme";
 import { StyleSheet, Text, View } from "react-native";
 
-import { MenuStyles } from "../../constants/menuStyles";
+import { getMenuStyles } from "../../constants/menuStyles";
 
 import type { AdTrackingPermissionState } from "../../lib/ads/trackingTransparency";
 import { ActionButton } from "../ActionButton";
@@ -16,6 +18,8 @@ export function AdTrackingPermissionCard({
   onRequestPermission,
   permissionState,
 }: AdTrackingPermissionCardProps) {
+  const styles = getStyles();
+  useAppTheme();
   const action =
     permissionState === "not-determined" ? (
       <ActionButton
@@ -25,12 +29,7 @@ export function AdTrackingPermissionCard({
         variant="primary"
       />
     ) : permissionState === "denied" ? (
-      <ActionButton
-        label="설정 열기"
-        onPress={onOpenSettings}
-        size="inline"
-        variant="secondary"
-      />
+      <ActionButton label="설정 열기" onPress={onOpenSettings} size="inline" variant="secondary" />
     ) : null;
 
   return (
@@ -60,14 +59,16 @@ function resolveAdTrackingStatusLabel(permissionState: AdTrackingPermissionState
   return "허용 안 됨";
 }
 
-const styles = StyleSheet.create({
-  card: MenuStyles.panel,
-  title: MenuStyles.sectionTitle,
-  actionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: MenuStyles.section.gap,
-  },
-  status: { ...MenuStyles.title, flexShrink: 1 },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    card: getMenuStyles().panel,
+    title: getMenuStyles().sectionTitle,
+    actionRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: getMenuStyles().section.gap,
+    },
+    status: { ...getMenuStyles().title, flexShrink: 1 },
+  }),
+);

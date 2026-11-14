@@ -26,10 +26,17 @@ function loader(react, extra = {}) {
       ),
     ),
     "src/constants/nativeSettingsStyles.ts": {
-      NativeSettingsStyles: { list: [], row: [], sectionTitle: [], title: [], description: [] },
+      getNativeSettingsStyles: () => ({
+        list: [],
+        row: [],
+        sectionTitle: [],
+        title: [],
+        description: [],
+      }),
     },
     "src/components/KeyboardAwareScrollView.tsx": { KeyboardAwareScrollView: "Scroll" },
     "src/components/AppFooterContentInset.tsx": { AppFooterContentInset: "Inset" },
+    "src/components/AppVersionFooter.tsx": { AppVersionFooter: "Footer" },
     "src/components/appSettings/SettingsCategoryOrderModal.tsx": {
       SettingsCategoryOrderModal: "Categories",
     },
@@ -117,7 +124,9 @@ for (const suffix of ["", ".ios"]) {
     const rows = nodes(
       SettingsMenuLinks({ sections, onSelect: (item) => selected.push(item) }),
     ).filter((node) => node.type === "Row");
-    assert.ok(rows.every((row) => row.props.leadingIcon));
+    const downloadRow = rows.find((row) => row.props.trailingIcon === "download");
+    assert.equal(downloadRow.props.leadingIcon, undefined);
+    assert.ok(rows.filter((row) => row !== downloadRow).every((row) => row.props.leadingIcon));
     assert.equal(rows.filter((row) => row.props.hasBadge).length, 1);
     const category = rows.find((row) => row.props.disabled);
     assert.ok(category.props.description);

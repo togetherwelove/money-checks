@@ -116,10 +116,7 @@ function buildCategoryRows(
   for (const entry of filteredEntries) {
     const key = entry.categoryId ? `id:${entry.categoryId}` : `legacy:${entry.category}`;
     labels.set(key, entry.category);
-    amountByCategory.set(
-      key,
-      (amountByCategory.get(key) ?? 0) + entry.amount,
-    );
+    amountByCategory.set(key, (amountByCategory.get(key) ?? 0) + entry.amount);
     countByCategory.set(key, (countByCategory.get(key) ?? 0) + 1);
   }
   const displayLabels = distinguishDuplicateNames(labels);
@@ -169,9 +166,11 @@ function distinguishDuplicateNames(labels: Map<string, string>) {
   const counts = new Map<string, number>();
   const ordinals = new Map<string, number>();
   for (const label of labels.values()) counts.set(label, (counts.get(label) ?? 0) + 1);
-  return new Map([...labels].map(([key, label]) => {
-    const ordinal = (ordinals.get(label) ?? 0) + 1;
-    ordinals.set(label, ordinal);
-    return [key, counts.get(label)! > 1 ? `${label} (${ordinal})` : label];
-  }));
+  return new Map(
+    [...labels].map(([key, label]) => {
+      const ordinal = (ordinals.get(label) ?? 0) + 1;
+      ordinals.set(label, ordinal);
+      return [key, counts.get(label)! > 1 ? `${label} (${ordinal})` : label];
+    }),
+  );
 }

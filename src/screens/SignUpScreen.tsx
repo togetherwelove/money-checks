@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { createThemeValue } from "../lib/appTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Linking, StyleSheet, Text, View } from "react-native";
 
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
@@ -10,7 +12,7 @@ import {
   type SignUpCaptchaChallengeHandle,
 } from "../components/authScreen/SignUpCaptchaChallenge";
 import { type SignUpStep, SignUpStepIndicator } from "../components/authScreen/SignUpStepIndicator";
-import { AppColors } from "../constants/colors";
+import { getAppColors } from "../constants/colors";
 import { EmailAuthCopy } from "../constants/emailAuth";
 import { EmailOtpTiming } from "../constants/emailOtp";
 import { KeyboardLayout } from "../constants/keyboard";
@@ -32,10 +34,14 @@ import {
 import { showNativeToast } from "../lib/nativeToast";
 
 type SignUpScreenProps = {
+  footer?: ReactNode;
   onBackToSignIn: () => void;
+  onBusyChange?: (busy: boolean) => void;
 };
 
-export function SignUpScreen({ onBackToSignIn }: SignUpScreenProps) {
+export function SignUpScreen({ onBackToSignIn, onBusyChange, footer }: SignUpScreenProps) {
+  const styles = getStyles();
+  useAppTheme();
   const [confirmPassword, setConfirmPassword] = useState("");
   const [email, setEmail] = useState("");
   const [hasAgreedToPrivacy, setHasAgreedToPrivacy] = useState(false);
@@ -44,6 +50,10 @@ export function SignUpScreen({ onBackToSignIn }: SignUpScreenProps) {
   const [isRequestingOtp, setIsRequestingOtp] = useState(false);
   const [isResendingOtp, setIsResendingOtp] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  useEffect(() => {
+    onBusyChange?.(isRequestingOtp || isResendingOtp || isVerifyingOtp);
+  }, [isRequestingOtp, isResendingOtp, isVerifyingOtp, onBusyChange]);
+  useEffect(() => () => onBusyChange?.(false), [onBusyChange]);
   const [resendAvailableAtByEmail, setResendAvailableAtByEmail] = useState<Record<string, number>>(
     {},
   );
@@ -263,42 +273,45 @@ export function SignUpScreen({ onBackToSignIn }: SignUpScreenProps) {
           token={token}
         />
       )}
+      {footer}
       <SignUpCaptchaChallenge ref={captchaChallengeRef} />
     </KeyboardAwareScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: AppColors.screenBackground,
-  },
-  content: {
-    ...ResponsivePageContentStyle,
-    flexGrow: 1,
-    padding: AppLayout.screenPadding,
-    gap: 16,
-    justifyContent: "center",
-  },
-  heroSection: {
-    gap: 8,
-    paddingHorizontal: 8,
-    marginBottom: 4,
-  },
-  brand: {
-    color: AppColors.primary,
-    fontSize: 13,
-    fontWeight: "700",
-    letterSpacing: 0.4,
-  },
-  title: {
-    color: AppColors.text,
-    fontSize: 30,
-    fontWeight: "800",
-  },
-  subtitle: {
-    color: AppColors.mutedText,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: getAppColors().screenBackground,
+    },
+    content: {
+      ...ResponsivePageContentStyle,
+      flexGrow: 1,
+      padding: AppLayout.screenPadding,
+      gap: 16,
+      justifyContent: "center",
+    },
+    heroSection: {
+      gap: 8,
+      paddingHorizontal: 8,
+      marginBottom: 4,
+    },
+    brand: {
+      color: getAppColors().primary,
+      fontSize: 13,
+      fontWeight: "700",
+      letterSpacing: 0.4,
+    },
+    title: {
+      color: getAppColors().text,
+      fontSize: 30,
+      fontWeight: "800",
+    },
+    subtitle: {
+      color: getAppColors().mutedText,
+      fontSize: 14,
+      lineHeight: 20,
+    },
+  }),
+);

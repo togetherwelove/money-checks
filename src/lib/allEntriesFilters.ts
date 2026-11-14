@@ -8,10 +8,7 @@ export function countAllEntriesFilters(
   entryTypeFilter: AllEntriesEntryTypeFilter,
   selectedCategoryIds: readonly string[],
 ): number {
-  return (
-    selectedCategoryIds.length +
-    (entryTypeFilter === AllEntriesEntryTypeFilters.all ? 0 : 1)
-  );
+  return selectedCategoryIds.length + (entryTypeFilter === AllEntriesEntryTypeFilters.all ? 0 : 1);
 }
 
 export function filterCategoriesByEntryType(

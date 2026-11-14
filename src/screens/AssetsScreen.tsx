@@ -1,8 +1,9 @@
+import { useAppTheme } from "../hooks/useAppTheme";
 import { useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { AssetCopy as Copy } from "../constants/assets";
-import { AssetStyles as styles } from "../constants/assetStyles";
-import { AppColors } from "../constants/colors";
+import { getAssetStyles } from "../constants/assetStyles";
+import { getAppColors } from "../constants/colors";
 import { AssetList } from "../components/assets/AssetList";
 import { usePersonalAssets } from "../hooks/usePersonalAssets";
 import type { PersonalAsset } from "../types/asset";
@@ -12,6 +13,7 @@ import { AppFooterContentInset } from "../components/AppFooterContentInset";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 
 export function AssetsScreen({ userId, bookId }: { userId: string; bookId: string | null }) {
+  useAppTheme();
   const { portfolio, loading, error, refresh } = usePersonalAssets(bookId ?? "");
   const [editing, setEditing] = useState<{ asset: PersonalAsset | null } | null>(null);
   const summary = portfolioSummary(portfolio);
@@ -20,25 +22,28 @@ export function AssetsScreen({ userId, bookId }: { userId: string; bookId: strin
   const active = portfolio.assets.filter((asset) => !asset.deleted_on);
   return (
     <>
-      <KeyboardAwareScrollView style={styles.screen} contentContainerStyle={styles.content}>
-        <View style={styles.row}>
-          <Text style={[styles.hint, styles.grow]}>{Copy.personal}</Text>
+      <KeyboardAwareScrollView
+        style={getAssetStyles().screen}
+        contentContainerStyle={getAssetStyles().content}
+      >
+        <View style={getAssetStyles().row}>
+          <Text style={[getAssetStyles().hint, getAssetStyles().grow]}>{Copy.personal}</Text>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={Copy.add}
             disabled={loading || Boolean(error)}
             onPress={() => setEditing({ asset: null })}
-            style={loading || error ? styles.disabled : undefined}
+            style={loading || error ? getAssetStyles().disabled : undefined}
           >
-            <Text style={styles.action}>{Copy.add}</Text>
+            <Text style={getAssetStyles().action}>{Copy.add}</Text>
           </Pressable>
         </View>
         {loading ? (
-          <ActivityIndicator accessibilityLabel={Copy.loading} color={AppColors.primary} />
+          <ActivityIndicator accessibilityLabel={Copy.loading} color={getAppColors().primary} />
         ) : null}
         {error ? (
-          <View style={styles.section}>
-            <Text accessibilityRole="alert" style={styles.error}>
+          <View style={getAssetStyles().section}>
+            <Text accessibilityRole="alert" style={getAssetStyles().error}>
               {error}
             </Text>
             <Pressable
@@ -46,43 +51,43 @@ export function AssetsScreen({ userId, bookId }: { userId: string; bookId: strin
               onPress={() => {
                 void refresh();
               }}
-              style={styles.row}
+              style={getAssetStyles().row}
             >
-              <Text style={styles.action}>{Copy.retry}</Text>
+              <Text style={getAssetStyles().action}>{Copy.retry}</Text>
             </Pressable>
           </View>
         ) : null}
         {!loading && !error ? (
           <>
-            <View style={styles.card}>
-              <Text style={styles.title}>{Copy.net}</Text>
-              <Text style={styles.amount}>{formatAssetAmount(summary.net)}</Text>
-              <Text style={styles.hint}>
+            <View style={getAssetStyles().card}>
+              <Text style={getAssetStyles().title}>{Copy.net}</Text>
+              <Text style={getAssetStyles().amount}>{formatAssetAmount(summary.net)}</Text>
+              <Text style={getAssetStyles().hint}>
                 {previous
                   ? `${Copy.change}${Copy.separator}${formatAssetAmount(summary.net - previous.net)}`
                   : Copy.noPrevious}
               </Text>
-              <Text style={styles.hint}>{Copy.summaryHint}</Text>
-              <View style={styles.row}>
-                <Text style={styles.text}>{Copy.total}</Text>
-                <Text style={styles.title}>{formatAssetAmount(summary.total)}</Text>
+              <Text style={getAssetStyles().hint}>{Copy.summaryHint}</Text>
+              <View style={getAssetStyles().row}>
+                <Text style={getAssetStyles().text}>{Copy.total}</Text>
+                <Text style={getAssetStyles().title}>{formatAssetAmount(summary.total)}</Text>
               </View>
-              <View style={styles.row}>
-                <Text style={styles.text}>{Copy.debt}</Text>
-                <Text style={styles.title}>{formatAssetAmount(summary.debt)}</Text>
+              <View style={getAssetStyles().row}>
+                <Text style={getAssetStyles().text}>{Copy.debt}</Text>
+                <Text style={getAssetStyles().title}>{formatAssetAmount(summary.debt)}</Text>
               </View>
             </View>
-            {!active.length ? <Text style={styles.hint}>{Copy.empty}</Text> : null}
+            {!active.length ? <Text style={getAssetStyles().hint}>{Copy.empty}</Text> : null}
             <AssetList portfolio={portfolio} onSelect={(asset) => setEditing({ asset })} />
             {portfolio.valuations.length ? (
-              <View style={styles.card}>
-                <Text style={styles.title}>{Copy.trend}</Text>
-                <Text style={styles.hint}>{Copy.trendHint}</Text>
+              <View style={getAssetStyles().card}>
+                <Text style={getAssetStyles().title}>{Copy.trend}</Text>
+                <Text style={getAssetStyles().hint}>{Copy.trendHint}</Text>
                 {trend.map((point) => (
-                  <View key={point.date} style={styles.row}>
-                    <View style={styles.section}>
-                      <Text style={styles.text}>{point.date.slice(0, 7)}</Text>
-                      <Text style={styles.hint}>
+                  <View key={point.date} style={getAssetStyles().row}>
+                    <View style={getAssetStyles().section}>
+                      <Text style={getAssetStyles().text}>{point.date.slice(0, 7)}</Text>
+                      <Text style={getAssetStyles().hint}>
                         {Copy.confirmed}
                         {Copy.separator}
                         {point.confirmed}
@@ -90,7 +95,7 @@ export function AssetsScreen({ userId, bookId }: { userId: string; bookId: strin
                         {point.count}
                       </Text>
                     </View>
-                    <Text style={styles.title}>{formatAssetAmount(point.net)}</Text>
+                    <Text style={getAssetStyles().title}>{formatAssetAmount(point.net)}</Text>
                   </View>
                 ))}
               </View>

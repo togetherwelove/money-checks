@@ -43,9 +43,9 @@ export async function confirmAndDownloadAnnualReport(params: DownloadAnnualRepor
   await reportFile.write(workbookBytes);
 
   await Sharing.shareAsync(reportFile.uri, {
-      dialogTitle: fileName,
-      mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      UTI: "org.openxmlformats.spreadsheetml.sheet",
+    dialogTitle: fileName,
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    UTI: "org.openxmlformats.spreadsheetml.sheet",
   });
 
   showNativeToast(AnnualReportCopy.successMessage);
@@ -54,7 +54,10 @@ export async function confirmAndDownloadAnnualReport(params: DownloadAnnualRepor
 
 async function confirmAnnualReportDownload(report: AnnualReportData) {
   const labels = AnnualReportCopy.summaryRows;
-  const message = [report.bookName, report.periodLabel, "",
+  const message = [
+    report.bookName,
+    report.periodLabel,
+    "",
     `${labels.entryCount}: ${report.entries.length.toLocaleString()}건`,
     `${labels.income}: ${formatCurrency(report.totalIncome)}`,
     `${labels.expense}: ${formatCurrency(report.totalExpense)}`,
@@ -62,16 +65,21 @@ async function confirmAnnualReportDownload(report: AnnualReportData) {
   ].join("\n");
 
   return new Promise<boolean>((resolve) => {
-    Alert.alert(AnnualReportCopy.previewTitle, message, [
-      {
-        style: "cancel",
-        text: AnnualReportCopy.cancelAction,
-        onPress: () => resolve(false),
-      },
-      {
-        text: AnnualReportCopy.downloadAction,
-        onPress: () => resolve(true),
-      },
-    ], { cancelable: true, onDismiss: () => resolve(false) });
+    Alert.alert(
+      AnnualReportCopy.previewTitle,
+      message,
+      [
+        {
+          style: "cancel",
+          text: AnnualReportCopy.cancelAction,
+          onPress: () => resolve(false),
+        },
+        {
+          text: AnnualReportCopy.exportAction,
+          onPress: () => resolve(true),
+        },
+      ],
+      { cancelable: true, onDismiss: () => resolve(false) },
+    );
   });
 }

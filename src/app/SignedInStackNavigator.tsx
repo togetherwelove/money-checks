@@ -1,3 +1,5 @@
+import { createThemeValue } from "../lib/appTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
 import {
   createNativeStackNavigator,
   type NativeStackNavigationOptions,
@@ -7,7 +9,8 @@ import { Keyboard } from "react-native";
 import type { SettingsMenuLinksProps } from "../components/appSettings/SettingsMenuLinks";
 
 import type { CalendarSummaryMode } from "../constants/calendarSummary";
-import { AppColors } from "../constants/colors";
+import { getAppColors } from "../constants/colors";
+import { createCalendarTodayButton } from "../lib/calendarTodayButton";
 import type { SubscriptionTier } from "../constants/subscription";
 import type { SupportPackageIdentifier } from "../constants/support";
 import type { BusyTaskTracker } from "../hooks/ledgerScreenState/types";
@@ -47,26 +50,30 @@ import {
 } from "./signedInNavigation";
 
 const Stack = createNativeStackNavigator<SignedInStackParamList>();
-const signedInStackScreenOptions: NativeStackNavigationOptions = {
-  animation: "slide_from_right",
-  contentStyle: { backgroundColor: AppColors.screenBackground },
-  fullScreenGestureEnabled: false,
-  freezeOnBlur: false,
-  gestureEnabled: true,
-  headerShown: true,
-  headerShadowVisible: false,
-  headerTitleAlign: "center",
-  headerBackButtonDisplayMode: "minimal",
-  headerTintColor: AppColors.text,
-  headerStyle: { backgroundColor: AppColors.screenBackground },
-};
-const entryNativeSheetOptions: NativeStackNavigationOptions = {
-  animation: "slide_from_bottom",
-  contentStyle: { backgroundColor: AppColors.transparent },
-  gestureEnabled: false,
-  headerShown: false,
-  presentation: "transparentModal",
-};
+const getSignedInStackScreenOptions = createThemeValue(
+  (): NativeStackNavigationOptions => ({
+    animation: "slide_from_right",
+    contentStyle: { backgroundColor: getAppColors().screenBackground },
+    fullScreenGestureEnabled: false,
+    freezeOnBlur: false,
+    gestureEnabled: true,
+    headerShown: true,
+    headerShadowVisible: false,
+    headerTitleAlign: "center",
+    headerBackButtonDisplayMode: "minimal",
+    headerTintColor: getAppColors().text,
+    headerStyle: { backgroundColor: getAppColors().screenBackground },
+  }),
+);
+const getEntryNativeSheetOptions = createThemeValue(
+  (): NativeStackNavigationOptions => ({
+    animation: "slide_from_bottom",
+    contentStyle: { backgroundColor: getAppColors().transparent },
+    gestureEnabled: false,
+    headerShown: false,
+    presentation: "transparentModal",
+  }),
+);
 
 export type SignedInStackNavigatorProps = {
   entryAppend: ReactNode;
@@ -96,6 +103,7 @@ export type SignedInStackNavigatorProps = {
   onDeleteSelectedEntry: LedgerEntryDeleteHandler;
   onDiscardEntryDraft: () => void;
   onEditSelectedEntryFromAllEntries: (entry: LedgerEntry) => void;
+  onAddFrequentEntry?: (entry: LedgerEntry) => void;
   onDuplicateEntry: (entry: LedgerEntry) => void;
   onEditSelectedEntryFromCalendar: (entry: LedgerEntry) => void;
   onOpenSubscription: () => void;
@@ -154,6 +162,7 @@ export function SignedInStackNavigator({
   onDeleteSelectedEntry,
   onDiscardEntryDraft,
   onEditSelectedEntryFromAllEntries,
+  onAddFrequentEntry,
   onDuplicateEntry,
   onEditSelectedEntryFromCalendar,
   onOpenAdTrackingSettings,
@@ -180,6 +189,7 @@ export function SignedInStackNavigator({
   trackBlockingTask,
   userId,
 }: SignedInStackNavigatorProps) {
+  useAppTheme();
   return (
     <Stack.Navigator
       initialRouteName={initialScreen}
@@ -190,13 +200,17 @@ export function SignedInStackNavigator({
       }}
       screenOptions={({ route }) => {
         const screen = route.name;
-        if (screen === "entry-sheet") return entryNativeSheetOptions;
+        if (screen === "entry-sheet") return getEntryNativeSheetOptions();
         const isPrimaryScreen = screen in PrimaryTabRoutes;
         return {
-          ...signedInStackScreenOptions,
-          animation: isPrimaryScreen ? "none" : signedInStackScreenOptions.animation,
+          ...getSignedInStackScreenOptions(),
+          animation: isPrimaryScreen ? "none" : getSignedInStackScreenOptions().animation,
           title: getAppScreenLabel(screen),
           headerTitle: () => renderScreenTitle(screen),
+          unstable_headerRightItems:
+            screen === "calendar"
+              ? () => [createCalendarTodayButton(ledgerState.selectedDate, onSelectCalendarDate)]
+              : undefined,
 
           headerBackVisible: !isPrimaryScreen,
           gestureEnabled: !isPrimaryScreen,
@@ -204,7 +218,15 @@ export function SignedInStackNavigator({
       }}
     >
       <Stack.Screen name="share">{renderLedgerBooks}</Stack.Screen>
-      <Stack.Screen name="assets">{() => <AssetsScreen key={`${userId}:${ledgerState.activeBook?.id}`} userId={userId} bookId={ledgerState.activeBook?.id ?? null} />}</Stack.Screen>
+      <Stack.Screen name="assets">
+        {() => (
+          <AssetsScreen
+            key={`${userId}:${ledgerState.activeBook?.id}`}
+            userId={userId}
+            bookId={ledgerState.activeBook?.id ?? null}
+          />
+        )}
+      </Stack.Screen>
       <Stack.Screen name="calendar">
         {() => (
           <HomeScreen
@@ -212,6 +234,7 @@ export function SignedInStackNavigator({
             calendarSummaryMode={calendarSummaryMode}
             isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
             onDeleteSelectedEntry={onDeleteSelectedEntry}
+            onAddFrequentEntry={onAddFrequentEntry}
             onDuplicateEntry={onDuplicateEntry}
             onEditSelectedEntry={onEditSelectedEntryFromCalendar}
             onPrepayInstallmentEntry={onPrepayInstallmentEntry}
@@ -222,7 +245,7 @@ export function SignedInStackNavigator({
           />
         )}
       </Stack.Screen>
-      <Stack.Screen name="entry-sheet" options={entryNativeSheetOptions}>
+      <Stack.Screen name="entry-sheet" options={getEntryNativeSheetOptions()}>
         {({ route }) => (
           <EntryNativeSheetScreen
             autoFocusContent={route.params?.autoFocusContent ?? false}
@@ -238,7 +261,9 @@ export function SignedInStackNavigator({
         {() => (
           <AllEntriesScreen
             activeBook={ledgerState.activeBook}
+            entryAppend={entryAppend}
             onDeleteEntry={onDeleteSelectedEntry}
+            onAddFrequentEntry={onAddFrequentEntry}
             onDuplicateEntry={onDuplicateEntry}
             onEditEntry={onEditSelectedEntryFromAllEntries}
             onPrepayInstallmentEntry={onPrepayInstallmentEntry}

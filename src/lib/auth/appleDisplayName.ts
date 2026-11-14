@@ -1,6 +1,5 @@
 import type * as AppleAuthentication from "expo-apple-authentication";
 
-
 type AppleNameParts = {
   familyName: string | null;
   fullName: string;

@@ -1,11 +1,13 @@
+import { createThemeValue } from "../../lib/appTheme";
+import { useAppTheme } from "../../hooks/useAppTheme";
 import { useEffect, useState } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
-import { AppColors } from "../../constants/colors";
+import { getAppColors } from "../../constants/colors";
 import {
   MonthlyInsightChartCopy as Copy,
   MonthlyInsightChartLayout as Layout,
 } from "../../constants/monthlyInsightCharts";
-import { CompactLabelTextStyle } from "../../constants/uiStyles";
+import { getCompactLabelTextStyle } from "../../constants/uiStyles";
 import { OneLineTextFitProps } from "../../constants/textLayout";
 import type { MonthlyTrendPoint } from "../../types/ledger";
 import { formatCurrency } from "../../utils/currency";
@@ -21,6 +23,8 @@ export function TrendChartTooltip({
   plotWidth: number;
   onDismiss: () => void;
 }) {
+  const styles = getStyles();
+  useAppTheme();
   const [opacity] = useState(() => new Animated.Value(0));
   const [tooltipWidth, setTooltipWidth] = useState(0);
   const ready = tooltipWidth > 0 && plotWidth > 0;
@@ -77,21 +81,23 @@ export function TrendChartTooltip({
   );
 }
 
-const styles = StyleSheet.create({
-  tooltip: {
-    position: "absolute",
-    top: 0,
-    maxWidth: "100%",
-    padding: Layout.trendTooltipPadding,
-    gap: Layout.trendTooltipGap,
-    borderRadius: Layout.trendTooltipRadius,
-    backgroundColor: AppColors.floatingPanelSurface,
-    borderWidth: Layout.trendGridLineWidth,
-    borderColor: AppColors.border,
-  },
-  row: { flexDirection: "row", alignItems: "center", gap: Layout.trendTooltipPadding },
-  title: { ...CompactLabelTextStyle, color: AppColors.text, fontWeight: "700" },
-  amount: { ...CompactLabelTextStyle, flexShrink: 1, color: AppColors.text },
-  income: { ...CompactLabelTextStyle, color: AppColors.income },
-  expense: { ...CompactLabelTextStyle, color: AppColors.expense },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    tooltip: {
+      position: "absolute",
+      top: 0,
+      maxWidth: "100%",
+      padding: Layout.trendTooltipPadding,
+      gap: Layout.trendTooltipGap,
+      borderRadius: Layout.trendTooltipRadius,
+      backgroundColor: getAppColors().floatingPanelSurface,
+      borderWidth: Layout.trendGridLineWidth,
+      borderColor: getAppColors().border,
+    },
+    row: { flexDirection: "row", alignItems: "center", gap: Layout.trendTooltipPadding },
+    title: { ...getCompactLabelTextStyle(), color: getAppColors().text, fontWeight: "700" },
+    amount: { ...getCompactLabelTextStyle(), flexShrink: 1, color: getAppColors().text },
+    income: { ...getCompactLabelTextStyle(), color: getAppColors().income },
+    expense: { ...getCompactLabelTextStyle(), color: getAppColors().expense },
+  }),
+);

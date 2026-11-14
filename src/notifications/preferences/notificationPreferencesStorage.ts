@@ -9,10 +9,7 @@ import {
   NotificationRequiredEvents,
 } from "../config/notificationCopy";
 import { clampNotificationThresholdAmount } from "../config/notificationThresholdLimits";
-import type {
-  NotificationEventType,
-  NotificationThresholdKey,
-} from "../domain/notificationEvents";
+import type { NotificationEventType, NotificationThresholdKey } from "../domain/notificationEvents";
 import type { NotificationPreferences } from "./notificationPreferences";
 
 const NOTIFICATION_PREFERENCES_TABLE = "notification_preferences";
@@ -99,7 +96,8 @@ function mergeNotificationPreferences(
     enabledThresholds: {
       ...createSingleSelectedThresholdState(thresholdState.selectedThresholdKey),
     },
-    selectedThresholdPeriod: NotificationDefaultThresholdPeriods[thresholdState.selectedThresholdKey],
+    selectedThresholdPeriod:
+      NotificationDefaultThresholdPeriods[thresholdState.selectedThresholdKey],
     thresholds: {
       ...fallbackPreferences.thresholds,
       ...clampNotificationThresholds(thresholdState.thresholds),

@@ -1,4 +1,3 @@
-
 import { AppLayout } from "./layout";
 
 export const BannerAdLayout = {

@@ -18,8 +18,24 @@ export const HelpUi = {
 } as const;
 
 export const HelpLinkItems = [
-  { label: "알뜰 홈페이지", description: "공지, 사용 안내, 업데이트 소식을 확인할 수 있어요", url: AppLinks.homepageUrl },
-  { label: "오픈소스 라이선스", description: "앱에서 사용하는 오픈소스 소프트웨어 고지", url: LegalLinks.openSourceLicensesUrl },
-  { label: "개인정보 처리방침", description: "개인정보 수집, 이용, 보관 및 권리 안내", url: LegalLinks.privacyPolicyUrl },
-  { label: "이용약관", description: "서비스 이용 조건, 구독 및 책임 범위 안내", url: LegalLinks.termsOfUseUrl },
+  {
+    label: "알뜰 홈페이지",
+    description: "공지, 사용 안내, 업데이트 소식을 확인할 수 있어요",
+    url: AppLinks.homepageUrl,
+  },
+  {
+    label: "오픈소스 라이선스",
+    description: "앱에서 사용하는 오픈소스 소프트웨어 고지",
+    url: LegalLinks.openSourceLicensesUrl,
+  },
+  {
+    label: "개인정보 처리방침",
+    description: "개인정보 수집, 이용, 보관 및 권리 안내",
+    url: LegalLinks.privacyPolicyUrl,
+  },
+  {
+    label: "이용약관",
+    description: "서비스 이용 조건, 구독 및 책임 범위 안내",
+    url: LegalLinks.termsOfUseUrl,
+  },
 ] as const;

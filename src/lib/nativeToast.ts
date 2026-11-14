@@ -1,7 +1,7 @@
 import { Dimensions, Keyboard } from "react-native";
 import type { ToastOptions } from "react-native-root-toast";
 
-import { ToastUi } from "../constants/toast";
+import { getToastUi } from "../constants/toast";
 
 export function showNativeToast(message: string) {
   const RootToast = require("react-native-root-toast").default as {
@@ -16,14 +16,14 @@ export function showNativeToast(message: string) {
 
   RootToast.show(message, {
     animation: true,
-    backgroundColor: ToastUi.backgroundColor,
+    backgroundColor: getToastUi().backgroundColor,
     duration: RootToast.durations.SHORT,
     hideOnPress: true,
     keyboardAvoiding: false,
-    opacity: ToastUi.opacity,
-    position: -(keyboardOverlap + ToastUi.bottomOffset),
+    opacity: getToastUi().opacity,
+    position: -(keyboardOverlap + getToastUi().bottomOffset),
     shadow: false,
-    textColor: ToastUi.textColor,
-    textStyle: { fontSize: ToastUi.textSize },
+    textColor: getToastUi().textColor,
+    textStyle: { fontSize: getToastUi().textSize },
   });
 }

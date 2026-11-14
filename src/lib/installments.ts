@@ -8,11 +8,11 @@ import { resolveDisplayCurrency } from "./currencyPreference";
 const INSTALLMENT_GROUP_PREFIX = "installment";
 const INSTALLMENT_NOTE_PATTERN = /\(\d+\/\d+\)$/;
 const InstallmentCopy = {
-    oneTimeLabel: "일시불",
-    progressLabel: "할부",
-    prepaidLabel: "선결제 완료",
-    monthsSuffix: "개월",
-  } as const;
+  oneTimeLabel: "일시불",
+  progressLabel: "할부",
+  prepaidLabel: "선결제 완료",
+  monthsSuffix: "개월",
+} as const;
 export const MAX_INSTALLMENT_MONTHS = 99;
 
 export function buildLedgerEntriesFromDraft(draft: LedgerEntryDraft): LedgerEntry[] {

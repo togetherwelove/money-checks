@@ -1,16 +1,18 @@
+import { createThemeValue } from "../lib/appTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
 import { Linking, StyleSheet, Text, View } from "react-native";
-import { MenuStyles } from "../constants/menuStyles";
+import { getMenuStyles } from "../constants/menuStyles";
 
 import { ActionButton } from "../components/ActionButton";
 import { AppFooterContentInset } from "../components/AppFooterContentInset";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { TextLinkButton } from "../components/TextLinkButton";
-import { AppColors } from "../constants/colors";
+import { getAppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import { LegalLinks } from "../constants/legal";
 import { SubscriptionHeroUi, SubscriptionMessages } from "../constants/subscription";
 import { AppTextBreakProps, CompactTextProps, OneLineTextFitProps } from "../constants/textLayout";
-import { BrandPlusTextStyle } from "../constants/uiStyles";
+import { getBrandPlusTextStyle } from "../constants/uiStyles";
 import { showNativeToast } from "../lib/nativeToast";
 
 type SubscriptionScreenProps = {
@@ -28,6 +30,8 @@ export function SubscriptionScreen({
   onRestorePurchases,
   plusPriceLabel,
 }: SubscriptionScreenProps) {
+  const styles = getStyles();
+  useAppTheme();
   const resolvedPlusPriceLabel = plusPriceLabel ?? SubscriptionMessages.priceUnavailable;
   const handleOpenLegalLink = async (url: string) => {
     try {
@@ -114,114 +118,116 @@ export function SubscriptionScreen({
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: AppColors.screenBackground,
-  },
-  scrollView: {
-    flex: 1,
-    backgroundColor: AppColors.screenBackground,
-  },
-  content: {
-    ...MenuStyles.content,
-    flexGrow: 1,
-  },
-  salesContent: {
-    flexGrow: 1,
-    width: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: MenuStyles.sections.gap,
-  },
-  copySection: {
-    width: "100%",
-    alignItems: "center",
-    gap: SubscriptionHeroUi.brandDescriptionGap,
-  },
-  benefitSection: {
-    width: "100%",
-    alignItems: "center",
-  },
-  detailSection: {
-    width: "100%",
-    alignItems: "center",
-    gap: 10,
-  },
-  renewalNotice: {
-    color: AppColors.mutedStrongText,
-    fontSize: 13,
-    lineHeight: 18,
-    padding: AppLayout.cardContentPadding,
-  },
-  legalLinkRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: 12,
-    padding: AppLayout.cardContentPadding,
-    borderTopWidth: 1,
-    borderTopColor: AppColors.border,
-  },
-  description: {
-    color: AppColors.text,
-    fontSize: 28,
-    lineHeight: 38,
-    fontWeight: "800",
-    textAlign: "center",
-    paddingHorizontal: 12,
-  },
-  ctaSection: {
-    width: "100%",
-    alignItems: "center",
-    gap: 10,
-  },
-  benefitList: {
-    maxWidth: "100%",
-    gap: 8,
-  },
-  benefitItem: {
-    color: AppColors.text,
-    fontSize: 15,
-    lineHeight: 22,
-    fontWeight: "600",
-    textAlign: "left",
-  },
-  activeChip: {
-    borderRadius: 999,
-    backgroundColor: AppColors.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    opacity: 0.45,
-  },
-  activeChipText: {
-    color: AppColors.inverseText,
-    fontSize: 15,
-    fontWeight: "800",
-    textAlign: "center",
-  },
-  purchaseButtonText: {
-    color: AppColors.inverseText,
-    fontSize: 15,
-    fontWeight: "700",
-    textAlign: "center",
-  },
-  purchaseButtonPlusText: {
-    ...BrandPlusTextStyle,
-    color: AppColors.inverseText,
-  },
-  unavailableSummary: {
-    color: AppColors.mutedText,
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  priceDetailLabel: {
-    color: AppColors.mutedStrongText,
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: getAppColors().screenBackground,
+    },
+    scrollView: {
+      flex: 1,
+      backgroundColor: getAppColors().screenBackground,
+    },
+    content: {
+      ...getMenuStyles().content,
+      flexGrow: 1,
+    },
+    salesContent: {
+      flexGrow: 1,
+      width: "100%",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: getMenuStyles().sections.gap,
+    },
+    copySection: {
+      width: "100%",
+      alignItems: "center",
+      gap: SubscriptionHeroUi.brandDescriptionGap,
+    },
+    benefitSection: {
+      width: "100%",
+      alignItems: "center",
+    },
+    detailSection: {
+      width: "100%",
+      alignItems: "center",
+      gap: 10,
+    },
+    renewalNotice: {
+      color: getAppColors().mutedStrongText,
+      fontSize: 13,
+      lineHeight: 18,
+      padding: AppLayout.cardContentPadding,
+    },
+    legalLinkRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      flexWrap: "wrap",
+      gap: 12,
+      padding: AppLayout.cardContentPadding,
+      borderTopWidth: 1,
+      borderTopColor: getAppColors().border,
+    },
+    description: {
+      color: getAppColors().text,
+      fontSize: 28,
+      lineHeight: 38,
+      fontWeight: "800",
+      textAlign: "center",
+      paddingHorizontal: 12,
+    },
+    ctaSection: {
+      width: "100%",
+      alignItems: "center",
+      gap: 10,
+    },
+    benefitList: {
+      maxWidth: "100%",
+      gap: 8,
+    },
+    benefitItem: {
+      color: getAppColors().text,
+      fontSize: 15,
+      lineHeight: 22,
+      fontWeight: "600",
+      textAlign: "left",
+    },
+    activeChip: {
+      borderRadius: 999,
+      backgroundColor: getAppColors().primary,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      opacity: 0.45,
+    },
+    activeChipText: {
+      color: getAppColors().onPrimary,
+      fontSize: 15,
+      fontWeight: "800",
+      textAlign: "center",
+    },
+    purchaseButtonText: {
+      color: getAppColors().onPrimary,
+      fontSize: 15,
+      fontWeight: "700",
+      textAlign: "center",
+    },
+    purchaseButtonPlusText: {
+      ...getBrandPlusTextStyle(),
+      color: getAppColors().onPrimary,
+    },
+    unavailableSummary: {
+      color: getAppColors().mutedText,
+      fontSize: 14,
+      lineHeight: 20,
+      fontWeight: "600",
+      textAlign: "center",
+    },
+    priceDetailLabel: {
+      color: getAppColors().mutedStrongText,
+      fontSize: 13,
+      lineHeight: 18,
+      fontWeight: "600",
+      textAlign: "center",
+    },
+  }),
+);

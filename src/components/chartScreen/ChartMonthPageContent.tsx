@@ -19,7 +19,8 @@ export function ChartMonthPageContent({
 }: ChartMonthPageContentProps) {
   return (
     <View style={styles.page}>
-      <ScrollView {...AppScrollBehavior}
+      <ScrollView
+        {...AppScrollBehavior}
         contentContainerStyle={styles.content}
         nestedScrollEnabled
         showsVerticalScrollIndicator={false}

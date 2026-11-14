@@ -1,6 +1,8 @@
+import { createThemeValue } from "../lib/appTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
 import { StyleSheet, Text, View } from "react-native";
 
-import { AppColors } from "../constants/colors";
+import { getAppColors } from "../constants/colors";
 import { AppMessages } from "../constants/messages";
 import { SharedLedgerJoinPreviewCopy } from "../constants/sharedLedgerJoinPreview";
 import { SharedLedgerJoinRequestUi, SharedLedgerPanelUi } from "../constants/sharedLedgerPanel";
@@ -25,6 +27,8 @@ export function LedgerBookJoinRequests({
   onRejectRequest,
   requests,
 }: LedgerBookJoinRequestsProps) {
+  const styles = getStyles();
+  useAppTheme();
   if (!requests.length) {
     return null;
   }
@@ -81,6 +85,8 @@ function JoinRequestStatusText({
 }: {
   approvalStatus: LedgerBookJoinApprovalStatus;
 }) {
+  const styles = getStyles();
+  useAppTheme();
   const message = resolveApprovalStatusMessage(approvalStatus);
   if (!message) {
     return null;
@@ -149,93 +155,95 @@ function getRequesterInitial(displayName: string): string {
   );
 }
 
-const styles = StyleSheet.create({
-  section: {
-    gap: 8,
-  },
-  title: {
-    color: AppColors.text,
-    fontSize: SharedLedgerPanelUi.sectionTitleFontSize,
-    fontWeight: "800",
-    lineHeight: SharedLedgerPanelUi.sectionTitleLineHeight,
-    paddingTop: 2,
-  },
-  list: {
-    gap: 0,
-  },
-  requestCard: {
-    gap: SharedLedgerPanelUi.joinRequestCardGap,
-    paddingHorizontal: SharedLedgerPanelUi.joinRequestCardPaddingHorizontal,
-    paddingVertical: SharedLedgerPanelUi.joinRequestCardPaddingVertical,
-    borderWidth: 0,
-    borderBottomWidth: 1,
-    borderBottomColor: AppColors.border,
-    borderRadius: 0,
-    backgroundColor: AppColors.screenBackground,
-  },
-  cardFooter: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    gap: SharedLedgerPanelUi.joinRequestActionGap,
-  },
-  requestHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: SharedLedgerPanelUi.joinRequestHeaderGap,
-  },
-  avatar: {
-    width: SharedLedgerPanelUi.joinRequestAvatarSize,
-    height: SharedLedgerPanelUi.joinRequestAvatarSize,
-    borderRadius: SharedLedgerPanelUi.joinRequestAvatarSize,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: AppColors.surfaceStrong,
-  },
-  avatarText: {
-    color: AppColors.primary,
-    fontSize: 12,
-    fontWeight: "800",
-  },
-  requestMeta: {
-    flex: 1,
-    minWidth: 0,
-    gap: SharedLedgerPanelUi.joinRequestMetaGap,
-  },
-  name: {
-    color: AppColors.text,
-    fontSize: 13,
-    fontWeight: "800",
-  },
-  requestedAt: {
-    color: AppColors.mutedStrongText,
-    fontSize: 11,
-    fontWeight: "600",
-  },
-  statusBadgeSlot: {
-    alignItems: "flex-end",
-    bottom: SharedLedgerPanelUi.joinRequestStatusBottom,
-    left: SharedLedgerPanelUi.joinRequestCardPaddingHorizontal,
-    position: "absolute",
-    right: SharedLedgerPanelUi.joinRequestCardPaddingHorizontal,
-  },
-  status: {
-    color: AppColors.mutedStrongText,
-    fontSize: 11,
-    fontWeight: "700",
-    lineHeight: SharedLedgerPanelUi.joinRequestStatusTextLineHeight,
-    textAlign: "right",
-  },
-  warningStatusText: {
-    color: AppColors.accent,
-  },
-  blockedStatusText: {
-    color: AppColors.expense,
-  },
-  actions: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: SharedLedgerPanelUi.joinRequestActionGap,
-    paddingRight: SharedLedgerPanelUi.joinRequestStatusReservedWidth,
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    section: {
+      gap: 8,
+    },
+    title: {
+      color: getAppColors().text,
+      fontSize: SharedLedgerPanelUi.sectionTitleFontSize,
+      fontWeight: "800",
+      lineHeight: SharedLedgerPanelUi.sectionTitleLineHeight,
+      paddingTop: 2,
+    },
+    list: {
+      gap: 0,
+    },
+    requestCard: {
+      gap: SharedLedgerPanelUi.joinRequestCardGap,
+      paddingHorizontal: SharedLedgerPanelUi.joinRequestCardPaddingHorizontal,
+      paddingVertical: SharedLedgerPanelUi.joinRequestCardPaddingVertical,
+      borderWidth: 0,
+      borderBottomWidth: 1,
+      borderBottomColor: getAppColors().border,
+      borderRadius: 0,
+      backgroundColor: getAppColors().screenBackground,
+    },
+    cardFooter: {
+      flexDirection: "row",
+      alignItems: "flex-end",
+      justifyContent: "space-between",
+      gap: SharedLedgerPanelUi.joinRequestActionGap,
+    },
+    requestHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: SharedLedgerPanelUi.joinRequestHeaderGap,
+    },
+    avatar: {
+      width: SharedLedgerPanelUi.joinRequestAvatarSize,
+      height: SharedLedgerPanelUi.joinRequestAvatarSize,
+      borderRadius: SharedLedgerPanelUi.joinRequestAvatarSize,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: getAppColors().surfaceStrong,
+    },
+    avatarText: {
+      color: getAppColors().primary,
+      fontSize: 12,
+      fontWeight: "800",
+    },
+    requestMeta: {
+      flex: 1,
+      minWidth: 0,
+      gap: SharedLedgerPanelUi.joinRequestMetaGap,
+    },
+    name: {
+      color: getAppColors().text,
+      fontSize: 13,
+      fontWeight: "800",
+    },
+    requestedAt: {
+      color: getAppColors().mutedStrongText,
+      fontSize: 11,
+      fontWeight: "600",
+    },
+    statusBadgeSlot: {
+      alignItems: "flex-end",
+      bottom: SharedLedgerPanelUi.joinRequestStatusBottom,
+      left: SharedLedgerPanelUi.joinRequestCardPaddingHorizontal,
+      position: "absolute",
+      right: SharedLedgerPanelUi.joinRequestCardPaddingHorizontal,
+    },
+    status: {
+      color: getAppColors().mutedStrongText,
+      fontSize: 11,
+      fontWeight: "700",
+      lineHeight: SharedLedgerPanelUi.joinRequestStatusTextLineHeight,
+      textAlign: "right",
+    },
+    warningStatusText: {
+      color: getAppColors().accent,
+    },
+    blockedStatusText: {
+      color: getAppColors().expense,
+    },
+    actions: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: SharedLedgerPanelUi.joinRequestActionGap,
+      paddingRight: SharedLedgerPanelUi.joinRequestStatusReservedWidth,
+    },
+  }),
+);

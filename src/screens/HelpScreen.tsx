@@ -1,12 +1,14 @@
+import { createThemeValue } from "../lib/appTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
 import type { ReactNode } from "react";
-import { Linking,Pressable,ScrollView,StyleSheet,Text,View } from "react-native";
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Feather } from "../components/AppIcons";
-import { MenuStyles } from "../constants/menuStyles";
+import { getMenuStyles } from "../constants/menuStyles";
 import { AppScrollBehavior } from "../constants/scroll";
 
 import { AppFooterContentInset } from "../components/AppFooterContentInset";
-import { AppColors } from "../constants/colors";
-import { HelpCopy,HelpLinkItems,HelpUi } from "../constants/help";
+import { getAppColors } from "../constants/colors";
+import { HelpCopy, HelpLinkItems, HelpUi } from "../constants/help";
 import { ReadingTextProps } from "../constants/textLayout";
 import { showNativeToast } from "../lib/nativeToast";
 
@@ -16,6 +18,8 @@ type HelpScreenProps = {
 };
 
 export function HelpScreen({ screenTitle, onOpenFaq }: HelpScreenProps) {
+  const styles = getStyles();
+  useAppTheme();
   const handleOpenLink = async (url: string) => {
     try {
       await Linking.openURL(url);
@@ -28,7 +32,9 @@ export function HelpScreen({ screenTitle, onOpenFaq }: HelpScreenProps) {
     <ScrollView {...AppScrollBehavior} contentContainerStyle={styles.content} style={styles.screen}>
       {screenTitle}
       <View style={styles.sections}>
-        <Text accessibilityRole="header" style={MenuStyles.sectionTitle}>{HelpCopy.linksTitle}</Text>
+        <Text accessibilityRole="header" style={getMenuStyles().sectionTitle}>
+          {HelpCopy.linksTitle}
+        </Text>
         <Text {...ReadingTextProps} style={styles.description}>
           {HelpCopy.linksDescription}
         </Text>
@@ -36,9 +42,15 @@ export function HelpScreen({ screenTitle, onOpenFaq }: HelpScreenProps) {
           <Pressable accessibilityRole="button" onPress={onOpenFaq} style={styles.linkRow}>
             <View style={styles.linkTextBlock}>
               <Text style={styles.linkLabel}>{HelpCopy.faqTitle}</Text>
-              <Text {...ReadingTextProps} style={styles.linkDescription}>{HelpCopy.faqLinkDescription}</Text>
+              <Text {...ReadingTextProps} style={styles.linkDescription}>
+                {HelpCopy.faqLinkDescription}
+              </Text>
             </View>
-            <Feather color={AppColors.mutedStrongText} name="chevron-right" size={HelpUi.iconSize} />
+            <Feather
+              color={getAppColors().mutedStrongText}
+              name="chevron-right"
+              size={HelpUi.iconSize}
+            />
           </Pressable>
           {HelpLinkItems.map((item, index) => (
             <Pressable
@@ -56,7 +68,11 @@ export function HelpScreen({ screenTitle, onOpenFaq }: HelpScreenProps) {
                   {item.description}
                 </Text>
               </View>
-              <Feather color={AppColors.mutedStrongText} name="external-link" size={HelpUi.iconSize} />
+              <Feather
+                color={getAppColors().mutedStrongText}
+                name="external-link"
+                size={HelpUi.iconSize}
+              />
             </Pressable>
           ))}
         </View>
@@ -66,28 +82,30 @@ export function HelpScreen({ screenTitle, onOpenFaq }: HelpScreenProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  sections: {
-    gap: MenuStyles.section.gap,
-  },
-  screen: {
-    flex: 1,
-    backgroundColor: AppColors.screenBackground,
-  },
-  content: {
-    ...MenuStyles.content,
-  },
-  description: MenuStyles.description,
-  linkList: {
-    ...MenuStyles.group,
-    gap: 0,
-    paddingVertical: 0,
-  },
-  linkRow: MenuStyles.row,
-  lastLinkRow: {
-    borderBottomWidth: 0,
-  },
-  linkTextBlock: MenuStyles.textBlock,
-  linkLabel: MenuStyles.title,
-  linkDescription: MenuStyles.description,
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    sections: {
+      gap: getMenuStyles().section.gap,
+    },
+    screen: {
+      flex: 1,
+      backgroundColor: getAppColors().screenBackground,
+    },
+    content: {
+      ...getMenuStyles().content,
+    },
+    description: getMenuStyles().description,
+    linkList: {
+      ...getMenuStyles().group,
+      gap: 0,
+      paddingVertical: 0,
+    },
+    linkRow: getMenuStyles().row,
+    lastLinkRow: {
+      borderBottomWidth: 0,
+    },
+    linkTextBlock: getMenuStyles().textBlock,
+    linkLabel: getMenuStyles().title,
+    linkDescription: getMenuStyles().description,
+  }),
+);

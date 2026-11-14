@@ -1,7 +1,8 @@
+import { useAppTheme } from "../../hooks/useAppTheme";
 import { Pressable, Text, View } from "react-native";
 import { AppSettingsUi } from "../../constants/appSettings";
-import { AppSettingsRowStyles as Row } from "../../constants/appSettingsStyles";
-import { AppColors } from "../../constants/colors";
+import { getAppSettingsRowStyles } from "../../constants/appSettingsStyles";
+import { getAppColors } from "../../constants/colors";
 import { NotificationBadgeCopy } from "../../constants/notificationBadges";
 import { CompactTextProps } from "../../constants/textLayout";
 import type { CategoryIconName } from "../../types/category";
@@ -28,6 +29,7 @@ export function SettingsActionRow({
   trailingIcon?: "chevron-right" | "download";
   onPress: () => void;
 }) {
+  useAppTheme();
   return (
     <Pressable
       accessibilityRole="button"
@@ -38,35 +40,39 @@ export function SettingsActionRow({
       disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => [
-        Row.row,
-        isLast && Row.lastRow,
-        embeddedInNativeRow && Row.embeddedAction,
-        disabled && Row.disabled,
-        pressed && Row.pressed,
+        getAppSettingsRowStyles().row,
+        isLast && getAppSettingsRowStyles().lastRow,
+        embeddedInNativeRow && getAppSettingsRowStyles().embeddedAction,
+        disabled && getAppSettingsRowStyles().disabled,
+        pressed && getAppSettingsRowStyles().pressed,
       ]}
     >
       {leadingIcon ? (
         <Feather
           name={leadingIcon}
           size={AppSettingsUi.selectionChevronIconSize}
-          color={AppColors.text}
+          color={getAppColors().text}
         />
-      ) : null}
-      <View style={Row.textBlock}>
-        <Text {...CompactTextProps} style={Row.title}>
+      ) : (
+        <View accessible={false} style={getAppSettingsRowStyles().leadingIconSpace} />
+      )}
+      <View style={getAppSettingsRowStyles().textBlock}>
+        <Text {...CompactTextProps} style={getAppSettingsRowStyles().title}>
           {label}
         </Text>
         {description ? (
-          <Text {...CompactTextProps} style={Row.description}>
+          <Text {...CompactTextProps} style={getAppSettingsRowStyles().description}>
             {description}
           </Text>
         ) : null}
       </View>
-      {hasBadge ? <View accessible={false} style={Row.notificationDot} /> : null}
+      {hasBadge ? (
+        <View accessible={false} style={getAppSettingsRowStyles().notificationDot} />
+      ) : null}
       <Feather
         name={trailingIcon}
         size={AppSettingsUi.selectionChevronIconSize}
-        color={AppColors.mutedStrongText}
+        color={getAppColors().mutedStrongText}
       />
     </Pressable>
   );

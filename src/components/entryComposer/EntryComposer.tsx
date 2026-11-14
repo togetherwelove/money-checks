@@ -1,17 +1,30 @@
+import { EntryHeaderDatePicker } from "./EntryHeaderDatePicker";
+import { FrequentEntryPicker } from "./FrequentEntryPicker";
 import { useEffect, useImperativeHandle, useRef, useState, type Ref } from "react";
 import { Alert, Keyboard } from "react-native";
 import type { TextInputInstance } from "react-native";
 
 import { CardSmsClipboardCopy } from "../../constants/cardSmsClipboard";
-import { EntryComposerCopy as Copy, type EntryComposerUnavailableReason } from "../../constants/entryComposer";
+import {
+  EntryComposerCopy as Copy,
+  type EntryComposerUnavailableReason,
+} from "../../constants/entryComposer";
 import { EntryRegistrationCopy } from "../../constants/entryRegistration";
 import { useEntryComposer } from "../../hooks/useEntryComposer";
 import { useLedgerCategories } from "../../hooks/useLedgerCategories";
-import { createDuplicateEntryDraft } from "../../utils/duplicateLedgerEntry";
+import {
+  createDuplicateEntryDraft,
+  type DuplicateEntrySource,
+} from "../../utils/duplicateLedgerEntry";
 import { showNativeToast } from "../../lib/nativeToast";
+import { logAppError } from "../../lib/logAppError";
 import type { LedgerEntry, LedgerEntryDraft } from "../../types/ledger";
 import { createDraftFromEntry } from "../../utils/ledgerEntries";
-import { getEntryComposerInvalidField, hasEntryComposerChanges, hasEntryComposerValues } from "../../utils/entryComposer";
+import {
+  getEntryComposerInvalidField,
+  hasEntryComposerChanges,
+  hasEntryComposerValues,
+} from "../../utils/entryComposer";
 import { EntryComposerPanel } from "./EntryComposerPanel";
 import { EntryComposerSheet } from "./EntryComposerSheet";
 import { EntryComposerHeader } from "./EntryComposerHeader";
@@ -19,6 +32,8 @@ import { EntryComposerForm } from "./EntryComposerForm";
 import { InstallmentConversionModal } from "./InstallmentConversionModal";
 import { InstallmentStatuses } from "../../constants/installments";
 import { InstallmentConversionCopy } from "../../constants/installmentConversion";
+import { appStorage } from "../../lib/appStorage";
+import { persistEntryComposerDraft } from "../../lib/entryComposerDraftStorage";
 
 type Props = {
   sheet: { visible: boolean; onClose: () => void; onDismiss?: () => void };
@@ -46,7 +61,21 @@ export type EntryComposerHandle = {
   discardDeletedEntry: (entries: LedgerEntry[]) => void;
 };
 
-export function EntryComposer({ ref, sheet, onDismissClipboard, bookId, selectedDate, userId, disabled, unavailableReason, onSelectBook, onSave, onEntryReviewChange, onConverted, onComplete }: Props) {
+export function EntryComposer({
+  ref,
+  sheet,
+  onDismissClipboard,
+  bookId,
+  selectedDate,
+  userId,
+  disabled,
+  unavailableReason,
+  onSelectBook,
+  onSave,
+  onEntryReviewChange,
+  onConverted,
+  onComplete,
+}: Props) {
   const [conversionOpen, setConversionOpen] = useState(false);
   const [sourceEntry, setSourceEntry] = useState<LedgerEntry | undefined>();
   const composer = useEntryComposer(bookId, selectedDate, userId);
@@ -54,8 +83,17 @@ export function EntryComposer({ ref, sheet, onDismissClipboard, bookId, selected
   const duplicationContext = useRef({ selectedDate, members: composer.members, categories });
   duplicationContext.current = { selectedDate, members: composer.members, categories };
   const { draft, setDraft } = composer;
-  const canLinkAssets = composer.members.some(member => member.userId === userId);
-  const requireLoan = composer.members.length === 0 || (composer.members.length === 1 && canLinkAssets);
+  useEffect(() => {
+    if (sourceEntry) return;
+    try {
+      persistEntryComposerDraft(appStorage, userId, bookId, draft, selectedDate);
+    } catch (error) {
+      logAppError("EntryComposer", error, { step: "persist_draft" });
+    }
+  }, [bookId, draft, selectedDate, sourceEntry, userId]);
+  const canLinkAssets = composer.members.some((member) => member.userId === userId);
+  const requireLoan =
+    composer.members.length === 0 || (composer.members.length === 1 && canLinkAssets);
   const discardAlertOpen = useRef(false);
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
@@ -63,9 +101,19 @@ export function EntryComposer({ ref, sheet, onDismissClipboard, bookId, selected
   const contentInputRef = useRef<TextInputInstance>(null);
   const focusTargetRef = useRef(inputRef);
   const locked = disabled || saving;
-  const hasInput = Boolean(draft.assetLink?.cashAssetId || draft.assetLink?.loanAssetId || draft.amount || draft.content || draft.note || draft.categoryId || draft.photoAttachments.length);
-  const defaultMemberId = composer.members.find(member => member.userId === userId)?.userId
-    ?? composer.members[0]?.userId ?? userId;
+  const hasInput = Boolean(
+    draft.assetLink?.cashAssetId ||
+      draft.assetLink?.loanAssetId ||
+      draft.amount ||
+      draft.content ||
+      draft.note ||
+      draft.categoryId ||
+      draft.photoAttachments.length,
+  );
+  const defaultMemberId =
+    composer.members.find((member) => member.userId === userId)?.userId ??
+    composer.members[0]?.userId ??
+    userId;
   const hasCloseValues = sourceEntry
     ? hasEntryComposerChanges(draft, sourceEntry, userId)
     : hasEntryComposerValues(draft, selectedDate, defaultMemberId);
@@ -76,13 +124,52 @@ export function EntryComposer({ ref, sheet, onDismissClipboard, bookId, selected
   sheetVisibleRef.current = sheetVisible;
   const sheetPresented = useRef(false);
 
+  const duplicateEntry = (entry: DuplicateEntrySource, date?: string) => {
+    if (locked || savingRef.current) return;
+    const apply = () => {
+      if (!mounted.current || lockedRef.current || savingRef.current) return;
+      const context = duplicationContext.current;
+      const copied = createDuplicateEntryDraft(
+        entry,
+        date ?? context.selectedDate,
+        userId,
+        context.members,
+        context.categories,
+      );
+      setDraft(copied);
+      focusTargetRef.current = inputRef;
+      setSourceEntry(undefined);
+      onEntryReviewChange?.(true);
+      onDismissClipboard?.();
+      Keyboard.dismiss();
+      if (
+        !copied.categoryId ||
+        copied.targetMemberId !== (entry.targetMemberId ?? entry.authorId ?? userId)
+      ) {
+        showNativeToast(Copy.duplicateAdjustedMessage);
+      }
+    };
+    if (!hasInput) {
+      apply();
+      return;
+    }
+    Alert.alert(Copy.replaceDuplicateTitle, Copy.replaceDuplicateMessage, [
+      { text: CardSmsClipboardCopy.keepAction, style: "cancel" },
+      { text: Copy.duplicate, style: "destructive", onPress: apply },
+    ]);
+  };
+
   useImperativeHandle(ref, () => ({
     isSaving: () => savingRef.current,
     isBusy: () => hasInput || savingRef.current,
-    focus: () => { if (!locked) focusTargetRef.current.current?.focus(); },
+    focus: () => {
+      if (!locked) focusTargetRef.current.current?.focus();
+    },
     discardDeletedEntry: (entries) => {
       if (!sourceEntry || !entries.some((entry) => entry.id === sourceEntry.id)) return;
-      composer.reset(); setSourceEntry(undefined); onEntryReviewChange?.(false);
+      composer.reset();
+      setSourceEntry(undefined);
+      onEntryReviewChange?.(false);
       Keyboard.dismiss();
     },
     editEntry: (entry) => {
@@ -94,9 +181,12 @@ export function EntryComposer({ ref, sheet, onDismissClipboard, bookId, selected
         setSourceEntry(entry);
         onEntryReviewChange?.(true);
         onDismissClipboard?.();
-          Keyboard.dismiss();
+        Keyboard.dismiss();
       };
-      if (!hasInput) { apply(); return; }
+      if (!hasInput) {
+        apply();
+        return;
+      }
       Alert.alert(Copy.replaceEditTitle, Copy.replaceEditMessage, [
         { text: CardSmsClipboardCopy.keepAction, style: "cancel" },
         { text: Copy.replaceEditAction, style: "destructive", onPress: apply },
@@ -106,49 +196,40 @@ export function EntryComposer({ ref, sheet, onDismissClipboard, bookId, selected
       if (locked || savingRef.current) return;
       const apply = () => {
         if (!mounted.current || lockedRef.current || savingRef.current) return;
-        const member = composer.members.find((item) => item.userId === userId) ?? composer.members[0];
-        setDraft({ ...imported, targetMemberId: member?.userId ?? userId, targetMemberName: member?.displayName });
+        const member =
+          composer.members.find((item) => item.userId === userId) ?? composer.members[0];
+        setDraft({
+          ...imported,
+          targetMemberId: member?.userId ?? userId,
+          targetMemberName: member?.displayName,
+        });
         focusTargetRef.current = contentInputRef;
         setSourceEntry(undefined);
         onEntryReviewChange?.(false);
         if (sheetPresented.current && sheetVisibleRef.current) contentInputRef.current?.focus();
       };
-      if (!hasInput) { apply(); return; }
+      if (!hasInput) {
+        apply();
+        return;
+      }
       Alert.alert(CardSmsClipboardCopy.replaceTitle, CardSmsClipboardCopy.replaceMessage, [
         { text: CardSmsClipboardCopy.keepAction, style: "cancel" },
         { text: CardSmsClipboardCopy.replaceAction, style: "destructive", onPress: apply },
       ]);
     },
-    duplicateEntry: (entry) => {
-      if (locked || savingRef.current) return;
-      const apply = () => {
-        if (!mounted.current || lockedRef.current || savingRef.current) return;
-        const context = duplicationContext.current;
-        const copied = createDuplicateEntryDraft(entry, context.selectedDate, userId, context.members, context.categories);
-        setDraft(copied);
-        focusTargetRef.current = inputRef;
-        setSourceEntry(undefined);
-        onEntryReviewChange?.(true);
-        onDismissClipboard?.();
-          Keyboard.dismiss();
-        if (!copied.categoryId || copied.targetMemberId !== (entry.targetMemberId ?? entry.authorId ?? userId)) {
-          showNativeToast(Copy.duplicateAdjustedMessage);
-        }
-      };
-      if (!hasInput) { apply(); return; }
-      Alert.alert(Copy.replaceDuplicateTitle, Copy.replaceDuplicateMessage, [
-        { text: CardSmsClipboardCopy.keepAction, style: "cancel" },
-        { text: Copy.duplicate, style: "destructive", onPress: apply },
-      ]);
-    },
+    duplicateEntry,
   }));
   const mounted = useRef(true);
   useEffect(() => {
     mounted.current = true;
-    return () => { mounted.current = false; };
+    return () => {
+      mounted.current = false;
+    };
   }, []);
 
-  useEffect(() => { if (locked) Keyboard.dismiss(); }, [locked]);
+  useEffect(() => {
+    if (locked) Keyboard.dismiss();
+  }, [locked]);
 
   useEffect(() => {
     if (sheetVisible === false) {
@@ -163,7 +244,13 @@ export function EntryComposer({ ref, sheet, onDismissClipboard, bookId, selected
   }, [sheetVisible, locked]);
 
   const requestDiscard = (afterDiscard?: () => void, allowDisabled = false) => {
-    if ((!allowDisabled && lockedRef.current) || savingRef.current || !mounted.current || discardAlertOpen.current) return;
+    if (
+      (!allowDisabled && lockedRef.current) ||
+      savingRef.current ||
+      !mounted.current ||
+      discardAlertOpen.current
+    )
+      return;
     discardAlertOpen.current = true;
     let resolved = false;
     const close = () => {
@@ -172,15 +259,25 @@ export function EntryComposer({ ref, sheet, onDismissClipboard, bookId, selected
       discardAlertOpen.current = false;
       return true;
     };
-    Alert.alert(EntryRegistrationCopy.discardChangesTitle, EntryRegistrationCopy.discardChangesMessage, [
-      { text: EntryRegistrationCopy.discardChangesCancelAction, style: "cancel", onPress: close },
-      { text: EntryRegistrationCopy.discardChangesConfirmAction, style: "destructive", onPress: () => {
-        if (close() && discard(allowDisabled)) afterDiscard?.();
-      } },
-    ], { cancelable: true, onDismiss: close });
+    Alert.alert(
+      EntryRegistrationCopy.discardChangesTitle,
+      EntryRegistrationCopy.discardChangesMessage,
+      [
+        { text: EntryRegistrationCopy.discardChangesCancelAction, style: "cancel", onPress: close },
+        {
+          text: EntryRegistrationCopy.discardChangesConfirmAction,
+          style: "destructive",
+          onPress: () => {
+            if (close() && discard(allowDisabled)) afterDiscard?.();
+          },
+        },
+      ],
+      { cancelable: true, onDismiss: close },
+    );
   };
   const discard = (allowDisabled = false) => {
-    if (!mounted.current || (!allowDisabled && lockedRef.current) || savingRef.current) return false;
+    if (!mounted.current || (!allowDisabled && lockedRef.current) || savingRef.current)
+      return false;
     Keyboard.dismiss();
     composer.reset();
     focusTargetRef.current = inputRef;
@@ -215,9 +312,14 @@ export function EntryComposer({ ref, sheet, onDismissClipboard, bookId, selected
       if (await onSave(draft, sourceEntry)) {
         if (!mounted.current) return;
         composer.reset();
-        setSourceEntry(undefined); onEntryReviewChange?.(false);
+        setSourceEntry(undefined);
+        onEntryReviewChange?.(false);
         onComplete?.();
-        showNativeToast(sourceEntry ? EntryRegistrationCopy.saveUpdateSuccess : EntryRegistrationCopy.saveCreateSuccess);
+        showNativeToast(
+          sourceEntry
+            ? EntryRegistrationCopy.saveUpdateSuccess
+            : EntryRegistrationCopy.saveCreateSuccess,
+        );
       }
     } catch {
       showNativeToast(EntryRegistrationCopy.saveError);
@@ -227,34 +329,88 @@ export function EntryComposer({ ref, sheet, onDismissClipboard, bookId, selected
     }
   };
   const content = (
-    <EntryComposerPanel disabled={disabled} saving={saving}
-      unavailableReason={unavailableReason} onSelectBook={onSelectBook}>
-      {conversionOpen && bookId && sourceEntry?.installmentGroupId ? <InstallmentConversionModal
-        bookId={bookId} groupId={sourceEntry.installmentGroupId}
-        onClose={() => setConversionOpen(false)} onConverted={() => {
-          setConversionOpen(false);
-          discard();
-          showNativeToast(InstallmentConversionCopy.success);
-          onConverted?.();
-        }} /> : null}
-      <EntryComposerForm composer={composer} bookId={bookId} disabled={locked}
+    <EntryComposerPanel
+      disabled={disabled}
+      saving={saving}
+      unavailableReason={unavailableReason}
+      onSelectBook={onSelectBook}
+    >
+      {conversionOpen && bookId && sourceEntry?.installmentGroupId ? (
+        <InstallmentConversionModal
+          bookId={bookId}
+          groupId={sourceEntry.installmentGroupId}
+          onClose={() => setConversionOpen(false)}
+          onConverted={() => {
+            setConversionOpen(false);
+            discard();
+            showNativeToast(InstallmentConversionCopy.success);
+            onConverted?.();
+          }}
+        />
+      ) : null}
+      <EntryComposerForm
+        frequentEntriesControl={
+          !sourceEntry && bookId ? (
+            <FrequentEntryPicker
+              userId={userId}
+              bookId={bookId}
+              visible={sheet.visible}
+              disabled={locked}
+              onSelect={(entry) => duplicateEntry(entry, draft.date)}
+            />
+          ) : null
+        }
+        composer={composer}
+        bookId={bookId}
+        disabled={locked}
         visible={sheet.visible}
         editingEntryId={sourceEntry?.id}
-        editing={Boolean(sourceEntry)} inputRef={inputRef} contentInputRef={contentInputRef} onChangeText={onDismissClipboard}
-        onConvert={sourceEntry?.installmentGroupId && sourceEntry.type === "expense" && sourceEntry.installmentStatus !== InstallmentStatuses.prepaid
-          ? () => setConversionOpen(true) : undefined} />
+        editing={Boolean(sourceEntry)}
+        inputRef={inputRef}
+        contentInputRef={contentInputRef}
+        onChangeText={onDismissClipboard}
+        onConvert={
+          sourceEntry?.installmentGroupId &&
+          sourceEntry.type === "expense" &&
+          sourceEntry.installmentStatus !== InstallmentStatuses.prepaid
+            ? () => setConversionOpen(true)
+            : undefined
+        }
+      />
     </EntryComposerPanel>
   );
-  return <EntryComposerSheet visible={sheet.visible} saving={saving} requiresCloseConfirmation={Boolean(hasCloseValues)} onDismiss={sheet.onDismiss}
-    onShow={() => {
-      if (!sheetVisibleRef.current) return;
-      sheetPresented.current = true;
-      if (!lockedRef.current) focusTargetRef.current.current?.focus();
-    }}
-    onClose={requestClose} header={<EntryComposerHeader type={draft.type}
-      typeDisabled={locked}
-      onSelectType={type => { if (!locked && type !== draft.type) { composer.update("type", type); composer.update("category", ""); composer.update("categoryId", ""); } }}
-      saving={saving} actionDisabled={locked || Boolean(getEntryComposerInvalidField(draft, requireLoan))}
-      actionLabel={saving ? Copy.saving : sourceEntry ? Copy.saveEdit : Copy.save}
-      onAction={save} onClose={requestClose} />}>{content}</EntryComposerSheet>;
+  return (
+    <EntryComposerSheet
+      visible={sheet.visible}
+      saving={saving}
+      requiresCloseConfirmation={Boolean(hasCloseValues)}
+      onDismiss={sheet.onDismiss}
+      onShow={() => {
+        if (!sheetVisibleRef.current) return;
+        sheetPresented.current = true;
+        if (!lockedRef.current) focusTargetRef.current.current?.focus();
+      }}
+      onClose={requestClose}
+      header={
+        <EntryComposerHeader
+          centerContent={
+            <EntryHeaderDatePicker
+              selectedDate={draft.date}
+              disabled={locked}
+              onSelectDate={(date) => {
+                if (!locked) composer.update("date", date);
+              }}
+            />
+          }
+          saving={saving}
+          actionDisabled={locked || Boolean(getEntryComposerInvalidField(draft, requireLoan))}
+          actionLabel={saving ? Copy.saving : sourceEntry ? Copy.saveEdit : Copy.save}
+          onAction={save}
+          onClose={requestClose}
+        />
+      }
+    >
+      {content}
+    </EntryComposerSheet>
+  );
 }

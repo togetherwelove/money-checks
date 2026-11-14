@@ -26,11 +26,16 @@ export async function copyLedgerShareCode(
   }
   if (!isCurrent()) return;
   showNativeToast(Copy.copyCodeSuccessToast);
-  const shouldShare = await new Promise<boolean>(resolve => {
-    Alert.alert(Copy.copyCodeSuccessToast, Copy.shareCodeQuestion, [
-      { text: Copy.copyOnlyAction, style: "cancel", onPress: () => resolve(false) },
-      { text: Copy.shareCodeAction, onPress: () => resolve(true) },
-    ], { cancelable: true, onDismiss: () => resolve(false) });
+  const shouldShare = await new Promise<boolean>((resolve) => {
+    Alert.alert(
+      Copy.copyCodeSuccessToast,
+      Copy.shareCodeQuestion,
+      [
+        { text: Copy.copyOnlyAction, style: "cancel", onPress: () => resolve(false) },
+        { text: Copy.shareCodeAction, onPress: () => resolve(true) },
+      ],
+      { cancelable: true, onDismiss: () => resolve(false) },
+    );
   });
   if (!shouldShare || !isCurrent()) return;
 

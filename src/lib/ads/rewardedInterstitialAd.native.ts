@@ -67,7 +67,10 @@ export function preloadRewardedInterstitialAd() {
 
 export function isRewardedInterstitialAdReady() {
   return Boolean(
-    rewardedInterstitialAd && isRewardedInterstitialLoaded && !isRewardedInterstitialShowing && !isPresentationPending,
+    rewardedInterstitialAd &&
+      isRewardedInterstitialLoaded &&
+      !isRewardedInterstitialShowing &&
+      !isPresentationPending,
   );
 }
 
@@ -75,9 +78,7 @@ export async function waitForRewardedInterstitialAdReady(): Promise<boolean> {
   preloadRewardedInterstitialAd();
   const startedAtMs = Date.now();
 
-  while (
-    Date.now() - startedAtMs < RewardedInterstitialReadinessConfig.readyWaitTimeoutMs
-  ) {
+  while (Date.now() - startedAtMs < RewardedInterstitialReadinessConfig.readyWaitTimeoutMs) {
     if (isRewardedInterstitialAdReady()) {
       return true;
     }
@@ -95,7 +96,12 @@ export async function showRewardedInterstitialAd(
     preloadRewardedInterstitialAd();
   }
 
-  if (!rewardedInterstitialAd || !isRewardedInterstitialLoaded || isRewardedInterstitialShowing || isPresentationPending) {
+  if (
+    !rewardedInterstitialAd ||
+    !isRewardedInterstitialLoaded ||
+    isRewardedInterstitialShowing ||
+    isPresentationPending
+  ) {
     logAppWarning("AdMob", "Rewarded interstitial ad not ready", {
       isLoaded: isRewardedInterstitialLoaded,
       isShowing: isRewardedInterstitialShowing,
@@ -243,7 +249,8 @@ function waitForRewardedInterstitialResult(
       },
     );
 
-    const onAbort = () => settle(() => resolve({ didClose: false, didEarnReward: hasEarnedReward, didOpen }));
+    const onAbort = () =>
+      settle(() => resolve({ didClose: false, didEarnReward: hasEarnedReward, didOpen }));
     signal.addEventListener("abort", onAbort);
     resultTimeout = setTimeout(() => {
       settle(() => {
@@ -393,10 +400,7 @@ function wait(durationMs: number) {
 }
 
 function resolveRewardedInterstitialAdUnitId() {
-  return resolveAdMobAdUnitId(
-    AdMobRewardedInterstitialConfig,
-    TestIds.REWARDED_INTERSTITIAL,
-  );
+  return resolveAdMobAdUnitId(AdMobRewardedInterstitialConfig, TestIds.REWARDED_INTERSTITIAL);
 }
 
 function logMissingRewardedInterstitialAdUnitId() {

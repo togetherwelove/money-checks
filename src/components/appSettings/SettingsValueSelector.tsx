@@ -1,11 +1,12 @@
+import { useAppTheme } from "../../hooks/useAppTheme";
 import { Feather } from "../AppIcons";
 import { type MenuAction, MenuView, type NativeActionEvent } from "@react-native-menu/menu";
 import { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { AppSettingsUi } from "../../constants/appSettings";
-import { AppColors } from "../../constants/colors";
-import { SettingValueActionStyle, SettingValueTextStyle } from "../../constants/uiStyles";
+import { getAppColors } from "../../constants/colors";
+import { SettingValueActionStyle, getSettingValueTextStyle } from "../../constants/uiStyles";
 
 type SettingsValueSelectorProps<Value extends string> = {
   value: Value;
@@ -18,8 +19,8 @@ export function SettingsValueSelector<Value extends string>({
   options,
   onChange,
 }: SettingsValueSelectorProps<Value>) {
-  const selectedOption =
-    options.find((option) => option.value === value) ?? options[0];
+  useAppTheme();
+  const selectedOption = options.find((option) => option.value === value) ?? options[0];
   const menuActions = useMemo<MenuAction[]>(
     () =>
       options.map((option) => ({
@@ -30,9 +31,7 @@ export function SettingsValueSelector<Value extends string>({
     [options, value],
   );
   const handlePressAction = (event: NativeActionEvent) => {
-    const selectedMenuOption = options.find(
-      (option) => option.value === event.nativeEvent.event,
-    );
+    const selectedMenuOption = options.find((option) => option.value === event.nativeEvent.event);
     if (selectedMenuOption) {
       onChange(selectedMenuOption.value);
     }
@@ -41,9 +40,9 @@ export function SettingsValueSelector<Value extends string>({
   return (
     <MenuView actions={menuActions} onPressAction={handlePressAction} style={styles.container}>
       <View accessibilityRole="button" style={SettingValueActionStyle}>
-        <Text style={SettingValueTextStyle}>{selectedOption.label}</Text>
+        <Text style={getSettingValueTextStyle()}>{selectedOption.label}</Text>
         <Feather
-          color={AppColors.mutedStrongText}
+          color={getAppColors().mutedStrongText}
           name="chevron-down"
           size={AppSettingsUi.selectionChevronIconSize}
         />

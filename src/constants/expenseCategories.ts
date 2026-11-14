@@ -16,19 +16,19 @@ type ExpenseCategoryLabelKey =
   | "transport";
 
 export const EXPENSE_CATEGORY_LABELS: Record<ExpenseCategoryLabelKey, string> = {
-    beauty: "미용",
-    dining: "외식",
-    education: "교육",
-    food: "식비",
-    living: "생활",
-    leisure: "여가",
-    medical: "의료",
-    occasion: "경조사",
-    other: "기타",
-    publicUtilities: "공과금",
-    shopping: "쇼핑",
-    subscription: "구독",
-    transport: "교통",
+  beauty: "미용",
+  dining: "외식",
+  education: "교육",
+  food: "식비",
+  living: "생활",
+  leisure: "여가",
+  medical: "의료",
+  occasion: "경조사",
+  other: "기타",
+  publicUtilities: "공과금",
+  shopping: "쇼핑",
+  subscription: "구독",
+  transport: "교통",
 } as const;
 
 export const EXPENSE_CATEGORIES = [

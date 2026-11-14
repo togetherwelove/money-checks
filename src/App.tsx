@@ -1,4 +1,11 @@
+import { getAppNavigationTheme } from "./lib/navigationTheme";
+import { createThemeValue, observeSystemTheme } from "./lib/appTheme";
+import { useAppTheme } from "./hooks/useAppTheme";
+import { addFrequentEntry } from "./lib/frequentEntries";
+import { appStorage as frequentEntryStorage } from "./lib/appStorage";
+import { FrequentEntryCopy } from "./constants/frequentEntries";
 import { LedgerEntryAppendRow } from "./components/LedgerEntryAppendRow";
+import { EntryAppendCopy } from "./constants/entryAppend";
 import { useTrackedTask } from "./hooks/useTrackedTask";
 import {
   resolveLedgerSaveErrorMessage,
@@ -9,6 +16,9 @@ import { useInitialNotificationPermission } from "./hooks/useInitialNotification
 import { useAppNotificationRouting } from "./hooks/useAppNotificationRouting";
 import { useAppAds } from "./hooks/useAppAds";
 import { useEntryClipboard } from "./hooks/useEntryClipboard";
+import { GuestApp } from "./app/GuestApp";
+import { useGuestEntryRequest } from "./hooks/useGuestEntryRequest";
+import { useResumeGuestEntry } from "./hooks/useResumeGuestEntry";
 import { NavigationContainer, createNavigationContainerRef } from "@react-navigation/native";
 import type { Session } from "@supabase/supabase-js";
 import * as SplashScreen from "expo-splash-screen";
@@ -32,14 +42,13 @@ import { LedgerBookManagementSheet } from "./components/LedgerBookManagementShee
 import { OnboardingTransitionScreen } from "./components/OnboardingTransitionScreen";
 import { SessionLoadingScreen } from "./components/SessionLoadingScreen";
 import { StartupErrorScreen } from "./components/StartupErrorScreen";
-import { NativeYearPickerModal } from "./components/calendarPicker/NativeYearPickerModal";
+import { EntryHeaderDatePicker as HeaderDatePicker } from "./components/entryComposer/EntryHeaderDatePicker";
 import { AnnualReportRangePickerModal } from "./components/annualReport/AnnualReportRangePickerModal";
 import { EntryComposer, type EntryComposerHandle } from "./components/entryComposer/EntryComposer";
 import { confirmInstallmentPrepayment } from "./components/installmentPrepaymentAlert";
 import { AdInterstitialPlacement } from "./constants/ads";
-import { AppColors } from "./constants/colors";
+import { getAppColors } from "./constants/colors";
 import { EntryRegistrationCopy } from "./constants/entryRegistration";
-import { formatMonthLabel, formatYearLabel } from "./constants/ledgerDisplay";
 import { FooterTabBarUi } from "./constants/menu";
 import { AppMessages } from "./constants/messages";
 import { SubscriptionMessages, SubscriptionTiers } from "./constants/subscription";
@@ -100,14 +109,36 @@ SplashScreen.preventAutoHideAsync().catch(() => {
 installAppTextDefaults();
 
 export default function App() {
+  const styles = getStyles();
+  useEffect(observeSystemTheme, []);
+  const colorScheme = useAppTheme();
   useGoogleAuthRedirectCompletion();
+  const guestEntry = useGuestEntryRequest();
+  const [isAuthVisible, setIsAuthVisible] = useState(false);
+  const [guestSelectedDate, setGuestSelectedDate] = useState(
+    () => guestEntry.date ?? toIsoDate(new Date()),
+  );
   const [isPasswordRecoverySession, setIsPasswordRecoverySession] = useState(false);
   usePasswordRecoveryRedirect({
     onRecoverySession: useCallback(() => {
+      guestEntry.clear();
       setIsPasswordRecoverySession(true);
-    }, []),
+    }, [guestEntry.clear]),
   });
   const { errorMessage, isLoading, session, retry } = useSupabaseSession();
+  const previousUserId = useRef<string | null>(null);
+  useEffect(() => {
+    if (previousUserId.current && !session && !isLoading) {
+      guestEntry.clear();
+      setIsAuthVisible(false);
+      setGuestSelectedDate(toIsoDate(new Date()));
+    }
+    previousUserId.current = session?.user.id ?? null;
+  }, [session, isLoading, guestEntry.clear]);
+  const closeAuth = () => {
+    guestEntry.clear();
+    setIsAuthVisible(false);
+  };
 
   const onSignedOutLayout = useDismissStartupSplash(
     !isLoading && (!session || isPasswordRecoverySession),
@@ -130,11 +161,35 @@ export default function App() {
               <PasswordResetScreen onComplete={() => setIsPasswordRecoverySession(false)} />
             </SignedOutAppShell>
           ) : !session ? (
-            <SignedOutAppShell key="authentication" onLayout={onSignedOutLayout}>
-              <AuthScreen initialErrorMessage={errorMessage} />
-            </SignedOutAppShell>
+            isAuthVisible ? (
+              <SignedOutAppShell key="authentication" onLayout={onSignedOutLayout}>
+                <AuthScreen initialErrorMessage={errorMessage} onClose={closeAuth} />
+              </SignedOutAppShell>
+            ) : (
+              <View style={styles.container} onLayout={onSignedOutLayout}>
+                <StatusBar barStyle={colorScheme === "dark" ? "light-content" : "dark-content"} />
+                <SafeAreaView edges={["left", "right"]} style={styles.bodySafeArea}>
+                  <GuestApp
+                    selectedDate={guestSelectedDate}
+                    onSelectDate={setGuestSelectedDate}
+                    onLogin={() => {
+                      guestEntry.clear();
+                      setIsAuthVisible(true);
+                    }}
+                    onRegister={() => {
+                      guestEntry.request(guestSelectedDate);
+                      setIsAuthVisible(true);
+                    }}
+                  />
+                </SafeAreaView>
+              </View>
+            )
           ) : (
-            <SignedInApp session={session} />
+            <SignedInApp
+              session={session}
+              guestEntryDate={guestEntry.date}
+              onConsumeGuestEntry={guestEntry.clear}
+            />
           )}
         </RootSiblingParent>
       </View>
@@ -149,9 +204,11 @@ function SignedOutAppShell({
   children: React.ReactNode;
   onLayout?: () => void;
 }) {
+  const styles = getStyles();
+  const colorScheme = useAppTheme();
   return (
     <View onLayout={onLayout} style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle={colorScheme === "dark" ? "light-content" : "dark-content"} />
       <SafeAreaView edges={["top"]} style={styles.signedOutSafeArea} />
       <SafeAreaView edges={["left", "right"]} style={styles.signedOutBodySafeArea}>
         <View style={styles.signedOutBody}>{children}</View>
@@ -160,8 +217,19 @@ function SignedOutAppShell({
   );
 }
 
-function SignedInApp({ session }: { session: Session }) {
+function SignedInApp({
+  session,
+  guestEntryDate,
+  onConsumeGuestEntry,
+}: {
+  session: Session;
+  guestEntryDate: string | null;
+  onConsumeGuestEntry: () => void;
+}) {
+  const styles = getStyles();
+  const colorScheme = useAppTheme();
   const navigationRef = useRef(createNavigationContainerRef<SignedInTabParamList>()).current;
+  const [isNavigationMounted, setIsNavigationMounted] = useState(false);
   const entryComposerRef = useRef<EntryComposerHandle>(null);
   const composerSheet = useSheetTransition();
   const isComposerVisible = composerSheet.isOpen;
@@ -179,7 +247,6 @@ function SignedInApp({ session }: { session: Session }) {
   const isLedgerManagementOpen = ledgerManagementSheet.isOpen;
   const setIsLedgerManagementOpen = ledgerManagementSheet.setOpen;
   const [footerHeight, setFooterHeight] = useState(0);
-  const [isYearPickerOpen, setIsYearPickerOpen] = useState(false);
   const [isNicknameScreenReady, setIsNicknameScreenReady] = useState(false);
   const { taskCount: blockingTaskCount, trackTask: trackBlockingTask } = useTrackedTask();
   const authProvider = resolveSessionAuthProvider(session);
@@ -349,7 +416,7 @@ function SignedInApp({ session }: { session: Session }) {
   } = useEntryClipboard({
     ledgerState,
     userId: session.user.id,
-    isSignedInInteractionReady,
+    isSignedInInteractionReady: isSignedInInteractionReady && !guestEntryDate,
     isEntrySheetOpen,
     isComposerPresented: composerSheet.isPresented,
     composerVisibleRef,
@@ -395,6 +462,7 @@ function SignedInApp({ session }: { session: Session }) {
       ledgerState.activeBook?.id,
       ledgerState.activeBook?.name,
       ledgerState.isReadOnlyDueToPlanLimit,
+      ,
     ],
   );
   const badgedLedgerBookIds = useMemo(
@@ -413,10 +481,6 @@ function SignedInApp({ session }: { session: Session }) {
     navigateToStackScreen,
     returnToCalendarRoot,
   });
-
-  const handleOpenYearPicker = () => {
-    if (currentScreen === "calendar") setIsYearPickerOpen(true);
-  };
 
   const handleCompleteNicknameOnboarding = async (displayName: string) => {
     try {
@@ -708,19 +772,36 @@ function SignedInApp({ session }: { session: Session }) {
     hasSettledInitialAdTrackingPermission,
   });
 
-  const renderScreenTitle = (screen: SignedInStackScreen, titleLabel?: string) => (
-    <AppNativeHeaderTitle
-      onPress={screen === "calendar" ? handleOpenYearPicker : undefined}
-      title={
-        titleLabel ??
-        (screen === "calendar"
-          ? `${formatYearLabel(ledgerState.visibleMonth)} ${formatMonthLabel(ledgerState.visibleMonth)}`
-          : screen === "charts"
-            ? ledgerState.currentChartMonth.title
-            : getAppScreenLabel(screen))
-      }
-    />
-  );
+  useResumeGuestEntry({
+    date: guestEntryDate,
+    selectedDate: ledgerState.selectedDate,
+    ready:
+      isSignedInInteractionReady &&
+      isNavigationMounted &&
+      Boolean(ledgerState.activeBook) &&
+      !ledgerState.isReadOnlyDueToPlanLimit &&
+      hasSettledInitialAdTrackingPermission &&
+      (!notifications.isSupported || authOnboarding.hasCompletedPermissionOnboarding),
+    onSelectDate: ledgerState.handleSelectDate,
+    onOpen: () => setIsComposerVisible(true),
+    onConsume: onConsumeGuestEntry,
+  });
+
+  const renderScreenTitle = (screen: SignedInStackScreen, titleLabel?: string) =>
+    screen === "calendar" ? (
+      <HeaderDatePicker
+        variant="navigation"
+        selectedDate={ledgerState.selectedDate}
+        onSelectDate={ledgerState.handleSelectDate}
+      />
+    ) : (
+      <AppNativeHeaderTitle
+        title={
+          titleLabel ??
+          (screen === "charts" ? ledgerState.currentChartMonth.title : getAppScreenLabel(screen))
+        }
+      />
+    );
 
   if (authOnboarding.isLoading) {
     return (
@@ -760,7 +841,7 @@ function SignedInApp({ session }: { session: Session }) {
         value={FooterTabBarUi.contentBottomGap + (appPlatform.os === "web" ? 0 : footerHeight)}
       >
         <View onLayout={onSignedInLayout} style={styles.container}>
-          <StatusBar barStyle="dark-content" />
+          <StatusBar barStyle={colorScheme === "dark" ? "light-content" : "dark-content"} />
           <SafeAreaView edges={["left", "right"]} style={styles.bodySafeArea}>
             <View
               style={styles.body}
@@ -775,7 +856,11 @@ function SignedInApp({ session }: { session: Session }) {
             >
               <View style={styles.navigationShell}>
                 <NavigationContainer
-                  onReady={syncCurrentRouteState}
+                  theme={getAppNavigationTheme()}
+                  onReady={() => {
+                    setIsNavigationMounted(true);
+                    syncCurrentRouteState();
+                  }}
                   onStateChange={syncCurrentRouteState}
                   ref={navigationRef}
                 >
@@ -791,6 +876,12 @@ function SignedInApp({ session }: { session: Session }) {
                     entryAppend={
                       <LedgerEntryAppendRow
                         selectedDate={ledgerState.selectedDate}
+                        hintLabel={
+                          currentScreen === "calendar" &&
+                          ledgerState.selectedEntries.length === 0
+                            ? EntryAppendCopy.emptyHint
+                            : undefined
+                        }
                         disabled={
                           !isSignedInInteractionReady ||
                           ledgerState.isReadOnlyDueToPlanLimit ||
@@ -842,6 +933,20 @@ function SignedInApp({ session }: { session: Session }) {
                     onDiscardEntryDraft={discardEntryDraft}
                     onEditSelectedEntryFromAllEntries={handleEditEntryFromAllEntries}
                     onEditSelectedEntryFromCalendar={handleEditEntryFromCalendar}
+                    onAddFrequentEntry={(entry) => {
+                      if (!ledgerState.activeBook?.id) return;
+                      try {
+                        const added = addFrequentEntry(
+                          frequentEntryStorage,
+                          session.user.id,
+                          ledgerState.activeBook?.id,
+                          entry,
+                        );
+                        showNativeToast(added ? FrequentEntryCopy.added : FrequentEntryCopy.exists);
+                      } catch {
+                        showNativeToast(FrequentEntryCopy.error);
+                      }
+                    }}
                     onDuplicateEntry={handleDuplicateEntry}
                     onOpenAdTrackingSettings={handleOpenAdTrackingSettings}
                     onOpenSubscription={handleOpenSubscription}
@@ -953,12 +1058,6 @@ function SignedInApp({ session }: { session: Session }) {
               subscriptionTier={subscription.currentTier}
               userId={session.user.id}
             />
-            <NativeYearPickerModal
-              isOpen={currentScreen === "calendar" && appPlatform.isIOS && isYearPickerOpen}
-              onClose={() => setIsYearPickerOpen(false)}
-              onSelectDate={ledgerState.handleSelectDate}
-              selectedDate={ledgerState.selectedDate}
-            />
             <AnnualReportRangePickerModal
               selectedYear={annualReport.periodSelection?.selectedYear ?? null}
               onSelectPeriod={annualReport.handleSelectPeriod}
@@ -985,38 +1084,40 @@ function SignedInApp({ session }: { session: Session }) {
   );
 }
 
-const styles = StyleSheet.create({
-  gestureRoot: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: AppColors.screenBackground,
-  },
-  topSafeArea: {
-    backgroundColor: AppColors.screenBackground,
-  },
-  bodySafeArea: {
-    flex: 1,
-    backgroundColor: AppColors.screenBackground,
-  },
-  body: {
-    flex: 1,
-    backgroundColor: AppColors.screenBackground,
-  },
-  navigationShell: {
-    flex: 1,
-    backgroundColor: AppColors.screenBackground,
-  },
-  signedOutSafeArea: {
-    backgroundColor: AppColors.screenBackground,
-  },
-  signedOutBodySafeArea: {
-    flex: 1,
-    backgroundColor: AppColors.screenBackground,
-  },
-  signedOutBody: {
-    flex: 1,
-    backgroundColor: AppColors.screenBackground,
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    gestureRoot: {
+      flex: 1,
+    },
+    container: {
+      flex: 1,
+      backgroundColor: getAppColors().screenBackground,
+    },
+    topSafeArea: {
+      backgroundColor: getAppColors().screenBackground,
+    },
+    bodySafeArea: {
+      flex: 1,
+      backgroundColor: getAppColors().screenBackground,
+    },
+    body: {
+      flex: 1,
+      backgroundColor: getAppColors().screenBackground,
+    },
+    navigationShell: {
+      flex: 1,
+      backgroundColor: getAppColors().screenBackground,
+    },
+    signedOutSafeArea: {
+      backgroundColor: getAppColors().screenBackground,
+    },
+    signedOutBodySafeArea: {
+      flex: 1,
+      backgroundColor: getAppColors().screenBackground,
+    },
+    signedOutBody: {
+      flex: 1,
+      backgroundColor: getAppColors().screenBackground,
+    },
+  }),
+);

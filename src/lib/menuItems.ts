@@ -9,7 +9,7 @@ import { getAppScreenLabel } from "./appScreenLabels";
 export type AppMenuAction = "annual-report-download" | "manage-categories";
 
 type AppMenuItemDisplay = {
-  icon: CategoryIconName;
+  icon?: CategoryIconName;
   label: string;
   description?: string;
   disabled?: boolean;
@@ -74,7 +74,6 @@ export function buildAllMenuSections(
   if (options.showAnnualReportDownload) {
     ledgerItems.push({
       action: "annual-report-download",
-      icon: "download",
       label: AnnualReportCopy.headerAccessibilityLabel,
     });
   }

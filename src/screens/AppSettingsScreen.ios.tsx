@@ -1,4 +1,8 @@
-import { NativeSettingsStyles } from "../constants/nativeSettingsStyles";
+import { ThemeSettings, ThemeModeOptions } from "../constants/theme";
+import { getThemeMode, setThemeMode } from "../lib/appTheme";
+import { createThemeValue } from "../lib/appTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
+import { getNativeSettingsStyles } from "../constants/nativeSettingsStyles";
 import { Host, List, Picker, RNHostView, Section, Text, VStack } from "@expo/ui/swift-ui";
 import { pickerStyle, tag } from "@expo/ui/swift-ui/modifiers";
 import { StyleSheet, View } from "react-native";
@@ -10,28 +14,29 @@ import {
   CalendarSummaryModeOptions,
   CalendarSummaryModes,
 } from "../constants/calendarSummary";
-import { AppColors } from "../constants/colors";
+import { getAppColors } from "../constants/colors";
 import { ExpenseTextColorOptions } from "../constants/expenseTextColor";
 import { AppLayout } from "../constants/layout";
 import { useExpenseTextColor } from "../contexts/ExpenseTextColorContext";
 import type { AppSettingsScreenProps } from "./AppSettingsScreen";
 
-const rowModifiers = NativeSettingsStyles.row;
-const menuPicker = [...rowModifiers, pickerStyle("menu")];
-const sectionTitleModifiers = NativeSettingsStyles.sectionTitle;
-const titleModifiers = NativeSettingsStyles.title;
-const descriptionModifiers = NativeSettingsStyles.description;
+const getRowModifiers = createThemeValue(() => getNativeSettingsStyles().row);
+const getMenuPicker = createThemeValue(() => [...getRowModifiers(), pickerStyle("menu")]);
+const getSectionTitleModifiers = createThemeValue(() => getNativeSettingsStyles().sectionTitle);
+const getTitleModifiers = createThemeValue(() => getNativeSettingsStyles().title);
+const getDescriptionModifiers = createThemeValue(() => getNativeSettingsStyles().description);
 
 export function AppSettingsScreen(props: AppSettingsScreenProps) {
+  const colorScheme = useAppTheme();
   const expenseTextColor = useExpenseTextColor();
   return (
     <Host
       style={styles.screen}
       useViewportSizeMeasurement
-      colorScheme="light"
-      seedColor={AppColors.primary}
+      colorScheme={colorScheme}
+      seedColor={getAppColors().primary}
     >
-      <List modifiers={NativeSettingsStyles.list}>
+      <List modifiers={getNativeSettingsStyles().list}>
         {props.screenTitle ? (
           <RNHostView matchContents>
             <View>{props.screenTitle}</View>
@@ -39,21 +44,35 @@ export function AppSettingsScreen(props: AppSettingsScreenProps) {
         ) : null}
         <Section
           header={
-            <Text modifiers={sectionTitleModifiers}>{AppSettingsCopy.featureSectionTitle}</Text>
+            <Text modifiers={getSectionTitleModifiers()}>
+              {AppSettingsCopy.featureSectionTitle}
+            </Text>
           }
         >
           <Picker
+            label={ThemeSettings.title}
+            selection={getThemeMode()}
+            onSelectionChange={setThemeMode}
+            modifiers={getMenuPicker()}
+          >
+            {ThemeModeOptions.map((option) => (
+              <Text key={option.value} modifiers={[tag(option.value)]}>
+                {option.label}
+              </Text>
+            ))}
+          </Picker>
+          <Picker
             label={
               <VStack alignment="leading" spacing={AppLayout.compactGap}>
-                <Text modifiers={titleModifiers}>{AppSettingsCopy.summaryModeTitle}</Text>
-                <Text modifiers={descriptionModifiers}>
+                <Text modifiers={getTitleModifiers()}>{AppSettingsCopy.summaryModeTitle}</Text>
+                <Text modifiers={getDescriptionModifiers()}>
                   {AppSettingsCopy.summaryModeDescription}
                 </Text>
               </VStack>
             }
             selection={props.calendarSummaryMode}
             onSelectionChange={props.onChangeCalendarSummaryMode}
-            modifiers={menuPicker}
+            modifiers={getMenuPicker()}
           >
             {CalendarSummaryModeOptions.map((option) => (
               <Text key={option.value} modifiers={[tag(option.value)]}>
@@ -63,12 +82,14 @@ export function AppSettingsScreen(props: AppSettingsScreenProps) {
           </Picker>
           {props.calendarSummaryMode === CalendarSummaryModes.selectedMonth ? (
             <Picker
-              label={<Text modifiers={titleModifiers}>{AppSettingsCopy.summaryBaseDayTitle}</Text>}
+              label={
+                <Text modifiers={getTitleModifiers()}>{AppSettingsCopy.summaryBaseDayTitle}</Text>
+              }
               selection={props.calendarSummaryBaseDay ?? CalendarSummaryBaseDay.unselected}
               onSelectionChange={(day) => {
                 if (day >= CalendarSummaryBaseDay.min) props.onChangeCalendarSummaryBaseDay(day);
               }}
-              modifiers={menuPicker}
+              modifiers={getMenuPicker()}
             >
               <Text modifiers={[tag(CalendarSummaryBaseDay.unselected)]}>
                 {AppSettingsCopy.summaryBaseDayPlaceholder}
@@ -83,15 +104,15 @@ export function AppSettingsScreen(props: AppSettingsScreenProps) {
           <Picker
             label={
               <VStack alignment="leading" spacing={AppLayout.compactGap}>
-                <Text modifiers={titleModifiers}>{AppSettingsCopy.expenseTextColorTitle}</Text>
-                <Text modifiers={descriptionModifiers}>
+                <Text modifiers={getTitleModifiers()}>{AppSettingsCopy.expenseTextColorTitle}</Text>
+                <Text modifiers={getDescriptionModifiers()}>
                   {AppSettingsCopy.expenseTextColorDescription}
                 </Text>
               </VStack>
             }
             selection={expenseTextColor.mode}
             onSelectionChange={expenseTextColor.updateMode}
-            modifiers={menuPicker}
+            modifiers={getMenuPicker()}
           >
             {ExpenseTextColorOptions.map((option) => (
               <Text key={option.value} modifiers={[tag(option.value)]}>
@@ -99,7 +120,7 @@ export function AppSettingsScreen(props: AppSettingsScreenProps) {
               </Text>
             ))}
           </Picker>
-          <VStack alignment="leading" modifiers={rowModifiers}>
+          <VStack alignment="leading" modifiers={getRowModifiers()}>
             <RNHostView matchContents={{ vertical: true }}>
               <CalendarHeatmapSetting
                 isPlusActive={props.isPlusActive}

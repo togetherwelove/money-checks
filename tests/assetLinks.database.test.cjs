@@ -65,20 +65,35 @@ test("PostgreSQL atomically applies, edits, removes and protects linked asset mo
     );
     const cash = await asset("cash", 1000),
       loan = await asset("loan", 5000);
-    const replaceCategories = (categories) => db.query(
-      "select private.replace_ledger_book_custom_categories($1,'expense',$2)",
-      [book, JSON.stringify(categories)],
-    );
-    const repaymentCategory = { id: "custom-category-loan-repayment", label: "Repayment", icon_name: "circle" };
+    const replaceCategories = (categories) =>
+      db.query("select private.replace_ledger_book_custom_categories($1,'expense',$2)", [
+        book,
+        JSON.stringify(categories),
+      ]);
+    const repaymentCategory = {
+      id: "custom-category-loan-repayment",
+      label: "Repayment",
+      icon_name: "circle",
+    };
     await replaceCategories([repaymentCategory]);
-    assert.equal((await db.query("select label from ledger_book_category_customizations")).rows[0].label, "Repayment");
+    assert.equal(
+      (await db.query("select label from ledger_book_category_customizations")).rows[0].label,
+      "Repayment",
+    );
     await assert.rejects(replaceCategories([]), /Loan repayment category is required/);
     await db.query("select set_config('request.jwt.claim.sub',$1,false)", [other]);
-    assert.equal((await db.query("select public.has_ledger_book_loans($1) as value", [book])).rows[0].value, false);
+    assert.equal(
+      (await db.query("select public.has_ledger_book_loans($1) as value", [book])).rows[0].value,
+      false,
+    );
     await db.query("select set_config('request.jwt.claim.sub',$1,false)", [owner]);
     await db.query("update personal_assets set deleted_on='2020-01-01' where id=$1", [loan]);
     await replaceCategories([]);
-    assert.equal((await db.query("select count(*)::int as n from ledger_book_category_customizations")).rows[0].n, 0);
+    assert.equal(
+      (await db.query("select count(*)::int as n from ledger_book_category_customizations")).rows[0]
+        .n,
+      0,
+    );
     await db.query("update personal_assets set deleted_on=null where id=$1", [loan]);
     await db.query("select public.ensure_loan_repayment_category($1)", [book]);
     const balance = async (id, date = "2020-02-01") =>

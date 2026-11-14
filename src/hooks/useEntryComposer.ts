@@ -9,46 +9,76 @@ import type { LedgerEntryDraft } from "../types/ledger";
 import type { LedgerBookMember } from "../types/ledgerBookMember";
 import { createDraft } from "../utils/ledgerEntries";
 import { AssetLinkConfig } from "../constants/assetLink";
+import { appStorage } from "../lib/appStorage";
+import { readEntryComposerDraft } from "../lib/entryComposerDraftStorage";
 
 export function useEntryComposer(bookId: string | null, selectedDate: string, userId: string) {
-  const [draft, setDraft] = useState(() => createDraft(selectedDate, userId));
+  const [draft, setDraft] = useState(
+    () =>
+      readEntryComposerDraft(appStorage, userId, bookId, selectedDate) ??
+      createDraft(selectedDate, userId),
+  );
   const [members, setMembers] = useState<LedgerBookMember[]>([]);
   const mounted = useRef(true);
 
   useEffect(() => {
     mounted.current = true;
-    return () => { mounted.current = false; };
+    return () => {
+      mounted.current = false;
+    };
   }, []);
 
   useEffect(() => {
     let active = true;
     if (bookId) {
-      void fetchLedgerBookMembers(bookId).then((nextMembers) => {
-        if (!active) return;
-        setMembers(nextMembers);
-        setDraft((current) => {
-          if ((current.amount || current.content) && !nextMembers.some((item) => item.userId === current.targetMemberId)) return current;
-          const member = nextMembers.find((item) => item.userId === current.targetMemberId)
-            ?? nextMembers.find((item) => item.userId === userId) ?? nextMembers[0];
-          return member ? { ...current, targetMemberId: member.userId, targetMemberName: member.displayName } : current;
-        });
-      }).catch((error) => logAppError("EntryComposer", error, { step: "load_members" }));
+      void fetchLedgerBookMembers(bookId)
+        .then((nextMembers) => {
+          if (!active) return;
+          setMembers(nextMembers);
+          setDraft((current) => {
+            if (
+              (current.amount || current.content) &&
+              !nextMembers.some((item) => item.userId === current.targetMemberId)
+            )
+              return current;
+            const member =
+              nextMembers.find((item) => item.userId === current.targetMemberId) ??
+              nextMembers.find((item) => item.userId === userId) ??
+              nextMembers[0];
+            return member
+              ? { ...current, targetMemberId: member.userId, targetMemberName: member.displayName }
+              : current;
+          });
+        })
+        .catch((error) => logAppError("EntryComposer", error, { step: "load_members" }));
     }
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [bookId, userId]);
 
   useEffect(() => {
-    setDraft((current) => current.amount || current.content ? current : { ...current, date: selectedDate });
+    setDraft((current) =>
+      current.amount || current.content ? current : { ...current, date: selectedDate },
+    );
   }, [selectedDate]);
 
   const update = <K extends keyof LedgerEntryDraft>(field: K, value: LedgerEntryDraft[K]) => {
     setDraft((current) => {
       let assetLink = current.assetLink;
-      if ((field === "categoryId" && value !== AssetLinkConfig.loanCategoryId) || (field === "type" && value !== "expense")) {
-        if (assetLink?.loanAssetId) assetLink = { ...assetLink, loanAssetId: null, principal: "0", fee: "0" };
+      if (
+        (field === "categoryId" && value !== AssetLinkConfig.loanCategoryId) ||
+        (field === "type" && value !== "expense")
+      ) {
+        if (assetLink?.loanAssetId)
+          assetLink = { ...assetLink, loanAssetId: null, principal: "0", fee: "0" };
       }
       if (field === "installmentMonths" && Number(value) > 1) assetLink = undefined;
-      return { ...current, ...(assetLink !== current.assetLink ? { assetLink } : {}), [field]: value };
+      return {
+        ...current,
+        ...(assetLink !== current.assetLink ? { assetLink } : {}),
+        [field]: value,
+      };
     });
   };
   const pickPhotos = async () => {
@@ -60,7 +90,10 @@ export function useEntryComposer(bookId: string | null, selectedDate: string, us
     try {
       const photos = await pickImageAttachments({ selectionLimit: remaining });
       if (mounted.current && photos.length) {
-        setDraft((current) => ({ ...current, photoAttachments: [...current.photoAttachments, ...photos].slice(0, ENTRY_PHOTO_LIMIT) }));
+        setDraft((current) => ({
+          ...current,
+          photoAttachments: [...current.photoAttachments, ...photos].slice(0, ENTRY_PHOTO_LIMIT),
+        }));
       }
     } catch {
       showNativeToast(EntryPhotoCopy.imagePickerError);
@@ -68,7 +101,10 @@ export function useEntryComposer(bookId: string | null, selectedDate: string, us
   };
   const reset = () => {
     const member = members.find((item) => item.userId === userId) ?? members[0];
-    setDraft({ ...createDraft(selectedDate, member?.userId ?? userId), targetMemberName: member?.displayName });
+    setDraft({
+      ...createDraft(selectedDate, member?.userId ?? userId),
+      targetMemberName: member?.displayName,
+    });
   };
   return { draft, members, pickPhotos, setDraft, update, reset, userId };
 }

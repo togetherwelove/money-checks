@@ -7,7 +7,9 @@ import type { MonthCalendarPagerProps } from "./monthCalendarPager/monthCalendar
 
 export function MonthCalendarPager(props: MonthCalendarPagerProps) {
   const isFocused = useIsFocused();
-  const [isAppActive, setIsAppActive] = useState(AppState.currentState !== "background" && AppState.currentState !== "inactive");
+  const [isAppActive, setIsAppActive] = useState(
+    AppState.currentState !== "background" && AppState.currentState !== "inactive",
+  );
   const [foregroundRevision, setForegroundRevision] = useState(0);
   const [heights, setHeights] = useState<Record<string, number>>({});
   useEffect(() => {
@@ -18,22 +20,38 @@ export function MonthCalendarPager(props: MonthCalendarPagerProps) {
     });
     return () => subscription.remove();
   }, []);
-  const pages = useMemo(() => [props.previousPage, props.currentPage, props.nextPage].map(
-    (page) => heights[page.key] === undefined || heights[page.key] === page.height
-      ? page : { ...page, height: heights[page.key] },
-  ), [props.previousPage, props.currentPage, props.nextPage, heights]);
+  const pages = useMemo(
+    () =>
+      [props.previousPage, props.currentPage, props.nextPage].map((page) =>
+        heights[page.key] === undefined || heights[page.key] === page.height
+          ? page
+          : { ...page, height: heights[page.key] },
+      ),
+    [props.previousPage, props.currentPage, props.nextPage, heights],
+  );
   useEffect(() => {
     const keys = new Set(pages.map((page) => page.key));
-    setHeights((current) => Object.keys(current).every((key) => keys.has(key)) ? current
-      : Object.fromEntries(Object.entries(current).filter(([key]) => keys.has(key))));
+    setHeights((current) =>
+      Object.keys(current).every((key) => keys.has(key))
+        ? current
+        : Object.fromEntries(Object.entries(current).filter(([key]) => keys.has(key))),
+    );
   }, [pages]);
   const onHeightChange = useCallback((key: string, height: number) => {
     if (!Number.isFinite(height) || height <= 0) return;
-    setHeights((current) => current[key] === height ? current : { ...current, [key]: height });
+    setHeights((current) => (current[key] === height ? current : { ...current, [key]: height }));
   }, []);
   const active = isFocused && isAppActive;
   // Reset the native page after focus and geometry changes.
   const geometryKey = JSON.stringify(pages.map((page) => [page.key, page.height]));
-  return <CalendarSwipeViewport {...props} geometryKey={geometryKey} active={active} resetRevision={foregroundRevision}
-    pages={pages} onHeightChange={onHeightChange} />;
+  return (
+    <CalendarSwipeViewport
+      {...props}
+      geometryKey={geometryKey}
+      active={active}
+      resetRevision={foregroundRevision}
+      pages={pages}
+      onHeightChange={onHeightChange}
+    />
+  );
 }

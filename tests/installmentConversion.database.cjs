@@ -30,18 +30,37 @@ test("PostgreSQL conversion is atomic, preserves paid rows and receipts, and rej
       );
       create unique index on ledger_entry_attachments(ledger_entry_id, receipt_file_id) where ledger_entry_id is not null;
     `);
-    await db.exec(fs.readFileSync(path.join(__dirname, "../supabase/migrations/202610170001_convert_installment_to_one_time.sql"), "utf8"));
+    await db.exec(
+      fs.readFileSync(
+        path.join(
+          __dirname,
+          "../supabase/migrations/202610170001_convert_installment_to_one_time.sql",
+        ),
+        "utf8",
+      ),
+    );
     const seed = async () => {
       await db.exec("truncate ledger_entries cascade; set test.editor = 'true';");
-      for (let i = 0; i < ids.length; i++) await db.query(
-        "insert into ledger_entries(id, book_id, user_id, occurred_on, amount, installment_group_id, installment_order) values ($1,$2,$3,$4,100000,'group',$5)",
-        [ids[i], book, author, `2026-${String(8 + i).padStart(2, "0")}-01`, i + 1]);
-      await db.query("insert into ledger_entry_attachments(user_id, installment_group_id, receipt_file_id) values ($1,'group',$2)", [author, book]);
-      await db.query("insert into ledger_entry_attachments(user_id, ledger_entry_id, receipt_file_id) values ($1,$2,$3)", [author, ids[2], author]);
+      for (let i = 0; i < ids.length; i++)
+        await db.query(
+          "insert into ledger_entries(id, book_id, user_id, occurred_on, amount, installment_group_id, installment_order) values ($1,$2,$3,$4,100000,'group',$5)",
+          [ids[i], book, author, `2026-${String(8 + i).padStart(2, "0")}-01`, i + 1],
+        );
+      await db.query(
+        "insert into ledger_entry_attachments(user_id, installment_group_id, receipt_file_id) values ($1,'group',$2)",
+        [author, book],
+      );
+      await db.query(
+        "insert into ledger_entry_attachments(user_id, ledger_entry_id, receipt_file_id) values ($1,$2,$3)",
+        [author, ids[2], author],
+      );
       return (await db.query("select id, updated_at from ledger_entries order by id")).rows;
     };
-    const convert = (snapshot, paid = []) => db.query(
-      "select convert_installment_to_one_time($1,'group',$2::uuid[],'2026-10-20',$3::jsonb)", [book, paid, JSON.stringify(snapshot)]);
+    const convert = (snapshot, paid = []) =>
+      db.query(
+        "select convert_installment_to_one_time($1,'group',$2::uuid[],'2026-10-20',$3::jsonb)",
+        [book, paid, JSON.stringify(snapshot)],
+      );
     let snapshot = await seed();
     await convert(snapshot);
     let rows = (await db.query("select * from ledger_entries")).rows;
@@ -52,9 +71,11 @@ test("PostgreSQL conversion is atomic, preserves paid rows and receipts, and rej
     assert.equal((await db.query("select * from ledger_entry_attachments")).rows.length, 2);
 
     snapshot = await seed();
-    const paidBefore = (await db.query("select * from ledger_entries where id=$1", [ids[0]])).rows[0];
+    const paidBefore = (await db.query("select * from ledger_entries where id=$1", [ids[0]]))
+      .rows[0];
     await convert(snapshot, [ids[0]]);
-    const paidAfter = (await db.query("select * from ledger_entries where id=$1", [ids[0]])).rows[0];
+    const paidAfter = (await db.query("select * from ledger_entries where id=$1", [ids[0]]))
+      .rows[0];
     assert.deepEqual(paidAfter, paidBefore);
     rows = (await db.query("select * from ledger_entries where id <> $1", [ids[0]])).rows;
     assert.equal(rows.length, 1);
@@ -63,7 +84,9 @@ test("PostgreSQL conversion is atomic, preserves paid rows and receipts, and rej
     assert.equal((await db.query("select * from ledger_entry_attachments")).rows.length, 3);
 
     snapshot = await seed();
-    await db.query("update ledger_entries set updated_at='2026-10-18T00:00:00Z' where id=$1", [ids[1]]);
+    await db.query("update ledger_entries set updated_at='2026-10-18T00:00:00Z' where id=$1", [
+      ids[1],
+    ]);
     await assert.rejects(convert(snapshot), /changed/);
     assert.equal((await db.query("select * from ledger_entries")).rows.length, 3);
     snapshot = await seed();

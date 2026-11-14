@@ -96,7 +96,9 @@ export function useNotificationPreferences(userId: string): NotificationPreferen
     },
     updateThresholdEnabled: (enabled) => {
       setPreferences((currentPreferences) => {
-        const selectedKey = resolveThresholdKeyFromPeriod(currentPreferences.selectedThresholdPeriod);
+        const selectedKey = resolveThresholdKeyFromPeriod(
+          currentPreferences.selectedThresholdPeriod,
+        );
         const nextPreferences = {
           ...currentPreferences,
           enabledThresholds: createSingleSelectedThresholdState(selectedKey, enabled),
@@ -167,7 +169,9 @@ function buildPreferenceGroups(
   })) as NotificationPreferenceGroup[];
 }
 
-function resolveThresholdKeyFromPeriod(period: NotificationThresholdPeriod): NotificationThresholdKey {
+function resolveThresholdKeyFromPeriod(
+  period: NotificationThresholdPeriod,
+): NotificationThresholdKey {
   const matchedKey = Object.entries(NotificationDefaultThresholdPeriods).find(
     ([, thresholdPeriod]) => thresholdPeriod === period,
   )?.[0] as NotificationThresholdKey | undefined;

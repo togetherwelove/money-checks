@@ -1,3 +1,8 @@
+export const HomeScreenCopy = {
+  todayAction: "오늘",
+  todayAccessibilityLabel: "오늘 날짜로 이동",
+} as const;
+
 export const HomeScreenUi = {
   monthTitleFontSize: 24,
   monthTitleLineHeight: 30,

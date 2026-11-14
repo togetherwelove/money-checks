@@ -56,3 +56,16 @@ export function resolveCategoryGridPosition(
     y: rowIndex * (cellSize + CATEGORY_GRID_GAP),
   };
 }
+
+export function resolveCategoryGridScrollY(
+  index: number,
+  cellSize: number,
+  columns: number,
+  scrollY: number,
+  viewportHeight: number,
+): number {
+  const { y: top } = resolveCategoryGridPosition(index, cellSize, columns);
+  if (top < scrollY || viewportHeight <= 0) return top;
+  const bottom = top + cellSize;
+  return bottom > scrollY + viewportHeight ? Math.max(0, bottom - viewportHeight) : scrollY;
+}

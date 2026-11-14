@@ -1,9 +1,11 @@
+import { createThemeValue } from "../lib/appTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { MenuStyles } from "../constants/menuStyles";
+import { getMenuStyles } from "../constants/menuStyles";
 
-import { AppColors } from "../constants/colors";
+import { getAppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import { DEFAULT_MEMBER_DISPLAY_NAME } from "../constants/ledgerDisplay";
 import type { SubscriptionTier } from "../constants/subscription";
@@ -105,6 +107,8 @@ export function LedgerBookManagementContent({
   subscriptionTier,
   userId,
 }: LedgerBookManagementContentProps) {
+  const styles = getStyles();
+  useAppTheme();
   const [members, setMembers] = useState<LedgerBookMember[]>([]);
   const activeBookId = activeBook?.id ?? null;
   const membersBookId = useRef(activeBookId);
@@ -310,15 +314,17 @@ function sortLedgerBookMembers(members: LedgerBookMember[]): LedgerBookMember[] 
   return [...members].sort((left, right) => left.displayName.localeCompare(right.displayName));
 }
 
-const styles = StyleSheet.create({
-  sections: {
-    gap: AppLayout.cardGap,
-  },
-  screen: {
-    flex: 1,
-    backgroundColor: AppColors.screenBackground,
-  },
-  content: {
-    ...MenuStyles.content,
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    sections: {
+      gap: AppLayout.cardGap,
+    },
+    screen: {
+      flex: 1,
+      backgroundColor: getAppColors().screenBackground,
+    },
+    content: {
+      ...getMenuStyles().content,
+    },
+  }),
+);

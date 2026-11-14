@@ -1,10 +1,12 @@
+import { createThemeValue } from "../lib/appTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text } from "react-native";
 
 import { ActionButtonLabelTextStyle } from "../constants/uiStyles";
 import { AuthControls } from "../constants/authControls";
-import { AppColors } from "../constants/colors";
+import { getAppColors } from "../constants/colors";
 import { OneLineTextFitProps } from "../constants/textLayout";
 
 type ActionButtonProps = {
@@ -30,6 +32,8 @@ export function ActionButton({
   size = "compact",
   variant = "secondary",
 }: ActionButtonProps) {
+  const styles = getStyles();
+  useAppTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isLoading = loading || isSubmitting;
 
@@ -85,63 +89,65 @@ export function ActionButton({
   );
 }
 
-const styles = StyleSheet.create({
-  button: {
-    minHeight: AuthControls.controlHeight,
-    paddingHorizontal: AuthControls.horizontalPadding,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  compactButton: {
-    paddingVertical: AuthControls.verticalPadding,
-    borderRadius: AuthControls.borderRadius,
-  },
-  inlineButton: {
-    minHeight: AuthControls.inlineControlHeight,
-    paddingHorizontal: AuthControls.inlineHorizontalPadding,
-    paddingVertical: AuthControls.inlineVerticalPadding,
-    borderRadius: AuthControls.borderRadius,
-  },
-  largeButton: {
-    paddingHorizontal: AuthControls.horizontalPadding,
-    paddingVertical: AuthControls.verticalPadding,
-    borderRadius: AuthControls.borderRadius,
-  },
-  fullWidth: {
-    flex: 1,
-  },
-  primaryButton: {
-    borderColor: AppColors.primary,
-    backgroundColor: AppColors.primary,
-  },
-  secondaryButton: {
-    borderColor: AppColors.border,
-    backgroundColor: AppColors.background,
-  },
-  destructiveButton: {
-    borderColor: AppColors.expense,
-    backgroundColor: AppColors.expenseSoft,
-  },
-  disabledButton: {
-    opacity: 0.45,
-  },
-  text: {
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  compactText: ActionButtonLabelTextStyle,
-  inlineText: {
-    fontSize: 13,
-  },
-  largeText: ActionButtonLabelTextStyle,
-  primaryText: {
-    color: AppColors.inverseText,
-  },
-  secondaryText: {
-    color: AppColors.primary,
-  },
-  destructiveText: {
-    color: AppColors.expense,
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    button: {
+      minHeight: AuthControls.controlHeight,
+      paddingHorizontal: AuthControls.horizontalPadding,
+      borderWidth: 1,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    compactButton: {
+      paddingVertical: AuthControls.verticalPadding,
+      borderRadius: AuthControls.borderRadius,
+    },
+    inlineButton: {
+      minHeight: AuthControls.inlineControlHeight,
+      paddingHorizontal: AuthControls.inlineHorizontalPadding,
+      paddingVertical: AuthControls.inlineVerticalPadding,
+      borderRadius: AuthControls.borderRadius,
+    },
+    largeButton: {
+      paddingHorizontal: AuthControls.horizontalPadding,
+      paddingVertical: AuthControls.verticalPadding,
+      borderRadius: AuthControls.borderRadius,
+    },
+    fullWidth: {
+      flex: 1,
+    },
+    primaryButton: {
+      borderColor: getAppColors().primary,
+      backgroundColor: getAppColors().primary,
+    },
+    secondaryButton: {
+      borderColor: getAppColors().border,
+      backgroundColor: getAppColors().background,
+    },
+    destructiveButton: {
+      borderColor: getAppColors().expense,
+      backgroundColor: getAppColors().expenseSoft,
+    },
+    disabledButton: {
+      opacity: 0.45,
+    },
+    text: {
+      fontSize: 12,
+      fontWeight: "700",
+    },
+    compactText: ActionButtonLabelTextStyle,
+    inlineText: {
+      fontSize: 13,
+    },
+    largeText: ActionButtonLabelTextStyle,
+    primaryText: {
+      color: getAppColors().onPrimary,
+    },
+    secondaryText: {
+      color: getAppColors().primary,
+    },
+    destructiveText: {
+      color: getAppColors().expense,
+    },
+  }),
+);

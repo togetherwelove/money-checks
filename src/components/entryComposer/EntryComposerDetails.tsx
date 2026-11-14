@@ -1,9 +1,18 @@
+import { createThemeValue } from "../../lib/appTheme";
+import { useAppTheme } from "../../hooks/useAppTheme";
 import { useState } from "react";
 import { Keyboard, StyleSheet, Text, View } from "react-native";
 
 import { EntryComposerCopy as Copy } from "../../constants/entryComposer";
 import { EntryRegistrationCopy } from "../../constants/entryRegistration";
-import { EntryDetailContainerStyle, EntryDetailFieldStyle, EntryDetailLabelStyle, EntryDetailValueStyle, EntryDetailHintStyle, EntryDetailRowStyle } from "../../constants/entryDetailStyles";
+import {
+  getEntryDetailContainerStyle,
+  EntryDetailFieldStyle,
+  getEntryDetailLabelStyle,
+  getEntryDetailValueStyle,
+  getEntryDetailHintStyle,
+  EntryDetailRowStyle,
+} from "../../constants/entryDetailStyles";
 import { formatInstallmentLabel } from "../../lib/installments";
 import type { useEntryComposer } from "../../hooks/useEntryComposer";
 import { EntryDateSelector } from "../EntryDateSelector";
@@ -15,51 +24,106 @@ import { ActionButton } from "../ActionButton";
 import { InstallmentConversionCopy } from "../../constants/installmentConversion";
 import { AssetLinkConfig } from "../../constants/assetLink";
 
-export function EntryComposerDetails({ composer, editing = false, onConvert, showDate = true }: {
-  composer: ReturnType<typeof useEntryComposer>; editing?: boolean; onConvert?: () => void;
+export function EntryComposerDetails({
+  composer,
+  editing = false,
+  onConvert,
+  showDate = true,
+}: {
+  composer: ReturnType<typeof useEntryComposer>;
+  editing?: boolean;
+  onConvert?: () => void;
   showDate?: boolean;
 }) {
+  const styles = getStyles();
+  useAppTheme();
   const [installmentOpen, setInstallmentOpen] = useState(false);
   const { draft, members, update, pickPhotos } = composer;
   return (
     <View style={styles.sections}>
-      {showDate ? <View style={styles.card}>
-        <EntryDateSelector selectedDate={draft.date} onSelectDate={(date) => update("date", date)} />
-      </View> : null}
-      {draft.categoryId !== AssetLinkConfig.loanCategoryId ? <View style={styles.card}>
-      {editing ? <View style={styles.paymentInfo}>
-        <View style={styles.paymentRow}>
-          <Text style={styles.label}>{EntryRegistrationCopy.paymentMethodLabel}</Text>
-          <Text style={styles.value}>{formatInstallmentLabel(draft.installmentMonths)}</Text>
+      {showDate ? (
+        <View style={styles.card}>
+          <EntryDateSelector
+            selectedDate={draft.date}
+            onSelectDate={(date) => update("date", date)}
+          />
         </View>
-        {onConvert ? <ActionButton label={InstallmentConversionCopy.action} onPress={onConvert} size="inline" /> : <Text style={styles.hint}>{Copy.paymentReadOnly}</Text>}
-      </View> : <EntryInstallmentSelector installmentMonths={draft.installmentMonths}
-        onSelectInstallmentMonths={months => update("installmentMonths", months)} onRequestCustom={() => {
-        Keyboard.dismiss();
-        setInstallmentOpen(true);
-      }} />}
-      <InstallmentPickerModal isOpen={installmentOpen} installmentMonths={draft.installmentMonths}
-        onClose={() => setInstallmentOpen(false)} onSelectInstallmentMonths={(months) => update("installmentMonths", months)} />
-      </View> : null}
-      {members.length > 1 ? <View style={styles.card}><EntryTargetMemberSelector
-        members={members} selectedMemberId={draft.targetMemberId}
-        onSelectMember={(member) => { update("targetMemberId", member.userId); update("targetMemberName", member.displayName); }}
-      /></View> : null}
+      ) : null}
+      {draft.categoryId !== AssetLinkConfig.loanCategoryId ? (
+        <View style={styles.card}>
+          {editing ? (
+            <View style={styles.paymentInfo}>
+              <View style={styles.paymentRow}>
+                <Text style={styles.label}>{EntryRegistrationCopy.paymentMethodLabel}</Text>
+                <Text style={styles.value}>{formatInstallmentLabel(draft.installmentMonths)}</Text>
+              </View>
+              {onConvert ? (
+                <ActionButton
+                  label={InstallmentConversionCopy.action}
+                  onPress={onConvert}
+                  size="inline"
+                />
+              ) : (
+                <Text style={styles.hint}>{Copy.paymentReadOnly}</Text>
+              )}
+            </View>
+          ) : (
+            <EntryInstallmentSelector
+              installmentMonths={draft.installmentMonths}
+              onSelectInstallmentMonths={(months) => update("installmentMonths", months)}
+              onRequestCustom={() => {
+                Keyboard.dismiss();
+                setInstallmentOpen(true);
+              }}
+            />
+          )}
+          <InstallmentPickerModal
+            isOpen={installmentOpen}
+            installmentMonths={draft.installmentMonths}
+            onClose={() => setInstallmentOpen(false)}
+            onSelectInstallmentMonths={(months) => update("installmentMonths", months)}
+          />
+        </View>
+      ) : null}
+      {members.length > 1 ? (
+        <View style={styles.card}>
+          <EntryTargetMemberSelector
+            members={members}
+            selectedMemberId={draft.targetMemberId}
+            onSelectMember={(member) => {
+              update("targetMemberId", member.userId);
+              update("targetMemberName", member.displayName);
+            }}
+          />
+        </View>
+      ) : null}
       <View style={[styles.card, styles.lastRow]}>
-      <EntryPhotoAttachmentField attachments={draft.photoAttachments} onPickAttachments={() => { void pickPhotos(); }}
-        onRemoveAttachment={(id) => update("photoAttachments", draft.photoAttachments.filter((photo) => (photo.id ?? photo.uri) !== id))} />
+        <EntryPhotoAttachmentField
+          attachments={draft.photoAttachments}
+          onPickAttachments={() => {
+            void pickPhotos();
+          }}
+          onRemoveAttachment={(id) =>
+            update(
+              "photoAttachments",
+              draft.photoAttachments.filter((photo) => (photo.id ?? photo.uri) !== id),
+            )
+          }
+        />
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  sections: { alignSelf: "stretch" },
-  card: EntryDetailContainerStyle,
-  lastRow: { borderBottomWidth: 0 },
-  paymentInfo: EntryDetailFieldStyle,
-  paymentRow: EntryDetailRowStyle,
-  label: EntryDetailLabelStyle,
-  value: EntryDetailValueStyle,
-  hint: EntryDetailHintStyle,
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    sections: { alignSelf: "stretch" },
+    card: getEntryDetailContainerStyle(),
+    lastRow: { borderBottomWidth: 0 },
+    paymentInfo: EntryDetailFieldStyle,
+    paymentRow: EntryDetailRowStyle,
+    label: getEntryDetailLabelStyle(),
+    value: getEntryDetailValueStyle(),
+    hint: getEntryDetailHintStyle(),
+  }),
+);

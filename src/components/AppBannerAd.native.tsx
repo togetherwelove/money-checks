@@ -1,8 +1,10 @@
+import { createThemeValue } from "../lib/appTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
 import { Platform, StyleSheet, View } from "react-native";
 import { BannerAd, BannerAdSize, TestIds } from "react-native-google-mobile-ads";
 
 import { AdMobBannerConfig, BannerAdLayout } from "../constants/ads";
-import { AppColors } from "../constants/colors";
+import { getAppColors } from "../constants/colors";
 import { resolveAdMobAdUnitId } from "../lib/ads/adUnitId";
 import { logAdMobLoadError } from "../lib/ads/adMobLoadError";
 import { getAdRequestOptions } from "../lib/ads/adRequestOptions";
@@ -12,6 +14,8 @@ type AppBannerAdProps = {
 };
 
 export function AppBannerAd({ variant = "default" }: AppBannerAdProps) {
+  const styles = getStyles();
+  useAppTheme();
   const adUnitId = resolveAdMobAdUnitId(AdMobBannerConfig, TestIds.BANNER);
 
   if (!adUnitId) {
@@ -44,24 +48,26 @@ export function AppBannerAd({ variant = "default" }: AppBannerAdProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  slot: {
-    height: BannerAdLayout.height,
-    flexShrink: 0,
-    alignItems: "center",
-    justifyContent: "center",
-    width: "100%",
-  },
-  container: {
-    alignItems: "center",
-    backgroundColor: AppColors.adBackground,
-    borderBottomColor: AppColors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    justifyContent: "center",
-    width: "100%",
-  },
-  embeddedContainer: {
-    backgroundColor: AppColors.adBackground,
-    borderBottomWidth: 0,
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    slot: {
+      height: BannerAdLayout.height,
+      flexShrink: 0,
+      alignItems: "center",
+      justifyContent: "center",
+      width: "100%",
+    },
+    container: {
+      alignItems: "center",
+      backgroundColor: getAppColors().adBackground,
+      borderBottomColor: getAppColors().border,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      justifyContent: "center",
+      width: "100%",
+    },
+    embeddedContainer: {
+      backgroundColor: getAppColors().adBackground,
+      borderBottomWidth: 0,
+    },
+  }),
+);

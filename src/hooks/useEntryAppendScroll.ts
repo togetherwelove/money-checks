@@ -80,6 +80,7 @@ export function useEntryAppendScroll<T extends AppendScrollable>(
 
   return {
     ref,
+    cancelPendingScroll: cancel,
     suppressPagination,
     onLayout: (event: LayoutChangeEvent) => {
       size.current.viewport = event.nativeEvent.layout.height;

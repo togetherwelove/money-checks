@@ -1,7 +1,9 @@
 const assert = require("node:assert/strict");
 const { test } = require("node:test");
 const { modules, currencyMock } = require("./annualReportHelpers.cjs");
-const { getEntryComposerInvalidField } = modules({ 'src/lib/currencyPreference.ts': currencyMock })("src/utils/entryComposer.ts");
+const { getEntryComposerInvalidField } = modules({ "src/lib/currencyPreference.ts": currencyMock })(
+  "src/utils/entryComposer.ts",
+);
 const completed = { amount: "8500", content: "점심 식사", categoryId: "food" };
 
 test("incomplete and invalid amounts never become saveable", () => {

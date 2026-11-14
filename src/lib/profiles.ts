@@ -10,17 +10,20 @@ import { supabase } from "./supabase";
 const PROFILE_TABLE = "profiles";
 const INVALID_DISPLAY_NAME_ERROR = "Display name is required.";
 
-export async function fetchProfileDisplayName(userId: string, signal?: AbortSignal): Promise<string> {
+export async function fetchProfileDisplayName(
+  userId: string,
+  signal?: AbortSignal,
+): Promise<string> {
   const cachedDisplayName = getCachedProfileDisplayName(userId);
   if (cachedDisplayName !== null) {
     return cachedDisplayName;
   }
 
-  const query = supabase
-    .from(PROFILE_TABLE)
-    .select("id, display_name")
-    .eq("id", userId);
-  const { data, error } = await (signal ? query.abortSignal(signal) : query).single<ProfileDisplayRow>();
+  const query = supabase.from(PROFILE_TABLE).select("id, display_name").eq("id", userId);
+  const { data, error } = await (signal
+    ? query.abortSignal(signal)
+    : query
+  ).single<ProfileDisplayRow>();
   if (signal?.aborted) throw new Error(StartupCopy.failed);
 
   if (error) {
@@ -32,7 +35,10 @@ export async function fetchProfileDisplayName(userId: string, signal?: AbortSign
   return displayName;
 }
 
-export async function fetchOwnProfileDisplayName(userId: string, signal?: AbortSignal): Promise<string> {
+export async function fetchOwnProfileDisplayName(
+  userId: string,
+  signal?: AbortSignal,
+): Promise<string> {
   return fetchProfileDisplayName(userId, signal);
 }
 

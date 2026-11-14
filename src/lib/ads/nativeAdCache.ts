@@ -25,19 +25,27 @@ export class NativeAdCache<T extends DisposableAd> {
       entry = undefined;
     }
     if (!entry) {
-      const created: Entry<T> = { promise: Promise.resolve(null), ad: null, users: 0, expiresAt: Infinity };
+      const created: Entry<T> = {
+        promise: Promise.resolve(null),
+        ad: null,
+        users: 0,
+        expiresAt: Infinity,
+      };
       entry = created;
       this.entries.set(slot, created);
-      created.promise = Promise.resolve().then(() => this.load(slot)).catch(() => null).then((ad) => {
-        if (this.entries.get(slot) !== created) {
-          ad?.destroy();
-          return null;
-        }
-        created.ad = ad;
-        created.expiresAt = Date.now() + (ad ? this.lifetimeMs : this.retryMs);
-        if (!created.users) this.scheduleExpiry(slot, created);
-        return ad;
-      });
+      created.promise = Promise.resolve()
+        .then(() => this.load(slot))
+        .catch(() => null)
+        .then((ad) => {
+          if (this.entries.get(slot) !== created) {
+            ad?.destroy();
+            return null;
+          }
+          created.ad = ad;
+          created.expiresAt = Date.now() + (ad ? this.lifetimeMs : this.retryMs);
+          if (!created.users) this.scheduleExpiry(slot, created);
+          return ad;
+        });
     }
     clearTimeout(entry.timer);
     entry.users++;
@@ -65,9 +73,12 @@ export class NativeAdCache<T extends DisposableAd> {
   private scheduleExpiry(slot: number, entry: Entry<T>) {
     clearTimeout(entry.timer);
     if (!Number.isFinite(entry.expiresAt)) return;
-    entry.timer = setTimeout(() => {
-      if (!entry.users && this.entries.get(slot) === entry) this.remove(slot, entry);
-    }, Math.max(0, entry.expiresAt - Date.now()));
+    entry.timer = setTimeout(
+      () => {
+        if (!entry.users && this.entries.get(slot) === entry) this.remove(slot, entry);
+      },
+      Math.max(0, entry.expiresAt - Date.now()),
+    );
   }
 
   private trimIdle() {

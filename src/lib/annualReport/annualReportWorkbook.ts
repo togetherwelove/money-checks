@@ -84,11 +84,17 @@ function buildAnnualReportWorkbookEntries(report: AnnualReportData): XlsxZipEntr
 function buildWorkbookSheets(report: AnnualReportData): WorkbookSheet[] {
   return [
     createSheet(AnnualReportCopy.summarySheetName, buildSummaryRows(report), SummaryColumnWidths, {
-      currencyColumns: [1], table: false,
+      currencyColumns: [1],
+      table: false,
     }),
-    createSheet(AnnualReportCopy.ledgerSheetName, buildLedgerRows(report), LedgerSheetColumnWidths, {
-      currencyColumns: [5, 6, 7],
-    }),
+    createSheet(
+      AnnualReportCopy.ledgerSheetName,
+      buildLedgerRows(report),
+      LedgerSheetColumnWidths,
+      {
+        currencyColumns: [5, 6, 7],
+      },
+    ),
     createSheet(
       AnnualReportCopy.monthlySummarySheetName,
       buildMonthlySummaryRows(report.monthlyRows),
@@ -97,13 +103,19 @@ function buildWorkbookSheets(report: AnnualReportData): WorkbookSheet[] {
     ),
     createSheet(
       AnnualReportCopy.expenseCategorySheetName,
-      [[...AnnualReportCopy.expenseCategoryHeaders], ...buildCategoryRows(report.expenseCategories, "expense")],
+      [
+        [...AnnualReportCopy.expenseCategoryHeaders],
+        ...buildCategoryRows(report.expenseCategories, "expense"),
+      ],
       CategorySummaryColumnWidths,
       { currencyColumns: [1], percentColumns: [2] },
     ),
     createSheet(
       AnnualReportCopy.incomeCategorySheetName,
-      [[...AnnualReportCopy.incomeCategoryHeaders], ...buildCategoryRows(report.incomeCategories, "income")],
+      [
+        [...AnnualReportCopy.incomeCategoryHeaders],
+        ...buildCategoryRows(report.incomeCategories, "income"),
+      ],
       CategorySummaryColumnWidths,
       { currencyColumns: [1], percentColumns: [2] },
     ),
@@ -269,11 +281,11 @@ function buildRootRelationshipsXml() {
 function buildWorkbookRelationshipsXml(sheetCount: number) {
   const sheetRelationships = Array.from({ length: sheetCount }, (_, index) => {
     const sheetNumber = index + 1;
-    return [WorksheetRelationshipType, `worksheets/sheet${sheetNumber}.xml`, `rId${sheetNumber}`] as [
-      string,
-      string,
-      string,
-    ];
+    return [
+      WorksheetRelationshipType,
+      `worksheets/sheet${sheetNumber}.xml`,
+      `rId${sheetNumber}`,
+    ] as [string, string, string];
   });
 
   return buildRelationshipsXml([
@@ -343,8 +355,16 @@ function buildRowXml(
   const rowNumber = rowIndex + 1;
   const cells = row
     .map((value, columnIndex) =>
-      buildCellXml(value, encodeCellReference(columnIndex, rowNumber), formattedColumns,
-        table && rowIndex === 0 ? ReportSheetStyle.header : !table && columnIndex === 0 ? ReportSheetStyle.label : undefined),
+      buildCellXml(
+        value,
+        encodeCellReference(columnIndex, rowNumber),
+        formattedColumns,
+        table && rowIndex === 0
+          ? ReportSheetStyle.header
+          : !table && columnIndex === 0
+            ? ReportSheetStyle.label
+            : undefined,
+      ),
     )
     .join("");
   const isNote = row[0] === AnnualReportCopy.summaryRows.note;
@@ -360,7 +380,9 @@ function buildCellXml(
   if (value instanceof Date) {
     const millisecondsPerDay = 86_400_000;
     const excelEpoch = Date.UTC(1899, 11, 30);
-    const serial = (Date.UTC(value.getFullYear(), value.getMonth(), value.getDate()) - excelEpoch) / millisecondsPerDay;
+    const serial =
+      (Date.UTC(value.getFullYear(), value.getMonth(), value.getDate()) - excelEpoch) /
+      millisecondsPerDay;
     return `<c r="${cellReference}" s="${ReportSheetStyle.date}"><v>${serial}</v></c>`;
   }
   if (typeof value === "number") {
@@ -401,10 +423,12 @@ function encodeColumnName(columnIndex: number) {
 
 function decodeColumnIndex(cellReference: string) {
   const columnName = cellReference.match(/^[A-Z]+/)?.[0] ?? "A";
-  return [...columnName].reduce(
-    (columnIndex, character) => columnIndex * 26 + character.charCodeAt(0) - 64,
-    0,
-  ) - 1;
+  return (
+    [...columnName].reduce(
+      (columnIndex, character) => columnIndex * 26 + character.charCodeAt(0) - 64,
+      0,
+    ) - 1
+  );
 }
 
 function createTextEntry(name: string, text: string): XlsxZipEntry {

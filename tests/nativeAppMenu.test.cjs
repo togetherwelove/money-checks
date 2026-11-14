@@ -40,7 +40,8 @@ for (const showAnnualReportDownload of [false, true]) {
       for (const item of items) {
         assert.equal(getAppMenuItemId(item), item.targetScreen ?? item.action);
         assert.ok(item.label);
-        assert.ok(item.icon);
+        if (item.action === "annual-report-download") assert.equal(item.icon, undefined);
+        else assert.ok(item.icon);
       }
     },
   );

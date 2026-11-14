@@ -13,6 +13,7 @@ export async function authorizeAppleAccountDeletion(): Promise<string | undefine
   const credential = await AppleAuthentication.signInAsync().catch(() => {
     throw new Error(AccountDeletionMessages.appleAuthorizationFailed);
   });
-  if (!credential.authorizationCode) throw new Error(AccountDeletionMessages.appleAuthorizationFailed);
+  if (!credential.authorizationCode)
+    throw new Error(AccountDeletionMessages.appleAuthorizationFailed);
   return credential.authorizationCode;
 }

@@ -1,8 +1,9 @@
+import { useAppTheme } from "../../hooks/useAppTheme";
 import { Text, TextInput, View } from "react-native";
 
 import { AppMessages } from "../../constants/messages";
 import { ActionButton } from "../ActionButton";
-import { sharedLedgerPanelStyles as styles } from "./sharedLedgerPanelStyles";
+import { getSharedLedgerPanelStyles } from "./sharedLedgerPanelStyles";
 
 type SharedLedgerJoinCardProps = {
   disabled?: boolean;
@@ -17,10 +18,16 @@ export function SharedLedgerJoinCard({
   onJoin,
   shareCodeInput,
 }: SharedLedgerJoinCardProps) {
+  useAppTheme();
   return (
-    <View style={[styles.section, styles.sectionContentInset]}>
-      <Text style={styles.sectionTitle}>{AppMessages.accountJoinTitle}</Text>
-      <Text style={styles.helpText}>{AppMessages.accountJoinSubtitle}</Text>
+    <View
+      style={[
+        getSharedLedgerPanelStyles().section,
+        getSharedLedgerPanelStyles().sectionContentInset,
+      ]}
+    >
+      <Text style={getSharedLedgerPanelStyles().sectionTitle}>{AppMessages.accountJoinTitle}</Text>
+      <Text style={getSharedLedgerPanelStyles().helpText}>{AppMessages.accountJoinSubtitle}</Text>
       <TextInput
         autoCapitalize="characters"
         editable={!disabled}
@@ -28,11 +35,14 @@ export function SharedLedgerJoinCard({
         onSubmitEditing={onJoin}
         placeholder={AppMessages.accountJoinPlaceholder}
         returnKeyType="done"
-        style={[styles.input, disabled ? styles.disabledInput : null]}
+        style={[
+          getSharedLedgerPanelStyles().input,
+          disabled ? getSharedLedgerPanelStyles().disabledInput : null,
+        ]}
         submitBehavior="blurAndSubmit"
         value={shareCodeInput}
       />
-      <View style={styles.actionRow}>
+      <View style={getSharedLedgerPanelStyles().actionRow}>
         <ActionButton disabled={disabled} label={AppMessages.accountJoinAction} onPress={onJoin} />
       </View>
     </View>

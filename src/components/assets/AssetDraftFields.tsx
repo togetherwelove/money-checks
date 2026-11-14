@@ -1,8 +1,9 @@
+import { useAppTheme } from "../../hooks/useAppTheme";
 import { Pressable, Text, TextInput, View } from "react-native";
 import { AssetConfig, AssetCopy as Copy } from "../../constants/assets";
 import { AppSettingsUi } from "../../constants/appSettings";
-import { AssetStyles as styles } from "../../constants/assetStyles";
-import { AppColors } from "../../constants/colors";
+import { getAssetStyles } from "../../constants/assetStyles";
+import { getAppColors } from "../../constants/colors";
 import type { AssetDraft } from "../../types/asset";
 import { assetAmount, formatAssetAmount, isAssetDebt } from "../../utils/assets";
 import { EntryDateSelector } from "../EntryDateSelector";
@@ -30,13 +31,14 @@ export function AssetDraftFields({
   bookId?: string;
   shared?: boolean;
 }) {
+  const colorScheme = useAppTheme();
   function field({ key, label, numeric = false }: Field) {
     return (
-      <View key={key} style={styles.section}>
-        <Text style={styles.label}>{label}</Text>
+      <View key={key} style={getAssetStyles().section}>
+        <Text style={getAssetStyles().label}>{label}</Text>
         <TextInput
           accessibilityLabel={label}
-          style={styles.input}
+          style={getAssetStyles().input}
           value={
             numeric && draft[key]
               ? formatDecimalAmountInput(draft[key], AssetConfig.currency)
@@ -45,7 +47,7 @@ export function AssetDraftFields({
           placeholder={key === "name" ? Copy.contentExamples[draft.kind] : undefined}
           editable={!disabled}
           keyboardType={numeric ? "decimal-pad" : "default"}
-          keyboardAppearance="light"
+          keyboardAppearance={colorScheme}
           maxLength={
             key === "name"
               ? AssetConfig.nameMaxLength
@@ -76,7 +78,7 @@ export function AssetDraftFields({
     additional.push({ key: "maturity", label: Copy.maturity });
   return (
     <>
-      <Text style={styles.label}>{Copy.date}</Text>
+      <Text style={getAssetStyles().label}>{Copy.date}</Text>
       <View pointerEvents={disabled ? "none" : "auto"}>
         <EntryDateSelector
           inline
@@ -99,22 +101,24 @@ export function AssetDraftFields({
                 : Copy.amount,
         numeric: true,
       })}
-      {draft.kind === "stock" ? <Text style={styles.hint}>{Copy.stockHint}</Text> : null}
+      {draft.kind === "stock" ? <Text style={getAssetStyles().hint}>{Copy.stockHint}</Text> : null}
       {["property", "car", "other"].includes(draft.kind) ? (
-        <Text style={styles.hint}>{Copy.valuationHint}</Text>
+        <Text style={getAssetStyles().hint}>{Copy.valuationHint}</Text>
       ) : null}
-      {draft.kind === "cash" ? <Text style={styles.hint}>{Copy.cashHint}</Text> : null}
+      {draft.kind === "cash" ? <Text style={getAssetStyles().hint}>{Copy.cashHint}</Text> : null}
       {draft.kind === "property" ? (
         <>
           {field({ key: "share", label: Copy.share, numeric: true })}
-          <Text style={styles.hint}>{Copy.propertyHint}</Text>
+          <Text style={getAssetStyles().hint}>{Copy.propertyHint}</Text>
         </>
       ) : null}
-      {isAssetDebt(draft.kind) ? <Text style={styles.hint}>{Copy.debtHint}</Text> : null}
+      {isAssetDebt(draft.kind) ? <Text style={getAssetStyles().hint}>{Copy.debtHint}</Text> : null}
       {Number.isFinite(amount) ? (
-        <View style={styles.row}>
-          <Text style={styles.label}>{Copy.reflected}</Text>
-          <Text style={isAssetDebt(draft.kind) ? styles.debtHeading : styles.title}>
+        <View style={getAssetStyles().row}>
+          <Text style={getAssetStyles().label}>{Copy.reflected}</Text>
+          <Text
+            style={isAssetDebt(draft.kind) ? getAssetStyles().debtHeading : getAssetStyles().title}
+          >
             {formatAssetAmount(isAssetDebt(draft.kind) ? -amount : amount)}
           </Text>
         </View>
@@ -134,13 +138,13 @@ export function AssetDraftFields({
         accessibilityState={{ expanded }}
         disabled={disabled}
         onPress={onToggleDetails}
-        style={styles.row}
+        style={getAssetStyles().row}
       >
-        <Text style={styles.action}>{expanded ? Copy.collapse : Copy.details}</Text>
+        <Text style={getAssetStyles().action}>{expanded ? Copy.collapse : Copy.details}</Text>
         <Feather
           name={expanded ? "chevron-up" : "chevron-down"}
           size={AppSettingsUi.selectionChevronIconSize}
-          color={AppColors.primary}
+          color={getAppColors().primary}
         />
       </Pressable>
       {expanded ? (

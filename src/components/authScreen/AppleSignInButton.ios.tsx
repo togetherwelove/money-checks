@@ -1,31 +1,42 @@
+import { FixedColors } from "../../constants/fixedColors";
 import * as AppleAuthentication from "expo-apple-authentication";
 import { useEffect, useState } from "react";
-import { StyleSheet } from "react-native";
+import { SymbolView } from "expo-symbols";
 
 import { AuthControls } from "../../constants/authControls";
+import { ProviderSignInButton } from "./ProviderSignInButton";
 
 export function AppleSignInButton({ onPress }: { onPress: () => void | Promise<void> }) {
   const [available, setAvailable] = useState(false);
   useEffect(() => {
     let mounted = true;
     void AppleAuthentication.isAvailableAsync()
-      .then((value) => { if (mounted) setAvailable(value); })
-      .catch(() => { if (mounted) setAvailable(false); });
-    return () => { mounted = false; };
+      .then((value) => {
+        if (mounted) setAvailable(value);
+      })
+      .catch(() => {
+        if (mounted) setAvailable(false);
+      });
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   if (!available) return null;
   return (
-    <AppleAuthentication.AppleAuthenticationButton
-      buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
-      buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
-      cornerRadius={AuthControls.borderRadius}
-      onPress={() => { void onPress(); }}
-      style={styles.button}
+    <ProviderSignInButton
+      dark
+      label="Apple로 로그인"
+      onPress={onPress}
+      icon={
+        <SymbolView
+          name={AuthControls.appleLogoSymbol}
+          tintColor={FixedColors.white}
+          size={AuthControls.providerIconSize}
+          resizeMode="scaleAspectFit"
+          style={{ width: AuthControls.providerIconSize, height: AuthControls.providerIconSize }}
+        />
+      }
     />
   );
 }
-
-const styles = StyleSheet.create({
-  button: { width: "100%", height: AuthControls.appleButtonHeight },
-});

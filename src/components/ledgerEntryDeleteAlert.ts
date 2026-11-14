@@ -3,38 +3,28 @@ import { Alert } from "react-native";
 import { InstallmentStatuses } from "../constants/installments";
 import { AppMessages } from "../constants/messages";
 import type { LedgerEntry } from "../types/ledger";
-import {
-  LedgerEntryDeleteScopes,
-  type LedgerEntryDeleteScope,
-} from "../types/ledgerEntryDeletion";
+import { LedgerEntryDeleteScopes, type LedgerEntryDeleteScope } from "../types/ledgerEntryDeletion";
 
-type ConfirmLedgerEntryDelete = (
-  entry: LedgerEntry,
-  scope: LedgerEntryDeleteScope,
-) => unknown;
+type ConfirmLedgerEntryDelete = (entry: LedgerEntry, scope: LedgerEntryDeleteScope) => unknown;
 
 export function showLedgerEntryDeleteAlert(
   entry: LedgerEntry,
   onConfirmDelete: ConfirmLedgerEntryDelete,
 ) {
   if (!entry.installmentGroupId) {
-    Alert.alert(
-      AppMessages.editorDeleteConfirmTitle,
-      AppMessages.editorDeleteConfirmMessage,
-      [
-        {
-          style: "cancel",
-          text: AppMessages.editorDeleteCancelAction,
+    Alert.alert(AppMessages.editorDeleteConfirmTitle, AppMessages.editorDeleteConfirmMessage, [
+      {
+        style: "cancel",
+        text: AppMessages.editorDeleteCancelAction,
+      },
+      {
+        onPress: () => {
+          void onConfirmDelete(entry, LedgerEntryDeleteScopes.single);
         },
-        {
-          onPress: () => {
-            void onConfirmDelete(entry, LedgerEntryDeleteScopes.single);
-          },
-          style: "destructive",
-          text: AppMessages.editorDeleteConfirmAction,
-        },
-      ],
-    );
+        style: "destructive",
+        text: AppMessages.editorDeleteConfirmAction,
+      },
+    ]);
     return;
   }
 

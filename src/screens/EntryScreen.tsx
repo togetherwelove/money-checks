@@ -1,9 +1,11 @@
+import { createThemeValue } from "../lib/appTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
 import { AppScrollBehavior } from "../constants/scroll";
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
 
 import { LedgerEntryForm } from "../components/LedgerEntryForm";
-import { AppColors } from "../constants/colors";
+import { getAppColors } from "../constants/colors";
 import { InstallmentStatuses } from "../constants/installments";
 import { ENTRY_PHOTO_LIMIT, EntryPhotoCopy } from "../constants/entryPhotos";
 import { KeyboardLayout } from "../constants/keyboard";
@@ -36,6 +38,8 @@ export function EntryScreen({
   onPrepayInstallmentEntry,
   state,
 }: EntryScreenProps) {
+  const styles = getStyles();
+  useAppTheme();
   const [members, setMembers] = useState<LedgerBookMember[]>([]);
   const {
     draft,
@@ -173,7 +177,8 @@ export function EntryScreen({
   );
 
   return (
-    <ScrollView {...AppScrollBehavior}
+    <ScrollView
+      {...AppScrollBehavior}
       automaticallyAdjustKeyboardInsets
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={styles.content}
@@ -228,32 +233,34 @@ export function EntryScreen({
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: AppColors.screenBackground,
-  },
-  content: {
-    paddingHorizontal: AppLayout.screenPadding,
-    paddingTop: AppLayout.cardContentPadding,
-  },
-  error: {
-    color: AppColors.expense,
-    fontSize: 12,
-  },
-  errorRetry: {
-    gap: 2,
-    alignItems: "flex-start",
-  },
-  errorRetryPressed: {
-    opacity: 0.7,
-  },
-  errorRetryDisabled: {
-    opacity: 0.5,
-  },
-  errorRetryLabel: {
-    color: AppColors.primary,
-    fontSize: 12,
-    fontWeight: "700",
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: getAppColors().screenBackground,
+    },
+    content: {
+      paddingHorizontal: AppLayout.screenPadding,
+      paddingTop: AppLayout.cardContentPadding,
+    },
+    error: {
+      color: getAppColors().expense,
+      fontSize: 12,
+    },
+    errorRetry: {
+      gap: 2,
+      alignItems: "flex-start",
+    },
+    errorRetryPressed: {
+      opacity: 0.7,
+    },
+    errorRetryDisabled: {
+      opacity: 0.5,
+    },
+    errorRetryLabel: {
+      color: getAppColors().primary,
+      fontSize: 12,
+      fontWeight: "700",
+    },
+  }),
+);

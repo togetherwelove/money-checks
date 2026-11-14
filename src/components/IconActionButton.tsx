@@ -1,10 +1,11 @@
+import { useAppTheme } from "../hooks/useAppTheme";
 import type { CategoryIconName } from "../types/category";
 import { Feather } from "./AppIcons";
 import type { ReactNode } from "react";
 import { Pressable, type PressableProps, StyleSheet } from "react-native";
 
 import { AuthControls } from "../constants/authControls";
-import { AppColors } from "../constants/colors";
+import { getAppColors } from "../constants/colors";
 
 export const ICON_ACTION_BUTTON_SIZE = AuthControls.controlHeight;
 export const ICON_ACTION_BUTTON_COMPACT_SIZE = 28;
@@ -32,6 +33,7 @@ export function IconActionButton({
   onPress,
   size = "default",
 }: IconActionButtonProps) {
+  useAppTheme();
   return (
     <Pressable
       accessibilityLabel={accessibilityLabel}
@@ -47,11 +49,13 @@ export function IconActionButton({
         disabled && dimWhenDisabled && styles.disabledButton,
       ]}
     >
-      {iconContent ?? <Feather
-        color={isActive ? AppColors.primary : AppColors.mutedText}
-        name={icon}
-        size={size === "compact" ? 16 : 18}
-      />}
+      {iconContent ?? (
+        <Feather
+          color={isActive ? getAppColors().primary : getAppColors().mutedText}
+          name={icon}
+          size={size === "compact" ? 16 : 18}
+        />
+      )}
     </Pressable>
   );
 }

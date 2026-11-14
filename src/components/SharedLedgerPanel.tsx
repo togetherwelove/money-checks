@@ -1,3 +1,4 @@
+import { useAppTheme } from "../hooks/useAppTheme";
 import { useState } from "react";
 import { Alert, View } from "react-native";
 
@@ -11,10 +12,7 @@ import {
 } from "../constants/subscription";
 import { useLedgerBookNickname } from "../hooks/useLedgerBookNickname";
 import { showNativeToast } from "../lib/nativeToast";
-import {
-  isValidLedgerShareCode,
-  normalizeLedgerShareCode,
-} from "../lib/ledgerShareCode";
+import { isValidLedgerShareCode, normalizeLedgerShareCode } from "../lib/ledgerShareCode";
 import { fetchOwnProfileDisplayName } from "../lib/profiles";
 import {
   resolveJoinPreviewConfirmationKind,
@@ -40,7 +38,7 @@ import type { LedgerBookMember } from "../types/ledgerBookMember";
 import { LedgerBookManagementCard } from "./sharedLedgerPanel/LedgerBookManagementCard";
 import { SharedLedgerBookCard } from "./sharedLedgerPanel/SharedLedgerBookCard";
 import { SharedLedgerJoinCard } from "./sharedLedgerPanel/SharedLedgerJoinCard";
-import { sharedLedgerPanelStyles as styles } from "./sharedLedgerPanel/sharedLedgerPanelStyles";
+import { getSharedLedgerPanelStyles } from "./sharedLedgerPanel/sharedLedgerPanelStyles";
 
 type SharedLedgerPanelProps = {
   badgedBookIds?: readonly string[];
@@ -110,12 +108,12 @@ export function SharedLedgerPanel({
   pendingJoinRequests,
   subscriptionTier,
 }: SharedLedgerPanelProps) {
+  useAppTheme();
   const [shareCodeInput, setShareCodeInput] = useState("");
   const currentMemberRole =
     members.find((member) => member.userId === currentUserId)?.role ??
     (activeBook?.ownerId === currentUserId ? "owner" : null);
-  const canEditBookName =
-    !isReadOnlyDueToPlanLimit && activeBook?.ownerId === currentUserId;
+  const canEditBookName = !isReadOnlyDueToPlanLimit && activeBook?.ownerId === currentUserId;
   const {
     bookNameInput,
     canEditBookName: canEditDisplayedBookName,
@@ -296,7 +294,7 @@ export function SharedLedgerPanel({
   const canLeaveSharedBook = Boolean(activeBook && activeBook.ownerId !== currentUserId);
 
   return (
-    <View style={styles.panel}>
+    <View style={getSharedLedgerPanelStyles().panel}>
       <LedgerBookManagementCard
         badgedBookIds={badgedBookIds}
         accessibleBooks={accessibleBooks}

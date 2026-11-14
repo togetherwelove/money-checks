@@ -12,13 +12,29 @@ type MonthCalendarSectionProps = {
   selectedDate: string;
 };
 
-function MonthCalendarSectionComponent({ isCalendarHeatmapEnabled, isReadOnlyDueToPlanLimit,
-  onCalendarHeightChange, onSelectDate, page, selectedDate }: MonthCalendarSectionProps) {
-  return <View collapsable={false} style={styles.section}
-    onLayout={event => onCalendarHeightChange(page.key, event.nativeEvent.layout.height)}>
-    <MonthCalendar days={page.summary.days} isHeatmapEnabled={isCalendarHeatmapEnabled}
-      isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit} onSelectDate={onSelectDate} selectedDate={selectedDate} />
-  </View>;
+function MonthCalendarSectionComponent({
+  isCalendarHeatmapEnabled,
+  isReadOnlyDueToPlanLimit,
+  onCalendarHeightChange,
+  onSelectDate,
+  page,
+  selectedDate,
+}: MonthCalendarSectionProps) {
+  return (
+    <View
+      collapsable={false}
+      style={styles.section}
+      onLayout={(event) => onCalendarHeightChange(page.key, event.nativeEvent.layout.height)}
+    >
+      <MonthCalendar
+        days={page.summary.days}
+        isHeatmapEnabled={isCalendarHeatmapEnabled}
+        isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
+        onSelectDate={onSelectDate}
+        selectedDate={selectedDate}
+      />
+    </View>
+  );
 }
 
 export const MonthCalendarSection = memo(MonthCalendarSectionComponent);

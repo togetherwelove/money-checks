@@ -1,13 +1,15 @@
+import { createThemeValue } from "../lib/appTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
 import { AppBannerAd } from "../components/AppBannerAd";
 import { ScreenLoadingOverlay } from "../components/ScreenLoadingOverlay";
 import { type ReactNode, useEffect, useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { ChartMonthPager } from "../components/chartScreen/ChartMonthPager";
 import { ChartMonthPageContent } from "../components/chartScreen/ChartMonthPageContent";
-import { AppColors } from "../constants/colors";
+import { getAppColors } from "../constants/colors";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
 import { MonthlyInsightChartCopy } from "../constants/monthlyInsightCharts";
-import { CompactLabelTextStyle } from "../constants/uiStyles";
+import { getCompactLabelTextStyle } from "../constants/uiStyles";
 import { CompactTextProps } from "../constants/textLayout";
 
 type ChartScreenProps = {
@@ -16,12 +18,10 @@ type ChartScreenProps = {
   state: LedgerScreenState;
 };
 
-export function ChartScreen({
-  renderScreenTitle,
-  showsBannerAd,
-  state,
-}: ChartScreenProps) {
-  const bannerAd = useMemo(() => showsBannerAd ? <AppBannerAd /> : null, [showsBannerAd]);
+export function ChartScreen({ renderScreenTitle, showsBannerAd, state }: ChartScreenProps) {
+  const styles = getStyles();
+  useAppTheme();
+  const bannerAd = useMemo(() => (showsBannerAd ? <AppBannerAd /> : null), [showsBannerAd]);
 
   useEffect(() => {
     if (state.currentChartMonth.scope === "all") {
@@ -42,7 +42,9 @@ export function ChartScreen({
         />
       ) : (
         <View style={styles.pagerLayer}>
-          <Text {...CompactTextProps} style={styles.swipeHint}>{MonthlyInsightChartCopy.swipeHint}</Text>
+          <Text {...CompactTextProps} style={styles.swipeHint}>
+            {MonthlyInsightChartCopy.swipeHint}
+          </Text>
           <ChartMonthPager
             activeBookId={state.activeBook?.id ?? null}
             currentMonth={state.currentChartMonth}
@@ -61,22 +63,27 @@ export function ChartScreen({
           />
         </View>
       )}
-      {state.isLoading || state.isLoadingChartEntries ||
-        (state.currentChartMonth.scope === "all" && state.isLoadingTotalSummary) ? <ScreenLoadingOverlay /> : null}
+      {state.isLoading ||
+      state.isLoadingChartEntries ||
+      (state.currentChartMonth.scope === "all" && state.isLoadingTotalSummary) ? (
+        <ScreenLoadingOverlay />
+      ) : null}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  swipeHint: { ...CompactLabelTextStyle, textAlign: "center" },
-  adSlot: { flexShrink: 0 },
-  pagerLayer: {
-    flex: 1,
-    minHeight: 0,
-    overflow: "hidden",
-  },
-  screen: {
-    flex: 1,
-    backgroundColor: AppColors.screenBackground,
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    swipeHint: { ...getCompactLabelTextStyle(), textAlign: "center" },
+    adSlot: { flexShrink: 0 },
+    pagerLayer: {
+      flex: 1,
+      minHeight: 0,
+      overflow: "hidden",
+    },
+    screen: {
+      flex: 1,
+      backgroundColor: getAppColors().screenBackground,
+    },
+  }),
+);

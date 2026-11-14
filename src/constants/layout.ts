@@ -20,4 +20,5 @@ export const AppLayout = {
 
 export const AppScreenTitleUi = {
   selectorIconSize: 18,
+  datePickerFont: { size: 16, weight: "semibold" } as const,
 } as const;

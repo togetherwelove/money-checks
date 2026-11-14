@@ -1,8 +1,9 @@
+import { useAppTheme } from "../hooks/useAppTheme";
 import { MaterialCommunityIcons } from "./AppIcons";
 import { StyleSheet, View } from "react-native";
 
 import {
-  SupportPackageCatalog,
+  getSupportPackageCatalog,
   type SupportPackageIdentifier,
   SupportUi,
 } from "../constants/support";
@@ -12,7 +13,10 @@ type SupportPackageIconProps = {
 };
 
 export function SupportPackageIcon({ identifier }: SupportPackageIconProps) {
-  const packageCatalogItem = SupportPackageCatalog.find((item) => item.identifier === identifier);
+  useAppTheme();
+  const packageCatalogItem = getSupportPackageCatalog().find(
+    (item) => item.identifier === identifier,
+  );
 
   if (!packageCatalogItem) {
     return null;

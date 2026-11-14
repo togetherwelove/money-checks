@@ -1,8 +1,9 @@
+import { useAppTheme } from "../../hooks/useAppTheme";
 import { useEffect, useRef } from "react";
 import { randomUUID } from "expo-crypto";
 import { Pressable, Text, TextInput, View } from "react-native";
 import { AssetLinkConfig as Config, AssetLinkCopy as Copy } from "../../constants/assetLink";
-import { AssetStyles as styles } from "../../constants/assetStyles";
+import { getAssetStyles } from "../../constants/assetStyles";
 import { useAssetLinkOptions } from "../../hooks/useAssetLinkOptions";
 import type { useEntryComposer } from "../../hooks/useEntryComposer";
 import { assetBalance, formatAssetAmount, latestValuation } from "../../utils/assets";
@@ -29,6 +30,7 @@ export function EntryAssetLinkFields({
   disabled?: boolean;
   editingEntryId?: string;
 }) {
+  useAppTheme();
   const { draft, userId, members, update } = composer;
   const canLinkAssets = members.some((member) => member.userId === userId);
   const { portfolio, error, retry } = useAssetLinkOptions(
@@ -126,19 +128,19 @@ export function EntryAssetLinkFields({
     selectLoan,
   ]);
   if (resolveDisplayCurrency() !== AssetConfig.currency)
-    return repayment || link ? <Text style={styles.hint}>{Copy.currency}</Text> : null;
+    return repayment || link ? <Text style={getAssetStyles().hint}>{Copy.currency}</Text> : null;
   if (!canLinkAssets)
     return link ? (
-      <View style={styles.section}>
-        <Text style={styles.hint}>{Copy.personalOnly}</Text>
-        <Text style={styles.hint}>{Copy.disconnectHint}</Text>
+      <View style={getAssetStyles().section}>
+        <Text style={getAssetStyles().hint}>{Copy.personalOnly}</Text>
+        <Text style={getAssetStyles().hint}>{Copy.disconnectHint}</Text>
         <Pressable
           accessibilityRole="button"
           disabled={disabled}
           onPress={() => update("assetLink", undefined)}
-          style={styles.row}
+          style={getAssetStyles().row}
         >
-          <Text style={styles.action}>{Copy.disconnect}</Text>
+          <Text style={getAssetStyles().action}>{Copy.disconnect}</Text>
         </Pressable>
       </View>
     ) : null;
@@ -149,7 +151,7 @@ export function EntryAssetLinkFields({
     ) &&
     !error
   )
-    return <Text style={styles.hint}>{AssetCopy.privateLink}</Text>;
+    return <Text style={getAssetStyles().hint}>{AssetCopy.privateLink}</Text>;
   if (!cash.length && !loans.length && !error && !link) return null;
   const valuation = link?.loanAssetId
     ? latestValuation(portfolio.valuations, link.loanAssetId, draft.date)
@@ -160,17 +162,17 @@ export function EntryAssetLinkFields({
   const details = valuation?.details;
   const suggestion = details ? estimateLoanFromSettings(balance, details, draft.date) : null;
   return (
-    <View style={styles.section} pointerEvents={disabled ? "none" : "auto"}>
+    <View style={getAssetStyles().section} pointerEvents={disabled ? "none" : "auto"}>
       {error ? (
         <Pressable accessibilityRole="button" onPress={retry}>
-          <Text style={styles.error}>
+          <Text style={getAssetStyles().error}>
             {Copy.loadError}
             {Copy.retry}
           </Text>
         </Pressable>
       ) : null}
       {draft.installmentMonths > 1 ? (
-        <Text style={styles.hint}>{Copy.oneTime}</Text>
+        <Text style={getAssetStyles().hint}>{Copy.oneTime}</Text>
       ) : (
         <>
           {cash.length || link?.cashAssetId ? (
@@ -197,7 +199,7 @@ export function EntryAssetLinkFields({
                     <Pressable
                       accessibilityRole="button"
                       disabled={disabled}
-                      style={styles.row}
+                      style={getAssetStyles().row}
                       onPress={() => {
                         const principal = draft.amount
                           ? Math.max(
@@ -211,40 +213,42 @@ export function EntryAssetLinkFields({
                         change({ principal });
                       }}
                     >
-                      <Text style={styles.action}>{Copy.suggest}</Text>
+                      <Text style={getAssetStyles().action}>{Copy.suggest}</Text>
                     </Pressable>
                   ) : (
-                    <Text style={styles.hint}>{Copy.manual}</Text>
+                    <Text style={getAssetStyles().hint}>{Copy.manual}</Text>
                   )}
                   {[
                     { key: "principal", label: Copy.principal },
                     { key: "fee", label: Copy.fee },
                   ].map((field) => (
-                    <View key={field.key} style={styles.section}>
-                      <Text style={styles.label}>{field.label}</Text>
+                    <View key={field.key} style={getAssetStyles().section}>
+                      <Text style={getAssetStyles().label}>{field.label}</Text>
                       <TextInput
                         accessibilityLabel={field.label}
                         keyboardType="decimal-pad"
                         clearButtonMode="while-editing"
                         editable={!disabled}
                         value={link[field.key as "principal" | "fee"]}
-                        style={styles.input}
+                        style={getAssetStyles().input}
                         onChangeText={(value) => change({ [field.key]: value })}
                       />
                     </View>
                   ))}
-                  <View style={styles.row}>
-                    <Text style={styles.label}>{Copy.interest}</Text>
-                    <Text style={styles.text}>{repaymentInterest(draft)}</Text>
+                  <View style={getAssetStyles().row}>
+                    <Text style={getAssetStyles().label}>{Copy.interest}</Text>
+                    <Text style={getAssetStyles().text}>{repaymentInterest(draft)}</Text>
                   </View>
-                  <View style={styles.row}>
-                    <Text style={styles.label}>{Copy.after}</Text>
-                    <Text style={styles.text}>
+                  <View style={getAssetStyles().row}>
+                    <Text style={getAssetStyles().label}>{Copy.after}</Text>
+                    <Text style={getAssetStyles().text}>
                       {formatAssetAmount(balance - Number(link.principal || 0))}
                     </Text>
                   </View>
-                  <Text style={styles.hint}>{Copy.estimate}</Text>
-                  {!link.cashAssetId ? <Text style={styles.hint}>{Copy.noCash}</Text> : null}
+                  <Text style={getAssetStyles().hint}>{Copy.estimate}</Text>
+                  {!link.cashAssetId ? (
+                    <Text style={getAssetStyles().hint}>{Copy.noCash}</Text>
+                  ) : null}
                 </>
               ) : null}
             </>
@@ -252,7 +256,7 @@ export function EntryAssetLinkFields({
         </>
       )}
       {entryAssetLinkError(draft, portfolio, editingEntryId, members.length <= 1) ? (
-        <Text style={styles.error}>
+        <Text style={getAssetStyles().error}>
           {entryAssetLinkError(draft, portfolio, editingEntryId, members.length <= 1)}
         </Text>
       ) : null}

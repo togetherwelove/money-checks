@@ -10,13 +10,13 @@ type IncomeCategoryLabelKey =
   | "sideIncome";
 
 export const INCOME_CATEGORY_LABELS: Record<IncomeCategoryLabelKey, string> = {
-    bonus: "성과급",
-    interest: "이자",
-    other: "기타",
-    refund: "환급",
-    resale: "중고판매",
-    salary: "급여",
-    sideIncome: "부수입",
+  bonus: "성과급",
+  interest: "이자",
+  other: "기타",
+  refund: "환급",
+  resale: "중고판매",
+  salary: "급여",
+  sideIncome: "부수입",
 } as const;
 
 export const INCOME_CATEGORIES = [

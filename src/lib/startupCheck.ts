@@ -22,7 +22,9 @@ export async function runStartupCheck<T>(
         reject(new Error(StartupCopy.timedOut));
         controller.abort();
       }, StartupCheck.timeoutMs);
-      Promise.resolve().then(() => operation(controller.signal)).then(resolve, reject);
+      Promise.resolve()
+        .then(() => operation(controller.signal))
+        .then(resolve, reject);
     });
   } finally {
     clearTimeout(timer);

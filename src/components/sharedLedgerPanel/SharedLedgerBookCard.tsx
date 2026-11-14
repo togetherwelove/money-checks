@@ -1,8 +1,9 @@
+import { useAppTheme } from "../../hooks/useAppTheme";
 import { Feather } from "../AppIcons";
 import { useEffect, useRef, useState } from "react";
 import { Text, TextInput, View } from "react-native";
 
-import { AppColors } from "../../constants/colors";
+import { getAppColors } from "../../constants/colors";
 import { AppMessages } from "../../constants/messages";
 import { ShareLedgerMessages } from "../../constants/shareLedgerMessages";
 import { SharedLedgerPanelUi } from "../../constants/sharedLedgerPanel";
@@ -15,7 +16,7 @@ import type {
 import { ActionButton } from "../ActionButton";
 import { IconActionButton } from "../IconActionButton";
 import { LedgerBookJoinRequests } from "../LedgerBookJoinRequests";
-import { sharedLedgerPanelStyles as styles } from "./sharedLedgerPanelStyles";
+import { getSharedLedgerPanelStyles } from "./sharedLedgerPanelStyles";
 
 type SharedLedgerBookCardProps = {
   activeBook: LedgerBook | null;
@@ -48,6 +49,7 @@ export function SharedLedgerBookCard({
   onSaveBookName,
   pendingJoinRequests,
 }: SharedLedgerBookCardProps) {
+  useAppTheme();
   const [isEditingBookName, setIsEditingBookName] = useState(false);
   const [isCopying, setIsCopying] = useState(false);
   const copyInProgress = useRef(false);
@@ -56,7 +58,9 @@ export function SharedLedgerBookCard({
   currentBook.current = activeBook;
   useEffect(() => {
     mounted.current = true;
-    return () => { mounted.current = false; };
+    return () => {
+      mounted.current = false;
+    };
   }, []);
   const shareCode = activeBook?.shareCode ?? null;
   const shouldShowJoinRequests = isOwner && Boolean(pendingJoinRequests.length);
@@ -71,8 +75,14 @@ export function SharedLedgerBookCard({
     setIsCopying(true);
     const bookId = activeBook?.id;
     try {
-      await copyLedgerShareCode(shareCode, onBeforeCopyShareCode, () => mounted.current &&
-        currentBook.current?.id === bookId && currentBook.current?.shareCode === shareCode);
+      await copyLedgerShareCode(
+        shareCode,
+        onBeforeCopyShareCode,
+        () =>
+          mounted.current &&
+          currentBook.current?.id === bookId &&
+          currentBook.current?.shareCode === shareCode,
+      );
     } finally {
       copyInProgress.current = false;
       if (mounted.current) setIsCopying(false);
@@ -97,11 +107,18 @@ export function SharedLedgerBookCard({
   };
 
   return (
-    <View style={[styles.section, styles.primarySection]}>
-      <View style={[styles.sectionHeader, hasDetails ? null : styles.sectionBottomInset]}>
+    <View
+      style={[getSharedLedgerPanelStyles().section, getSharedLedgerPanelStyles().primarySection]}
+    >
+      <View
+        style={[
+          getSharedLedgerPanelStyles().sectionHeader,
+          hasDetails ? null : getSharedLedgerPanelStyles().sectionBottomInset,
+        ]}
+      >
         {canEditBookName ? (
           isEditingBookName ? (
-            <View style={styles.bookNameEditRow}>
+            <View style={getSharedLedgerPanelStyles().bookNameEditRow}>
               <TextInput
                 autoCapitalize="words"
                 autoComplete="off"
@@ -112,20 +129,23 @@ export function SharedLedgerBookCard({
                 placeholder="가계부 이름 입력"
                 returnKeyType="done"
                 spellCheck={false}
-                style={styles.bookNameHeaderInput}
+                style={getSharedLedgerPanelStyles().bookNameHeaderInput}
                 submitBehavior="blurAndSubmit"
                 textContentType="none"
                 value={bookNameInput}
               />
-              <View style={styles.bookNameActionSlot}>
-                <Text onPress={handleCancelEditingBookName} style={styles.bookNameCancelAction}>
+              <View style={getSharedLedgerPanelStyles().bookNameActionSlot}>
+                <Text
+                  onPress={handleCancelEditingBookName}
+                  style={getSharedLedgerPanelStyles().bookNameCancelAction}
+                >
                   취소
                 </Text>
               </View>
             </View>
           ) : (
-            <View style={styles.bookNameRow}>
-              <Text numberOfLines={1} style={styles.bookName}>
+            <View style={getSharedLedgerPanelStyles().bookNameRow}>
+              <Text numberOfLines={1} style={getSharedLedgerPanelStyles().bookName}>
                 {bookName ?? "나의 가계부"}
               </Text>
               <IconActionButton
@@ -137,26 +157,41 @@ export function SharedLedgerBookCard({
             </View>
           )
         ) : (
-          <Text numberOfLines={1} style={[styles.bookName, styles.bookNameHeaderTitle]}>
+          <Text
+            numberOfLines={1}
+            style={[
+              getSharedLedgerPanelStyles().bookName,
+              getSharedLedgerPanelStyles().bookNameHeaderTitle,
+            ]}
+          >
             {bookName ?? AppMessages.accountBookFallback}
           </Text>
         )}
       </View>
       {shareCode ? (
-        <View style={[styles.codeBlock, shouldShowJoinRequests ? null : styles.sectionBottomInset]}>
-          <Text style={styles.helpText}>{AppMessages.accountShareCodeHint}</Text>
-          <View style={styles.shareCodeRow}>
+        <View
+          style={[
+            getSharedLedgerPanelStyles().codeBlock,
+            shouldShowJoinRequests ? null : getSharedLedgerPanelStyles().sectionBottomInset,
+          ]}
+        >
+          <Text style={getSharedLedgerPanelStyles().helpText}>
+            {AppMessages.accountShareCodeHint}
+          </Text>
+          <View style={getSharedLedgerPanelStyles().shareCodeRow}>
             <ActionButton
               fullWidth
               label={ShareLedgerMessages.copyCodeAction}
               labelContent={
-                <View style={styles.copyActionContent}>
+                <View style={getSharedLedgerPanelStyles().copyActionContent}>
                   <Feather
-                    color={AppColors.inverseText}
+                    color={getAppColors().onPrimary}
                     name="copy"
                     size={SharedLedgerPanelUi.copyActionIconSize}
                   />
-                  <Text style={styles.copyActionText}>{ShareLedgerMessages.copyCodeAction}</Text>
+                  <Text style={getSharedLedgerPanelStyles().copyActionText}>
+                    {ShareLedgerMessages.copyCodeAction}
+                  </Text>
                 </View>
               }
               onPress={() => {
@@ -170,7 +205,13 @@ export function SharedLedgerBookCard({
         </View>
       ) : null}
       {shouldShowJoinRequests ? (
-        <View style={[styles.sectionContent, styles.subsection, styles.sectionBottomInset]}>
+        <View
+          style={[
+            getSharedLedgerPanelStyles().sectionContent,
+            getSharedLedgerPanelStyles().subsection,
+            getSharedLedgerPanelStyles().sectionBottomInset,
+          ]}
+        >
           <LedgerBookJoinRequests
             disabled={isReadOnlyDueToPlanLimit}
             onApproveRequest={onApproveJoinRequest}

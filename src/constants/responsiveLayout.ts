@@ -7,11 +7,18 @@ export const ResponsiveLayout = {
   minimumTransactionViewport: HomeScreenUi.transactionMinimumHeight,
 } as const;
 
-export function resolveHomeLayout(width: number, height: number, calendarHeight: number, bottomInset: number) {
+export function resolveHomeLayout(
+  width: number,
+  height: number,
+  calendarHeight: number,
+  bottomInset: number,
+) {
   const split = width >= ResponsiveLayout.splitViewMinWidth;
   return {
     split,
-    scrollCalendarWithEntries: !split && height > 0 &&
+    scrollCalendarWithEntries:
+      !split &&
+      height > 0 &&
       calendarHeight + bottomInset + ResponsiveLayout.minimumTransactionViewport > height,
   };
 }

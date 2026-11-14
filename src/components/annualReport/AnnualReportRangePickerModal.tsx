@@ -1,11 +1,17 @@
+import { createThemeValue } from "../../lib/appTheme";
+import { useAppTheme } from "../../hooks/useAppTheme";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { NativePickerSheet } from "../NativePickerSheet";
-import { AnnualReportCopy, AnnualReportUi, type AnnualReportRangeMode } from "../../constants/annualReport";
+import {
+  AnnualReportCopy,
+  AnnualReportUi,
+  type AnnualReportRangeMode,
+} from "../../constants/annualReport";
 import { AnnualReportPeriodOptions } from "./AnnualReportPeriodOptions";
-import { AppColors } from "../../constants/colors";
+import { getAppColors } from "../../constants/colors";
 import { parseIsoDate, toIsoDate } from "../../utils/calendar";
 
 type AnnualReportRangePickerModalProps = {
@@ -31,6 +37,8 @@ export function AnnualReportRangePickerModal({
   onConfirm,
   startDate,
 }: AnnualReportRangePickerModalProps) {
+  const styles = getStyles();
+  useAppTheme();
   const initialStartDate = useMemo(() => parseIsoDate(startDate), [startDate]);
   const initialEndDate = useMemo(() => parseIsoDate(endDate), [endDate]);
   const [draftStartDate, setDraftStartDate] = useState(initialStartDate);
@@ -53,9 +61,20 @@ export function AnnualReportRangePickerModal({
     <NativePickerSheet
       isOpen={isOpen}
       onClose={onClose}
-      title={selectedYear !== null ? AnnualReportCopy.optionTitle : AnnualReportCopy.customRangeTitle}
-      action={selectedYear === null ? { label: AnnualReportCopy.downloadAction, disabled,
-        onPress: () => { void onConfirm(toIsoDate(draftStartDate), toIsoDate(draftEndDate)); } } : undefined}
+      title={
+        selectedYear !== null ? AnnualReportCopy.optionTitle : AnnualReportCopy.customRangeTitle
+      }
+      action={
+        selectedYear === null
+          ? {
+              label: AnnualReportCopy.exportAction,
+              disabled,
+              onPress: () => {
+                void onConfirm(toIsoDate(draftStartDate), toIsoDate(draftEndDate));
+              },
+            }
+          : undefined
+      }
     >
       {selectedYear !== null ? (
         <AnnualReportPeriodOptions selectedYear={selectedYear} onSelect={onSelectPeriod} />
@@ -114,6 +133,8 @@ function DateFieldButton({
   onPress: () => void;
   value: string;
 }) {
+  const styles = getStyles();
+  useAppTheme();
   return (
     <Pressable
       disabled={disabled}
@@ -128,39 +149,41 @@ function DateFieldButton({
   );
 }
 
-const styles = StyleSheet.create({
-  activeDateFieldButton: {
-    borderColor: AppColors.primary,
-    backgroundColor: AppColors.surfaceMuted,
-  },
-  activeLabel: {
-    color: AppColors.primary,
-  },
-  dateFieldButton: {
-    flex: 1,
-    gap: 4,
-    paddingHorizontal: AnnualReportUi.rangeFieldPaddingHorizontal,
-    paddingVertical: AnnualReportUi.rangeFieldPaddingVertical,
-    borderWidth: AnnualReportUi.rangeFieldBorderWidth,
-    borderColor: AppColors.border,
-    borderRadius: AnnualReportUi.rangeFieldPaddingHorizontal,
-    backgroundColor: AppColors.background,
-  },
-  dateFieldValue: {
-    color: AppColors.text,
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  label: {
-    color: AppColors.mutedText,
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  pickerSlot: {
-    gap: AnnualReportUi.rangePickerGap,
-  },
-  rangeFields: {
-    flexDirection: "row",
-    gap: AnnualReportUi.rangeFieldGap,
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    activeDateFieldButton: {
+      borderColor: getAppColors().primary,
+      backgroundColor: getAppColors().surfaceMuted,
+    },
+    activeLabel: {
+      color: getAppColors().primary,
+    },
+    dateFieldButton: {
+      flex: 1,
+      gap: 4,
+      paddingHorizontal: AnnualReportUi.rangeFieldPaddingHorizontal,
+      paddingVertical: AnnualReportUi.rangeFieldPaddingVertical,
+      borderWidth: AnnualReportUi.rangeFieldBorderWidth,
+      borderColor: getAppColors().border,
+      borderRadius: AnnualReportUi.rangeFieldPaddingHorizontal,
+      backgroundColor: getAppColors().background,
+    },
+    dateFieldValue: {
+      color: getAppColors().text,
+      fontSize: 13,
+      fontWeight: "700",
+    },
+    label: {
+      color: getAppColors().mutedText,
+      fontSize: 12,
+      fontWeight: "700",
+    },
+    pickerSlot: {
+      gap: AnnualReportUi.rangePickerGap,
+    },
+    rangeFields: {
+      flexDirection: "row",
+      gap: AnnualReportUi.rangeFieldGap,
+    },
+  }),
+);

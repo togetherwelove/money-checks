@@ -1,6 +1,8 @@
+import { createThemeValue } from "../lib/appTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
 import { Pressable, StyleSheet, Text } from "react-native";
 
-import { AppColors } from "../constants/colors";
+import { getAppColors } from "../constants/colors";
 import { AppTextBreakProps, CompactTextProps } from "../constants/textLayout";
 
 type TextLinkButtonProps = {
@@ -18,6 +20,8 @@ export function TextLinkButton({
   onPress,
   tone = "default",
 }: TextLinkButtonProps) {
+  const styles = getStyles();
+  useAppTheme();
   return (
     <Pressable
       disabled={disabled}
@@ -38,23 +42,25 @@ export function TextLinkButton({
   );
 }
 
-const styles = StyleSheet.create({
-  button: {
-    alignSelf: "flex-start",
-  },
-  centerButton: {
-    alignSelf: "center",
-  },
-  disabledButton: {
-    opacity: 0.45,
-  },
-  text: {
-    color: AppColors.mutedText,
-    fontSize: 13,
-    fontWeight: "600",
-    textDecorationLine: "underline",
-  },
-  destructiveText: {
-    color: AppColors.expense,
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    button: {
+      alignSelf: "flex-start",
+    },
+    centerButton: {
+      alignSelf: "center",
+    },
+    disabledButton: {
+      opacity: 0.45,
+    },
+    text: {
+      color: getAppColors().mutedText,
+      fontSize: 13,
+      fontWeight: "600",
+      textDecorationLine: "underline",
+    },
+    destructiveText: {
+      color: getAppColors().expense,
+    },
+  }),
+);

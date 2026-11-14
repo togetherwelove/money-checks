@@ -1,6 +1,8 @@
+import { createThemeValue } from "../../lib/appTheme";
+import { useAppTheme } from "../../hooks/useAppTheme";
 import { StyleSheet, Text, View } from "react-native";
 
-import { AppColors } from "../../constants/colors";
+import { getAppColors } from "../../constants/colors";
 import { EmailAuthCopy, EmailSignUpStepUi } from "../../constants/emailAuth";
 
 export type SignUpStep = "agreement" | "credentials" | "otp";
@@ -12,6 +14,8 @@ type SignUpStepIndicatorProps = {
 const SIGN_UP_STEPS: SignUpStep[] = ["agreement", "credentials", "otp"];
 
 export function SignUpStepIndicator({ currentStep }: SignUpStepIndicatorProps) {
+  const styles = getStyles();
+  useAppTheme();
   const currentStepIndex = SIGN_UP_STEPS.indexOf(currentStep);
 
   return (
@@ -56,54 +60,56 @@ function getSignUpStepLabel(step: SignUpStep): string {
   return EmailAuthCopy.signUp.stepOtpLabel;
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: EmailSignUpStepUi.rowGap,
-  },
-  stepGroup: {
-    flexDirection: "row",
-    alignItems: "center",
-    flexShrink: 1,
-    gap: EmailSignUpStepUi.rowGap,
-  },
-  connector: {
-    width: EmailSignUpStepUi.dotSize,
-    height: EmailSignUpStepUi.connectorHeight,
-    backgroundColor: AppColors.border,
-  },
-  activeConnector: {
-    backgroundColor: AppColors.primary,
-  },
-  stepItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: EmailSignUpStepUi.stepGap,
-  },
-  dot: {
-    width: EmailSignUpStepUi.dotSize,
-    height: EmailSignUpStepUi.dotSize,
-    borderRadius: EmailSignUpStepUi.dotSize,
-    borderWidth: EmailSignUpStepUi.dotBorderWidth,
-    borderColor: AppColors.border,
-    backgroundColor: AppColors.surface,
-  },
-  activeDot: {
-    borderColor: AppColors.primary,
-    backgroundColor: AppColors.primary,
-  },
-  completeDot: {
-    borderColor: AppColors.primary,
-    backgroundColor: AppColors.primary,
-  },
-  label: {
-    color: AppColors.mutedText,
-    fontSize: EmailSignUpStepUi.labelFontSize,
-    fontWeight: "700",
-    lineHeight: EmailSignUpStepUi.labelLineHeight,
-  },
-  activeLabel: {
-    color: AppColors.primary,
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    container: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: EmailSignUpStepUi.rowGap,
+    },
+    stepGroup: {
+      flexDirection: "row",
+      alignItems: "center",
+      flexShrink: 1,
+      gap: EmailSignUpStepUi.rowGap,
+    },
+    connector: {
+      width: EmailSignUpStepUi.dotSize,
+      height: EmailSignUpStepUi.connectorHeight,
+      backgroundColor: getAppColors().border,
+    },
+    activeConnector: {
+      backgroundColor: getAppColors().primary,
+    },
+    stepItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: EmailSignUpStepUi.stepGap,
+    },
+    dot: {
+      width: EmailSignUpStepUi.dotSize,
+      height: EmailSignUpStepUi.dotSize,
+      borderRadius: EmailSignUpStepUi.dotSize,
+      borderWidth: EmailSignUpStepUi.dotBorderWidth,
+      borderColor: getAppColors().border,
+      backgroundColor: getAppColors().surface,
+    },
+    activeDot: {
+      borderColor: getAppColors().primary,
+      backgroundColor: getAppColors().primary,
+    },
+    completeDot: {
+      borderColor: getAppColors().primary,
+      backgroundColor: getAppColors().primary,
+    },
+    label: {
+      color: getAppColors().mutedText,
+      fontSize: EmailSignUpStepUi.labelFontSize,
+      fontWeight: "700",
+      lineHeight: EmailSignUpStepUi.labelLineHeight,
+    },
+    activeLabel: {
+      color: getAppColors().primary,
+    },
+  }),
+);

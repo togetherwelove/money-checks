@@ -1,9 +1,11 @@
-﻿import { useCallback, useEffect, useState } from "react";
+import { createThemeValue } from "../../lib/appTheme";
+import { useAppTheme } from "../../hooks/useAppTheme";
+import { useCallback, useEffect, useState } from "react";
 import Svg, { Circle, G, Line } from "react-native-svg";
 import { type StyleProp, StyleSheet, Pressable, Text, type TextStyle, View } from "react-native";
 
-import { AppColors } from "../../constants/colors";
-import { CardTitleTextStyle, CompactLabelTextStyle } from "../../constants/uiStyles";
+import { getAppColors } from "../../constants/colors";
+import { getCardTitleTextStyle, getCompactLabelTextStyle } from "../../constants/uiStyles";
 import {
   MonthlyInsightChartCopy,
   MonthlyInsightChartLayout,
@@ -24,6 +26,8 @@ export function MonthlyTrendLineChart({
   title = MonthlyInsightChartCopy.trendTitle,
   trendMonths,
 }: MonthlyTrendLineChartProps) {
+  const styles = getStyles();
+  useAppTheme();
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [plotWidth, setPlotWidth] = useState(0);
   const dismissTooltip = useCallback(() => setSelectedKey(null), []);
@@ -49,9 +53,9 @@ export function MonthlyTrendLineChart({
           {title}
         </Text>
         <View style={styles.legend}>
-          <LegendItem color={AppColors.income} label={MonthlyInsightChartCopy.incomeLabel} />
+          <LegendItem color={getAppColors().income} label={MonthlyInsightChartCopy.incomeLabel} />
           <LegendItem
-            color={AppColors.expense}
+            color={getAppColors().expense}
             label={MonthlyInsightChartCopy.expenseLabel}
             textStyle={expenseTextStyle}
           />
@@ -123,20 +127,20 @@ export function MonthlyTrendLineChart({
                     x2={`${((selectedIndex + 0.5) / trendMonths.length) * 100}%`}
                     y1={0}
                     y2={MonthlyInsightChartLayout.trendLineHeight}
-                    stroke={AppColors.mutedStrongText}
+                    stroke={getAppColors().mutedStrongText}
                     strokeWidth={MonthlyInsightChartLayout.trendGridLineWidth}
                   />
                 ) : null}
                 <TrendLine
                   trendMonths={trendMonths}
                   amountKey="incomeAmount"
-                  color={AppColors.income}
+                  color={getAppColors().income}
                   maxAmount={maxAmount}
                 />
                 <TrendLine
                   trendMonths={trendMonths}
                   amountKey="expenseAmount"
-                  color={AppColors.expense}
+                  color={getAppColors().expense}
                   maxAmount={maxAmount}
                 />
               </Svg>
@@ -193,6 +197,7 @@ function TrendLine({
   color: string;
   maxAmount: number;
 }) {
+  useAppTheme();
   const position = (index: number) => ({
     x: `${((index + 0.5) / trendMonths.length) * 100}%`,
     y:
@@ -238,6 +243,8 @@ function LegendItem({
   label: string;
   textStyle?: StyleProp<TextStyle>;
 }) {
+  const styles = getStyles();
+  useAppTheme();
   return (
     <View style={styles.legendItem}>
       <View style={[styles.legendDot, { backgroundColor: color }]} />
@@ -248,99 +255,101 @@ function LegendItem({
   );
 }
 
-const styles = StyleSheet.create({
-  activeMonth: {
-    color: AppColors.text,
-    fontWeight: "800",
-  },
-  chartFrame: {
-    gap: 12,
-  },
-  chartBody: {
-    height: MonthlyInsightChartLayout.trendLineHeight,
-    justifyContent: "flex-end",
-  },
-  chartContent: {
-    flex: 1,
-    gap: 6,
-    minWidth: 0,
-  },
-  touchLayer: { ...StyleSheet.absoluteFill, flexDirection: "row" },
-  touchColumn: { flex: 1 },
-  linePlot: { overflow: "visible" },
-  gridLayer: {
-    ...StyleSheet.absoluteFill,
-  },
-  gridLine: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    height: MonthlyInsightChartLayout.trendGridLineWidth,
-    backgroundColor: AppColors.border,
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-    flexWrap: "wrap",
-  },
-  legend: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  legendDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 999,
-  },
-  legendItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  legendText: {
-    ...CompactLabelTextStyle,
-  },
-  monthLabel: {
-    ...CompactLabelTextStyle,
-    flex: 1,
-    minWidth: 0,
-    textAlign: "center",
-  },
-  monthLabelRow: {
-    flexDirection: "row",
-  },
-  plotRow: {
-    flexDirection: "row",
-    gap: MonthlyInsightChartLayout.trendYAxisGap,
-    paddingTop: MonthlyInsightChartLayout.trendYAxisLabelLineHeight / 2,
-  },
-  section: {
-    gap: 8,
-  },
-  sectionTitle: {
-    ...CardTitleTextStyle,
-  },
-  yAxis: {
-    alignItems: "flex-end",
-    height: MonthlyInsightChartLayout.trendLineHeight,
-  },
-  yAxisLabel: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    transform: [{ translateY: MonthlyInsightChartLayout.trendYAxisLabelLineHeight / 2 }],
-    height: MonthlyInsightChartLayout.trendYAxisLabelLineHeight,
-    lineHeight: MonthlyInsightChartLayout.trendYAxisLabelLineHeight,
-    color: AppColors.mutedText,
-    textAlign: "right",
-  },
-  axisMeasurement: { opacity: 0 },
-  axisText: {
-    fontSize: MonthlyInsightChartLayout.trendYAxisLabelFontSize,
-    fontWeight: "600",
-    lineHeight: MonthlyInsightChartLayout.trendYAxisLabelLineHeight,
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    activeMonth: {
+      color: getAppColors().text,
+      fontWeight: "800",
+    },
+    chartFrame: {
+      gap: 12,
+    },
+    chartBody: {
+      height: MonthlyInsightChartLayout.trendLineHeight,
+      justifyContent: "flex-end",
+    },
+    chartContent: {
+      flex: 1,
+      gap: 6,
+      minWidth: 0,
+    },
+    touchLayer: { ...StyleSheet.absoluteFill, flexDirection: "row" },
+    touchColumn: { flex: 1 },
+    linePlot: { overflow: "visible" },
+    gridLayer: {
+      ...StyleSheet.absoluteFill,
+    },
+    gridLine: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      height: MonthlyInsightChartLayout.trendGridLineWidth,
+      backgroundColor: getAppColors().border,
+    },
+    headerRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 12,
+      flexWrap: "wrap",
+    },
+    legend: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+    },
+    legendDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 999,
+    },
+    legendItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+    },
+    legendText: {
+      ...getCompactLabelTextStyle(),
+    },
+    monthLabel: {
+      ...getCompactLabelTextStyle(),
+      flex: 1,
+      minWidth: 0,
+      textAlign: "center",
+    },
+    monthLabelRow: {
+      flexDirection: "row",
+    },
+    plotRow: {
+      flexDirection: "row",
+      gap: MonthlyInsightChartLayout.trendYAxisGap,
+      paddingTop: MonthlyInsightChartLayout.trendYAxisLabelLineHeight / 2,
+    },
+    section: {
+      gap: 8,
+    },
+    sectionTitle: {
+      ...getCardTitleTextStyle(),
+    },
+    yAxis: {
+      alignItems: "flex-end",
+      height: MonthlyInsightChartLayout.trendLineHeight,
+    },
+    yAxisLabel: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      transform: [{ translateY: MonthlyInsightChartLayout.trendYAxisLabelLineHeight / 2 }],
+      height: MonthlyInsightChartLayout.trendYAxisLabelLineHeight,
+      lineHeight: MonthlyInsightChartLayout.trendYAxisLabelLineHeight,
+      color: getAppColors().mutedText,
+      textAlign: "right",
+    },
+    axisMeasurement: { opacity: 0 },
+    axisText: {
+      fontSize: MonthlyInsightChartLayout.trendYAxisLabelFontSize,
+      fontWeight: "600",
+      lineHeight: MonthlyInsightChartLayout.trendYAxisLabelLineHeight,
+    },
+  }),
+);

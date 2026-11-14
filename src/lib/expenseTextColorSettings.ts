@@ -29,7 +29,5 @@ export function writeExpenseTextColorMode(mode: ExpenseTextColorMode): void {
 }
 
 function isExpenseTextColorMode(value: string | null): value is ExpenseTextColorMode {
-  return (
-    value === ExpenseTextColorModes.defaultText || value === ExpenseTextColorModes.expense
-  );
+  return value === ExpenseTextColorModes.defaultText || value === ExpenseTextColorModes.expense;
 }

@@ -1,13 +1,15 @@
+import { createThemeValue } from "../lib/appTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { CardSmsClipboardCopy } from "../constants/cardSmsClipboard";
-import { AppColors } from "../constants/colors";
+import { getAppColors } from "../constants/colors";
 import { EntryAppendCopy as Copy } from "../constants/entryAppend";
 import {
   EntryComposerCopy,
   EntryComposerUi,
   type EntryComposerUnavailableReason,
 } from "../constants/entryComposer";
-import { LedgerEntryRowStyles as Row, LedgerEntryRowUi } from "../constants/ledgerEntryRow";
+import { getLedgerEntryRowStyles, LedgerEntryRowUi } from "../constants/ledgerEntryRow";
 import { AppLayout } from "../constants/layout";
 import { CompactTextProps } from "../constants/textLayout";
 import { useClipboardExpansionAnimation } from "../hooks/useClipboardExpansionAnimation";
@@ -26,6 +28,7 @@ type Props = {
   onAdd: () => void;
   onApplyClipboard: () => void;
   onDismissClipboard: () => void;
+  hintLabel?: string;
 };
 
 export function LedgerEntryAppendRow({
@@ -36,7 +39,10 @@ export function LedgerEntryAppendRow({
   onAdd,
   onApplyClipboard,
   onDismissClipboard,
+  hintLabel,
 }: Props) {
+  const styles = getStyles();
+  useAppTheme();
   const progress = useClipboardExpansionAnimation(Boolean(draft));
   const expenseTextStyle = useExpenseTextColor().textStyle;
   const date = formatSelectedDateWithYear(draft?.date ?? selectedDate);
@@ -47,7 +53,9 @@ export function LedgerEntryAppendRow({
       : unavailableReason === "read-only"
         ? EntryComposerCopy.unavailable
         : EntryComposerCopy.loading
-    : date;
+    : draft
+      ? date
+      : (hintLabel ?? date);
   const title = draft?.content ?? Copy.add;
   return (
     <Animated.View
@@ -65,24 +73,28 @@ export function LedgerEntryAppendRow({
         onPress={() => {
           if (!disabled) (draft ? onApplyClipboard : onAdd)();
         }}
-        style={({ pressed }) => [styles.action, pressed && styles.pressed]}
+        style={({ pressed }) => [
+          styles.action,
+          !draft && styles.addAction,
+          pressed && styles.pressed,
+        ]}
       >
-        <View style={Row.leadingIcon}>
+        <View style={getLedgerEntryRowStyles().leadingIcon}>
           <Feather
             name={draft ? "clipboard" : "plus"}
             size={LedgerEntryRowUi.iconSize}
-            color={AppColors.primary}
+            color={getAppColors().primary}
           />
         </View>
-        <View style={Row.textBlock}>
+        <View style={getLedgerEntryRowStyles().textBlock}>
           <Text
             {...CompactTextProps}
             numberOfLines={1}
-            style={[Row.content, !draft && styles.addTitle]}
+            style={[getLedgerEntryRowStyles().content, !draft && styles.addTitle]}
           >
             {title}
           </Text>
-          <Text {...CompactTextProps} numberOfLines={1} style={Row.meta}>
+          <Text {...CompactTextProps} numberOfLines={1} style={getLedgerEntryRowStyles().meta}>
             {hint}
           </Text>
         </View>
@@ -90,7 +102,10 @@ export function LedgerEntryAppendRow({
           <View style={styles.amountBlock}>
             <Text
               {...CompactTextProps}
-              style={[Row.amount, draft.type === "income" ? styles.income : expenseTextStyle]}
+              style={[
+                getLedgerEntryRowStyles().amount,
+                draft.type === "income" ? styles.income : expenseTextStyle,
+              ]}
             >
               {amount}
             </Text>
@@ -98,13 +113,7 @@ export function LedgerEntryAppendRow({
               {Copy.review}
             </Text>
           </View>
-        ) : (
-          <Feather
-            name="chevron-right"
-            size={LedgerEntryRowUi.iconSize}
-            color={AppColors.mutedText}
-          />
-        )}
+        ) : null}
       </Pressable>
       {draft ? (
         <IconActionButton
@@ -119,30 +128,33 @@ export function LedgerEntryAppendRow({
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    ...Row.row,
-    borderBottomWidth: 0,
-    marginVertical: AppLayout.compactGap,
-  },
-  outline: {
-    ...StyleSheet.absoluteFill,
-    left: AppLayout.compactGap,
-    right: AppLayout.compactGap,
-    borderWidth: AppLayout.dividerWidth,
-    borderRadius: AppLayout.groupRadius,
-    borderColor: AppColors.border,
-    borderStyle: "dashed",
-    backgroundColor: AppColors.surfaceMuted,
-  },
-  previewOutline: {
-    borderStyle: "solid",
-  },
-  action: { ...Row.body, flex: 1, minHeight: EntryComposerUi.fieldHeight },
-  addTitle: { color: AppColors.primary },
-  amountBlock: { alignItems: "flex-end", gap: Row.textBlock.gap },
-  review: { ...Row.meta, color: AppColors.primary },
-  income: { color: AppColors.income },
-  pressed: { backgroundColor: AppColors.surfaceMuted },
-  disabled: { opacity: EntryComposerUi.disabledOpacity },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    row: {
+      ...getLedgerEntryRowStyles().row,
+      borderBottomWidth: 0,
+      marginVertical: AppLayout.compactGap,
+    },
+    outline: {
+      ...StyleSheet.absoluteFill,
+      left: AppLayout.compactGap,
+      right: AppLayout.compactGap,
+      borderWidth: AppLayout.dividerWidth,
+      borderRadius: AppLayout.groupRadius,
+      borderColor: getAppColors().border,
+      borderStyle: "dashed",
+      backgroundColor: getAppColors().surfaceMuted,
+    },
+    previewOutline: {
+      borderStyle: "solid",
+    },
+    action: { ...getLedgerEntryRowStyles().body, flex: 1, minHeight: EntryComposerUi.fieldHeight },
+    addAction: { paddingLeft: AppLayout.screenPadding },
+    addTitle: { color: getAppColors().primary },
+    amountBlock: { alignItems: "flex-end", gap: getLedgerEntryRowStyles().textBlock.gap },
+    review: { ...getLedgerEntryRowStyles().meta, color: getAppColors().primary },
+    income: { color: getAppColors().income },
+    pressed: { backgroundColor: getAppColors().surfaceMuted },
+    disabled: { opacity: EntryComposerUi.disabledOpacity },
+  }),
+);

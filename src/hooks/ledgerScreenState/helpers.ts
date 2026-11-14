@@ -79,14 +79,8 @@ export async function saveLedgerEntry(params: {
   userId: string;
   syncPhotoAttachments?: boolean;
 }): Promise<LedgerEntry> {
-  const {
-    activeBookId,
-    editingEntryId,
-    entry,
-    syncPhotoAttachments,
-    trackBusyTask,
-    userId,
-  } = params;
+  const { activeBookId, editingEntryId, entry, syncPhotoAttachments, trackBusyTask, userId } =
+    params;
   if (editingEntryId) {
     return trackBusyTask(() => updateLedgerEntry(entry, { syncPhotoAttachments }));
   }

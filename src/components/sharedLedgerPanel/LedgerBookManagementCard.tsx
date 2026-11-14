@@ -1,3 +1,4 @@
+import { useAppTheme } from "../../hooks/useAppTheme";
 import { useState } from "react";
 import { Alert, Pressable, Text, TextInput, View } from "react-native";
 
@@ -19,7 +20,7 @@ import type { LedgerBookMember } from "../../types/ledgerBookMember";
 import { IconActionButton } from "../IconActionButton";
 import { LedgerBookMembers } from "../LedgerBookMembers";
 import { TextLinkButton } from "../TextLinkButton";
-import { sharedLedgerPanelStyles as styles } from "./sharedLedgerPanelStyles";
+import { getSharedLedgerPanelStyles } from "./sharedLedgerPanelStyles";
 
 type LedgerBookManagementCardProps = {
   badgedBookIds?: readonly string[];
@@ -60,6 +61,7 @@ export function LedgerBookManagementCard({
   shouldShowSharedMemberLimitNotice,
   subscriptionTier,
 }: LedgerBookManagementCardProps) {
+  useAppTheme();
   const [newBookName, setNewBookName] = useState("");
   const ownedBookCount = accessibleBooks.filter((book) => book.ownerId === currentUserId).length;
   const accessibleBookCount = accessibleBooks.length;
@@ -213,11 +215,13 @@ export function LedgerBookManagementCard({
   };
 
   return (
-    <View style={styles.section}>
-      <View style={styles.sectionHeader}>
-        <View style={styles.sectionTitleRow}>
-          <Text style={styles.sectionTitle}>{LedgerBookManagementCopy.listTitle}</Text>
-          <Text style={styles.hintText}>
+    <View style={getSharedLedgerPanelStyles().section}>
+      <View style={getSharedLedgerPanelStyles().sectionHeader}>
+        <View style={getSharedLedgerPanelStyles().sectionTitleRow}>
+          <Text style={getSharedLedgerPanelStyles().sectionTitle}>
+            {LedgerBookManagementCopy.listTitle}
+          </Text>
+          <Text style={getSharedLedgerPanelStyles().hintText}>
             {accessibleBookCount}/{accessibleBookLimit}
           </Text>
         </View>
@@ -230,8 +234,8 @@ export function LedgerBookManagementCard({
       </View>
       <View
         style={[
-          styles.ledgerBookList,
-          shouldInsetLedgerBookList ? styles.sectionBottomInset : null,
+          getSharedLedgerPanelStyles().ledgerBookList,
+          shouldInsetLedgerBookList ? getSharedLedgerPanelStyles().sectionBottomInset : null,
         ]}
       >
         {accessibleBooks.length > 0 ? (
@@ -262,37 +266,44 @@ export function LedgerBookManagementCard({
                   }
                 }}
                 style={[
-                  styles.ledgerBookItem,
-                  isReadOnlyBook ? styles.readOnlyLedgerBookItem : null,
-                  isActiveBook ? styles.activeLedgerBookItem : null,
+                  getSharedLedgerPanelStyles().ledgerBookItem,
+                  isReadOnlyBook ? getSharedLedgerPanelStyles().readOnlyLedgerBookItem : null,
+                  isActiveBook ? getSharedLedgerPanelStyles().activeLedgerBookItem : null,
                 ]}
               >
-                <View style={styles.ledgerBookItemContent}>
-                  <View style={styles.ledgerBookItemNameRow}>
+                <View style={getSharedLedgerPanelStyles().ledgerBookItemContent}>
+                  <View style={getSharedLedgerPanelStyles().ledgerBookItemNameRow}>
                     {shouldShowPendingRequestBadge || badgedBookIds?.includes(book.id) ? (
-                      <View accessible accessibilityLabel={NotificationBadgeCopy.unreadBookAccessibilityLabel}
-                        style={styles.pendingRequestBadge} />
+                      <View
+                        accessible
+                        accessibilityLabel={NotificationBadgeCopy.unreadBookAccessibilityLabel}
+                        style={getSharedLedgerPanelStyles().pendingRequestBadge}
+                      />
                     ) : null}
                     <Text
                       numberOfLines={1}
                       style={[
-                        styles.ledgerBookItemName,
-                        isActiveBook ? styles.activeLedgerBookItemName : null,
+                        getSharedLedgerPanelStyles().ledgerBookItemName,
+                        isActiveBook ? getSharedLedgerPanelStyles().activeLedgerBookItemName : null,
                       ]}
                     >
                       {book.name}
                     </Text>
                     {isReadOnlyBook ? (
-                      <View style={styles.readOnlyLedgerBookChip}>
-                        <Text style={styles.readOnlyLedgerBookChipText}>조회 전용</Text>
+                      <View style={getSharedLedgerPanelStyles().readOnlyLedgerBookChip}>
+                        <Text style={getSharedLedgerPanelStyles().readOnlyLedgerBookChipText}>
+                          조회 전용
+                        </Text>
                       </View>
                     ) : null}
                   </View>
-                  <View style={styles.ledgerBookItemMetaRow}>
-                    <Text style={styles.ledgerBookItemMeta}>{ownershipLabel}</Text>
+                  <View style={getSharedLedgerPanelStyles().ledgerBookItemMetaRow}>
+                    <Text style={getSharedLedgerPanelStyles().ledgerBookItemMeta}>
+                      {ownershipLabel}
+                    </Text>
                     {visibleShareCode ? (
-                      <View style={styles.shareCodePreviewRow}>
-                        <Text selectable style={styles.shareCodePreviewValue}>
+                      <View style={getSharedLedgerPanelStyles().shareCodePreviewRow}>
+                        <Text selectable style={getSharedLedgerPanelStyles().shareCodePreviewValue}>
                           {visibleShareCode}
                         </Text>
                       </View>
@@ -313,15 +324,19 @@ export function LedgerBookManagementCard({
             );
           })
         ) : (
-          <Text style={styles.helpText}>{LedgerBookManagementCopy.emptyList}</Text>
+          <Text style={getSharedLedgerPanelStyles().helpText}>
+            {LedgerBookManagementCopy.emptyList}
+          </Text>
         )}
       </View>
       {activeBook ? (
         <View
           style={[
-            styles.ledgerBookList,
-            styles.ledgerBookMembersBlock,
-            shouldUseNativeNamePrompt && !canLeaveSharedBook ? styles.sectionBottomInset : null,
+            getSharedLedgerPanelStyles().ledgerBookList,
+            getSharedLedgerPanelStyles().ledgerBookMembersBlock,
+            shouldUseNativeNamePrompt && !canLeaveSharedBook
+              ? getSharedLedgerPanelStyles().sectionBottomInset
+              : null,
           ]}
         >
           <LedgerBookMembers
@@ -336,7 +351,12 @@ export function LedgerBookManagementCard({
         </View>
       ) : null}
       {!shouldUseNativeNamePrompt ? (
-        <View style={[styles.createBookRow, canLeaveSharedBook ? null : styles.sectionBottomInset]}>
+        <View
+          style={[
+            getSharedLedgerPanelStyles().createBookRow,
+            canLeaveSharedBook ? null : getSharedLedgerPanelStyles().sectionBottomInset,
+          ]}
+        >
           <TextInput
             autoCapitalize="words"
             autoComplete="off"
@@ -350,7 +370,7 @@ export function LedgerBookManagementCard({
             placeholder={LedgerBookManagementCopy.createNamePlaceholder}
             returnKeyType="done"
             spellCheck={false}
-            style={styles.createBookInput}
+            style={getSharedLedgerPanelStyles().createBookInput}
             submitBehavior="blurAndSubmit"
             textContentType="none"
             value={newBookName}
@@ -358,7 +378,12 @@ export function LedgerBookManagementCard({
         </View>
       ) : null}
       {canLeaveSharedBook ? (
-        <View style={[styles.disconnectActionRow, styles.sectionBottomInset]}>
+        <View
+          style={[
+            getSharedLedgerPanelStyles().disconnectActionRow,
+            getSharedLedgerPanelStyles().sectionBottomInset,
+          ]}
+        >
           <TextLinkButton
             label={AppMessages.accountDisconnectAction}
             onPress={() => {
@@ -369,7 +394,12 @@ export function LedgerBookManagementCard({
         </View>
       ) : null}
       {canDeleteActiveBook ? (
-        <View style={[styles.disconnectActionRow, styles.sectionBottomInset]}>
+        <View
+          style={[
+            getSharedLedgerPanelStyles().disconnectActionRow,
+            getSharedLedgerPanelStyles().sectionBottomInset,
+          ]}
+        >
           <TextLinkButton
             label={LedgerBookManagementCopy.deleteAction}
             onPress={handleDeleteActiveLedgerBook}

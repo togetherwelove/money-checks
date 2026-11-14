@@ -1,9 +1,11 @@
+import { createThemeValue } from "../lib/appTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
 import type { ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { AppColors } from "../constants/colors";
+import { getAppColors } from "../constants/colors";
 import { AppTextBreakProps } from "../constants/textLayout";
-import { ScreenTitleTextStyle } from "../constants/uiStyles";
+import { getScreenTitleTextStyle } from "../constants/uiStyles";
 
 type ScreenHeaderBlockProps = {
   action?: ReactNode;
@@ -13,6 +15,8 @@ type ScreenHeaderBlockProps = {
 };
 
 export function ScreenHeaderBlock({ action, eyebrow, subtitle, title }: ScreenHeaderBlockProps) {
+  const styles = getStyles();
+  useAppTheme();
   return (
     <View style={styles.header}>
       {eyebrow ? (
@@ -35,34 +39,36 @@ export function ScreenHeaderBlock({ action, eyebrow, subtitle, title }: ScreenHe
   );
 }
 
-const styles = StyleSheet.create({
-  header: {
-    gap: 4,
-    paddingTop: 8,
-  },
-  eyebrow: {
-    color: AppColors.mutedStrongText,
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 0.4,
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: 12,
-    flexWrap: "wrap",
-  },
-  title: {
-    ...ScreenTitleTextStyle,
-    flex: 1,
-  },
-  action: {
-    flexShrink: 0,
-  },
-  subtitle: {
-    color: AppColors.mutedText,
-    fontSize: 13,
-    lineHeight: 18,
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    header: {
+      gap: 4,
+      paddingTop: 8,
+    },
+    eyebrow: {
+      color: getAppColors().mutedStrongText,
+      fontSize: 11,
+      fontWeight: "700",
+      letterSpacing: 0.4,
+    },
+    titleRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+      gap: 12,
+      flexWrap: "wrap",
+    },
+    title: {
+      ...getScreenTitleTextStyle(),
+      flex: 1,
+    },
+    action: {
+      flexShrink: 0,
+    },
+    subtitle: {
+      color: getAppColors().mutedText,
+      fontSize: 13,
+      lineHeight: 18,
+    },
+  }),
+);

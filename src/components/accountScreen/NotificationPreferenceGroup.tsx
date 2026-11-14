@@ -1,9 +1,14 @@
-import { StyleSheet,Text,View } from "react-native";
-import { MenuStyles } from "../../constants/menuStyles";
+import { createThemeValue } from "../../lib/appTheme";
+import { useAppTheme } from "../../hooks/useAppTheme";
+import { StyleSheet, Text, View } from "react-native";
+import { getMenuStyles } from "../../constants/menuStyles";
 
 import { AppSettingsUi } from "../../constants/appSettings";
 import { OneLineTextFitProps } from "../../constants/textLayout";
-import type { NotificationThresholdKey,NotificationThresholdPeriod } from "../../notifications/domain/notificationEvents";
+import type {
+  NotificationThresholdKey,
+  NotificationThresholdPeriod,
+} from "../../notifications/domain/notificationEvents";
 import type { NotificationPreferenceGroup as NotificationPreferenceGroupState } from "../../notifications/preferences/notificationPreferences";
 import { NotificationPreferenceRow } from "./NotificationPreferenceRow";
 import { NotificationThresholdField } from "./NotificationThresholdField";
@@ -28,6 +33,8 @@ export function NotificationPreferenceGroup({
   onChangeThresholdValue,
   onToggle,
 }: NotificationPreferenceGroupProps) {
+  const styles = getStyles();
+  useAppTheme();
   const thresholdSettings = group.thresholdSettings;
 
   return (
@@ -63,17 +70,19 @@ export function NotificationPreferenceGroup({
   );
 }
 
-const styles = StyleSheet.create({
-  group: {
-    gap: AppSettingsUi.sectionGap,
-  },
-  headingBlock: {
-    minWidth: 0,
-  },
-  title: MenuStyles.sectionTitle,
-  thresholdBlock: {
-    ...MenuStyles.group,
-    paddingHorizontal: MenuStyles.row.paddingHorizontal,
-  },
-  list: MenuStyles.group,
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    group: {
+      gap: AppSettingsUi.sectionGap,
+    },
+    headingBlock: {
+      minWidth: 0,
+    },
+    title: getMenuStyles().sectionTitle,
+    thresholdBlock: {
+      ...getMenuStyles().group,
+      paddingHorizontal: getMenuStyles().row.paddingHorizontal,
+    },
+    list: getMenuStyles().group,
+  }),
+);

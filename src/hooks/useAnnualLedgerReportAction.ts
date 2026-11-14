@@ -2,7 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { Alert } from "react-native";
 
 import { AnnualReportCopy, type AnnualReportRangeMode } from "../constants/annualReport";
-import { buildCustomRangePeriod, buildFirstToLastPeriod, buildSelectedYearPeriod, type AnnualReportPeriod } from "../lib/annualReport/annualReportPeriods";
+import {
+  buildCustomRangePeriod,
+  buildFirstToLastPeriod,
+  buildSelectedYearPeriod,
+  type AnnualReportPeriod,
+} from "../lib/annualReport/annualReportPeriods";
 import { confirmAndDownloadAnnualReport } from "../lib/annualReport/downloadAnnualReport";
 import { fetchAnnualReportEntries } from "../lib/annualReport/fetchAnnualReportEntries";
 import { fetchLedgerEntryDateBounds } from "../lib/ledgerEntries";
@@ -22,9 +27,15 @@ type Params = {
   visibleMonth: Date;
 };
 
-export function useAnnualLedgerReportAction({ activeBook, onBeforeDownloadReport = null, visibleMonth }: Params) {
+export function useAnnualLedgerReportAction({
+  activeBook,
+  onBeforeDownloadReport = null,
+  visibleMonth,
+}: Params) {
   const [periodSelection, setPeriodSelection] = useState<ReportSelection | null>(null);
-  const [customRangeDraft, setCustomRangeDraft] = useState<(ReportSelection & { isOpen: boolean }) | null>(null);
+  const [customRangeDraft, setCustomRangeDraft] = useState<
+    (ReportSelection & { isOpen: boolean }) | null
+  >(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const busy = useRef(false);
   const mounted = useRef(true);
@@ -33,7 +44,9 @@ export function useAnnualLedgerReportAction({ activeBook, onBeforeDownloadReport
 
   useEffect(() => {
     mounted.current = true;
-    return () => { mounted.current = false; };
+    return () => {
+      mounted.current = false;
+    };
   }, []);
   useEffect(() => {
     setPeriodSelection(null);
@@ -55,29 +68,43 @@ export function useAnnualLedgerReportAction({ activeBook, onBeforeDownloadReport
     }
   };
 
-  const handleDownloadReport = () => run(async () => {
-    if (!activeBook) return false;
-    const bounds = await fetchLedgerEntryDateBounds(activeBook.id);
-    if (!mounted.current || activeBookId.current !== activeBook.id) return false;
-    if (!bounds) {
-      Alert.alert(AnnualReportCopy.noEntriesMessage);
-      return false;
-    }
-    setPeriodSelection({ bookId: activeBook.id, bookName: activeBook.name,
-      startDate: bounds.firstDate, endDate: bounds.lastDate, selectedYear: visibleMonth.getFullYear() });
-    return true;
-  });
-
-  const download = (selection: ReportSelection, period: AnnualReportPeriod) => run(async () => {
-    if (activeBookId.current !== selection.bookId) return false;
-    const entries = await fetchAnnualReportEntries(selection.bookId, period.dateFrom, period.dateTo);
-    if (!mounted.current || activeBookId.current !== selection.bookId) return false;
-    const completed = await confirmAndDownloadAnnualReport({
-      bookName: selection.bookName, entries, period, onBeforeDownload: onBeforeDownloadReport,
+  const handleDownloadReport = () =>
+    run(async () => {
+      if (!activeBook) return false;
+      const bounds = await fetchLedgerEntryDateBounds(activeBook.id);
+      if (!mounted.current || activeBookId.current !== activeBook.id) return false;
+      if (!bounds) {
+        Alert.alert(AnnualReportCopy.noEntriesMessage);
+        return false;
+      }
+      setPeriodSelection({
+        bookId: activeBook.id,
+        bookName: activeBook.name,
+        startDate: bounds.firstDate,
+        endDate: bounds.lastDate,
+        selectedYear: visibleMonth.getFullYear(),
+      });
+      return true;
     });
-    if (completed && mounted.current) setCustomRangeDraft(null);
-    return completed;
-  });
+
+  const download = (selection: ReportSelection, period: AnnualReportPeriod) =>
+    run(async () => {
+      if (activeBookId.current !== selection.bookId) return false;
+      const entries = await fetchAnnualReportEntries(
+        selection.bookId,
+        period.dateFrom,
+        period.dateTo,
+      );
+      if (!mounted.current || activeBookId.current !== selection.bookId) return false;
+      const completed = await confirmAndDownloadAnnualReport({
+        bookName: selection.bookName,
+        entries,
+        period,
+        onBeforeDownload: onBeforeDownloadReport,
+      });
+      if (completed && mounted.current) setCustomRangeDraft(null);
+      return completed;
+    });
 
   const handleSelectPeriod = async (mode: AnnualReportRangeMode) => {
     if (!periodSelection || busy.current) return false;
@@ -87,9 +114,12 @@ export function useAnnualLedgerReportAction({ activeBook, onBeforeDownloadReport
       setCustomRangeDraft({ ...selection, isOpen: true });
       return true;
     }
-    return download(selection, mode === "first-to-last"
-      ? buildFirstToLastPeriod(selection.startDate, selection.endDate)
-      : buildSelectedYearPeriod(selection.selectedYear));
+    return download(
+      selection,
+      mode === "first-to-last"
+        ? buildFirstToLastPeriod(selection.startDate, selection.endDate)
+        : buildSelectedYearPeriod(selection.selectedYear),
+    );
   };
 
   const handleConfirmCustomRange = async (startDate: string, endDate: string) => {
@@ -107,7 +137,9 @@ export function useAnnualLedgerReportAction({ activeBook, onBeforeDownloadReport
     handleClosePeriodPicker: () => setPeriodSelection(null),
     handleSelectPeriod,
     customRangeDraft,
-    handleCloseCustomRangePicker: () => { if (!busy.current) setCustomRangeDraft(null); },
+    handleCloseCustomRangePicker: () => {
+      if (!busy.current) setCustomRangeDraft(null);
+    },
     handleConfirmCustomRange,
     handleDownloadReport,
     isDownloading,

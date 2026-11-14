@@ -138,7 +138,7 @@ function editor(save, props = {}) {
       Text: "Text",
       View: "View",
     },
-    "src/constants/assetStyles.ts": { AssetStyles: {} },
+    "src/constants/assetStyles.ts": { getAssetStyles: () => ({}) },
     "src/components/NativeSelectionSheet.tsx": { NativeSelectionSheet: "Sheet" },
     "src/components/KeyboardAwareScrollView.tsx": { KeyboardAwareScrollView: "Scroll" },
     "src/components/assets/AssetDraftFields.tsx": { AssetDraftFields: "Fields" },

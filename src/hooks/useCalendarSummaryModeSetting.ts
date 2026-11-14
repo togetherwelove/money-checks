@@ -9,9 +9,7 @@ import {
 } from "../lib/calendarSummaryModeSettings";
 
 export function useCalendarSummaryModeSetting() {
-  const [calendarSummaryBaseDay, setCalendarSummaryBaseDay] = useState(
-    readCalendarSummaryBaseDay,
-  );
+  const [calendarSummaryBaseDay, setCalendarSummaryBaseDay] = useState(readCalendarSummaryBaseDay);
   const [calendarSummaryMode, setCalendarSummaryMode] = useState(readCalendarSummaryMode);
 
   const updateCalendarSummaryBaseDay = (day: number) => {

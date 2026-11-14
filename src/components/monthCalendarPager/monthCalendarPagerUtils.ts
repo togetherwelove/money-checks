@@ -26,10 +26,7 @@ export function buildMonthPageFromSummary(
   };
 }
 
-export function resolveCalendarHeight(
-  days: MonthlyLedgerSummary["days"],
-  fontScale = 1,
-): number {
+export function resolveCalendarHeight(days: MonthlyLedgerSummary["days"], fontScale = 1): number {
   const visibleWeeks = getVisibleCalendarWeeks(days);
 
   return Math.ceil(

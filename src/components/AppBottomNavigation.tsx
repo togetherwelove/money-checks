@@ -1,6 +1,8 @@
+import { createThemeValue } from "../lib/appTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
 import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { AppColors } from "../constants/colors";
+import { getAppColors } from "../constants/colors";
 import { FooterTabBarUi } from "../constants/menu";
 import { buildFooterTabs } from "../lib/footerTabs";
 import type { AppBottomNavigationProps } from "./AppBottomNavigation.types";
@@ -15,6 +17,8 @@ export function AppBottomNavigation({
   onSelect,
   onLayout,
 }: AppBottomNavigationProps) {
+  const styles = getStyles();
+  useAppTheme();
   const insets = useSafeAreaInsets();
   const selected = tabs.find((tab) => tab.targetScreen === activeScreen)?.targetScreen ?? null;
   return (
@@ -34,12 +38,14 @@ export function AppBottomNavigation({
   );
 }
 
-const styles = StyleSheet.create({
-  root: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: AppColors.screenBackground,
-    paddingHorizontal: FooterTabBarUi.barHorizontalInset,
-  },
-  tabs: { flex: 1 },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    root: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: getAppColors().screenBackground,
+      paddingHorizontal: FooterTabBarUi.barHorizontalInset,
+    },
+    tabs: { flex: 1 },
+  }),
+);

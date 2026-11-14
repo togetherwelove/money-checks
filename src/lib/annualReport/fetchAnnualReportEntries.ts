@@ -24,6 +24,10 @@ export async function fetchAnnualReportEntries(bookId: string, dateFrom: string,
     if (!last.createdAt) throw new Error(AnnualReportCopy.incompleteDataMessage);
     cursor = { createdAt: last.createdAt, id: last.id };
   }
-  return entries.sort((a, b) => a.date.localeCompare(b.date)
-    || (a.createdAt ?? "").localeCompare(b.createdAt ?? "") || a.id.localeCompare(b.id));
+  return entries.sort(
+    (a, b) =>
+      a.date.localeCompare(b.date) ||
+      (a.createdAt ?? "").localeCompare(b.createdAt ?? "") ||
+      a.id.localeCompare(b.id),
+  );
 }

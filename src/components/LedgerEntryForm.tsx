@@ -1,3 +1,5 @@
+import { createThemeValue } from "../lib/appTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
 import { useEffect, useRef, useState } from "react";
 import { Keyboard, StyleSheet, Text, TextInput, View } from "react-native";
 import type { TextInputInstance } from "react-native";
@@ -5,14 +7,11 @@ import type { TextInputInstance } from "react-native";
 import { CategorySelector } from "../components/CategorySelector";
 import { EntryTargetMemberSelector } from "../components/EntryTargetMemberSelector";
 import { CATEGORY_OPTIONS } from "../constants/categories";
-import { AppColors } from "../constants/colors";
+import { getAppColors } from "../constants/colors";
 import { EntryRegistrationCopy } from "../constants/entryRegistration";
 import { AppLayout } from "../constants/layout";
 import { AppMessages } from "../constants/messages";
-import {
-  FormLabelTextStyle,
-  UnderlineFormInputTextStyle,
-} from "../constants/uiStyles";
+import { getFormLabelTextStyle, getUnderlineFormInputTextStyle } from "../constants/uiStyles";
 import { showNativeToast } from "../lib/nativeToast";
 import type { LedgerEntryDraft, LedgerEntryType } from "../types/ledger";
 import type { LedgerBookMember } from "../types/ledgerBookMember";
@@ -64,6 +63,8 @@ export function LedgerEntryForm({
   onPrepayInstallmentEntry = null,
   showInstallmentPrepaymentAction = false,
 }: LedgerEntryFormProps) {
+  const styles = getStyles();
+  useAppTheme();
   const categories = CATEGORY_OPTIONS[draft.type];
   const formattedAmountValue = formatAmountInput(draft.amount);
   const amountInputRef = useRef<TextInputInstance>(null);
@@ -299,46 +300,48 @@ export function LedgerEntryForm({
   );
 }
 
-const styles = StyleSheet.create({
-  form: {
-    position: "relative",
-    gap: AppLayout.cardGap,
-  },
-  fieldGroup: {
-    gap: 6,
-  },
-  fieldHeaderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-  },
-  label: FormLabelTextStyle,
-  input: UnderlineFormInputTextStyle,
-  clearableInputRow: {
-    alignItems: "center",
-    borderBottomColor: AppColors.border,
-    borderBottomWidth: AppLayout.dividerWidth,
-    flexDirection: "row",
-  },
-  clearableInput: {
-    ...UnderlineFormInputTextStyle,
-    borderBottomWidth: 0,
-    flex: 1,
-    minWidth: 0,
-  },
-  formActions: {
-    paddingTop: 4,
-    gap: 8,
-  },
-  primaryActionRow: {
-    flexDirection: "row",
-  },
-  secondaryActionRow: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    form: {
+      position: "relative",
+      gap: AppLayout.cardGap,
+    },
+    fieldGroup: {
+      gap: 6,
+    },
+    fieldHeaderRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 8,
+    },
+    label: getFormLabelTextStyle(),
+    input: getUnderlineFormInputTextStyle(),
+    clearableInputRow: {
+      alignItems: "center",
+      borderBottomColor: getAppColors().border,
+      borderBottomWidth: AppLayout.dividerWidth,
+      flexDirection: "row",
+    },
+    clearableInput: {
+      ...getUnderlineFormInputTextStyle(),
+      borderBottomWidth: 0,
+      flex: 1,
+      minWidth: 0,
+    },
+    formActions: {
+      paddingTop: 4,
+      gap: 8,
+    },
+    primaryActionRow: {
+      flexDirection: "row",
+    },
+    secondaryActionRow: {
+      flexDirection: "row",
+      justifyContent: "flex-end",
+    },
+  }),
+);
 
 function resolveDraftValidationMessage(draft: LedgerEntryDraft): string | null {
   if (!Number(draft.amount)) {

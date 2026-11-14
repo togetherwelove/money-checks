@@ -11,8 +11,14 @@ import { LedgerBookManagementView } from "./LedgerBookManagementView";
 import { NativeSelectionSheet } from "./NativeSelectionSheet";
 
 type ShareProps = ComponentProps<typeof LedgerBookManagementContent>;
-type Props = Pick<ShareProps, "onBeforeCopyShareCode" | "onBeforeSendJoinRequest" |
-  "onSendPendingJoinRequestNotification" | "onSendPushNotificationToBookMembers" | "onSendPushNotificationToUsers"> & {
+type Props = Pick<
+  ShareProps,
+  | "onBeforeCopyShareCode"
+  | "onBeforeSendJoinRequest"
+  | "onSendPendingJoinRequestNotification"
+  | "onSendPushNotificationToBookMembers"
+  | "onSendPushNotificationToUsers"
+> & {
   isOpen: boolean;
   badgedBookIds: readonly string[];
   onClose: () => void;
@@ -31,11 +37,18 @@ export function LedgerBookManagementSheet({ isOpen, onClose, onDismiss, state, .
     if (isOpen && bookId) void refreshShareCode.current();
   }, [isOpen, bookId]);
 
-  return <NativeSelectionSheet isOpen={isOpen} onClose={onClose} onDismiss={onDismiss}
-    title={LedgerBookManagementCopy.listTitle} dismissible={!state.isBusy}>
-    <BottomContentInsetContext.Provider value={AppLayout.cardContentPadding}>
-      <LedgerBookManagementView {...props} state={state} />
-    </BottomContentInsetContext.Provider>
-    {state.isBusy ? <BlockingOverlay /> : null}
-  </NativeSelectionSheet>;
+  return (
+    <NativeSelectionSheet
+      isOpen={isOpen}
+      onClose={onClose}
+      onDismiss={onDismiss}
+      title={LedgerBookManagementCopy.listTitle}
+      dismissible={!state.isBusy}
+    >
+      <BottomContentInsetContext.Provider value={AppLayout.cardContentPadding}>
+        <LedgerBookManagementView {...props} state={state} />
+      </BottomContentInsetContext.Provider>
+      {state.isBusy ? <BlockingOverlay /> : null}
+    </NativeSelectionSheet>
+  );
 }

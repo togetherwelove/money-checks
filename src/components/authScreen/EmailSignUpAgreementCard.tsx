@@ -1,10 +1,12 @@
+import { createThemeValue } from "../../lib/appTheme";
+import { useAppTheme } from "../../hooks/useAppTheme";
 import { Feather } from "../AppIcons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { AppColors } from "../../constants/colors";
+import { getAppColors } from "../../constants/colors";
 import { EmailAuthCopy, EmailSignUpAgreementUi } from "../../constants/emailAuth";
 import { ReadingTextProps } from "../../constants/textLayout";
-import { ActionSurfaceStyle } from "../../constants/uiStyles";
+import { getActionSurfaceStyle } from "../../constants/uiStyles";
 import { ActionButton } from "../ActionButton";
 import { TextLinkButton } from "../TextLinkButton";
 
@@ -31,6 +33,8 @@ export function EmailSignUpAgreementCard({
   onTogglePrivacy,
   onToggleTerms,
 }: EmailSignUpAgreementCardProps) {
+  const styles = getStyles();
+  useAppTheme();
   const hasAgreedToAll = hasAgreedToTerms && hasAgreedToPrivacy;
 
   return (
@@ -91,13 +95,15 @@ function AgreementRow({
   onPressView,
   required = false,
 }: AgreementRowProps) {
+  const styles = getStyles();
+  useAppTheme();
   return (
     <View style={styles.row}>
       <Pressable accessibilityRole="checkbox" accessibilityState={{ checked }} onPress={onPress}>
         <View style={[styles.checkbox, checked ? styles.checkedBox : null]}>
           {checked ? (
             <Feather
-              color={AppColors.inverseText}
+              color={getAppColors().onPrimary}
               name="check"
               size={EmailSignUpAgreementUi.checkIconSize}
             />
@@ -121,49 +127,51 @@ function AgreementRow({
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    ...ActionSurfaceStyle,
-    gap: EmailSignUpAgreementUi.cardGap,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: EmailSignUpAgreementUi.rowGap,
-  },
-  checkbox: {
-    alignItems: "center",
-    justifyContent: "center",
-    width: EmailSignUpAgreementUi.checkBoxSize,
-    height: EmailSignUpAgreementUi.checkBoxSize,
-    borderColor: AppColors.border,
-    borderRadius: EmailSignUpAgreementUi.checkBoxBorderRadius,
-    borderWidth: EmailSignUpAgreementUi.checkBoxBorderWidth,
-    backgroundColor: AppColors.surface,
-  },
-  checkedBox: {
-    borderColor: AppColors.primary,
-    backgroundColor: AppColors.primary,
-  },
-  labelButton: {
-    flex: 1,
-    minWidth: 0,
-  },
-  label: {
-    color: AppColors.text,
-    fontSize: EmailSignUpAgreementUi.labelFontSize,
-    fontWeight: "700",
-    lineHeight: EmailSignUpAgreementUi.labelLineHeight,
-  },
-  requiredPrefix: {
-    color: AppColors.primary,
-  },
-  divider: {
-    height: EmailSignUpAgreementUi.dividerHeight,
-    backgroundColor: AppColors.border,
-  },
-  actionGroup: {
-    gap: EmailSignUpAgreementUi.actionGroupGap,
-    paddingTop: EmailSignUpAgreementUi.actionGroupPaddingTop,
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    card: {
+      ...getActionSurfaceStyle(),
+      gap: EmailSignUpAgreementUi.cardGap,
+    },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: EmailSignUpAgreementUi.rowGap,
+    },
+    checkbox: {
+      alignItems: "center",
+      justifyContent: "center",
+      width: EmailSignUpAgreementUi.checkBoxSize,
+      height: EmailSignUpAgreementUi.checkBoxSize,
+      borderColor: getAppColors().border,
+      borderRadius: EmailSignUpAgreementUi.checkBoxBorderRadius,
+      borderWidth: EmailSignUpAgreementUi.checkBoxBorderWidth,
+      backgroundColor: getAppColors().surface,
+    },
+    checkedBox: {
+      borderColor: getAppColors().primary,
+      backgroundColor: getAppColors().primary,
+    },
+    labelButton: {
+      flex: 1,
+      minWidth: 0,
+    },
+    label: {
+      color: getAppColors().text,
+      fontSize: EmailSignUpAgreementUi.labelFontSize,
+      fontWeight: "700",
+      lineHeight: EmailSignUpAgreementUi.labelLineHeight,
+    },
+    requiredPrefix: {
+      color: getAppColors().primary,
+    },
+    divider: {
+      height: EmailSignUpAgreementUi.dividerHeight,
+      backgroundColor: getAppColors().border,
+    },
+    actionGroup: {
+      gap: EmailSignUpAgreementUi.actionGroupGap,
+      paddingTop: EmailSignUpAgreementUi.actionGroupPaddingTop,
+    },
+  }),
+);

@@ -1,12 +1,14 @@
+import { createThemeValue } from "../../lib/appTheme";
+import { useAppTheme } from "../../hooks/useAppTheme";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 
-import { AppColors } from "../../constants/colors";
+import { getAppColors } from "../../constants/colors";
 import { EmailAuthCopy } from "../../constants/emailAuth";
 import {
-  FormInputTextStyle,
-  FormLabelTextStyle,
+  getFormInputTextStyle,
+  getFormLabelTextStyle,
   StatusMessageTextStyle,
-  ActionSurfaceStyle,
+  getActionSurfaceStyle,
 } from "../../constants/uiStyles";
 import { isPasswordValid } from "../../lib/auth/passwordValidation";
 import { ActionButton } from "../ActionButton";
@@ -44,6 +46,8 @@ export function EmailSignUpFormCard({
   submitLabel,
   submitting = false,
 }: EmailSignUpFormCardProps) {
+  const styles = getStyles();
+  useAppTheme();
   const canSubmit = Boolean(
     email.trim() && isPasswordValid(password) && confirmPassword && password === confirmPassword,
   );
@@ -121,21 +125,23 @@ export function EmailSignUpFormCard({
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    ...ActionSurfaceStyle,
-    gap: 12,
-  },
-  fieldGroup: {
-    gap: 6,
-  },
-  label: FormLabelTextStyle,
-  input: FormInputTextStyle,
-  actionGroup: {
-    gap: 8,
-  },
-  status: {
-    color: AppColors.primary,
-    ...StatusMessageTextStyle,
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    card: {
+      ...getActionSurfaceStyle(),
+      gap: 12,
+    },
+    fieldGroup: {
+      gap: 6,
+    },
+    label: getFormLabelTextStyle(),
+    input: getFormInputTextStyle(),
+    actionGroup: {
+      gap: 8,
+    },
+    status: {
+      color: getAppColors().primary,
+      ...StatusMessageTextStyle,
+    },
+  }),
+);

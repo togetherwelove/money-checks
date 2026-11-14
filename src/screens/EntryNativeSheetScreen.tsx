@@ -1,14 +1,13 @@
+import { createThemeValue } from "../lib/appTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
 import { useNavigation, usePreventRemove } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 
 import type { SignedInStackParamList } from "../app/signedInNavigation";
-import { AppColors } from "../constants/colors";
-import {
-  EntryNativeSheetUi,
-  EntryRegistrationCopy,
-} from "../constants/entryRegistration";
+import { getAppColors } from "../constants/colors";
+import { EntryNativeSheetUi, EntryRegistrationCopy } from "../constants/entryRegistration";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
 import { showNativeToast } from "../lib/nativeToast";
 import type { LedgerEntry } from "../types/ledger";
@@ -32,6 +31,8 @@ export function EntryNativeSheetScreen({
   onPrepayInstallmentEntry,
   state,
 }: EntryNativeSheetScreenProps) {
+  const styles = getStyles();
+  useAppTheme();
   const navigation =
     useNavigation<NativeStackNavigationProp<SignedInStackParamList, "entry-sheet">>();
   const { height: windowHeight } = useWindowDimensions();
@@ -141,28 +142,30 @@ export function EntryNativeSheetScreen({
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    backgroundColor: AppColors.overlay,
-    flex: 1,
-    justifyContent: "flex-end",
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFill,
-  },
-  sheet: {
-    backgroundColor: AppColors.screenBackground,
-    borderTopLeftRadius: EntryNativeSheetUi.topRadius,
-    borderTopRightRadius: EntryNativeSheetUi.topRadius,
-    overflow: "hidden",
-    width: "100%",
-  },
-  grabber: {
-    alignSelf: "center",
-    backgroundColor: AppColors.border,
-    borderRadius: EntryNativeSheetUi.grabberHeight / 2,
-    height: EntryNativeSheetUi.grabberHeight,
-    marginTop: EntryNativeSheetUi.grabberTopMargin,
-    width: EntryNativeSheetUi.grabberWidth,
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    overlay: {
+      backgroundColor: getAppColors().overlay,
+      flex: 1,
+      justifyContent: "flex-end",
+    },
+    backdrop: {
+      ...StyleSheet.absoluteFill,
+    },
+    sheet: {
+      backgroundColor: getAppColors().screenBackground,
+      borderTopLeftRadius: EntryNativeSheetUi.topRadius,
+      borderTopRightRadius: EntryNativeSheetUi.topRadius,
+      overflow: "hidden",
+      width: "100%",
+    },
+    grabber: {
+      alignSelf: "center",
+      backgroundColor: getAppColors().border,
+      borderRadius: EntryNativeSheetUi.grabberHeight / 2,
+      height: EntryNativeSheetUi.grabberHeight,
+      marginTop: EntryNativeSheetUi.grabberTopMargin,
+      width: EntryNativeSheetUi.grabberWidth,
+    },
+  }),
+);

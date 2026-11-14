@@ -5,8 +5,20 @@ export const EntryComposerCopy = {
   typeLabel: "내역 유형",
   expense: "지출",
   income: "수입",
-  stepTitles: { amount: "금액", content: "내용", category: "분류", review: "등록 내용 확인", note: "메모" },
-  stepHints: { amount: "금액을 입력한 뒤 위의 확인 버튼을 눌러 주세요.", content: "어디에 사용한 내역인지 적어 주세요.", category: "내역에 맞는 분류를 선택해 주세요.", review: "내용을 확인한 뒤 위의 확인 버튼으로 저장하세요.", note: "기억할 내용을 적고 확인 버튼을 눌러 주세요." },
+  stepTitles: {
+    amount: "금액",
+    content: "내용",
+    category: "분류",
+    review: "등록 내용 확인",
+    note: "메모",
+  },
+  stepHints: {
+    amount: "금액을 입력한 뒤 위의 확인 버튼을 눌러 주세요.",
+    content: "어디에 사용한 내역인지 적어 주세요.",
+    category: "내역에 맞는 분류를 선택해 주세요.",
+    review: "내용을 확인한 뒤 위의 확인 버튼으로 저장하세요.",
+    note: "기억할 내용을 적고 확인 버튼을 눌러 주세요.",
+  },
   next: "다음",
   nextContent: "다음: 내용",
   confirm: "확인",
@@ -27,8 +39,10 @@ export const EntryComposerCopy = {
   replaceEditAction: "수정하기",
   duplicate: "복제",
   replaceDuplicateTitle: "선택한 내역을 복제할까요?",
-  replaceDuplicateMessage: "현재 입력 중인 정보는 사라지고 복제한 내용을 불러옵니다. 확인 후 등록해 주세요.",
-  duplicateAdjustedMessage: "사용할 수 없는 구성원은 본인으로 변경했어요. 분류가 비어 있으면 다시 선택해 주세요.",
+  replaceDuplicateMessage:
+    "현재 입력 중인 정보는 사라지고 복제한 내용을 불러옵니다. 확인 후 등록해 주세요.",
+  duplicateAdjustedMessage:
+    "사용할 수 없는 구성원은 본인으로 변경했어요. 분류가 비어 있으면 다시 선택해 주세요.",
   editAccessibilityHint: "이 항목의 입력 또는 선택 영역을 열어 수정합니다.",
   photoCount: "첨부 사진",
   badge: " •",
@@ -94,7 +108,11 @@ export const EntryComposerDots = {
   cycleDurationMs: 1200,
   character: ".",
   phases: [0, 1, 2, 3],
-  offsets: [[-2, 0, 0, -2], [0, -2, 0, 0], [0, 0, -2, 0]],
+  offsets: [
+    [-2, 0, 0, -2],
+    [0, -2, 0, 0],
+    [0, 0, -2, 0],
+  ],
 } as const;
 
 export type EntryComposerUnavailableReason = "read-only" | "no-book";

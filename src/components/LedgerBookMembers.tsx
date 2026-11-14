@@ -1,9 +1,11 @@
+import { createThemeValue } from "../lib/appTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
 import { AppScrollBehavior } from "../constants/scroll";
 import { Feather } from "./AppIcons";
 import { useRef, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { AppColors } from "../constants/colors";
+import { getAppColors } from "../constants/colors";
 import { LedgerBookMembersLayout, LedgerBookMembersUi } from "../constants/ledgerBookMembers";
 import {
   AppMessages,
@@ -35,6 +37,8 @@ export function LedgerBookMembers({
   onTransferOwnership,
   shouldShowSharedMemberLimitNotice,
 }: LedgerBookMembersProps) {
+  const styles = getStyles();
+  useAppTheme();
   const pendingKickMemberIdRef = useRef<string | null>(null);
   const pendingTransferMemberIdRef = useRef<string | null>(null);
   const [pendingKickMemberId, setPendingKickMemberId] = useState<string | null>(null);
@@ -96,7 +100,7 @@ export function LedgerBookMembers({
                     ]}
                   >
                     <Feather
-                      color={AppColors.primary}
+                      color={getAppColors().primary}
                       name="user-check"
                       size={LedgerBookMembersUi.actionIconSize}
                     />
@@ -120,7 +124,7 @@ export function LedgerBookMembers({
                   ]}
                 >
                   <Feather
-                    color={AppColors.expense}
+                    color={getAppColors().expense}
                     name="user-minus"
                     size={LedgerBookMembersUi.actionIconSize}
                   />
@@ -137,7 +141,8 @@ export function LedgerBookMembers({
     <View style={styles.section}>
       <Text style={styles.memberTitle}>{AppMessages.accountMembersTitle}</Text>
       {shouldScrollMembers ? (
-        <ScrollView {...AppScrollBehavior}
+        <ScrollView
+          {...AppScrollBehavior}
           nestedScrollEnabled
           showsVerticalScrollIndicator
           style={styles.memberListScroll}
@@ -272,103 +277,105 @@ function confirmTransferOwnership(
   );
 }
 
-const styles = StyleSheet.create({
-  section: {
-    gap: 6,
-  },
-  memberList: {
-    overflow: "hidden",
-    borderWidth: 0,
-    borderBottomWidth: 1,
-    borderBottomColor: AppColors.border,
-    borderRadius: 0,
-    backgroundColor: AppColors.screenBackground,
-  },
-  memberListScroll: {
-    maxHeight: LedgerBookMembersLayout.listMaxHeight,
-  },
-  memberTitle: {
-    color: AppColors.mutedStrongText,
-    fontSize: LedgerBookMembersUi.labelFontSize,
-    fontWeight: "700",
-    lineHeight: LedgerBookMembersUi.labelLineHeight,
-    marginBottom: LedgerBookMembersUi.labelBottomMargin,
-  },
-  memberRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-    minHeight: LedgerBookMembersUi.rowHeight,
-    paddingHorizontal: LedgerBookMembersUi.rowHorizontalPadding,
-    paddingVertical: LedgerBookMembersUi.rowVerticalPadding,
-  },
-  memberRowDivider: {
-    borderTopWidth: 1,
-    borderTopColor: AppColors.border,
-  },
-  memberIdentity: {
-    flex: 1,
-    minWidth: 0,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: LedgerBookMembersUi.memberIdentityGap,
-  },
-  memberName: {
-    color: AppColors.text,
-    fontSize: 13,
-    fontWeight: "600",
-    lineHeight: LedgerBookMembersUi.rowTextLineHeight,
-    flexShrink: 1,
-  },
-  selfBadge: {
-    color: AppColors.mutedText,
-    fontSize: 11,
-    fontWeight: "700",
-    lineHeight: LedgerBookMembersUi.badgeLineHeight,
-    backgroundColor: AppColors.surface,
-    borderColor: AppColors.border,
-    borderWidth: 1,
-    borderRadius: LedgerBookMembersUi.selfBadgeHorizontalPadding,
-    paddingHorizontal: LedgerBookMembersUi.selfBadgeHorizontalPadding,
-    paddingVertical: LedgerBookMembersUi.selfBadgeVerticalPadding,
-    flexShrink: 0,
-  },
-  memberRoleBadge: {
-    color: AppColors.mutedText,
-    fontSize: 11,
-    fontWeight: "700",
-    lineHeight: LedgerBookMembersUi.badgeLineHeight,
-    borderRadius: LedgerBookMembersUi.roleBadgeHorizontalPadding,
-    paddingHorizontal: LedgerBookMembersUi.roleBadgeHorizontalPadding,
-    paddingVertical: LedgerBookMembersUi.roleBadgeVerticalPadding,
-    flexShrink: 0,
-  },
-  ownerRoleBadge: {
-    color: AppColors.primary,
-    backgroundColor: AppColors.surfaceStrong,
-  },
-  memberActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    flexShrink: 0,
-  },
-  memberActionButton: {
-    borderWidth: 1,
-    borderColor: AppColors.expenseSoft,
-    borderRadius: LedgerBookMembersUi.actionButtonBorderRadius,
-    backgroundColor: AppColors.expenseSoft,
-    alignItems: "center",
-    justifyContent: "center",
-    height: LedgerBookMembersUi.actionButtonSize,
-    width: LedgerBookMembersUi.actionButtonSize,
-  },
-  transferOwnershipButton: {
-    borderColor: AppColors.surfaceStrong,
-    backgroundColor: AppColors.surfaceStrong,
-  },
-  disabledMemberActionButton: {
-    opacity: LedgerBookMembersUi.disabledActionButtonOpacity,
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    section: {
+      gap: 6,
+    },
+    memberList: {
+      overflow: "hidden",
+      borderWidth: 0,
+      borderBottomWidth: 1,
+      borderBottomColor: getAppColors().border,
+      borderRadius: 0,
+      backgroundColor: getAppColors().screenBackground,
+    },
+    memberListScroll: {
+      maxHeight: LedgerBookMembersLayout.listMaxHeight,
+    },
+    memberTitle: {
+      color: getAppColors().mutedStrongText,
+      fontSize: LedgerBookMembersUi.labelFontSize,
+      fontWeight: "700",
+      lineHeight: LedgerBookMembersUi.labelLineHeight,
+      marginBottom: LedgerBookMembersUi.labelBottomMargin,
+    },
+    memberRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 8,
+      minHeight: LedgerBookMembersUi.rowHeight,
+      paddingHorizontal: LedgerBookMembersUi.rowHorizontalPadding,
+      paddingVertical: LedgerBookMembersUi.rowVerticalPadding,
+    },
+    memberRowDivider: {
+      borderTopWidth: 1,
+      borderTopColor: getAppColors().border,
+    },
+    memberIdentity: {
+      flex: 1,
+      minWidth: 0,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: LedgerBookMembersUi.memberIdentityGap,
+    },
+    memberName: {
+      color: getAppColors().text,
+      fontSize: 13,
+      fontWeight: "600",
+      lineHeight: LedgerBookMembersUi.rowTextLineHeight,
+      flexShrink: 1,
+    },
+    selfBadge: {
+      color: getAppColors().mutedText,
+      fontSize: 11,
+      fontWeight: "700",
+      lineHeight: LedgerBookMembersUi.badgeLineHeight,
+      backgroundColor: getAppColors().surface,
+      borderColor: getAppColors().border,
+      borderWidth: 1,
+      borderRadius: LedgerBookMembersUi.selfBadgeHorizontalPadding,
+      paddingHorizontal: LedgerBookMembersUi.selfBadgeHorizontalPadding,
+      paddingVertical: LedgerBookMembersUi.selfBadgeVerticalPadding,
+      flexShrink: 0,
+    },
+    memberRoleBadge: {
+      color: getAppColors().mutedText,
+      fontSize: 11,
+      fontWeight: "700",
+      lineHeight: LedgerBookMembersUi.badgeLineHeight,
+      borderRadius: LedgerBookMembersUi.roleBadgeHorizontalPadding,
+      paddingHorizontal: LedgerBookMembersUi.roleBadgeHorizontalPadding,
+      paddingVertical: LedgerBookMembersUi.roleBadgeVerticalPadding,
+      flexShrink: 0,
+    },
+    ownerRoleBadge: {
+      color: getAppColors().primary,
+      backgroundColor: getAppColors().surfaceStrong,
+    },
+    memberActions: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      flexShrink: 0,
+    },
+    memberActionButton: {
+      borderWidth: 1,
+      borderColor: getAppColors().expenseSoft,
+      borderRadius: LedgerBookMembersUi.actionButtonBorderRadius,
+      backgroundColor: getAppColors().expenseSoft,
+      alignItems: "center",
+      justifyContent: "center",
+      height: LedgerBookMembersUi.actionButtonSize,
+      width: LedgerBookMembersUi.actionButtonSize,
+    },
+    transferOwnershipButton: {
+      borderColor: getAppColors().surfaceStrong,
+      backgroundColor: getAppColors().surfaceStrong,
+    },
+    disabledMemberActionButton: {
+      opacity: LedgerBookMembersUi.disabledActionButtonOpacity,
+    },
+  }),
+);

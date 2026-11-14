@@ -1,3 +1,5 @@
+import { createThemeValue } from "../lib/appTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
 import { type MenuAction, MenuView, type NativeActionEvent } from "@react-native-menu/menu";
 import { useMemo, useState } from "react";
 import { AssetLinkConfig } from "../constants/assetLink";
@@ -10,8 +12,8 @@ import {
   CategoryCustomizerCopy,
 } from "../constants/categoryCustomizer";
 import { CATEGORY_GRID_GAP } from "../constants/categorySelector";
-import { AppColors } from "../constants/colors";
-import { FormLabelTextStyle } from "../constants/uiStyles";
+import { getAppColors } from "../constants/colors";
+import { getFormLabelTextStyle } from "../constants/uiStyles";
 import { useCustomCategories } from "../hooks/useCustomCategories";
 import {
   resolveCategoryGridHeight,
@@ -51,6 +53,8 @@ export function CategorySelector({
   title,
   onSelectCategory,
 }: CategorySelectorProps) {
+  const styles = getStyles();
+  const colorScheme = useAppTheme();
   const [gridWidth, setGridWidth] = useState(0);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<CategoryDefinition | null>(null);
@@ -94,45 +98,45 @@ export function CategorySelector({
     [categoryOrderIds, customCategories, visibleBaseCategories],
   );
   const { cellSize, columns } = resolveCategoryGridMetrics(gridWidth);
-  const gridHeight = resolveCategoryGridHeight(
-    displayedCategories.length, cellSize, columns,
-  );
+  const gridHeight = resolveCategoryGridHeight(displayedCategories.length, cellSize, columns);
   const categoryMenuActions = useMemo<MenuAction[]>(
     () => [
       {
         id: CategoryMenuAction.edit,
         image: "pencil",
-        imageColor: AppColors.text,
+        imageColor: getAppColors().text,
         title: CategoryContextMenuCopy.editAction,
       },
       {
         attributes: { destructive: true },
         id: CategoryMenuAction.delete,
         image: "trash",
-        imageColor: AppColors.expense,
+        imageColor: getAppColors().expense,
         title: CategoryCustomizerCopy.deleteAction,
       },
     ],
-    [],
+    [colorScheme],
   );
 
   const categoryCreateModal = (
     <CategoryCreateModal
-        actionLabel={editingCategory ? "저장" : undefined}
-        errorMessage={isLoadingCategories ? CategoryCustomizerCopy.loadingCategories : newCategoryError}
-        isBusy={isLoadingCategories || isSavingCategories}
-        iconName={newCategoryIconName}
-        isOpen={isCreateModalOpen}
-        label={newCategoryLabel}
-        title={editingCategory ? CategoryContextMenuCopy.editModalTitle : undefined}
-        onCancel={cancelCategoryCreation}
-        onChangeIcon={setNewCategoryIconName}
-        onChangeLabel={(label) => {
-          setNewCategoryLabel(label);
-          setNewCategoryError(null);
-        }}
-        onSubmit={submitCategoryForm}
-      />
+      actionLabel={editingCategory ? "저장" : undefined}
+      errorMessage={
+        isLoadingCategories ? CategoryCustomizerCopy.loadingCategories : newCategoryError
+      }
+      isBusy={isLoadingCategories || isSavingCategories}
+      iconName={newCategoryIconName}
+      isOpen={isCreateModalOpen}
+      label={newCategoryLabel}
+      title={editingCategory ? CategoryContextMenuCopy.editModalTitle : undefined}
+      onCancel={cancelCategoryCreation}
+      onChangeIcon={setNewCategoryIconName}
+      onChangeLabel={(label) => {
+        setNewCategoryLabel(label);
+        setNewCategoryError(null);
+      }}
+      onSubmit={submitCategoryForm}
+    />
   );
 
   return (
@@ -192,7 +196,6 @@ export function CategorySelector({
       await updateCategory();
       return;
     }
-
   }
 
   function updateSystemCategory(category: CategoryDefinition) {
@@ -264,7 +267,7 @@ export function CategorySelector({
     const nextCategory = nextCustomCategories.find(
       (category) => category.id === editingCategory.id,
     );
-    if (!await saveCustomCategories(nextCustomCategories)) {
+    if (!(await saveCustomCategories(nextCustomCategories))) {
       setNewCategoryError(CategoryCustomizerCopy.saveError);
       return;
     }
@@ -316,7 +319,10 @@ export function CategorySelector({
     if (category.id !== AssetLinkConfig.loanCategoryId || !bookId) return true;
     try {
       if (!(await hasLedgerBookLoans(bookId))) return true;
-      Alert.alert(CategoryContextMenuCopy.deleteConfirmTitle, CategoryContextMenuCopy.loanDeleteBlocked);
+      Alert.alert(
+        CategoryContextMenuCopy.deleteConfirmTitle,
+        CategoryContextMenuCopy.loanDeleteBlocked,
+      );
     } catch {
       Alert.alert(CategoryCustomizerCopy.saveError);
     }
@@ -355,17 +361,19 @@ export function CategorySelector({
   }
 }
 
-const styles = StyleSheet.create({
-  container: {
-    gap: 6,
-  },
-  title: FormLabelTextStyle,
-  options: {
-    position: "relative",
-    width: "100%",
-    marginTop: CATEGORY_GRID_GAP,
-  },
-  categoryMenuAnchor: {
-    position: "absolute",
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    container: {
+      gap: 6,
+    },
+    title: getFormLabelTextStyle(),
+    options: {
+      position: "relative",
+      width: "100%",
+      marginTop: CATEGORY_GRID_GAP,
+    },
+    categoryMenuAnchor: {
+      position: "absolute",
+    },
+  }),
+);

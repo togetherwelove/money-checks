@@ -1,6 +1,7 @@
+import { useAppTheme } from "../hooks/useAppTheme";
 import { Feather } from "./AppIcons";
 import { Pressable, StyleSheet } from "react-native";
-import { AppColors } from "../constants/colors";
+import { getAppColors } from "../constants/colors";
 import { ModalCloseButtonUi as Ui } from "../constants/modal";
 
 export function ModalCloseButton({
@@ -10,6 +11,7 @@ export function ModalCloseButton({
   onPress: () => void;
   disabled?: boolean;
 }) {
+  useAppTheme();
   return (
     <Pressable
       accessibilityRole="button"
@@ -17,9 +19,13 @@ export function ModalCloseButton({
       accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={onPress}
-      style={({ pressed }) => [styles.button, pressed && styles.pressed, disabled && styles.disabled]}
+      style={({ pressed }) => [
+        styles.button,
+        pressed && styles.pressed,
+        disabled && styles.disabled,
+      ]}
     >
-      <Feather name="x" size={Ui.iconSize} color={AppColors.mutedStrongText} />
+      <Feather name="x" size={Ui.iconSize} color={getAppColors().mutedStrongText} />
     </Pressable>
   );
 }

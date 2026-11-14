@@ -1,11 +1,13 @@
+import { createThemeValue } from "../../lib/appTheme";
+import { useAppTheme } from "../../hooks/useAppTheme";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
-import { AppColors } from "../../constants/colors";
+import { getAppColors } from "../../constants/colors";
 import { EmailAuthCopy } from "../../constants/emailAuth";
 import {
-  ActionSurfaceStyle,
-  FormInputTextStyle,
-  FormLabelTextStyle,
+  getActionSurfaceStyle,
+  getFormInputTextStyle,
+  getFormLabelTextStyle,
 } from "../../constants/uiStyles";
 import { ActionButton } from "../ActionButton";
 
@@ -30,6 +32,8 @@ export function EmailSignInCard({
   password,
   submitting = false,
 }: EmailSignInCardProps) {
+  const styles = getStyles();
+  useAppTheme();
   const canSubmit = Boolean(email.trim() && password);
 
   return (
@@ -96,41 +100,43 @@ export function EmailSignInCard({
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    ...ActionSurfaceStyle,
-    gap: 12,
-  },
-  fieldGroup: {
-    gap: 6,
-  },
-  label: FormLabelTextStyle,
-  input: FormInputTextStyle,
-  actionGroup: {
-    gap: 8,
-  },
-  linkRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-  linkButton: {
-    paddingVertical: 4,
-  },
-  disabledLinkButton: {
-    opacity: 0.45,
-  },
-  linkDivider: {
-    color: AppColors.mutedText,
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  linkText: {
-    color: AppColors.mutedStrongText,
-    fontSize: 13,
-    fontWeight: "600",
-    textDecorationLine: "underline",
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    card: {
+      ...getActionSurfaceStyle(),
+      gap: 12,
+    },
+    fieldGroup: {
+      gap: 6,
+    },
+    label: getFormLabelTextStyle(),
+    input: getFormInputTextStyle(),
+    actionGroup: {
+      gap: 8,
+    },
+    linkRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+    },
+    linkButton: {
+      paddingVertical: 4,
+    },
+    disabledLinkButton: {
+      opacity: 0.45,
+    },
+    linkDivider: {
+      color: getAppColors().mutedText,
+      fontSize: 13,
+      fontWeight: "600",
+    },
+    linkText: {
+      color: getAppColors().mutedStrongText,
+      fontSize: 13,
+      fontWeight: "600",
+      textDecorationLine: "underline",
+    },
+  }),
+);

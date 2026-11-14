@@ -1,4 +1,5 @@
-import { AppColors } from "./colors";
+import { createThemeValue } from "../lib/appTheme";
+import { getAppColors } from "./colors";
 
 export const SupportConfig = {
   offeringIdentifier: "support",
@@ -21,41 +22,44 @@ export type SupportPackageCatalogItem = {
   title: string;
 };
 
-export const SupportPackageCatalog: readonly SupportPackageCatalogItem[] = [
-    {
-      description: "개발자가 가장 좋아합니다.",
-      iconBackgroundColor: AppColors.surfaceMuted,
-      iconColor: AppColors.primary,
-      iconName: "cup-outline",
-      identifier: SupportConfig.packageIdentifiers.small,
-      title: "바나나우유",
-    },
-    {
-      description: "앱 개선에 큰 도움이 됩니다.",
-      iconBackgroundColor: AppColors.surfaceStrong,
-      iconColor: AppColors.primary,
-      iconName: "coffee-outline",
-      identifier: SupportConfig.packageIdentifiers.medium,
-      title: "커피 한 잔",
-    },
-    {
-      description: "개발자 가족의 하루가 완벽해집니다.",
-      iconBackgroundColor: AppColors.surfaceMuted,
-      iconColor: AppColors.primary,
-      iconName: "food-drumstick-outline",
-      identifier: SupportConfig.packageIdentifiers.large,
-      title: "치킨 한 마리",
-    },
-  ] as const;
+export const getSupportPackageCatalog = createThemeValue(
+  (): readonly SupportPackageCatalogItem[] =>
+    [
+      {
+        description: "개발자가 가장 좋아합니다.",
+        iconBackgroundColor: getAppColors().surfaceMuted,
+        iconColor: getAppColors().primary,
+        iconName: "cup-outline",
+        identifier: SupportConfig.packageIdentifiers.small,
+        title: "바나나우유",
+      },
+      {
+        description: "앱 개선에 큰 도움이 됩니다.",
+        iconBackgroundColor: getAppColors().surfaceStrong,
+        iconColor: getAppColors().primary,
+        iconName: "coffee-outline",
+        identifier: SupportConfig.packageIdentifiers.medium,
+        title: "커피 한 잔",
+      },
+      {
+        description: "개발자 가족의 하루가 완벽해집니다.",
+        iconBackgroundColor: getAppColors().surfaceMuted,
+        iconColor: getAppColors().primary,
+        iconName: "food-drumstick-outline",
+        identifier: SupportConfig.packageIdentifiers.large,
+        title: "치킨 한 마리",
+      },
+    ] as const,
+);
 
 export const SupportMessages = {
-    purchaseAction: "개발자 후원하기",
-    purchaseError: "후원을 처리하지 못했어요.",
-    purchaseSuccess: "후원해 주셔서 감사합니다.",
-    pricePendingLabel: "가격 확인 중",
-    screenTitle: "후원하기",
-    unavailableDescription: "아직 후원 상품을 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요.",
-  } as const;
+  purchaseAction: "개발자 후원하기",
+  purchaseError: "후원을 처리하지 못했어요.",
+  purchaseSuccess: "후원해 주셔서 감사합니다.",
+  pricePendingLabel: "가격 확인 중",
+  screenTitle: "후원하기",
+  unavailableDescription: "아직 후원 상품을 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요.",
+} as const;
 
 export const SupportUi = {
   actionIconSize: 14,

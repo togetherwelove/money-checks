@@ -1,44 +1,6 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
-
-import { AuthControls } from "../../constants/authControls";
-import { AppColors } from "../../constants/colors";
 import { GoogleGIcon } from "./GoogleGIcon";
+import { ProviderSignInButton } from "./ProviderSignInButton";
 
-type GoogleSignInButtonProps = {
-  onPress: () => void | Promise<void>;
-};
-
-export function GoogleSignInButton({ onPress }: GoogleSignInButtonProps) {
-  return (
-    <Pressable onPress={onPress} style={styles.button}>
-      <View style={styles.iconBox}>
-        <GoogleGIcon />
-      </View>
-      <Text style={styles.label}>Google로 로그인</Text>
-    </Pressable>
-  );
+export function GoogleSignInButton({ onPress }: { onPress: () => void | Promise<void> }) {
+  return <ProviderSignInButton icon={<GoogleGIcon />} label="Google로 로그인" onPress={onPress} />;
 }
-
-const styles = StyleSheet.create({
-  button: {
-    minHeight: 48,
-    borderWidth: 1,
-    borderColor: AppColors.border,
-    borderRadius: AuthControls.borderRadius,
-    backgroundColor: AppColors.surface,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    paddingHorizontal: 16,
-  },
-  iconBox: {
-    width: 20,
-    alignItems: "center",
-  },
-  label: {
-    color: AppColors.text,
-    fontSize: 15,
-    fontWeight: "700",
-  },
-});

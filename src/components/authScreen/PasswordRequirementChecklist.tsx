@@ -1,6 +1,8 @@
+import { createThemeValue } from "../../lib/appTheme";
+import { useAppTheme } from "../../hooks/useAppTheme";
 import { StyleSheet, Text, View } from "react-native";
 
-import { AppColors } from "../../constants/colors";
+import { getAppColors } from "../../constants/colors";
 import {
   getPasswordRequirementStates,
   isPasswordConfirmationValid,
@@ -16,6 +18,8 @@ type PasswordConfirmationRequirementProps = {
 };
 
 export function PasswordRequirementChecklist({ password }: PasswordRequirementChecklistProps) {
+  const styles = getStyles();
+  useAppTheme();
   const requirements = getPasswordRequirementStates(password);
 
   return (
@@ -38,6 +42,7 @@ export function PasswordConfirmationRequirement({
   confirmPassword,
   password,
 }: PasswordConfirmationRequirementProps) {
+  useAppTheme();
   if (!confirmPassword) {
     return null;
   }
@@ -51,6 +56,8 @@ export function PasswordConfirmationRequirement({
 }
 
 function PasswordRequirementItem({ isMet, label }: { isMet: boolean; label: string }) {
+  const styles = getStyles();
+  useAppTheme();
   return (
     <View style={styles.item}>
       <View style={[styles.indicator, isMet ? styles.indicatorMet : styles.indicatorUnmet]} />
@@ -61,47 +68,49 @@ function PasswordRequirementItem({ isMet, label }: { isMet: boolean; label: stri
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    gap: 6,
-  },
-  title: {
-    color: AppColors.mutedText,
-    fontSize: 12,
-    fontWeight: "700",
-    lineHeight: 18,
-  },
-  list: {
-    gap: 6,
-  },
-  item: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  indicator: {
-    width: 10,
-    height: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  indicatorMet: {
-    backgroundColor: AppColors.success,
-    borderColor: AppColors.success,
-  },
-  indicatorUnmet: {
-    backgroundColor: AppColors.background,
-    borderColor: AppColors.border,
-  },
-  itemText: {
-    fontSize: 12,
-    fontWeight: "600",
-    lineHeight: 18,
-  },
-  itemTextMet: {
-    color: AppColors.success,
-  },
-  itemTextUnmet: {
-    color: AppColors.mutedText,
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    container: {
+      gap: 6,
+    },
+    title: {
+      color: getAppColors().mutedText,
+      fontSize: 12,
+      fontWeight: "700",
+      lineHeight: 18,
+    },
+    list: {
+      gap: 6,
+    },
+    item: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    indicator: {
+      width: 10,
+      height: 10,
+      borderRadius: 10,
+      borderWidth: 1,
+    },
+    indicatorMet: {
+      backgroundColor: getAppColors().success,
+      borderColor: getAppColors().success,
+    },
+    indicatorUnmet: {
+      backgroundColor: getAppColors().background,
+      borderColor: getAppColors().border,
+    },
+    itemText: {
+      fontSize: 12,
+      fontWeight: "600",
+      lineHeight: 18,
+    },
+    itemTextMet: {
+      color: getAppColors().success,
+    },
+    itemTextUnmet: {
+      color: getAppColors().mutedText,
+    },
+  }),
+);

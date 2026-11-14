@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useState } from "react";
 import { AppState, Platform } from "react-native";
 
@@ -34,13 +33,15 @@ export function useSupabaseSession(): SessionState & { retry: () => void } {
       syncAutoRefresh(AppState.currentState);
     }
 
-    void loadInitialSession(() => supabase.auth.getSession(), controller.signal).then((nextState) => {
-      if (!isMounted) {
-        return;
-      }
-      hasResolvedSession = !nextState.errorMessage;
-      setSessionState(nextState);
-    });
+    void loadInitialSession(() => supabase.auth.getSession(), controller.signal).then(
+      (nextState) => {
+        if (!isMounted) {
+          return;
+        }
+        hasResolvedSession = !nextState.errorMessage;
+        setSessionState(nextState);
+      },
+    );
 
     const {
       data: { subscription },

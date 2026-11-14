@@ -46,7 +46,9 @@ export async function deleteAccountRequest({
       status: response.status,
       statusText: response.statusText,
     });
-    throw new Error(payload.errorMessage || "계정을 삭제하지 못했어요. 잠시 후 다시 시도해 주세요.");
+    throw new Error(
+      payload.errorMessage || "계정을 삭제하지 못했어요. 잠시 후 다시 시도해 주세요.",
+    );
   }
 
   if (payload.success !== true) {

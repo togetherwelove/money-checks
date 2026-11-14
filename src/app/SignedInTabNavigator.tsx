@@ -40,7 +40,13 @@ export function SignedInTabNavigator(props: SignedInTabNavigatorProps) {
     >
       {destinations.map((tab) => (
         <Tab.Screen key={tab.screen} name={PrimaryTabRoutes[tab.screen]}>
-          {() => <SignedInStackNavigator {...props} initialScreen={tab.screen} />}
+          {() =>
+            "renderGuestScreen" in props ? (
+              props.renderGuestScreen(tab.screen)
+            ) : (
+              <SignedInStackNavigator {...props} initialScreen={tab.screen} />
+            )
+          }
         </Tab.Screen>
       ))}
     </Tab.Navigator>

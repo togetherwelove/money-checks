@@ -1,3 +1,5 @@
+import { createThemeValue } from "../lib/appTheme";
+import { useAppTheme } from "../hooks/useAppTheme";
 import { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import type { TextInputInstance } from "react-native";
@@ -6,13 +8,13 @@ import { ActionButton } from "../components/ActionButton";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { ScreenHeaderBlock } from "../components/ScreenHeaderBlock";
 import { TextLinkButton } from "../components/TextLinkButton";
-import { AppColors } from "../constants/colors";
+import { getAppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
 import {
-  ActionSurfaceStyle,
+  getActionSurfaceStyle,
   ResponsivePageContentStyle,
   StatusMessageTextStyle,
-  UnderlineFormInputTextStyle,
+  getUnderlineFormInputTextStyle,
 } from "../constants/uiStyles";
 import { isApplePrivateRelayEmail } from "../lib/auth/applePrivateRelayEmail";
 import { scheduleIdleTask } from "../lib/idleScheduler";
@@ -29,6 +31,8 @@ export function NicknameSetupScreen({
   onSubmit,
   onSwitchAccount,
 }: NicknameSetupScreenProps) {
+  const styles = getStyles();
+  useAppTheme();
   const [displayName, setDisplayName] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [inputInstanceKey, setInputInstanceKey] = useState(0);
@@ -79,10 +83,7 @@ export function NicknameSetupScreen({
       contentContainerStyle={styles.content}
       style={styles.screen}
     >
-      <ScreenHeaderBlock
-        eyebrow="반갑습니다"
-        title="이름을 설정해 주세요."
-      />
+      <ScreenHeaderBlock eyebrow="반갑습니다" title="이름을 설정해 주세요." />
       <View style={styles.card}>
         {accountEmail ? (
           <Text style={styles.accountDescription}>
@@ -108,44 +109,38 @@ export function NicknameSetupScreen({
           value={displayName}
         />
         {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
-        <ActionButton
-          label="다음"
-          onPress={handleSubmit}
-          variant="primary"
-        />
+        <ActionButton label="다음" onPress={handleSubmit} variant="primary" />
       </View>
-      <TextLinkButton
-        align="center"
-        label="다른 계정으로 로그인"
-        onPress={onSwitchAccount}
-      />
+      <TextLinkButton align="center" label="다른 계정으로 로그인" onPress={onSwitchAccount} />
     </KeyboardAwareScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: AppColors.screenBackground,
-  },
-  content: {
-    ...ResponsivePageContentStyle,
-    padding: AppLayout.screenPadding,
-    gap: 12,
-  },
-  card: {
-    ...ActionSurfaceStyle,
-    gap: 10,
-  },
-  input: UnderlineFormInputTextStyle,
-  accountDescription: {
-    color: AppColors.mutedStrongText,
-    fontSize: 12,
-    fontWeight: "600",
-    lineHeight: 18,
-  },
-  errorText: {
-    color: AppColors.expense,
-    ...StatusMessageTextStyle,
-  },
-});
+const getStyles = createThemeValue(() =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: getAppColors().screenBackground,
+    },
+    content: {
+      ...ResponsivePageContentStyle,
+      padding: AppLayout.screenPadding,
+      gap: 12,
+    },
+    card: {
+      ...getActionSurfaceStyle(),
+      gap: 10,
+    },
+    input: getUnderlineFormInputTextStyle(),
+    accountDescription: {
+      color: getAppColors().mutedStrongText,
+      fontSize: 12,
+      fontWeight: "600",
+      lineHeight: 18,
+    },
+    errorText: {
+      color: getAppColors().expense,
+      ...StatusMessageTextStyle,
+    },
+  }),
+);
