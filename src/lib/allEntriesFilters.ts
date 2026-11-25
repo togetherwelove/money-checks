@@ -1,3 +1,4 @@
+import type { AllEntriesDateRange } from "../constants/allEntries";
 import {
   type AllEntriesEntryTypeFilter,
   AllEntriesEntryTypeFilters,
@@ -7,8 +8,13 @@ import type { CategoryDefinition } from "../types/category";
 export function countAllEntriesFilters(
   entryTypeFilter: AllEntriesEntryTypeFilter,
   selectedCategoryIds: readonly string[],
+  dateRange?: AllEntriesDateRange | null,
 ): number {
-  return selectedCategoryIds.length + (entryTypeFilter === AllEntriesEntryTypeFilters.all ? 0 : 1);
+  return (
+    selectedCategoryIds.length +
+    (entryTypeFilter === AllEntriesEntryTypeFilters.all ? 0 : 1) +
+    (dateRange ? 1 : 0)
+  );
 }
 
 export function filterCategoriesByEntryType(

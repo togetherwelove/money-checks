@@ -3,11 +3,14 @@ import { StyleSheet } from "react-native";
 import { getAppColors } from "./colors";
 import { AppLayout } from "./layout";
 import { EntryComposerUi } from "./entryComposer";
+import { SettingsGroupDesign } from "./settingsGroupStyles";
 import {
   getFormLabelTextStyle,
   getSupportingTextStyle,
   getUnderlineFormInputTextStyle,
 } from "./uiStyles";
+
+const MEMBER_ASSET_TITLE_LIST_GAP = 6;
 
 export const getAssetStyles = createThemeValue(() =>
   StyleSheet.create({
@@ -20,6 +23,11 @@ export const getAssetStyles = createThemeValue(() =>
       alignSelf: "center",
     },
     section: { gap: AppLayout.cardGap },
+    memberAssetSection: { gap: MEMBER_ASSET_TITLE_LIST_GAP },
+    memberAssetTitle: {
+      marginHorizontal: SettingsGroupDesign.radius,
+      marginTop: AppLayout.cardContentPadding,
+    },
     card: {
       padding: AppLayout.cardContentPadding,
       borderRadius: AppLayout.cardRadius,
@@ -32,6 +40,26 @@ export const getAssetStyles = createThemeValue(() =>
       borderColor: getAppColors().border,
     },
     assetCardPressed: { backgroundColor: getAppColors().surfaceStrong },
+    summaryCard: { padding: AppLayout.cardGap, gap: AppLayout.compactGap },
+    scopeControl: {
+      alignItems: "center",
+      gap: AppLayout.compactGap,
+      flexShrink: 1,
+    },
+    summaryBreakdown: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: AppLayout.cardGap,
+      marginTop: AppLayout.compactGap,
+      paddingTop: AppLayout.cardGap,
+      borderTopWidth: AppLayout.dividerWidth,
+      borderTopColor: getAppColors().border,
+    },
+    summaryMetric: {
+      flexBasis: AppLayout.summaryCardMinWidth,
+      flexGrow: 1,
+      gap: AppLayout.compactGap,
+    },
     assetTint: { backgroundColor: getAppColors().assetTint },
     debtTint: { backgroundColor: getAppColors().debtTint },
     row: {
@@ -43,6 +71,7 @@ export const getAssetStyles = createThemeValue(() =>
       paddingVertical: AppLayout.compactGap,
     },
     assetHeadingRow: { minHeight: 0, paddingVertical: 0 },
+    assetCardAmount: { flexShrink: 0 },
     wrap: { flexDirection: "row", flexWrap: "wrap", gap: AppLayout.cardGap },
     grow: { flex: 1 },
     title: {

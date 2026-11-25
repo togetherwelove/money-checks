@@ -1,3 +1,4 @@
+import { AppFontSize } from "../../constants/typography";
 import { createThemeValue } from "../../lib/appTheme";
 import { useAppTheme } from "../../hooks/useAppTheme";
 import { Feather } from "../AppIcons";
@@ -74,7 +75,7 @@ const getStyles = createThemeValue(() =>
     },
     optionText: {
       color: getAppColors().text,
-      fontSize: 12,
+      fontSize: AppFontSize.caption,
       fontWeight: "600",
       textAlign: "center",
     },

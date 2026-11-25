@@ -13,9 +13,20 @@ import {
   scrollContentBackground,
 } from "@expo/ui/swift-ui/modifiers";
 import { getAppColors } from "./colors";
+import { SettingsGroupDesign } from "./settingsGroupStyles";
 import { MenuDesign } from "./menuDesign";
 
 export const getNativeSettingsStyles = createThemeValue(() => ({
+  menuGroup: [
+    listRowSeparator("hidden"),
+    listRowBackground(getAppColors().screenBackground),
+    listRowInsets({
+      top: MenuDesign.screenTopPadding,
+      bottom: SettingsGroupDesign.sectionGap - MenuDesign.screenTopPadding,
+      leading: MenuDesign.horizontalPadding,
+      trailing: MenuDesign.horizontalPadding,
+    }),
+  ],
   footer: [listRowSeparator("hidden"), listRowBackground(getAppColors().screenBackground)],
   list: [
     listStyle("plain"),

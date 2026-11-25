@@ -1,3 +1,4 @@
+import { getSettingsGroupStyles } from "../constants/settingsGroupStyles";
 import { createThemeValue } from "../lib/appTheme";
 import { useAppTheme } from "../hooks/useAppTheme";
 import type { ReactNode } from "react";
@@ -90,7 +91,7 @@ const getStyles = createThemeValue(() =>
       backgroundColor: getAppColors().screenBackground,
     },
     content: {
-      ...getMenuStyles().content,
+      ...getSettingsGroupStyles().page,
     },
   }),
 );

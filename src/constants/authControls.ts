@@ -1,10 +1,11 @@
+import { AppFontSize } from "./typography";
 import { FixedColors } from "./fixedColors";
 export const AuthControls = {
   appleBackground: FixedColors.black,
   appleLogoSymbol: "apple.logo",
   providerIconSize: 18,
   providerButtonHeight: 44,
-  providerFontSize: 15,
+  providerFontSize: AppFontSize.label,
   providerFontWeight: "500",
   providerIconGap: 8,
   providerHorizontalPadding: 16,

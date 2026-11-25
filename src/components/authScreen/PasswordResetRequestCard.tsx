@@ -1,3 +1,4 @@
+import { AppFontSize, AppLineHeight } from "../../constants/typography";
 import { createThemeValue } from "../../lib/appTheme";
 import { useAppTheme } from "../../hooks/useAppTheme";
 import { StyleSheet, Text, TextInput, View } from "react-native";
@@ -83,8 +84,8 @@ const getStyles = createThemeValue(() =>
     },
     subtitle: {
       color: getAppColors().mutedStrongText,
-      fontSize: 13,
-      lineHeight: 20,
+      fontSize: AppFontSize.body,
+      lineHeight: AppLineHeight.body,
     },
     fieldGroup: {
       gap: 6,

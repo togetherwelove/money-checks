@@ -1,3 +1,5 @@
+import { SettingsGroup } from "../appSettings/SettingsGroup";
+import { getSettingsGroupStyles } from "../../constants/settingsGroupStyles";
 import { createThemeValue } from "../../lib/appTheme";
 import { useAppTheme } from "../../hooks/useAppTheme";
 import { StyleSheet, Text, View } from "react-native";
@@ -33,13 +35,15 @@ export function AdTrackingPermissionCard({
     ) : null;
 
   return (
-    <View style={styles.card}>
-      <Text style={styles.title}>앱 추적 권한 허용하기</Text>
-      <View style={styles.actionRow}>
-        <Text style={styles.status}>{resolveAdTrackingStatusLabel(permissionState)}</Text>
-        {action}
+    <SettingsGroup>
+      <View style={styles.card}>
+        <Text style={styles.title}>앱 추적 권한 허용하기</Text>
+        <View style={styles.actionRow}>
+          <Text style={styles.status}>{resolveAdTrackingStatusLabel(permissionState)}</Text>
+          {action}
+        </View>
       </View>
-    </View>
+    </SettingsGroup>
   );
 }
 
@@ -61,14 +65,14 @@ function resolveAdTrackingStatusLabel(permissionState: AdTrackingPermissionState
 
 const getStyles = createThemeValue(() =>
   StyleSheet.create({
-    card: getMenuStyles().panel,
-    title: getMenuStyles().sectionTitle,
+    card: getSettingsGroupStyles().body,
+    title: getSettingsGroupStyles().label,
     actionRow: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
       gap: getMenuStyles().section.gap,
     },
-    status: { ...getMenuStyles().title, flexShrink: 1 },
+    status: { ...getSettingsGroupStyles().value, flexShrink: 1 },
   }),
 );

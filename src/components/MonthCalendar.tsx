@@ -1,7 +1,15 @@
 import { createThemeValue } from "../lib/appTheme";
 import { useAppTheme } from "../hooks/useAppTheme";
 import { memo, useCallback, useMemo } from "react";
-import { Pressable, type StyleProp, StyleSheet, Text, type TextStyle, View } from "react-native";
+import {
+  type LayoutRectangle,
+  Pressable,
+  type StyleProp,
+  StyleSheet,
+  Text,
+  type TextStyle,
+  View,
+} from "react-native";
 
 import { getCalendarDayUi } from "../constants/calendarDay";
 import { getAppColors } from "../constants/colors";
@@ -31,6 +39,8 @@ type MonthCalendarProps = {
   isReadOnlyDueToPlanLimit?: boolean;
   onSelectDate: (isoDate: string) => void;
   selectedDate: string;
+  collapsedWeekIndex?: number;
+  onWeekLayout?: (index: number, layout: LayoutRectangle) => void;
 };
 
 type CalendarDayHeatmapTone = "expense" | "income" | null;
@@ -47,6 +57,8 @@ function MonthCalendarComponent({
   isReadOnlyDueToPlanLimit = false,
   onSelectDate,
   selectedDate,
+  collapsedWeekIndex,
+  onWeekLayout,
 }: MonthCalendarProps) {
   const styles = getStyles();
   useAppTheme();
@@ -69,6 +81,20 @@ function MonthCalendarComponent({
           <View
             key={week.map((day) => day.isoDate).join(":")}
             style={[styles.weekRow, getWeekDividerStyle(weekIndex)]}
+            onLayout={
+              onWeekLayout && ((event) => onWeekLayout(weekIndex, event.nativeEvent.layout))
+            }
+            accessibilityElementsHidden={
+              collapsedWeekIndex !== undefined && weekIndex !== collapsedWeekIndex
+            }
+            importantForAccessibility={
+              collapsedWeekIndex !== undefined && weekIndex !== collapsedWeekIndex
+                ? "no-hide-descendants"
+                : "auto"
+            }
+            pointerEvents={
+              collapsedWeekIndex !== undefined && weekIndex !== collapsedWeekIndex ? "none" : "auto"
+            }
           >
             {week.map((day) => (
               <View key={day.isoDate} style={styles.daySlot}>
@@ -78,6 +104,7 @@ function MonthCalendarComponent({
                   isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
                   isSelected={day.isoDate === selectedDate}
                   onSelectDate={handleSelectDate}
+                  showsOutsideMonth={collapsedWeekIndex === weekIndex}
                 />
               </View>
             ))}
@@ -129,12 +156,14 @@ const DayCell = memo(function DayCell({
   isReadOnlyDueToPlanLimit,
   isSelected,
   onSelectDate,
+  showsOutsideMonth,
 }: {
   day: CalendarDay;
   heatmapLevel: number;
   isReadOnlyDueToPlanLimit: boolean;
   isSelected: boolean;
   onSelectDate: (isoDate: string) => void;
+  showsOutsideMonth: boolean;
 }) {
   const styles = getStyles();
   useAppTheme();
@@ -142,7 +171,7 @@ const DayCell = memo(function DayCell({
     onSelectDate(day.isoDate);
   }, [day.isoDate, onSelectDate]);
 
-  if (!day.isCurrentMonth) {
+  if (!day.isCurrentMonth && !showsOutsideMonth) {
     return (
       <View
         accessibilityElementsHidden
@@ -182,6 +211,7 @@ const DayCell = memo(function DayCell({
               styles.dayNumber,
               shouldApplyWeekendTint && isSunday && styles.sundayNumber,
               shouldApplyWeekendTint && isSaturday && styles.saturdayNumber,
+              !day.isCurrentMonth && shouldApplyWeekendTint && styles.outsideMonthDayNumber,
               day.isToday && !isSelected ? styles.todayNumber : null,
               isSelected ? styles.selectedDayNumber : null,
               day.isToday && isSelected ? styles.selectedTodayNumber : null,
@@ -382,6 +412,7 @@ const getStyles = createThemeValue(() =>
     todayNumber: {
       color: getAppColors().accent,
     },
+    outsideMonthDayNumber: { color: getAppColors().mutedText },
     selectedDayNumber: {
       color: getAppColors().primary,
     },

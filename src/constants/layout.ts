@@ -1,3 +1,5 @@
+import { AppFontSize } from "./typography";
+
 const SCREEN_PADDING = 8;
 const COMPACT_GAP = 4;
 
@@ -20,5 +22,5 @@ export const AppLayout = {
 
 export const AppScreenTitleUi = {
   selectorIconSize: 18,
-  datePickerFont: { size: 16, weight: "semibold" } as const,
+  datePickerFont: { size: AppFontSize.label, weight: "semibold" } as const,
 } as const;

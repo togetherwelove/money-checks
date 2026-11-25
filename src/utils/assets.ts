@@ -74,9 +74,6 @@ export function assetDraftError(draft: AssetDraft): string | null {
     !Number.isFinite(amount) ||
     amount < 0 ||
     amount > AssetConfig.maximumAmount ||
-    !validAssetDate(draft.date) ||
-    draft.date < AssetConfig.earliestDate ||
-    draft.date > assetToday() ||
     (draft.kind === "stock" &&
       !draft.amount.trim() &&
       (numberValue(draft.quantity) > AssetConfig.maximumQuantity ||
@@ -109,20 +106,11 @@ export function assetKind(kind: AssetKind) {
 export function isAssetDebt(kind: AssetKind) {
   return assetKind(kind).group === "debt";
 }
-export function latestValuation(
-  valuations: AssetValuation[],
-  assetId: string,
-  date = assetToday(),
-) {
+export function latestValuation(valuations: AssetValuation[], assetId: string) {
   let latest: AssetValuation | undefined;
   for (const value of valuations) {
-    if (value.asset_id !== assetId || value.valued_on > date) continue;
-    if (
-      !latest ||
-      value.valued_on > latest.valued_on ||
-      (value.valued_on === latest.valued_on && value.created_at > latest.created_at)
-    )
-      latest = value;
+    if (value.asset_id !== assetId) continue;
+    if (!latest || value.created_at > latest.created_at) latest = value;
   }
   return latest;
 }
@@ -145,85 +133,31 @@ export function draftFromAsset(asset: PersonalAsset, valuation: AssetValuation):
     date: assetToday(),
   };
 }
-export function assetBalance(
-  portfolio: AssetPortfolio,
-  assetId: string,
-  date = assetToday(),
-  excludeEntryId?: string,
-) {
-  const baseline = latestValuation(portfolio.valuations, assetId, date);
-  if (!baseline) return 0;
-  let balance = new BalanceDecimal(baseline.amount);
-  for (const movement of portfolio.movements ?? []) {
-    if (
-      movement.asset_id !== assetId ||
-      movement.entry_id === excludeEntryId ||
-      movement.occurred_on > date
-    )
-      continue;
-    if (
-      movement.occurred_on > baseline.valued_on ||
-      (movement.occurred_on === baseline.valued_on && movement.created_at > baseline.created_at)
-    )
-      balance = balance.plus(movement.amount);
+export function assetBalance(portfolio: AssetPortfolio, assetId: string, excludeEntryId?: string) {
+  const asset = portfolio.assets.find((item) => item.id === assetId);
+  let balance = new BalanceDecimal(asset?.current_balance ?? 0);
+  if (excludeEntryId) {
+    for (const movement of portfolio.movements ?? []) {
+      if (movement.asset_id === assetId && movement.entry_id === excludeEntryId)
+        balance = balance.minus(movement.amount);
+    }
   }
   return balance.toDecimalPlaces(AssetLinkConfig.moneyDecimals).toNumber();
 }
-export function assetActivity(portfolio: AssetPortfolio, assetId: string, date = assetToday()) {
-  const baseline = latestValuation(portfolio.valuations, assetId, date);
-  let latestDate = baseline?.valued_on ?? "",
-    stamp = baseline?.created_at ?? "",
-    automatic = false;
-  for (const movement of portfolio.movements ?? []) {
-    if (movement.asset_id !== assetId || movement.occurred_on > date) continue;
-    if (
-      movement.occurred_on > latestDate ||
-      (movement.occurred_on === latestDate && movement.created_at > stamp)
-    ) {
-      latestDate = movement.occurred_on;
-      stamp = movement.created_at;
-      automatic = true;
-    }
-  }
-  return { date: latestDate, automatic };
-}
-export function portfolioSummary(portfolio: AssetPortfolio, date = assetToday()) {
+
+export function portfolioSummary(portfolio: AssetPortfolio) {
   let total = new BalanceDecimal(0),
     debt = new BalanceDecimal(0);
   for (const asset of portfolio.assets) {
-    if (asset.deleted_on && asset.deleted_on <= date) continue;
-    const value = assetBalance(portfolio, asset.id, date);
-    if (isAssetDebt(asset.kind)) debt = debt.plus(value);
-    else total = total.plus(value);
+    if (asset.deleted_on) continue;
+    if (isAssetDebt(asset.kind)) debt = debt.plus(asset.current_balance);
+    else total = total.plus(asset.current_balance);
   }
   return {
     total: total.toNumber(),
     debt: debt.toNumber(),
     net: total.minus(debt).toDecimalPlaces(AssetLinkConfig.moneyDecimals).toNumber(),
   };
-}
-export function portfolioTrend(portfolio: AssetPortfolio, today = assetToday()) {
-  const firstDate = portfolio.valuations.reduce(
-    (first, value) => (value.valued_on < first ? value.valued_on : first),
-    today,
-  );
-  const current = new Date(`${today}T12:00:00`);
-  return Array.from({ length: AssetConfig.trendMonths }, (_, index) => {
-    const monthEnd = new Date(current.getFullYear(), current.getMonth() - index + 1, 0);
-    const date =
-      index === 0
-        ? today
-        : `${monthEnd.getFullYear()}-${String(monthEnd.getMonth() + 1).padStart(2, "0")}-${String(monthEnd.getDate()).padStart(2, "0")}`;
-    const active = portfolio.assets.filter((asset) => !asset.deleted_on || asset.deleted_on > date);
-    const confirmed = active.filter(
-      (asset) =>
-        latestValuation(portfolio.valuations, asset.id, date)?.valued_on.slice(0, 7) ===
-        date.slice(0, 7),
-    ).length;
-    return { date, confirmed, count: active.length, ...portfolioSummary(portfolio, date) };
-  })
-    .filter((point) => point.date >= firstDate)
-    .reverse();
 }
 
 const currencyFormat = new Intl.NumberFormat("ko-KR", {

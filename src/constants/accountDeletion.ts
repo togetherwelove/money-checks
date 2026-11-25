@@ -7,6 +7,7 @@ export const AccountDeletionSubscriptionCopy = {
 } as const;
 
 export const AccountDeletionMessages = {
+  deleteAction: "계정 삭제",
   confirmTitle: "계정을 삭제할까요?",
   appleRequiresIOS: "Apple로 로그인한 계정은 iPhone에서 Apple 재인증 후 삭제해 주세요.",
   appleAuthorizationFailed: "Apple 계정을 다시 확인하지 못했어요. 잠시 후 다시 시도해 주세요.",

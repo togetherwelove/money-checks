@@ -10,6 +10,50 @@ const nodes = (node) =>
     : node?.props
       ? [node, ...nodes(node.props.children)]
       : [];
+
+test("home requests entries in registration order both on load and refresh", async () => {
+  const state = hooks();
+  const date = "2026-11-23";
+  const entries = [
+    { id: "older", amount: 10 },
+    { id: "newer", amount: 20 },
+  ];
+  const queries = [];
+  const loadSelectedEntries = modules({
+    react: state.react,
+    "src/lib/ledgerEntries.ts": {
+      fetchLedgerEntries: async (...args) => {
+        queries.push(args);
+        return entries;
+      },
+    },
+    "src/lib/logAppError.ts": { logAppError() {} },
+    "src/lib/performanceTrace.ts": { createPerformanceTrace: () => () => {} },
+  });
+  const { useSelectedDateEntries } = loadSelectedEntries(
+    "src/hooks/ledgerScreenState/useSelectedDateEntries.ts",
+  );
+  const { buildLedgerEntryListSignature } = loadSelectedEntries(
+    "src/utils/ledgerEntrySignature.ts",
+  );
+  const render = () =>
+    state.render(() =>
+      useSelectedDateEntries("book", date, buildLedgerEntryListSignature(entries)),
+    );
+  render();
+  await new Promise(setImmediate);
+  await render().refreshSelectedDateEntries();
+  assert.equal(queries.length, 2);
+  for (const [book, start, end, options] of queries) {
+    assert.equal(book, "book");
+    assert.equal(start, date);
+    assert.equal(end, date);
+    assert.equal(options.orderBy, "created_at");
+    assert.equal(options.ascending, true);
+  }
+  state.unmount();
+});
+
 const load = modules({
   "react/jsx-runtime": { jsx, jsxs: jsx },
   "react-native": {
@@ -84,6 +128,7 @@ test("home refresh does not insert a loading spacer into empty or populated list
 test("all entries suppresses its empty-list loader while the native pull indicator is active", () => {
   const h = hooks();
   let pulling = false;
+  const queries = [];
   const entries = [],
     categories = [];
   const loadScreen = modules({
@@ -102,7 +147,10 @@ test("all entries suppresses its empty-list loader while the native pull indicat
       usePullToRefresh: () => ({ isPullRefreshing: pulling, onPullRefresh() {} }),
     },
     "src/hooks/useAllLedgerEntries.ts": {
-      useAllLedgerEntries: () => ({ entries, isRefreshing: true, refreshEntries: async () => {} }),
+      useAllLedgerEntries: (query) => {
+        queries.push(query);
+        return { entries, isRefreshing: true, refreshEntries: async () => {} };
+      },
     },
     "src/hooks/useLedgerCategories.ts": { useLedgerCategories: () => categories },
     "src/hooks/useLedgerCategoryIconMap.ts": { useLedgerCategoryIconMap: () => new Map() },
@@ -134,6 +182,40 @@ test("all entries suppresses its empty-list loader while the native pull indicat
   );
   assert.equal(list.props.ListEmptyComponent.type, initialEmpty.type);
   assert.strictEqual(list.props.ListEmptyComponent.props.style, initialEmpty.props.style);
+  const dateRange = { startDate: "2026-11-01", endDate: "2026-11-30" };
+  const reportCategoryFilter = {
+    bookId: "book",
+    requestId: 1,
+    categories: [{ id: "food", label: "식비" }],
+    entryType: "expense",
+    dateRange,
+  };
+  h.render(() =>
+    AllEntriesScreen({
+      activeBook: { id: "book" },
+      showsNativeAds: false,
+      reportCategoryFilter,
+    }),
+  );
+  assert.deepEqual(Array.from(queries.at(-1).selectedCategoryIds), ["food"]);
+  assert.equal(queries.at(-1).dateRange, dateRange);
+  assert.equal(queries.at(-1).entryTypeFilter, "expense");
+  const incomeFilter = {
+    ...reportCategoryFilter,
+    requestId: 2,
+    entryType: "income",
+    categories: [{ id: "salary", label: "월급" }],
+  };
+  h.render(() =>
+    AllEntriesScreen({
+      activeBook: { id: "book" },
+      showsNativeAds: false,
+      reportCategoryFilter: incomeFilter,
+    }),
+  );
+  assert.deepEqual(Array.from(queries.at(-1).selectedCategoryIds), ["salary"]);
+  assert.equal(queries.at(-1).dateRange, dateRange);
+  assert.equal(queries.at(-1).entryTypeFilter, "income");
   h.unmount();
 });
 function render(extra = {}) {

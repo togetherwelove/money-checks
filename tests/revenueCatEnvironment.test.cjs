@@ -3,6 +3,7 @@ const fs = require("node:fs");
 const vm = require("node:vm");
 const test = require("node:test");
 const ts = require("typescript");
+const { getThemeTestMock } = require("./themeTestMocks.cjs");
 
 function resolveKey(env) {
   function evaluate(file, imports = {}) {
@@ -10,7 +11,11 @@ function resolveKey(env) {
     const { outputText } = ts.transpileModule(fs.readFileSync(file, "utf8"), {
       compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
     });
-    vm.runInNewContext(outputText, { exports, process: { env }, require: (name) => imports[name] });
+    vm.runInNewContext(outputText, {
+      exports,
+      process: { env },
+      require: (name) => getThemeTestMock(name) ?? imports[name],
+    });
     return exports;
   }
   return evaluate("src/lib/subscription/revenueCatApiKey.ts", {

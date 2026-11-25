@@ -1,3 +1,5 @@
+import { SettingsGroup } from "../appSettings/SettingsGroup";
+import { getSettingsGroupStyles } from "../../constants/settingsGroupStyles";
 import { createThemeValue } from "../../lib/appTheme";
 import { useAppTheme } from "../../hooks/useAppTheme";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -80,7 +82,7 @@ export function AnnualReportRangePickerModal({
         <AnnualReportPeriodOptions selectedYear={selectedYear} onSelect={onSelectPeriod} />
       ) : (
         <>
-          <View style={styles.rangeFields}>
+          <SettingsGroup>
             <DateFieldButton
               disabled={disabled}
               isActive={activeField === "start"}
@@ -95,7 +97,7 @@ export function AnnualReportRangePickerModal({
               onPress={() => setActiveField("end")}
               value={toIsoDate(draftEndDate)}
             />
-          </View>
+          </SettingsGroup>
           <View style={styles.pickerSlot}>
             <DateTimePicker
               display="spinner"
@@ -138,6 +140,8 @@ function DateFieldButton({
   return (
     <Pressable
       disabled={disabled}
+      accessibilityRole="button"
+      accessibilityState={{ selected: isActive, disabled }}
       onPress={onPress}
       style={[styles.dateFieldButton, isActive ? styles.activeDateFieldButton : null]}
     >
@@ -158,32 +162,11 @@ const getStyles = createThemeValue(() =>
     activeLabel: {
       color: getAppColors().primary,
     },
-    dateFieldButton: {
-      flex: 1,
-      gap: 4,
-      paddingHorizontal: AnnualReportUi.rangeFieldPaddingHorizontal,
-      paddingVertical: AnnualReportUi.rangeFieldPaddingVertical,
-      borderWidth: AnnualReportUi.rangeFieldBorderWidth,
-      borderColor: getAppColors().border,
-      borderRadius: AnnualReportUi.rangeFieldPaddingHorizontal,
-      backgroundColor: getAppColors().background,
-    },
-    dateFieldValue: {
-      color: getAppColors().text,
-      fontSize: 13,
-      fontWeight: "700",
-    },
-    label: {
-      color: getAppColors().mutedText,
-      fontSize: 12,
-      fontWeight: "700",
-    },
+    dateFieldButton: getSettingsGroupStyles().row,
+    dateFieldValue: getSettingsGroupStyles().value,
+    label: getSettingsGroupStyles().label,
     pickerSlot: {
       gap: AnnualReportUi.rangePickerGap,
-    },
-    rangeFields: {
-      flexDirection: "row",
-      gap: AnnualReportUi.rangeFieldGap,
     },
   }),
 );

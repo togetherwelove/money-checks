@@ -4,6 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { PGlite } = require("@electric-sql/pglite");
 const { modules } = require("./annualReportHelpers.cjs");
+const { verifyCurrentAssetBalances } = require("./currentAssetBalancesChecks.cjs");
 
 test("PostgreSQL atomically applies, edits, removes and protects linked asset movements", async () => {
   const db = new PGlite();
@@ -216,6 +217,13 @@ test("PostgreSQL atomically applies, edits, removes and protects linked asset mo
     );
     await db.exec("reset role;");
     // Run the production portfolio reader against real table columns, not a permissive query mock.
+    for (const file of fs
+      .readdirSync(path.join(__dirname, "../supabase/migrations"))
+      .filter((name) => /^202611(?:17000[1-3]|230001)_/.test(name))
+      .sort()) {
+      await db.exec(fs.readFileSync(path.join(__dirname, "../supabase/migrations", file), "utf8"));
+    }
+    assert.equal(await balance(cash), 650, "migration preserves the effective balance");
     const client = modules({
       "src/lib/supabase.ts": {
         supabase: {
@@ -255,7 +263,7 @@ test("PostgreSQL atomically applies, edits, removes and protects linked asset mo
     const loaded = await client.fetchPersonalAssets(book);
     assert.equal(loaded.assets.length, 3);
     assert.equal(loaded.movements.length, 3);
-    assert.equal(modules()("src/utils/assets.ts").assetBalance(loaded, cash, "2020-02-01"), 650);
+    assert.equal(modules()("src/utils/assets.ts").assetBalance(loaded, cash), 650);
     assert.ok(
       (
         await db.query(
@@ -294,6 +302,7 @@ test("PostgreSQL atomically applies, edits, removes and protects linked asset mo
       /unavailable/,
     );
     await db.exec("reset role");
+    await verifyCurrentAssetBalances({ db, owner, other, book, cash, link, insert, balance });
     // Existing private links can be retained while another editor changes ledger amounts.
     await db.query("update ledger_entries set amount=110 where id=$1", [payment]);
     assert.equal(await balance(loan), 4920);

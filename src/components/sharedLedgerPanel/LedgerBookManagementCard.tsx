@@ -1,11 +1,13 @@
+import { TextLinkButton } from "../TextLinkButton";
+import { LedgerBookChoice } from "./LedgerBookChoice";
+import { getSettingsGroupStyles } from "../../constants/settingsGroupStyles";
+import { useRegisterLedgerBookCreateAction } from "./ledgerBookManagementHeader";
 import { useAppTheme } from "../../hooks/useAppTheme";
-import { useState } from "react";
-import { Alert, Pressable, Text, TextInput, View } from "react-native";
+import { useState, type ReactNode } from "react";
+import { Alert, Text, TextInput, View } from "react-native";
 
 import { LedgerBookManagementCopy } from "../../constants/ledgerBookManagement";
 import { AppMessages } from "../../constants/messages";
-import { NotificationBadgeCopy } from "../../constants/notificationBadges";
-import { SharedLedgerPanelUi } from "../../constants/sharedLedgerPanel";
 import {
   SubscriptionConfig,
   type SubscriptionTier,
@@ -19,17 +21,19 @@ import type { LedgerBookJoinRequestCountByBookId } from "../../types/ledgerBookJ
 import type { LedgerBookMember } from "../../types/ledgerBookMember";
 import { IconActionButton } from "../IconActionButton";
 import { LedgerBookMembers } from "../LedgerBookMembers";
-import { TextLinkButton } from "../TextLinkButton";
+import { SettingsRow } from "../appSettings/SettingsRow";
 import { getSharedLedgerPanelStyles } from "./sharedLedgerPanelStyles";
 
 type LedgerBookManagementCardProps = {
   badgedBookIds?: readonly string[];
   accessibleBooks: AccessibleLedgerBook[];
   activeBook: LedgerBook | null;
+  activeBookNameControl?: ReactNode;
   canLeaveSharedBook: boolean;
   currentUserId: string;
   isReadOnlyDueToPlanLimit: boolean;
   members: LedgerBookMember[];
+  memberLimit: number | null;
   onCreateLedgerBook: (nextName: string) => Promise<boolean>;
   onDeleteActiveLedgerBook: () => Promise<boolean>;
   onKickMember: (targetUserId: string) => Promise<boolean>;
@@ -46,10 +50,12 @@ export function LedgerBookManagementCard({
   badgedBookIds,
   accessibleBooks,
   activeBook,
+  activeBookNameControl,
   canLeaveSharedBook,
   currentUserId,
   isReadOnlyDueToPlanLimit,
   members,
+  memberLimit,
   onCreateLedgerBook,
   onDeleteActiveLedgerBook,
   onKickMember,
@@ -76,7 +82,6 @@ export function LedgerBookManagementCard({
   const canCreateOwnedBook =
     ownedBookCount < ownedBookLimit && accessibleBookCount < accessibleBookLimit;
   const shouldUseNativeNamePrompt = appPlatform.isIOS;
-  const shouldInsetLedgerBookList = shouldUseNativeNamePrompt && !activeBook;
   const isFreePlan = subscriptionTier === SubscriptionTiers.free;
   const createLimitReachedMessage = isFreePlan
     ? LedgerBookManagementCopy.createFreePlanLimitReached
@@ -178,6 +183,11 @@ export function LedgerBookManagementCard({
     );
   };
 
+  const hasHeaderCreateAction = useRegisterLedgerBookCreateAction(
+    handlePressCreateLedgerBook,
+    isCreateActionDisabled,
+  );
+
   const handleSwitchLedgerBook = async (bookId: string) => {
     const didSwitch = await onSwitchLedgerBook(bookId);
     showNativeToast(
@@ -214,135 +224,63 @@ export function LedgerBookManagementCard({
     );
   };
 
+  const currentBook = accessibleBooks.find((book) => book.id === activeBook?.id);
+  const otherBooks = accessibleBooks.filter((book) => book.id !== activeBook?.id);
+  const renderBook = (book: AccessibleLedgerBook, current = false) => (
+    <LedgerBookChoice
+      key={book.id}
+      book={book}
+      current={current}
+      currentUserId={currentUserId}
+      nameControl={current ? activeBookNameControl : undefined}
+      readOnly={!isLedgerBookEditableWithinPlanLimit(subscriptionTier, accessibleBooks, book.id)}
+      unread={Boolean(
+        badgedBookIds?.includes(book.id) ||
+          (book.ownerId === currentUserId && (pendingJoinRequestCountsByBookId[book.id] ?? 0) > 0),
+      )}
+      onSelect={handleSwitchLedgerBook}
+    />
+  );
+
   return (
-    <View style={getSharedLedgerPanelStyles().section}>
-      <View style={getSharedLedgerPanelStyles().sectionHeader}>
-        <View style={getSharedLedgerPanelStyles().sectionTitleRow}>
-          <Text style={getSharedLedgerPanelStyles().sectionTitle}>
-            {LedgerBookManagementCopy.listTitle}
-          </Text>
-          <Text style={getSharedLedgerPanelStyles().hintText}>
-            {accessibleBookCount}/{accessibleBookLimit}
-          </Text>
-        </View>
+    <View style={getSharedLedgerPanelStyles().panel}>
+      {!hasHeaderCreateAction ? (
         <IconActionButton
           accessibilityLabel={LedgerBookManagementCopy.createAction}
           disabled={isCreateActionDisabled}
           icon="plus"
           onPress={handlePressCreateLedgerBook}
         />
-      </View>
-      <View
-        style={[
-          getSharedLedgerPanelStyles().ledgerBookList,
-          shouldInsetLedgerBookList ? getSharedLedgerPanelStyles().sectionBottomInset : null,
-        ]}
-      >
-        {accessibleBooks.length > 0 ? (
-          accessibleBooks.map((book) => {
-            const isActiveBook = book.id === activeBook?.id;
-            const isOwner = book.ownerId === currentUserId;
-            const isReadOnlyBook = !isLedgerBookEditableWithinPlanLimit(
-              subscriptionTier,
-              accessibleBooks,
-              book.id,
-            );
-            const ownershipLabel = isOwner
-              ? LedgerBookManagementCopy.ownerBadge
-              : LedgerBookManagementCopy.sharedBadge;
-            const shouldShowPendingRequestBadge =
-              isOwner && (pendingJoinRequestCountsByBookId[book.id] ?? 0) > 0;
-            const switchIcon = isActiveBook ? "check" : "chevrons-right";
-            const visibleShareCode =
-              isActiveBook && book.shareCode ? formatVisibleShareCode(book.shareCode) : null;
-            return (
-              <Pressable
-                accessibilityLabel={LedgerBookManagementCopy.switchActionAccessibilityLabel}
-                accessibilityRole="button"
-                key={book.id}
-                onPress={() => {
-                  if (!isActiveBook) {
-                    void handleSwitchLedgerBook(book.id);
-                  }
-                }}
-                style={[
-                  getSharedLedgerPanelStyles().ledgerBookItem,
-                  isReadOnlyBook ? getSharedLedgerPanelStyles().readOnlyLedgerBookItem : null,
-                  isActiveBook ? getSharedLedgerPanelStyles().activeLedgerBookItem : null,
-                ]}
-              >
-                <View style={getSharedLedgerPanelStyles().ledgerBookItemContent}>
-                  <View style={getSharedLedgerPanelStyles().ledgerBookItemNameRow}>
-                    {shouldShowPendingRequestBadge || badgedBookIds?.includes(book.id) ? (
-                      <View
-                        accessible
-                        accessibilityLabel={NotificationBadgeCopy.unreadBookAccessibilityLabel}
-                        style={getSharedLedgerPanelStyles().pendingRequestBadge}
-                      />
-                    ) : null}
-                    <Text
-                      numberOfLines={1}
-                      style={[
-                        getSharedLedgerPanelStyles().ledgerBookItemName,
-                        isActiveBook ? getSharedLedgerPanelStyles().activeLedgerBookItemName : null,
-                      ]}
-                    >
-                      {book.name}
-                    </Text>
-                    {isReadOnlyBook ? (
-                      <View style={getSharedLedgerPanelStyles().readOnlyLedgerBookChip}>
-                        <Text style={getSharedLedgerPanelStyles().readOnlyLedgerBookChipText}>
-                          조회 전용
-                        </Text>
-                      </View>
-                    ) : null}
-                  </View>
-                  <View style={getSharedLedgerPanelStyles().ledgerBookItemMetaRow}>
-                    <Text style={getSharedLedgerPanelStyles().ledgerBookItemMeta}>
-                      {ownershipLabel}
-                    </Text>
-                    {visibleShareCode ? (
-                      <View style={getSharedLedgerPanelStyles().shareCodePreviewRow}>
-                        <Text selectable style={getSharedLedgerPanelStyles().shareCodePreviewValue}>
-                          {visibleShareCode}
-                        </Text>
-                      </View>
-                    ) : null}
-                  </View>
-                </View>
-                <IconActionButton
-                  accessibilityLabel={LedgerBookManagementCopy.switchActionAccessibilityLabel}
-                  icon={switchIcon}
-                  isActive={isActiveBook}
-                  onPress={() => {
-                    if (!isActiveBook) {
-                      void handleSwitchLedgerBook(book.id);
-                    }
-                  }}
-                />
-              </Pressable>
-            );
-          })
-        ) : (
-          <Text style={getSharedLedgerPanelStyles().helpText}>
-            {LedgerBookManagementCopy.emptyList}
-          </Text>
-        )}
-      </View>
+      ) : null}
+      {currentBook ? (
+        <View style={getSettingsGroupStyles().section}>
+          <View style={getSharedLedgerPanelStyles().bookListHeading}>
+            <Text style={getSettingsGroupStyles().heading}>
+              {LedgerBookManagementCopy.currentBookTitle}
+            </Text>
+            <Text style={getSharedLedgerPanelStyles().hintText}>
+              {accessibleBookCount}/{accessibleBookLimit}
+            </Text>
+          </View>
+          {renderBook(currentBook, true)}
+          {canLeaveSharedBook ? (
+            <View style={getSharedLedgerPanelStyles().disconnectActionRow}>
+              <TextLinkButton
+                label={AppMessages.accountDisconnectAction}
+                onPress={() => confirmLeaveSharedLedgerBook(onLeave)}
+                tone="destructive"
+              />
+            </View>
+          ) : null}
+        </View>
+      ) : null}
       {activeBook ? (
-        <View
-          style={[
-            getSharedLedgerPanelStyles().ledgerBookList,
-            getSharedLedgerPanelStyles().ledgerBookMembersBlock,
-            shouldUseNativeNamePrompt && !canLeaveSharedBook
-              ? getSharedLedgerPanelStyles().sectionBottomInset
-              : null,
-          ]}
-        >
+        <View style={getSharedLedgerPanelStyles().membersDirectory}>
           <LedgerBookMembers
             currentUserId={currentUserId}
             isManagementDisabled={isReadOnlyDueToPlanLimit}
             members={members}
+            memberLimit={memberLimit}
             onKickMember={onKickMember}
             onOpenSubscription={onOpenSubscription}
             onTransferOwnership={onTransferOwnership}
@@ -350,13 +288,24 @@ export function LedgerBookManagementCard({
           />
         </View>
       ) : null}
+      {otherBooks.length > 0 ? (
+        <View style={getSettingsGroupStyles().section}>
+          <View style={getSharedLedgerPanelStyles().bookListHeading}>
+            <Text style={getSettingsGroupStyles().heading}>
+              {LedgerBookManagementCopy.otherBooksTitle}
+            </Text>
+            <Text style={getSharedLedgerPanelStyles().hintText}>{otherBooks.length}</Text>
+          </View>
+          <View style={getSharedLedgerPanelStyles().otherBookList}>
+            {otherBooks.map((book) => renderBook(book))}
+          </View>
+        </View>
+      ) : null}
+      {accessibleBooks.length === 0 ? (
+        <Text style={getSettingsGroupStyles().caption}>{LedgerBookManagementCopy.emptyList}</Text>
+      ) : null}
       {!shouldUseNativeNamePrompt ? (
-        <View
-          style={[
-            getSharedLedgerPanelStyles().createBookRow,
-            canLeaveSharedBook ? null : getSharedLedgerPanelStyles().sectionBottomInset,
-          ]}
-        >
+        <View style={getSharedLedgerPanelStyles().createBookRow}>
           <TextInput
             autoCapitalize="words"
             autoComplete="off"
@@ -364,9 +313,7 @@ export function LedgerBookManagementCard({
             editable={canCreateOwnedBook}
             importantForAutofill="no"
             onChangeText={setNewBookName}
-            onSubmitEditing={() => {
-              handlePressCreateLedgerBook();
-            }}
+            onSubmitEditing={handlePressCreateLedgerBook}
             placeholder={LedgerBookManagementCopy.createNamePlaceholder}
             returnKeyType="done"
             spellCheck={false}
@@ -377,33 +324,12 @@ export function LedgerBookManagementCard({
           />
         </View>
       ) : null}
-      {canLeaveSharedBook ? (
-        <View
-          style={[
-            getSharedLedgerPanelStyles().disconnectActionRow,
-            getSharedLedgerPanelStyles().sectionBottomInset,
-          ]}
-        >
-          <TextLinkButton
-            label={AppMessages.accountDisconnectAction}
-            onPress={() => {
-              confirmLeaveSharedLedgerBook(onLeave);
-            }}
-            tone="destructive"
-          />
-        </View>
-      ) : null}
       {canDeleteActiveBook ? (
-        <View
-          style={[
-            getSharedLedgerPanelStyles().disconnectActionRow,
-            getSharedLedgerPanelStyles().sectionBottomInset,
-          ]}
-        >
-          <TextLinkButton
+        <View style={getSharedLedgerPanelStyles().section}>
+          <SettingsRow
             label={LedgerBookManagementCopy.deleteAction}
             onPress={handleDeleteActiveLedgerBook}
-            tone="destructive"
+            destructive
           />
         </View>
       ) : null}
@@ -427,10 +353,4 @@ function confirmLeaveSharedLedgerBook(onConfirm: () => unknown) {
       },
     ],
   );
-}
-
-function formatVisibleShareCode(shareCode: string): string {
-  return `${shareCode.slice(0, SharedLedgerPanelUi.shareCodePreviewPrefixLength)}${
-    SharedLedgerPanelUi.shareCodePreviewMask
-  }`;
 }

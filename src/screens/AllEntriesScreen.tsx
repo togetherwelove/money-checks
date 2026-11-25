@@ -1,3 +1,6 @@
+import { AppFontSize } from "../constants/typography";
+import type { AllEntriesDateRange, ReportCategoryFilter } from "../constants/allEntries";
+import { AllEntriesTotals } from "../components/allEntries/AllEntriesTotals";
 import { createThemeValue } from "../lib/appTheme";
 import { useAppTheme } from "../hooks/useAppTheme";
 import { useNativeAdCache } from "../hooks/useNativeAdCache";
@@ -24,7 +27,6 @@ import {
   AllEntriesEntryTypeFilters,
   AllEntriesFilterCopy,
 } from "../constants/allEntries";
-import { CATEGORY_OPTIONS } from "../constants/categories";
 import { getAppColors } from "../constants/colors";
 import { RefreshableScrollBehavior, EntryListScrollUi } from "../constants/scroll";
 import { AppLayout } from "../constants/layout";
@@ -32,7 +34,6 @@ import { useAllLedgerEntries } from "../hooks/useAllLedgerEntries";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { useLedgerCategories } from "../hooks/useLedgerCategories";
 import { useLedgerCategoryIconMap } from "../hooks/useLedgerCategoryIconMap";
-import { resolveAllEntriesQueryCategoryIds } from "../lib/allEntriesFilters";
 import { buildAllEntriesFeedItems } from "../lib/allEntriesFeedItems";
 import type { LedgerEntry } from "../types/ledger";
 import {
@@ -53,6 +54,7 @@ type AllEntriesScreenProps = {
   onPrepayInstallmentEntry: InstallmentPrepaymentHandler;
   screenTitle: ReactNode;
   showsNativeAds: boolean;
+  reportCategoryFilter?: ReportCategoryFilter;
 };
 
 export function AllEntriesScreen({
@@ -65,41 +67,43 @@ export function AllEntriesScreen({
   onPrepayInstallmentEntry,
   screenTitle,
   showsNativeAds,
+  reportCategoryFilter,
 }: AllEntriesScreenProps) {
   const styles = getStyles();
   useAppTheme();
   const nativeAdCache = useNativeAdCache(showsNativeAds);
+  const activeBookId = activeBook?.id ?? null;
+  const initialFilter =
+    reportCategoryFilter?.bookId === activeBookId ? reportCategoryFilter : undefined;
+  const [dateRange, setDateRange] = useState<AllEntriesDateRange | null>(
+    initialFilter?.dateRange ?? null,
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [entryTypeFilter, setEntryTypeFilter] = useState<AllEntriesEntryTypeFilter>(
-    AllEntriesEntryTypeFilters.all,
+    initialFilter?.entryType ?? AllEntriesEntryTypeFilters.all,
   );
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
-  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>(
+    () => initialFilter?.categories.map((category) => category.id) ?? [],
+  );
   const deferredSearchQuery = useDeferredValue(searchQuery.trim());
-  const activeBookId = activeBook?.id ?? null;
   const categories = useLedgerCategories(activeBookId);
   const categoryIconByKey = useLedgerCategoryIconMap(activeBookId);
-  const queryCategoryIds = useMemo(
-    () =>
-      resolveAllEntriesQueryCategoryIds(
-        [...CATEGORY_OPTIONS.expense, ...CATEGORY_OPTIONS.income, ...categories],
-        entryTypeFilter,
-        selectedCategoryIds,
-      ),
-    [categories, entryTypeFilter, selectedCategoryIds],
-  );
+  const queryCategoryIds = useMemo(() => [...new Set(selectedCategoryIds)], [selectedCategoryIds]);
   const categoryLabelById = useMemo(
     () => new Map(categories.map((category) => [category.id, category.label])),
     [categories],
   );
   useEffect(() => {
+    setDateRange(initialFilter?.dateRange ?? null);
     setSearchQuery("");
-    setEntryTypeFilter(AllEntriesEntryTypeFilters.all);
+    setEntryTypeFilter(initialFilter?.entryType ?? AllEntriesEntryTypeFilters.all);
     setIsFilterSheetOpen(false);
-    setSelectedCategoryIds([]);
-  }, [activeBookId]);
+    setSelectedCategoryIds(initialFilter?.categories.map((category) => category.id) ?? []);
+  }, [activeBookId, initialFilter]);
   const {
     entries,
+    summary,
     errorMessage,
     hasMore,
     isLoadingMore,
@@ -111,11 +115,14 @@ export function AllEntriesScreen({
     activeBookId,
     selectedCategoryIds: queryCategoryIds,
     searchQuery: deferredSearchQuery,
+    dateRange,
+    entryTypeFilter,
   });
   const hasAppliedFilters =
     deferredSearchQuery.length > 0 ||
     entryTypeFilter !== AllEntriesEntryTypeFilters.all ||
-    selectedCategoryIds.length > 0;
+    selectedCategoryIds.length > 0 ||
+    Boolean(dateRange);
   // This callback changes with the book and query, clearing any previous pull indicator.
   const { isPullRefreshing, onPullRefresh } = usePullToRefresh(refreshEntries, refreshEntries);
   const feedItems = useMemo(() => {
@@ -136,7 +143,10 @@ export function AllEntriesScreen({
         <View style={styles.title}>{screenTitle}</View>
         <View style={styles.controls}>
           <AllEntriesFilterBar
+            dateRange={dateRange}
+            onRemoveDateRange={() => setDateRange(null)}
             categories={categories}
+            reportCategories={initialFilter?.categories}
             entryTypeFilter={entryTypeFilter}
             onChangeSearchQuery={setSearchQuery}
             onOpenFilter={() => setIsFilterSheetOpen(true)}
@@ -149,6 +159,7 @@ export function AllEntriesScreen({
               setEntryTypeFilter(AllEntriesEntryTypeFilters.all);
             }}
             onReset={() => {
+              setDateRange(null);
               setSearchQuery("");
               setEntryTypeFilter(AllEntriesEntryTypeFilters.all);
               setSelectedCategoryIds([]);
@@ -156,6 +167,7 @@ export function AllEntriesScreen({
             searchQuery={searchQuery}
             selectedCategoryIds={selectedCategoryIds}
           />
+          {hasAppliedFilters ? <AllEntriesTotals summary={summary} type={entryTypeFilter} /> : null}
         </View>
       </View>
       <FlatList
@@ -268,8 +280,9 @@ export function AllEntriesScreen({
       {isFilterSheetOpen ? (
         <AllEntriesFilterSheet
           categories={categories}
-          entryTypeFilter={entryTypeFilter}
-          onApply={(nextEntryTypeFilter, nextCategoryIds) => {
+          dateRange={dateRange}
+          onApply={(nextEntryTypeFilter, nextCategoryIds, nextDateRange) => {
+            setDateRange(nextDateRange);
             setEntryTypeFilter(nextEntryTypeFilter);
             setSelectedCategoryIds([...nextCategoryIds]);
           }}
@@ -340,21 +353,21 @@ const getStyles = createThemeValue(() =>
     },
     loadingMoreLabel: {
       color: getAppColors().mutedText,
-      fontSize: 12,
+      fontSize: AppFontSize.caption,
       fontWeight: "600",
     },
     emptyTitle: {
       color: getAppColors().text,
-      fontSize: 14,
+      fontSize: AppFontSize.body,
       fontWeight: "700",
     },
     emptyHint: {
       color: getAppColors().mutedText,
-      fontSize: 12,
+      fontSize: AppFontSize.caption,
     },
     error: {
       color: getAppColors().expense,
-      fontSize: 12,
+      fontSize: AppFontSize.caption,
     },
     errorRetry: {
       gap: 2,
@@ -368,7 +381,7 @@ const getStyles = createThemeValue(() =>
     },
     errorRetryLabel: {
       color: getAppColors().primary,
-      fontSize: 12,
+      fontSize: AppFontSize.caption,
       fontWeight: "700",
     },
   }),

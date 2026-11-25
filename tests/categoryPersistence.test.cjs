@@ -569,6 +569,10 @@ test("category manager tabs protect unsaved order and disable changes during sav
       "../ActionButton": { ActionButton: "ActionButton" },
       "../ModalCloseButton": { ModalCloseButton: "ModalCloseButton" },
       "../../constants/scroll": {},
+      "../../constants/settingsGroupStyles": {
+        SettingsGroupDesign: {},
+        getSettingsGroupStyles: () => ({ card: {} }),
+      },
       "../../constants/categoryCustomizer": load("src/constants/categoryCustomizer.ts", {}),
       "../../constants/categorySelector": categoryGridConstants,
       "../../lib/categoryGrid": categoryGrid,

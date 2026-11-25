@@ -10,6 +10,7 @@ export type EntryComposerHeaderProps = {
   saving?: boolean;
   actionDisabled?: boolean;
   actionLabel?: string;
+  actionIcon?: "check" | "plus";
   onAction?: () => void;
   onClose: () => void;
 };

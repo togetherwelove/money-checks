@@ -1,6 +1,7 @@
 import { StyleSheet } from "react-native";
 
 import { getCalendarDayUi } from "../../constants/calendarDay";
+import { AppLineHeight } from "../../constants/typography";
 import { AppTextScale, resolveTextScale } from "../../constants/textLayout";
 import type { CalendarDay } from "../../types/ledger";
 
@@ -11,7 +12,7 @@ export const CALENDAR_DAY_CELL_BORDER_WIDTH = 1;
 export const CALENDAR_BOTTOM_BORDER_CLIP_PADDING = CALENDAR_DAY_CELL_BORDER_WIDTH;
 export const CALENDAR_DAY_CONTENT_GAP = 0;
 export const CALENDAR_DAY_NUMBER_BORDER_WIDTH = 0;
-export const CALENDAR_DAY_NUMBER_LINE_HEIGHT = 18;
+export const CALENDAR_DAY_NUMBER_LINE_HEIGHT = AppLineHeight.label;
 export const CALENDAR_DAY_NUMBER_PADDING_VERTICAL = 0;
 export const CALENDAR_DAY_NUMBER_WIDTH = 28;
 export const CALENDAR_AMOUNT_PADDING_VERTICAL = 0;

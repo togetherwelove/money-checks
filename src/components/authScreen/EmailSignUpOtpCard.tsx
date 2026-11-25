@@ -1,3 +1,4 @@
+import { AppFontSize, AppLineHeight } from "../../constants/typography";
 import { createThemeValue } from "../../lib/appTheme";
 import { useAppTheme } from "../../hooks/useAppTheme";
 import { StyleSheet, Text, TextInput, View } from "react-native";
@@ -117,13 +118,13 @@ const getStyles = createThemeValue(() =>
     },
     title: {
       color: getAppColors().text,
-      fontSize: 20,
+      fontSize: AppFontSize.title,
       fontWeight: "800",
     },
     subtitle: {
       color: getAppColors().mutedStrongText,
-      fontSize: 13,
-      lineHeight: 20,
+      fontSize: AppFontSize.body,
+      lineHeight: AppLineHeight.body,
     },
     emailBox: {
       ...getInsetBoxStyle(),
@@ -131,12 +132,12 @@ const getStyles = createThemeValue(() =>
     },
     emailLabel: {
       color: getAppColors().mutedText,
-      fontSize: 11,
+      fontSize: AppFontSize.caption,
       fontWeight: "700",
     },
     emailValue: {
       color: getAppColors().text,
-      fontSize: 15,
+      fontSize: AppFontSize.label,
       fontWeight: "600",
     },
     fieldGroup: {

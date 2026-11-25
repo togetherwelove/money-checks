@@ -1,3 +1,4 @@
+import { AppFontSize, AppLineHeight } from "../constants/typography";
 import { createThemeValue } from "../lib/appTheme";
 import { useAppTheme } from "../hooks/useAppTheme";
 import type { ReactNode } from "react";
@@ -47,7 +48,7 @@ const getStyles = createThemeValue(() =>
     },
     eyebrow: {
       color: getAppColors().mutedStrongText,
-      fontSize: 11,
+      fontSize: AppFontSize.caption,
       fontWeight: "700",
       letterSpacing: 0.4,
     },
@@ -67,8 +68,8 @@ const getStyles = createThemeValue(() =>
     },
     subtitle: {
       color: getAppColors().mutedText,
-      fontSize: 13,
-      lineHeight: 18,
+      fontSize: AppFontSize.body,
+      lineHeight: AppLineHeight.body,
     },
   }),
 );

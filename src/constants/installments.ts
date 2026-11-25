@@ -1,3 +1,4 @@
+import { AppFontSize } from "./typography";
 export const InstallmentStatuses = {
   prepaid: "PREPAID",
   proceeding: "PROCEEDING",
@@ -14,7 +15,7 @@ export type InstallmentStatus = (typeof InstallmentStatuses)[keyof typeof Instal
 
 export const InstallmentStatusBadgeUi = {
   borderRadius: 999,
-  fontSize: 10,
+  fontSize: AppFontSize.caption,
   horizontalPadding: 7,
   verticalPadding: 2,
 } as const;

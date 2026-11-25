@@ -120,3 +120,22 @@ test("pull refresh cancellation survives loading and content-size updates withou
   assert.deepEqual(ui.calls, []);
   ui.unmount();
 });
+
+test("automatic scrolling waits for the viewport and content to settle", (t) => {
+  const ui = setup(t);
+  let scroll = ui.measure();
+  t.mock.timers.tick(400);
+  scroll.onLayout({ nativeEvent: { layout: { height: 250 } } });
+  t.mock.timers.tick(400);
+  assert.deepEqual(ui.calls, []);
+  scroll.onContentSizeChange(400, 1100);
+  t.mock.timers.tick(400);
+  assert.deepEqual(ui.calls, []);
+  ui.tick();
+  assert.deepEqual(ui.calls, [["end", { animated: true }]]);
+  scroll = ui.render();
+  scroll.onLayout({ nativeEvent: { layout: { height: 200 } } });
+  ui.tick();
+  assert.equal(ui.calls.length, 1);
+  ui.unmount();
+});

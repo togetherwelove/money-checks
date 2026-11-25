@@ -1,7 +1,9 @@
+import { AppFontSize, AppLineHeight } from "./typography";
 import { AppLayout } from "./layout";
 
 export const BannerAdLayout = {
   // BannerAdSize.BANNER is 320 x 50 density-independent pixels.
+  width: 320,
   height: 50,
 } as const;
 
@@ -58,14 +60,14 @@ export const NativeAdCardUi = {
   stackedFontScaleThreshold: 1.3,
   stackedHeadlineReservedLines: 2,
   stackedBodyReservedLines: 3,
-  callToActionLineHeight: 16,
+  callToActionLineHeight: AppLineHeight.caption,
   callToActionPaddingVertical: 6,
   callToActionGap: 4,
   callToActionIconButtonSize: 32,
   callToActionIconSize: 15,
   callToActionIconBorderRadius: 16,
   callToActionPaddingHorizontal: 10,
-  callToActionTextFontSize: 11,
+  callToActionTextFontSize: AppFontSize.caption,
   callToActionTextMaxWidth: 72,
   contentPaddingHorizontal: AppLayout.screenPadding,
   contentPaddingVertical: 6,
@@ -75,11 +77,11 @@ export const NativeAdCardUi = {
   iconSize: 38,
   minHeight: 54,
   primaryRowGap: 8,
-  bodyFontSize: 12,
+  bodyFontSize: AppFontSize.caption,
   bodyMaxLines: 2,
-  bodyLineHeight: 16,
-  headlineFontSize: 14,
-  headlineLineHeight: 18,
-  sponsoredLabelFontSize: 11,
+  bodyLineHeight: AppLineHeight.caption,
+  headlineFontSize: AppFontSize.body,
+  headlineLineHeight: AppLineHeight.body,
+  sponsoredLabelFontSize: AppFontSize.caption,
   textBlockGap: 2,
 } as const;

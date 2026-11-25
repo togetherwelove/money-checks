@@ -1,3 +1,5 @@
+import { SettingsGroup } from "../components/appSettings/SettingsGroup";
+import { getSettingsGroupStyles } from "../constants/settingsGroupStyles";
 import { createThemeValue } from "../lib/appTheme";
 import { useAppTheme } from "../hooks/useAppTheme";
 import type { ReactNode } from "react";
@@ -9,7 +11,6 @@ import { AppScrollBehavior } from "../constants/scroll";
 import { AppFooterContentInset } from "../components/AppFooterContentInset";
 import { getAppColors } from "../constants/colors";
 import { HelpCopy, HelpLinkItems, HelpUi } from "../constants/help";
-import { ReadingTextProps } from "../constants/textLayout";
 import { showNativeToast } from "../lib/nativeToast";
 
 type HelpScreenProps = {
@@ -32,19 +33,10 @@ export function HelpScreen({ screenTitle, onOpenFaq }: HelpScreenProps) {
     <ScrollView {...AppScrollBehavior} contentContainerStyle={styles.content} style={styles.screen}>
       {screenTitle}
       <View style={styles.sections}>
-        <Text accessibilityRole="header" style={getMenuStyles().sectionTitle}>
-          {HelpCopy.linksTitle}
-        </Text>
-        <Text {...ReadingTextProps} style={styles.description}>
-          {HelpCopy.linksDescription}
-        </Text>
-        <View style={styles.linkList}>
+        <SettingsGroup description={HelpCopy.faqLinkDescription}>
           <Pressable accessibilityRole="button" onPress={onOpenFaq} style={styles.linkRow}>
             <View style={styles.linkTextBlock}>
               <Text style={styles.linkLabel}>{HelpCopy.faqTitle}</Text>
-              <Text {...ReadingTextProps} style={styles.linkDescription}>
-                {HelpCopy.faqLinkDescription}
-              </Text>
             </View>
             <Feather
               color={getAppColors().mutedStrongText}
@@ -52,21 +44,16 @@ export function HelpScreen({ screenTitle, onOpenFaq }: HelpScreenProps) {
               size={HelpUi.iconSize}
             />
           </Pressable>
-          {HelpLinkItems.map((item, index) => (
+        </SettingsGroup>
+        {HelpLinkItems.map((item) => (
+          <SettingsGroup key={item.url} description={item.description}>
             <Pressable
               accessibilityRole="link"
-              key={item.url}
               onPress={() => void handleOpenLink(item.url)}
-              style={[
-                styles.linkRow,
-                index === HelpLinkItems.length - 1 ? styles.lastLinkRow : null,
-              ]}
+              style={styles.linkRow}
             >
               <View style={styles.linkTextBlock}>
                 <Text style={styles.linkLabel}>{item.label}</Text>
-                <Text {...ReadingTextProps} style={styles.linkDescription}>
-                  {item.description}
-                </Text>
               </View>
               <Feather
                 color={getAppColors().mutedStrongText}
@@ -74,8 +61,8 @@ export function HelpScreen({ screenTitle, onOpenFaq }: HelpScreenProps) {
                 size={HelpUi.iconSize}
               />
             </Pressable>
-          ))}
-        </View>
+          </SettingsGroup>
+        ))}
         <AppFooterContentInset />
       </View>
     </ScrollView>
@@ -85,27 +72,17 @@ export function HelpScreen({ screenTitle, onOpenFaq }: HelpScreenProps) {
 const getStyles = createThemeValue(() =>
   StyleSheet.create({
     sections: {
-      gap: getMenuStyles().section.gap,
+      gap: getSettingsGroupStyles().sections.gap,
     },
     screen: {
       flex: 1,
       backgroundColor: getAppColors().screenBackground,
     },
     content: {
-      ...getMenuStyles().content,
+      ...getSettingsGroupStyles().page,
     },
-    description: getMenuStyles().description,
-    linkList: {
-      ...getMenuStyles().group,
-      gap: 0,
-      paddingVertical: 0,
-    },
-    linkRow: getMenuStyles().row,
-    lastLinkRow: {
-      borderBottomWidth: 0,
-    },
+    linkRow: getSettingsGroupStyles().row,
     linkTextBlock: getMenuStyles().textBlock,
-    linkLabel: getMenuStyles().title,
-    linkDescription: getMenuStyles().description,
+    linkLabel: getSettingsGroupStyles().label,
   }),
 );

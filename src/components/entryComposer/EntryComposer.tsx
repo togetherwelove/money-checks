@@ -34,6 +34,7 @@ import { InstallmentStatuses } from "../../constants/installments";
 import { InstallmentConversionCopy } from "../../constants/installmentConversion";
 import { appStorage } from "../../lib/appStorage";
 import { persistEntryComposerDraft } from "../../lib/entryComposerDraftStorage";
+import { createRecentEntryAssetLink } from "../../lib/recentEntryAsset";
 
 type Props = {
   sheet: { visible: boolean; onClose: () => void; onDismiss?: () => void };
@@ -102,7 +103,7 @@ export function EntryComposer({
   const focusTargetRef = useRef(inputRef);
   const locked = disabled || saving;
   const hasInput = Boolean(
-    draft.assetLink?.cashAssetId ||
+    (draft.assetLink?.cashAssetId && draft.assetLink.cashAssetId !== composer.recentCashAssetId) ||
       draft.assetLink?.loanAssetId ||
       draft.amount ||
       draft.content ||
@@ -116,7 +117,7 @@ export function EntryComposer({
     userId;
   const hasCloseValues = sourceEntry
     ? hasEntryComposerChanges(draft, sourceEntry, userId)
-    : hasEntryComposerValues(draft, selectedDate, defaultMemberId);
+    : hasEntryComposerValues(draft, selectedDate, defaultMemberId, composer.recentCashAssetId);
   const lockedRef = useRef(locked);
   lockedRef.current = locked;
   const sheetVisible = sheet.visible;
@@ -200,6 +201,11 @@ export function EntryComposer({
           composer.members.find((item) => item.userId === userId) ?? composer.members[0];
         setDraft({
           ...imported,
+          assetLink:
+            imported.installmentMonths > 1
+              ? undefined
+              : (imported.assetLink ??
+                createRecentEntryAssetLink(composer.recentCashAssetId ?? null)),
           targetMemberId: member?.userId ?? userId,
           targetMemberName: member?.displayName,
         });
@@ -311,7 +317,7 @@ export function EntryComposer({
     try {
       if (await onSave(draft, sourceEntry)) {
         if (!mounted.current) return;
-        composer.reset();
+        composer.reset(!sourceEntry);
         setSourceEntry(undefined);
         onEntryReviewChange?.(false);
         onComplete?.();

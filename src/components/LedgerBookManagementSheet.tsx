@@ -1,3 +1,7 @@
+import {
+  LedgerBookManagementHeaderContext,
+  useLedgerBookManagementHeader,
+} from "./sharedLedgerPanel/ledgerBookManagementHeader";
 import { type ComponentProps, useEffect, useRef } from "react";
 
 import { AppLayout } from "../constants/layout";
@@ -31,6 +35,7 @@ type Props = Pick<
 
 export function LedgerBookManagementSheet({ isOpen, onClose, onDismiss, state, ...props }: Props) {
   const bookId = state.activeBook?.id;
+  const header = useLedgerBookManagementHeader();
   const refreshShareCode = useRef(state.refreshExpiredShareCode);
   refreshShareCode.current = state.refreshExpiredShareCode;
   useEffect(() => {
@@ -43,11 +48,14 @@ export function LedgerBookManagementSheet({ isOpen, onClose, onDismiss, state, .
       onClose={onClose}
       onDismiss={onDismiss}
       title={LedgerBookManagementCopy.listTitle}
+      action={header.action}
       dismissible={!state.isBusy}
     >
-      <BottomContentInsetContext.Provider value={AppLayout.cardContentPadding}>
-        <LedgerBookManagementView {...props} state={state} />
-      </BottomContentInsetContext.Provider>
+      <LedgerBookManagementHeaderContext.Provider value={header.setAction}>
+        <BottomContentInsetContext.Provider value={AppLayout.cardContentPadding}>
+          <LedgerBookManagementView {...props} managementInline state={state} />
+        </BottomContentInsetContext.Provider>
+      </LedgerBookManagementHeaderContext.Provider>
       {state.isBusy ? <BlockingOverlay /> : null}
     </NativeSelectionSheet>
   );

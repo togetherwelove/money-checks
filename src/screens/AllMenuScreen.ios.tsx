@@ -1,3 +1,6 @@
+import { MenuSubscriptionCard } from "../components/appSettings/MenuSubscriptionCard";
+import { AllMenuSubscriptionItem } from "../lib/menuItems";
+import { MenuLegalLinks } from "../components/appSettings/MenuLegalLinks";
 import { useAppTheme } from "../hooks/useAppTheme";
 import { Host, List, RNHostView, VStack } from "@expo/ui/swift-ui";
 import { AppVersionFooter } from "../components/AppVersionFooter";
@@ -21,10 +24,21 @@ export function AllMenuScreen(props: AllMenuScreenProps) {
         seedColor={getAppColors().primary}
       >
         <List modifiers={getNativeSettingsStyles().list}>
+          <VStack modifiers={getNativeSettingsStyles().menuGroup}>
+            <RNHostView matchContents={{ vertical: true }}>
+              <MenuSubscriptionCard
+                isPlusActive={props.isPlusActive}
+                onPress={() => actions.selectMenuItem(AllMenuSubscriptionItem)}
+              />
+            </RNHostView>
+          </VStack>
           <SettingsMenuLinks sections={props.menuSections} onSelect={actions.selectMenuItem} />
           <VStack modifiers={getNativeSettingsStyles().footer}>
             <RNHostView matchContents={{ vertical: true }}>
               <AppVersionFooter />
+            </RNHostView>
+            <RNHostView matchContents={{ vertical: true }}>
+              <MenuLegalLinks />
             </RNHostView>
           </VStack>
         </List>

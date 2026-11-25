@@ -1,3 +1,4 @@
+import { SharedLedgerPanelUi } from "../constants/sharedLedgerPanel";
 import { SHARE_CODE_LENGTH } from "../constants/ledgerDisplay";
 
 const SHARE_CODE_WHITESPACE_PATTERN = /\s/g;
@@ -9,4 +10,9 @@ export function normalizeLedgerShareCode(value: string): string {
 
 export function isValidLedgerShareCode(value: string): boolean {
   return value.length === SHARE_CODE_LENGTH && SHARE_CODE_CHARACTER_PATTERN.test(value);
+}
+
+export function formatLedgerBookTitle(name: string, shareCode?: string | null): string {
+  if (!shareCode) return name;
+  return `${name} (${shareCode.slice(0, SharedLedgerPanelUi.shareCodePreviewPrefixLength)}${SharedLedgerPanelUi.shareCodePreviewMask})`;
 }

@@ -1,9 +1,9 @@
+import { getSettingsGroupStyles } from "../constants/settingsGroupStyles";
 import { createThemeValue } from "../lib/appTheme";
 import { useAppTheme } from "../hooks/useAppTheme";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { getMenuStyles } from "../constants/menuStyles";
 
 import { getAppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
@@ -42,6 +42,8 @@ function createShareMembersRealtimeChannelName(bookId: string) {
 }
 
 type LedgerBookManagementContentProps = {
+  managementInline?: boolean;
+  isBusy?: boolean;
   badgedBookIds?: readonly string[];
   accessibleBooks: AccessibleLedgerBook[];
   activeBook: LedgerBook | null;
@@ -81,6 +83,8 @@ type LedgerBookManagementContentProps = {
 };
 
 export function LedgerBookManagementContent({
+  managementInline,
+  isBusy,
   badgedBookIds,
   accessibleBooks,
   activeBook,
@@ -220,6 +224,8 @@ export function LedgerBookManagementContent({
       {screenTitle}
       <View style={styles.sections}>
         <SharedLedgerPanel
+          managementInline={managementInline}
+          isBusy={isBusy}
           badgedBookIds={badgedBookIds}
           accessibleBooks={accessibleBooks}
           activeBook={activeBook}
@@ -324,7 +330,7 @@ const getStyles = createThemeValue(() =>
       backgroundColor: getAppColors().screenBackground,
     },
     content: {
-      ...getMenuStyles().content,
+      ...getSettingsGroupStyles().page,
     },
   }),
 );

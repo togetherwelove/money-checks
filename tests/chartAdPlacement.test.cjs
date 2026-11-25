@@ -19,7 +19,7 @@ test("chart has one stable ad outside paging and scrolling across month and scop
     "react/jsx-runtime": { jsx, jsxs: jsx },
     "@react-navigation/native": { useIsFocused: () => true },
     "src/components/ScreenLoadingOverlay.tsx": { ScreenLoadingOverlay: "LocalLoading" },
-    "react-native": { View: "View", StyleSheet: { create: (value) => value } },
+    "react-native": { View: "View", StyleSheet: { hairlineWidth: 1, create: (value) => value } },
     "../components/AppBannerAd": { AppBannerAd: "Ad" },
     "../components/chartScreen/ChartMonthPager": { ChartMonthPager: "Pager" },
     "../components/chartScreen/ChartMonthPageContent": { ChartMonthPageContent: "Page" },
@@ -35,8 +35,9 @@ test("chart has one stable ad outside paging and scrolling across month and scop
   const adSlot = first.props.children[0];
   const ad = adSlot.props.children;
   assert.equal(ad.type, "Ad");
-  assert.equal(adSlot.props.style.flexShrink, 0);
-  assert.equal(adSlot.props.style.position, undefined);
+  assert.equal(adSlot.props.style[0].flexShrink, 0);
+  assert.equal(adSlot.props.style[0].position, undefined);
+  assert.equal(adSlot.props.style[1].height, 51);
   assert.equal(first.props.children[1].type, "View");
   assert.equal(first.props.children[1].props.children[1].type, "Pager");
   assert.equal(first.props.children[1].props.children[1].props.showsBannerAd, undefined);
@@ -49,6 +50,18 @@ test("chart has one stable ad outside paging and scrolling across month and scop
   assert.equal(all.props.children[1].props.showsBannerAd, undefined);
   props.showsBannerAd = false;
   assert.equal(render().props.children[0].props.children, null);
+  props.reservesBannerAdSpace = true;
+  const pendingAdSlot = render().props.children[0];
+  assert.equal(pendingAdSlot.props.children, null);
+  assert.equal(pendingAdSlot.props.style[1].height, adSlot.props.style[1].height);
+  props.showsBannerAd = true;
+  assert.equal(
+    render().props.children[0].props.style[1].height,
+    pendingAdSlot.props.style[1].height,
+  );
+  props.showsBannerAd = false;
+  props.reservesBannerAdSpace = false;
+  assert.equal(render().props.children[0].props.style[1], false);
   props.state.isLoadingChartEntries = true;
   assert.equal(render().props.children[2].type, "LocalLoading");
   props.state.isLoadingChartEntries = false;

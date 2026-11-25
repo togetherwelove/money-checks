@@ -73,11 +73,7 @@ export function LedgerEntryAppendRow({
         onPress={() => {
           if (!disabled) (draft ? onApplyClipboard : onAdd)();
         }}
-        style={({ pressed }) => [
-          styles.action,
-          !draft && styles.addAction,
-          pressed && styles.pressed,
-        ]}
+        style={({ pressed }) => [styles.action, pressed && styles.pressed]}
       >
         <View style={getLedgerEntryRowStyles().leadingIcon}>
           <Feather
@@ -148,8 +144,12 @@ const getStyles = createThemeValue(() =>
     previewOutline: {
       borderStyle: "solid",
     },
-    action: { ...getLedgerEntryRowStyles().body, flex: 1, minHeight: EntryComposerUi.fieldHeight },
-    addAction: { paddingLeft: AppLayout.screenPadding },
+    action: {
+      ...getLedgerEntryRowStyles().body,
+      flex: 1,
+      minHeight: EntryComposerUi.fieldHeight,
+      paddingLeft: AppLayout.screenPadding,
+    },
     addTitle: { color: getAppColors().primary },
     amountBlock: { alignItems: "flex-end", gap: getLedgerEntryRowStyles().textBlock.gap },
     review: { ...getLedgerEntryRowStyles().meta, color: getAppColors().primary },

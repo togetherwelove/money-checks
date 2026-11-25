@@ -1,3 +1,4 @@
+import { AppFontSize } from "../../constants/typography";
 import { createThemeValue } from "../../lib/appTheme";
 import { useAppTheme } from "../../hooks/useAppTheme";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
@@ -129,12 +130,12 @@ const getStyles = createThemeValue(() =>
     },
     linkDivider: {
       color: getAppColors().mutedText,
-      fontSize: 13,
+      fontSize: AppFontSize.body,
       fontWeight: "600",
     },
     linkText: {
       color: getAppColors().mutedStrongText,
-      fontSize: 13,
+      fontSize: AppFontSize.body,
       fontWeight: "600",
       textDecorationLine: "underline",
     },

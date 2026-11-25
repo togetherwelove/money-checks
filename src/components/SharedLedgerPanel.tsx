@@ -1,3 +1,8 @@
+import { useLedgerBookMemberLimit } from "../hooks/useLedgerBookMemberLimit";
+import { LedgerBookManagementAccess } from "./sharedLedgerPanel/LedgerBookManagementAccess";
+import { LedgerBookJoinRequests } from "./LedgerBookJoinRequests";
+import { getSettingsGroupStyles } from "../constants/settingsGroupStyles";
+import { LedgerBookNameEditor } from "./sharedLedgerPanel/LedgerBookNameEditor";
 import { useAppTheme } from "../hooks/useAppTheme";
 import { useState } from "react";
 import { Alert, View } from "react-native";
@@ -5,11 +10,7 @@ import { Alert, View } from "react-native";
 import { DEFAULT_MEMBER_DISPLAY_NAME } from "../constants/ledgerDisplay";
 import { AppMessages } from "../constants/messages";
 import { SharedLedgerJoinPreviewCopy } from "../constants/sharedLedgerJoinPreview";
-import {
-  SubscriptionConfig,
-  type SubscriptionTier,
-  SubscriptionTiers,
-} from "../constants/subscription";
+import { type SubscriptionTier } from "../constants/subscription";
 import { useLedgerBookNickname } from "../hooks/useLedgerBookNickname";
 import { showNativeToast } from "../lib/nativeToast";
 import { isValidLedgerShareCode, normalizeLedgerShareCode } from "../lib/ledgerShareCode";
@@ -41,6 +42,8 @@ import { SharedLedgerJoinCard } from "./sharedLedgerPanel/SharedLedgerJoinCard";
 import { getSharedLedgerPanelStyles } from "./sharedLedgerPanel/sharedLedgerPanelStyles";
 
 type SharedLedgerPanelProps = {
+  managementInline?: boolean;
+  isBusy?: boolean;
   badgedBookIds?: readonly string[];
   accessibleBooks: AccessibleLedgerBook[];
   activeBook: LedgerBook | null;
@@ -81,6 +84,8 @@ type SharedLedgerPanelProps = {
 };
 
 export function SharedLedgerPanel({
+  managementInline = false,
+  isBusy = false,
   badgedBookIds,
   accessibleBooks,
   activeBook,
@@ -125,12 +130,16 @@ export function SharedLedgerPanel({
     canEditBookName,
     onSaveBookName: onRenameActiveLedgerBook,
   });
-  const sharedMemberLimit =
-    subscriptionTier === SubscriptionTiers.plus
-      ? SubscriptionConfig.plusSharedMemberLimit
-      : SubscriptionConfig.freeSharedMemberLimit;
+  const sharedMemberLimit = useLedgerBookMemberLimit(
+    activeBook?.ownerId,
+    currentUserId,
+    subscriptionTier,
+    members.length,
+  );
   const shouldShowSharedMemberLimitNotice =
-    currentMemberRole === "owner" && members.length >= sharedMemberLimit;
+    currentMemberRole === "owner" &&
+    sharedMemberLimit !== null &&
+    members.length >= sharedMemberLimit;
   const blockReadOnlyShareActionIfNeeded = () => {
     if (!isReadOnlyDueToPlanLimit) {
       return false;
@@ -142,12 +151,12 @@ export function SharedLedgerPanel({
     return true;
   };
 
-  const handleJoin = async () => {
+  const handleJoin = async (inputShareCode: string) => {
     if (blockReadOnlyShareActionIfNeeded()) {
       return;
     }
 
-    const nextShareCode = normalizeLedgerShareCode(shareCodeInput);
+    const nextShareCode = normalizeLedgerShareCode(inputShareCode);
     if (!nextShareCode) {
       showNativeToast("공유 코드를 입력해 주세요.");
       return;
@@ -295,38 +304,68 @@ export function SharedLedgerPanel({
 
   return (
     <View style={getSharedLedgerPanelStyles().panel}>
-      <LedgerBookManagementCard
-        badgedBookIds={badgedBookIds}
-        accessibleBooks={accessibleBooks}
-        activeBook={activeBook}
-        canLeaveSharedBook={canLeaveSharedBook}
-        currentUserId={currentUserId}
-        isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
-        members={members}
-        onCreateLedgerBook={onCreateLedgerBook}
-        onDeleteActiveLedgerBook={onDeleteActiveLedgerBook}
-        onKickMember={handleKickMember}
-        onLeave={handleLeave}
+      <LedgerBookManagementAccess
+        inline={managementInline}
+        isBusy={isBusy}
         onOpenSubscription={onOpenSubscription}
-        onSwitchLedgerBook={onSwitchLedgerBook}
-        onTransferOwnership={handleTransferOwnership}
-        pendingJoinRequestCountsByBookId={pendingJoinRequestCountsByBookId}
-        shouldShowSharedMemberLimitNotice={shouldShowSharedMemberLimitNotice}
-        subscriptionTier={subscriptionTier}
-      />
+      >
+        {(openSubscription) => (
+          <View style={getSettingsGroupStyles().sections}>
+            <LedgerBookManagementCard
+              activeBookNameControl={
+                canEditDisplayedBookName ? (
+                  <LedgerBookNameEditor
+                    key={activeBook?.id}
+                    bookName={displayedBookName}
+                    shareCode={activeBook?.shareCode}
+                    bookNameInput={bookNameInput}
+                    canEditBookName={canEditDisplayedBookName}
+                    onChangeBookName={handleChangeBookName}
+                    onSaveBookName={handleSaveBookName}
+                  />
+                ) : undefined
+              }
+              badgedBookIds={badgedBookIds}
+              accessibleBooks={accessibleBooks}
+              activeBook={activeBook}
+              canLeaveSharedBook={canLeaveSharedBook}
+              currentUserId={currentUserId}
+              isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
+              members={members}
+              memberLimit={sharedMemberLimit}
+              onCreateLedgerBook={onCreateLedgerBook}
+              onDeleteActiveLedgerBook={onDeleteActiveLedgerBook}
+              onKickMember={handleKickMember}
+              onLeave={handleLeave}
+              onOpenSubscription={openSubscription}
+              onSwitchLedgerBook={onSwitchLedgerBook}
+              onTransferOwnership={handleTransferOwnership}
+              pendingJoinRequestCountsByBookId={pendingJoinRequestCountsByBookId}
+              shouldShowSharedMemberLimitNotice={shouldShowSharedMemberLimitNotice}
+              subscriptionTier={subscriptionTier}
+            />
+            {currentMemberRole === "owner" && pendingJoinRequests.length > 0 ? (
+              <View style={[getSettingsGroupStyles().card, getSettingsGroupStyles().body]}>
+                <LedgerBookJoinRequests
+                  disabled={isReadOnlyDueToPlanLimit}
+                  onApproveRequest={handleApproveJoinRequest}
+                  onRejectRequest={handleRejectJoinRequest}
+                  requests={pendingJoinRequests}
+                />
+              </View>
+            ) : null}
+          </View>
+        )}
+      </LedgerBookManagementAccess>
       <SharedLedgerBookCard
+        showJoinRequests={false}
         activeBook={activeBook}
-        bookName={displayedBookName}
-        bookNameInput={bookNameInput}
-        canEditBookName={canEditDisplayedBookName}
         currentUserId={currentUserId}
         isOwner={currentMemberRole === "owner"}
         isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
         onApproveJoinRequest={handleApproveJoinRequest}
         onBeforeCopyShareCode={onBeforeCopyShareCode}
-        onChangeBookName={handleChangeBookName}
         onRejectJoinRequest={handleRejectJoinRequest}
-        onSaveBookName={handleSaveBookName}
         pendingJoinRequests={pendingJoinRequests}
       />
       <SharedLedgerJoinCard

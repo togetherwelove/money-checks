@@ -1,18 +1,15 @@
-import { createThemeValue } from "../lib/appTheme";
-import { useAppTheme } from "../hooks/useAppTheme";
-import { Linking, StyleSheet, Text, View } from "react-native";
-import { getMenuStyles } from "../constants/menuStyles";
-
+import { Linking, Text, View } from "react-native";
 import { ActionButton } from "../components/ActionButton";
 import { AppFooterContentInset } from "../components/AppFooterContentInset";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
+import { SubscriptionBenefits } from "../components/SubscriptionBenefits";
 import { TextLinkButton } from "../components/TextLinkButton";
-import { getAppColors } from "../constants/colors";
-import { AppLayout } from "../constants/layout";
 import { LegalLinks } from "../constants/legal";
-import { SubscriptionHeroUi, SubscriptionMessages } from "../constants/subscription";
-import { AppTextBreakProps, CompactTextProps, OneLineTextFitProps } from "../constants/textLayout";
-import { getBrandPlusTextStyle } from "../constants/uiStyles";
+import { SubscriptionMessages } from "../constants/subscription";
+import { SubscriptionPageCopy } from "../constants/subscriptionPage";
+import { getSubscriptionPageStyles } from "../constants/subscriptionPageStyles";
+import { AppTextBreakProps } from "../constants/textLayout";
+import { useAppTheme } from "../hooks/useAppTheme";
 import { showNativeToast } from "../lib/nativeToast";
 
 type SubscriptionScreenProps = {
@@ -30,81 +27,70 @@ export function SubscriptionScreen({
   onRestorePurchases,
   plusPriceLabel,
 }: SubscriptionScreenProps) {
-  const styles = getStyles();
+  const styles = getSubscriptionPageStyles();
   useAppTheme();
-  const resolvedPlusPriceLabel = plusPriceLabel ?? SubscriptionMessages.priceUnavailable;
   const handleOpenLegalLink = async (url: string) => {
     try {
       await Linking.openURL(url);
     } catch {
-      showNativeToast("링크를 열지 못했어요. 다시 시도해 주세요.");
+      showNativeToast(SubscriptionPageCopy.linkError);
     }
   };
-
   return (
     <View style={styles.screen}>
-      <KeyboardAwareScrollView contentContainerStyle={styles.content} style={styles.scrollView}>
-        <View style={styles.salesContent}>
-          <View style={styles.copySection}>
+      <KeyboardAwareScrollView contentContainerStyle={styles.content} style={styles.screen}>
+        <View style={styles.sections}>
+          <View style={styles.intro}>
+            <Text {...AppTextBreakProps} style={styles.headline}>
+              {SubscriptionPageCopy.headline}
+            </Text>
             <Text {...AppTextBreakProps} style={styles.description}>
-              {SubscriptionMessages.heroDescription}
+              {SubscriptionPageCopy.description}
             </Text>
           </View>
-          <View style={styles.benefitSection}>
-            <View style={styles.benefitList}>
-              {["· 광고 모두 제거", "· 가계부 동시 최대 3개", "· 가계부당 공유 멤버 최대 5명"].map(
-                (item) => (
-                  <Text key={item} style={styles.benefitItem}>
-                    {item}
-                  </Text>
-                ),
-              )}
+          <SubscriptionBenefits />
+          <View style={styles.plan}>
+            <View style={styles.planHeading}>
+              <Text style={styles.planTitle}>{SubscriptionPageCopy.planTitle}</Text>
+              <Text style={styles.description}>{SubscriptionPageCopy.billingSummary}</Text>
             </View>
-          </View>
-          <View style={styles.ctaSection}>
+            <Text {...AppTextBreakProps} style={plusPriceLabel ? styles.price : styles.description}>
+              {plusPriceLabel ?? SubscriptionMessages.priceUnavailable}
+            </Text>
             {isPlusActive ? (
-              <View style={styles.activeChip}>
-                <Text {...CompactTextProps} style={styles.activeChipText}>
-                  {SubscriptionMessages.plusSummary}
-                </Text>
-              </View>
+              <Text style={styles.activeState}>{SubscriptionMessages.plusSummary}</Text>
             ) : hasAvailablePlusPackage && plusPriceLabel ? (
               <ActionButton
                 fullWidth
+                shape="capsule"
                 label={SubscriptionMessages.purchaseAction}
-                labelContent={
-                  <Text {...OneLineTextFitProps} style={styles.purchaseButtonText}>
-                    알뜰 <Text style={styles.purchaseButtonPlusText}>plus</Text> 구독
-                  </Text>
-                }
-                onPress={() => {
-                  void onPurchasePlus();
-                }}
+                onPress={onPurchasePlus}
                 size="large"
                 variant="primary"
               />
             ) : (
-              <Text style={styles.unavailableSummary}>{SubscriptionMessages.purchaseError}</Text>
+              <Text {...AppTextBreakProps} style={styles.description}>
+                {SubscriptionMessages.purchaseError}
+              </Text>
             )}
-            <Text style={styles.priceDetailLabel}>{resolvedPlusPriceLabel}</Text>
           </View>
-          <View style={styles.detailSection}>
-            <Text style={styles.renewalNotice}>{SubscriptionMessages.renewalNotice}</Text>
-            <View style={styles.legalLinkRow}>
+          <View style={styles.details}>
+            <Text {...AppTextBreakProps} style={styles.description}>
+              {SubscriptionMessages.renewalNotice}
+            </Text>
+            <View style={styles.legalLinks}>
               <TextLinkButton
                 label={SubscriptionMessages.restoreAction}
-                onPress={() => {
-                  void onRestorePurchases();
-                }}
+                onPress={onRestorePurchases}
               />
               <TextLinkButton
-                label="개인정보 처리방침"
+                label={SubscriptionPageCopy.privacyAction}
                 onPress={() => {
                   void handleOpenLegalLink(LegalLinks.privacyPolicyUrl);
                 }}
               />
               <TextLinkButton
-                label="이용약관"
+                label={SubscriptionPageCopy.termsAction}
                 onPress={() => {
                   void handleOpenLegalLink(LegalLinks.termsOfUseUrl);
                 }}
@@ -117,117 +103,3 @@ export function SubscriptionScreen({
     </View>
   );
 }
-
-const getStyles = createThemeValue(() =>
-  StyleSheet.create({
-    screen: {
-      flex: 1,
-      backgroundColor: getAppColors().screenBackground,
-    },
-    scrollView: {
-      flex: 1,
-      backgroundColor: getAppColors().screenBackground,
-    },
-    content: {
-      ...getMenuStyles().content,
-      flexGrow: 1,
-    },
-    salesContent: {
-      flexGrow: 1,
-      width: "100%",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: getMenuStyles().sections.gap,
-    },
-    copySection: {
-      width: "100%",
-      alignItems: "center",
-      gap: SubscriptionHeroUi.brandDescriptionGap,
-    },
-    benefitSection: {
-      width: "100%",
-      alignItems: "center",
-    },
-    detailSection: {
-      width: "100%",
-      alignItems: "center",
-      gap: 10,
-    },
-    renewalNotice: {
-      color: getAppColors().mutedStrongText,
-      fontSize: 13,
-      lineHeight: 18,
-      padding: AppLayout.cardContentPadding,
-    },
-    legalLinkRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      flexWrap: "wrap",
-      gap: 12,
-      padding: AppLayout.cardContentPadding,
-      borderTopWidth: 1,
-      borderTopColor: getAppColors().border,
-    },
-    description: {
-      color: getAppColors().text,
-      fontSize: 28,
-      lineHeight: 38,
-      fontWeight: "800",
-      textAlign: "center",
-      paddingHorizontal: 12,
-    },
-    ctaSection: {
-      width: "100%",
-      alignItems: "center",
-      gap: 10,
-    },
-    benefitList: {
-      maxWidth: "100%",
-      gap: 8,
-    },
-    benefitItem: {
-      color: getAppColors().text,
-      fontSize: 15,
-      lineHeight: 22,
-      fontWeight: "600",
-      textAlign: "left",
-    },
-    activeChip: {
-      borderRadius: 999,
-      backgroundColor: getAppColors().primary,
-      paddingHorizontal: 16,
-      paddingVertical: 14,
-      opacity: 0.45,
-    },
-    activeChipText: {
-      color: getAppColors().onPrimary,
-      fontSize: 15,
-      fontWeight: "800",
-      textAlign: "center",
-    },
-    purchaseButtonText: {
-      color: getAppColors().onPrimary,
-      fontSize: 15,
-      fontWeight: "700",
-      textAlign: "center",
-    },
-    purchaseButtonPlusText: {
-      ...getBrandPlusTextStyle(),
-      color: getAppColors().onPrimary,
-    },
-    unavailableSummary: {
-      color: getAppColors().mutedText,
-      fontSize: 14,
-      lineHeight: 20,
-      fontWeight: "600",
-      textAlign: "center",
-    },
-    priceDetailLabel: {
-      color: getAppColors().mutedStrongText,
-      fontSize: 13,
-      lineHeight: 18,
-      fontWeight: "600",
-      textAlign: "center",
-    },
-  }),
-);

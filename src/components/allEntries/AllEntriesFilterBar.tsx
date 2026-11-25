@@ -1,3 +1,4 @@
+import type { AllEntriesDateRange, ReportCategory } from "../../constants/allEntries";
 import { createThemeValue } from "../../lib/appTheme";
 import { useAppTheme } from "../../hooks/useAppTheme";
 import { AppScrollBehavior } from "../../constants/scroll";
@@ -19,7 +20,10 @@ import type { CategoryDefinition } from "../../types/category";
 import { countAllEntriesFilters } from "../../lib/allEntriesFilters";
 
 type AllEntriesFilterBarProps = {
+  dateRange?: AllEntriesDateRange | null;
+  onRemoveDateRange?: () => void;
   categories: readonly CategoryDefinition[];
+  reportCategories?: ReportCategory[];
   entryTypeFilter: AllEntriesEntryTypeFilter;
   onChangeSearchQuery: (searchQuery: string) => void;
   onOpenFilter: () => void;
@@ -31,7 +35,10 @@ type AllEntriesFilterBarProps = {
 };
 
 export function AllEntriesFilterBar({
+  dateRange,
+  onRemoveDateRange,
   categories,
+  reportCategories,
   entryTypeFilter,
   onChangeSearchQuery,
   onOpenFilter,
@@ -43,11 +50,17 @@ export function AllEntriesFilterBar({
 }: AllEntriesFilterBarProps) {
   const styles = getStyles();
   useAppTheme();
-  const filterCount = countAllEntriesFilters(entryTypeFilter, selectedCategoryIds);
+  const filterCount = countAllEntriesFilters(entryTypeFilter, selectedCategoryIds, dateRange);
   const hasActiveFilters = searchQuery.trim().length > 0 || filterCount > 0;
   const categoryLabelById = useMemo(
-    () => new Map(categories.map((category) => [category.id, category.label])),
-    [categories],
+    () =>
+      new Map(
+        [...(reportCategories ?? []), ...categories].map((category) => [
+          category.id,
+          category.label,
+        ]),
+      ),
+    [categories, reportCategories],
   );
 
   return (
@@ -93,6 +106,12 @@ export function AllEntriesFilterBar({
               showsHorizontalScrollIndicator={false}
               style={styles.activeFilterList}
             >
+              {dateRange ? (
+                <ActiveFilterChip
+                  label={`${dateRange.startDate} ~ ${dateRange.endDate}`}
+                  onRemove={() => onRemoveDateRange?.()}
+                />
+              ) : null}
               {entryTypeFilter !== AllEntriesEntryTypeFilters.all ? (
                 <ActiveFilterChip
                   label={formatAllEntriesEntryTypeFilterLabel(entryTypeFilter)}

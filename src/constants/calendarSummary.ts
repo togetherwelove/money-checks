@@ -28,9 +28,25 @@ export const CalendarSummaryModeOptions: { label: string; value: CalendarSummary
 
 export const CalendarSummaryLoadingLabel = "...";
 
+export const CalendarSummaryBalanceLabels = {
+  [CalendarSummaryModes.monthly]: "이번달 차액",
+  [CalendarSummaryModes.all]: "전체 차액",
+  [CalendarSummaryModes.selectedMonth]: "선택 기간 차액",
+} as const satisfies Record<CalendarSummaryMode, string>;
+
+export function formatCalendarSummaryBalanceLabel(mode: CalendarSummaryMode, periodLabel: string) {
+  if (
+    mode === CalendarSummaryModes.selectedMonth &&
+    periodLabel &&
+    periodLabel !== CalendarSummaryLabels.selectedMonthPrompt
+  ) {
+    return `${periodLabel.replace(/\s*~\s*/g, "~")} 차액`;
+  }
+  return CalendarSummaryBalanceLabels[mode];
+}
+
 export const CalendarSummaryLabels = {
   all: "전체 기간",
-  balance: "잔액",
   changePeriod: "집계 기간 변경",
   expense: "지출",
   income: "수입",

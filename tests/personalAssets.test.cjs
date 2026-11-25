@@ -15,7 +15,7 @@ test("debt choices are loan and other debt, and other debt reduces net worth", (
   assert.equal(
     portfolioSummary(
       {
-        assets: [{ id: "other", kind: "other-debt", deleted_on: null }],
+        assets: [{ id: "other", kind: "other-debt", current_balance: 1000, deleted_on: null }],
         valuations: [
           { asset_id: "other", valued_on: "2026-01-01", amount: 1000, created_at: "2026-01-01" },
         ],
@@ -25,14 +25,8 @@ test("debt choices are loan and other debt, and other debt reduces net worth", (
     -1000,
   );
 });
-const {
-  createAssetDraft,
-  assetAmount,
-  assetDraftError,
-  portfolioSummary,
-  portfolioTrend,
-  draftFromAsset,
-} = load("src/utils/assets.ts");
+const { createAssetDraft, assetAmount, assetDraftError, portfolioSummary, draftFromAsset } =
+  load("src/utils/assets.ts");
 
 test("stock quantities, property shares and zero balances are valued without creating income", () => {
   const stock = { ...createAssetDraft("stock"), name: "주식", quantity: "1.5", unitPrice: "20000" };
@@ -51,8 +45,6 @@ test("stock quantities, property shares and zero balances are valued without cre
     { share: "101" },
     { amount: "-1" },
     { amount: "Infinity" },
-    { date: "2099-01-01" },
-    { date: "2026-02-30" },
   ]) {
     assert.ok(assetDraftError({ ...property, ...extra }));
   }
@@ -61,9 +53,23 @@ test("stock quantities, property shares and zero balances are valued without cre
 });
 
 const assets = [
-  { id: "house", kind: "property", name: "집", note: "", deleted_on: null },
-  { id: "loan", kind: "loan", name: "대출", note: "", deleted_on: null },
-  { id: "car", kind: "car", name: "자동차", note: "", deleted_on: "2026-03-10" },
+  {
+    id: "house",
+    kind: "property",
+    current_balance: 350000000,
+    name: "집",
+    note: "",
+    deleted_on: null,
+  },
+  { id: "loan", kind: "loan", current_balance: 90000000, name: "대출", note: "", deleted_on: null },
+  {
+    id: "car",
+    kind: "car",
+    current_balance: 20000000,
+    name: "자동차",
+    note: "",
+    deleted_on: "2026-03-10",
+  },
 ];
 const valuation = (asset_id, valued_on, amount, details = {}) => ({
   id: `${asset_id}-${valued_on}`,
@@ -84,23 +90,12 @@ const portfolio = {
   ],
 };
 
-test("net worth uses the last known valuation at each date and subtracts debts exactly once", () => {
+test("net worth uses current balances and excludes deleted assets regardless of valuation history", () => {
   assert.deepEqual(
-    { ...portfolioSummary(portfolio, "2026-01-31") },
-    { total: 300000000, debt: 100000000, net: 200000000 },
+    { ...portfolioSummary(portfolio) },
+    { total: 350000000, debt: 90000000, net: 260000000 },
   );
-  assert.equal(portfolioSummary(portfolio, "2026-02-28").net, 230000000);
-  assert.equal(portfolioSummary(portfolio, "2026-03-31").net, 260000000);
-  assert.equal(portfolioSummary(portfolio, "2025-12-31").net, 0);
-  const trend = portfolioTrend(portfolio, "2026-03-20");
-  assert.deepEqual(
-    Array.from(trend, (point) => [point.date, point.net]),
-    [
-      ["2026-01-31", 200000000],
-      ["2026-02-28", 230000000],
-      ["2026-03-20", 260000000],
-    ],
-  );
+  assert.equal(portfolioSummary({ ...portfolio, valuations: [] }).net, 260000000);
 });
 
 test("editing retains holding inputs and records a new valuation as of today by default", () => {
@@ -115,7 +110,7 @@ test("same-day revisions retain history and the latest revision determines net w
   const first = { ...valuation("cash", "2026-03-10", 100), created_at: "2026-03-10T09:00:00Z" };
   const second = { ...valuation("cash", "2026-03-10", 200), created_at: "2026-03-10T10:00:00Z" };
   const snapshot = {
-    assets: [{ id: "cash", kind: "cash", deleted_on: null }],
+    assets: [{ id: "cash", kind: "cash", current_balance: 200, deleted_on: null }],
     valuations: [second, first],
   };
   assert.equal(portfolioSummary(snapshot, "2026-03-10").net, 200);
@@ -142,7 +137,10 @@ function editor(save, props = {}) {
     "src/components/NativeSelectionSheet.tsx": { NativeSelectionSheet: "Sheet" },
     "src/components/KeyboardAwareScrollView.tsx": { KeyboardAwareScrollView: "Scroll" },
     "src/components/assets/AssetDraftFields.tsx": { AssetDraftFields: "Fields" },
-    "src/lib/personalAssets.ts": { savePersonalAsset: save, deletePersonalAsset: async () => {} },
+    "src/lib/personalAssets.ts": {
+      savePersonalAsset: save,
+      deletePersonalAsset: async () => {},
+    },
   })("src/components/assets/AssetEditorSheet.tsx").AssetEditorSheet;
   const render = () =>
     state.render(() =>
@@ -175,10 +173,6 @@ test("asset sheet shows seven kinds with cash and savings combined", () => {
   assert.deepEqual(
     choices.map((node) => node.props.children.props.children),
     ["현금·저축", "투자 계좌", "부동산", "자동차", "기타 자산", "대출", "기타 부채"],
-  );
-  assert.equal(
-    ui.render().props.children.props.children[0].props.children[1].props.children.length,
-    7,
   );
   ui.unmount();
 });
@@ -241,9 +235,11 @@ test("persistence only invokes asset RPCs, propagates failures and paginates com
             eq: (column, owner) => ({
               order(orderColumn) {
                 assert.ok(
-                  table === "ledger_asset_movements"
-                    ? ["asset_id", "entry_id"].includes(orderColumn)
-                    : orderColumn === "id",
+                  table === "asset_monthly_snapshots"
+                    ? ["asset_id", "month_end"].includes(orderColumn)
+                    : table === "ledger_asset_movements"
+                      ? ["asset_id", "entry_id"].includes(orderColumn)
+                      : orderColumn === "id",
                 );
                 return this;
               },
@@ -270,6 +266,7 @@ test("persistence only invokes asset RPCs, propagates failures and paginates com
   const result = await client.fetchPersonalAssets("owner");
   assert.equal(result.assets.length, 1001);
   assert.equal(result.valuations.length, 1001);
+  assert.ok(calls.slice(2).every((call) => call[0] !== "asset_monthly_snapshots"));
   assert.ok(calls.slice(2).every((call) => call[1] === "book_id" && call[2] === "owner"));
   const failed = modules({
     "src/lib/supabase.ts": { supabase: { rpc: async () => ({ error: new Error("failed") }) } },
@@ -282,6 +279,7 @@ test("refresh ignores an old account response and removes its foreground subscri
   const requests = [],
     removed = [];
   const usePersonalAssets = modules({
+    "src/lib/ledgerBooks.ts": { fetchLedgerBookMembers: async () => [] },
     react: state.react,
     "@react-navigation/native": { useIsFocused: () => true },
     "react-native": {
@@ -355,16 +353,4 @@ test("investment account totals replace holding inputs and retain legacy valuati
   assert.equal(assetAmount(legacy), 30000);
   assert.equal(assetDraftError(legacy), null);
   assert.equal(assetAmount({ ...legacy, amount: "40000" }), 40000);
-});
-
-test("monthly records disclose carried valuations separately from confirmed values", () => {
-  const trend = portfolioTrend(portfolio, "2026-03-20");
-  assert.deepEqual(
-    Array.from(trend, ({ confirmed, count }) => [confirmed, count]),
-    [
-      [2, 3],
-      [2, 3],
-      [1, 2],
-    ],
-  );
 });

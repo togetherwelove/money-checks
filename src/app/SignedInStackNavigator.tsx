@@ -1,3 +1,4 @@
+import { getSupportContactSheetOptions } from "./supportContactSheetOptions";
 import { createThemeValue } from "../lib/appTheme";
 import { useAppTheme } from "../hooks/useAppTheme";
 import {
@@ -8,8 +9,10 @@ import type { ReactNode } from "react";
 import { Keyboard } from "react-native";
 import type { SettingsMenuLinksProps } from "../components/appSettings/SettingsMenuLinks";
 
-import type { CalendarSummaryMode } from "../constants/calendarSummary";
+import { CalendarSummaryModes, type CalendarSummaryMode } from "../constants/calendarSummary";
+import type { OpenReportCategoryEntries } from "../constants/allEntries";
 import { getAppColors } from "../constants/colors";
+import { AppFontSize } from "../constants/typography";
 import { createCalendarTodayButton } from "../lib/calendarTodayButton";
 import type { SubscriptionTier } from "../constants/subscription";
 import type { SupportPackageIdentifier } from "../constants/support";
@@ -60,6 +63,7 @@ const getSignedInStackScreenOptions = createThemeValue(
     headerShown: true,
     headerShadowVisible: false,
     headerTitleAlign: "center",
+    headerTitleStyle: { fontSize: AppFontSize.title },
     headerBackButtonDisplayMode: "minimal",
     headerTintColor: getAppColors().text,
     headerStyle: { backgroundColor: getAppColors().screenBackground },
@@ -107,6 +111,7 @@ export type SignedInStackNavigatorProps = {
   onDuplicateEntry: (entry: LedgerEntry) => void;
   onEditSelectedEntryFromCalendar: (entry: LedgerEntry) => void;
   onOpenSubscription: () => void;
+  onOpenReportCategoryEntries: OpenReportCategoryEntries;
   onOpenAdTrackingSettings: () => void;
   onOpenSubscriptionManagement: () => Promise<void>;
   onPurchaseSupportPackage: (identifier: SupportPackageIdentifier) => Promise<void>;
@@ -127,6 +132,7 @@ export type SignedInStackNavigatorProps = {
   showAdTrackingPermissionCard: boolean;
   showNotificationSettings: boolean;
   showsBannerAd: boolean;
+  reservesBannerAdSpace?: boolean;
   supportPackages: SupportPackageSnapshot[];
   supportPackagesLoading: boolean;
   subscriptionTier: SubscriptionTier;
@@ -167,6 +173,7 @@ export function SignedInStackNavigator({
   onEditSelectedEntryFromCalendar,
   onOpenAdTrackingSettings,
   onOpenSubscription,
+  onOpenReportCategoryEntries,
   onOpenSubscriptionManagement,
   onPurchaseSupportPackage,
   onPurchasePlus,
@@ -183,6 +190,7 @@ export function SignedInStackNavigator({
   showAdTrackingPermissionCard,
   showNotificationSettings,
   showsBannerAd,
+  reservesBannerAdSpace = showsBannerAd,
   supportPackages,
   supportPackagesLoading,
   subscriptionTier,
@@ -219,11 +227,12 @@ export function SignedInStackNavigator({
     >
       <Stack.Screen name="share">{renderLedgerBooks}</Stack.Screen>
       <Stack.Screen name="assets">
-        {() => (
+        {({ navigation }) => (
           <AssetsScreen
             key={`${userId}:${ledgerState.activeBook?.id}`}
             userId={userId}
             bookId={ledgerState.activeBook?.id ?? null}
+            setHeaderOptions={navigation.setOptions}
           />
         )}
       </Stack.Screen>
@@ -232,15 +241,24 @@ export function SignedInStackNavigator({
           <HomeScreen
             entryAppend={entryAppend}
             calendarSummaryMode={calendarSummaryMode}
+            calendarSummaryBaseDay={calendarSummaryBaseDay}
             isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
             onDeleteSelectedEntry={onDeleteSelectedEntry}
             onAddFrequentEntry={onAddFrequentEntry}
             onDuplicateEntry={onDuplicateEntry}
             onEditSelectedEntry={onEditSelectedEntryFromCalendar}
+            onSelectSummaryMode={(mode, day) => {
+              if (mode === CalendarSummaryModes.selectedMonth) {
+                if (day === undefined) return;
+                onChangeCalendarSummaryBaseDay(day);
+              }
+              onChangeCalendarSummaryMode(mode);
+            }}
             onPrepayInstallmentEntry={onPrepayInstallmentEntry}
             onSelectCalendarDate={onSelectCalendarDate}
             screenTitle={() => null}
             showsBannerAd={showsBannerAd}
+            reservesBannerAdSpace={reservesBannerAdSpace}
             state={ledgerState}
           />
         )}
@@ -258,9 +276,11 @@ export function SignedInStackNavigator({
         )}
       </Stack.Screen>
       <Stack.Screen name="all-entries">
-        {() => (
+        {({ route }) => (
           <AllEntriesScreen
+            key={`${ledgerState.activeBook?.id ?? ""}:${route.params?.reportCategoryFilter.requestId ?? ""}`}
             activeBook={ledgerState.activeBook}
+            reportCategoryFilter={route.params?.reportCategoryFilter}
             entryAppend={entryAppend}
             onDeleteEntry={onDeleteSelectedEntry}
             onAddFrequentEntry={onAddFrequentEntry}
@@ -275,8 +295,10 @@ export function SignedInStackNavigator({
       <Stack.Screen name="charts">
         {() => (
           <ChartScreen
+            onOpenReportCategoryEntries={onOpenReportCategoryEntries}
             renderScreenTitle={() => null}
             showsBannerAd={showsBannerAd}
+            reservesBannerAdSpace={reservesBannerAdSpace}
             state={ledgerState}
           />
         )}
@@ -303,6 +325,7 @@ export function SignedInStackNavigator({
       <Stack.Screen name="all-menu">
         {() => (
           <AllMenuScreen
+            isPlusActive={isPlusActive}
             menuSections={menuSections}
             onSelectMenuItem={onSelectMenuItem}
             activeBookId={ledgerState.activeBook?.id ?? null}
@@ -318,7 +341,6 @@ export function SignedInStackNavigator({
             calendarSummaryBaseDay={calendarSummaryBaseDay}
             calendarSummaryMode={calendarSummaryMode}
             isCalendarHeatmapEnabled={isCalendarHeatmapEnabled}
-            onChangeCalendarSummaryMode={onChangeCalendarSummaryMode}
             onChangeCalendarSummaryBaseDay={onChangeCalendarSummaryBaseDay}
             isPlusActive={isPlusActive}
             onOpenSubscription={onOpenSubscription}
@@ -371,7 +393,10 @@ export function SignedInStackNavigator({
         )}
       </Stack.Screen>
       <Stack.Screen name="help-faq">{() => <HelpFaqScreen screenTitle={null} />}</Stack.Screen>
-      <Stack.Screen name="contact-support">
+      <Stack.Screen
+        name="contact-support"
+        options={({ navigation }) => getSupportContactSheetOptions(() => navigation.goBack())}
+      >
         {() => <SupportContactScreen email={email} screenTitle={null} />}
       </Stack.Screen>
     </Stack.Navigator>

@@ -1,3 +1,5 @@
+import { AppFontSize } from "../constants/typography";
+import { SettingsGroupDesign } from "../constants/settingsGroupStyles";
 import { createThemeValue } from "../lib/appTheme";
 import { useAppTheme } from "../hooks/useAppTheme";
 import type { ReactNode } from "react";
@@ -13,6 +15,7 @@ type ActionButtonProps = {
   disabled?: boolean;
   dimWhenDisabled?: boolean;
   fullWidth?: boolean;
+  shape?: "rounded" | "capsule";
   label: string;
   labelContent?: ReactNode;
   loading?: boolean;
@@ -25,6 +28,7 @@ export function ActionButton({
   disabled = false,
   dimWhenDisabled = true,
   fullWidth = false,
+  shape = "rounded",
   label,
   labelContent = null,
   loading = false,
@@ -63,6 +67,7 @@ export function ActionButton({
 
   return (
     <Pressable
+      accessibilityLabel={label}
       accessibilityRole="button"
       accessibilityState={{ disabled: disabled || isLoading, busy: isLoading }}
       disabled={disabled || isLoading}
@@ -72,6 +77,8 @@ export function ActionButton({
         styles[`${size}Button`],
         fullWidth ? styles.fullWidth : null,
         styles[`${variant}Button`],
+        shape === "capsule" && styles.capsuleButton,
+        shape === "capsule" && variant === "secondary" && styles.capsuleSecondaryButton,
         dimWhenDisabled && (disabled || isLoading) ? styles.disabledButton : null,
       ]}
     >
@@ -113,6 +120,13 @@ const getStyles = createThemeValue(() =>
       paddingVertical: AuthControls.verticalPadding,
       borderRadius: AuthControls.borderRadius,
     },
+    capsuleSecondaryButton: { backgroundColor: getAppColors().surface },
+    capsuleButton: {
+      minHeight: SettingsGroupDesign.singleLineHeight,
+      paddingHorizontal: SettingsGroupDesign.horizontalPadding,
+      borderRadius: SettingsGroupDesign.radius,
+      paddingVertical: SettingsGroupDesign.rowVerticalPadding,
+    },
     fullWidth: {
       flex: 1,
     },
@@ -132,12 +146,12 @@ const getStyles = createThemeValue(() =>
       opacity: 0.45,
     },
     text: {
-      fontSize: 12,
+      fontSize: AppFontSize.caption,
       fontWeight: "700",
     },
     compactText: ActionButtonLabelTextStyle,
     inlineText: {
-      fontSize: 13,
+      fontSize: AppFontSize.body,
     },
     largeText: ActionButtonLabelTextStyle,
     primaryText: {

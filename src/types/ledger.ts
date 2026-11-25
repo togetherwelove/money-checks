@@ -1,5 +1,6 @@
 import type { InstallmentStatus } from "../constants/installments";
 import type { EntryAssetLink } from "./assetLink";
+import type { DailyExpenseComparison } from "./expenseComparison";
 
 export type LedgerEntryType = "income" | "expense";
 
@@ -88,26 +89,16 @@ export type MonthlyComparisonMetric = {
   direction: MonthlyChangeDirection;
 };
 
-export type MonthlyCategoryExpense = {
+export type MonthlyCategoryBreakdown = {
   amount: number;
   category: string;
+  categoryId: string;
   share: number;
 };
 
-export type MonthlyCategoryIncome = {
+export type MonthlyMemberBreakdown = {
   amount: number;
-  category: string;
-  share: number;
-};
-
-export type MonthlyMemberExpense = {
-  amount: number;
-  memberName: string;
-  share: number;
-};
-
-export type MonthlyMemberIncome = {
-  amount: number;
+  memberKey: string;
   memberName: string;
   share: number;
 };
@@ -123,14 +114,15 @@ export type MonthlyTrendPoint = {
 export type MonthlyInsightComparisonBasis = "month" | "period";
 
 export type MonthlyInsights = {
+  dailyExpenseComparison?: DailyExpenseComparison;
   comparisonBasis: MonthlyInsightComparisonBasis;
   currentMonthLabel: string;
   previousMonthLabel: string;
   expenseComparison: MonthlyComparisonMetric;
   incomeComparison: MonthlyComparisonMetric;
-  categoryExpenses: MonthlyCategoryExpense[];
-  categoryIncomes: MonthlyCategoryIncome[];
-  memberExpenses: MonthlyMemberExpense[];
-  memberIncomes: MonthlyMemberIncome[];
+  categoryExpenses: MonthlyCategoryBreakdown[];
+  categoryIncomes: MonthlyCategoryBreakdown[];
+  memberExpenses: MonthlyMemberBreakdown[];
+  memberIncomes: MonthlyMemberBreakdown[];
   trendMonths: MonthlyTrendPoint[];
 };

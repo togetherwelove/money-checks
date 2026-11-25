@@ -3,7 +3,7 @@ import { AssetConfig } from "../constants/assets";
 import { AssetLinkConfig as Config, AssetLinkCopy as Copy } from "../constants/assetLink";
 import type { AssetDraft, AssetPortfolio } from "../types/asset";
 import type { LedgerEntryDraft } from "../types/ledger";
-import { assetToday, validAssetDate, assetBalance } from "./assets";
+import { validAssetDate, assetBalance } from "./assets";
 
 const Money = Decimal.clone({
   precision: Config.calculationPrecision,
@@ -117,7 +117,7 @@ export function entryAssetLinkError(
     return Copy.loanRequired;
   if (!link?.cashAssetId && !link?.loanAssetId)
     return requireLoan && draft.categoryId === Config.loanCategoryId ? Copy.loanRequired : null;
-  if (draft.installmentMonths > 1 || draft.date > assetToday()) return Copy.oneTime;
+  if (draft.installmentMonths > 1) return Copy.oneTime;
   if (
     !link.requestId ||
     (link.loanAssetId && (draft.type !== "expense" || draft.categoryId !== Config.loanCategoryId))
@@ -150,11 +150,9 @@ export function entryAssetLinkError(
     portfolio &&
     ((link.cashAssetId &&
       draft.type === "expense" &&
-      Number(draft.amount) >
-        assetBalance(portfolio, link.cashAssetId, draft.date, excludeEntryId)) ||
+      Number(draft.amount) > assetBalance(portfolio, link.cashAssetId, excludeEntryId)) ||
       (link.loanAssetId &&
-        Number(link.principal) >
-          assetBalance(portfolio, link.loanAssetId, draft.date, excludeEntryId)))
+        Number(link.principal) > assetBalance(portfolio, link.loanAssetId, excludeEntryId)))
   )
     return Copy.balanceError;
   return null;

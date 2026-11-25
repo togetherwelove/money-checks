@@ -58,13 +58,11 @@ export function EntryAssetLinkFields({
     if (selectedLoan && (!draft.content.trim() || draft.content === previousLoan?.name)) {
       update("content", selectedLoan.name);
     }
-    const settings = id
-      ? latestValuation(portfolio.valuations, id, draft.date)?.details
-      : undefined;
+    const settings = id ? latestValuation(portfolio.valuations, id)?.details : undefined;
     const estimate =
       id && settings
         ? estimateLoanFromSettings(
-            assetBalance(portfolio, id, draft.date, editingEntryId),
+            assetBalance(portfolio, id, editingEntryId),
             settings,
             draft.date,
           )
@@ -110,8 +108,7 @@ export function EntryAssetLinkFields({
       autoSelected.current = true;
       return;
     }
-    if (loans.length !== 1 || !latestValuation(portfolio.valuations, loans[0].id, draft.date))
-      return;
+    if (loans.length !== 1 || !latestValuation(portfolio.valuations, loans[0].id)) return;
     autoSelected.current = true;
     selectLoan(loans[0].id);
   }, [
@@ -154,11 +151,9 @@ export function EntryAssetLinkFields({
     return <Text style={getAssetStyles().hint}>{AssetCopy.privateLink}</Text>;
   if (!cash.length && !loans.length && !error && !link) return null;
   const valuation = link?.loanAssetId
-    ? latestValuation(portfolio.valuations, link.loanAssetId, draft.date)
+    ? latestValuation(portfolio.valuations, link.loanAssetId)
     : undefined;
-  const balance = link?.loanAssetId
-    ? assetBalance(portfolio, link.loanAssetId, draft.date, editingEntryId)
-    : 0;
+  const balance = link?.loanAssetId ? assetBalance(portfolio, link.loanAssetId, editingEntryId) : 0;
   const details = valuation?.details;
   const suggestion = details ? estimateLoanFromSettings(balance, details, draft.date) : null;
   return (

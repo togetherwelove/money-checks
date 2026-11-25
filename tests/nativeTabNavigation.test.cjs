@@ -13,10 +13,13 @@ test("iOS uses native symbol tabs for five destinations and forwards the in-list
     "src/app/NativeTabScene.tsx": { NativeTabScene: "Scene" },
   });
   const { SignedInTabNavigator } = load("src/app/SignedInTabNavigator.ios.tsx");
+  const { PrimaryTabRoutes } = load("src/app/signedInNavigation.ts");
   const append = jsx("Append", {});
   const tree = SignedInTabNavigator({ badges: [], disabled: false, entryAppend: append });
   assert.equal(tree.type, "NativeTabs");
   assert.equal(tree.props.children.length, 5);
+  const reportTab = tree.props.children.find((tab) => tab.props.name === PrimaryTabRoutes.charts);
+  assert.equal(reportTab.props.options.tabBarLabel, "분석");
   for (const tab of tree.props.children) {
     assert.equal(tab.props.options.tabBarIcon({ focused: false }).type, "sfSymbol");
     assert.equal(tab.props.children().props.children.props.entryAppend, append);

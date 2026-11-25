@@ -22,6 +22,7 @@ export function EntryComposerHeader({
   saving = false,
   actionDisabled = false,
   actionLabel,
+  actionIcon = "check",
   onAction,
   onClose,
 }: EntryComposerHeaderProps) {
@@ -86,7 +87,7 @@ export function EntryComposerHeader({
             <ActivityIndicator color={getAppColors().onPrimary} />
           ) : (
             <MaterialCommunityIcons
-              name="check"
+              name={actionIcon}
               size={Ui.sheetIconSize}
               color={getAppColors().onPrimary}
             />

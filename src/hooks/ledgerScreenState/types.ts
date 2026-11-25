@@ -1,4 +1,5 @@
 import type { MonthPage } from "../../components/monthCalendarPager/monthCalendarPagerUtils";
+import type { AllEntriesDateRange } from "../../constants/allEntries";
 import type {
   LedgerEntry,
   LedgerEntryDraft,
@@ -26,6 +27,7 @@ import type {
 export type BusyTaskTracker = <T>(task: () => Promise<T>) => Promise<T>;
 
 export type ChartMonthData = {
+  dateRange?: AllEntriesDateRange;
   key: string;
   monthlyInsights: MonthlyInsights;
   monthlyLedger: MonthlyLedgerSummary;

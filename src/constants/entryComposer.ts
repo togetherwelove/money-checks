@@ -1,3 +1,4 @@
+import { AppFontSize, AppLineHeight } from "./typography";
 export const EntryComposerCopy = {
   sheetTitle: "내역 추가 · 수정",
   closeSheet: "입력창 닫기",
@@ -61,23 +62,23 @@ export const EntryComposerCopy = {
   selectBook: "가계부 선택",
 } as const;
 
-const SHEET_TEXT_FIELD_LINE_HEIGHT = 22;
+const SHEET_TEXT_FIELD_LINE_HEIGHT = AppLineHeight.label;
 const SHEET_TEXT_FIELD_VERTICAL_PADDING = 6;
 
 export const EntryComposerUi = {
   sheetControlSize: 48,
   sheetTypePickerWidth: 176,
   sheetIconSize: 24,
-  sheetSegmentFontSize: 16,
+  sheetSegmentFontSize: AppFontSize.label,
   sheetCardRadius: 28,
   sheetFieldHeight: 48,
-  sheetFieldFontSize: 16,
+  sheetFieldFontSize: AppFontSize.label,
   sheetFieldLineHeight: SHEET_TEXT_FIELD_LINE_HEIGHT,
   sheetFieldVerticalPadding: 8,
   sheetTextFieldHeight: SHEET_TEXT_FIELD_LINE_HEIGHT + SHEET_TEXT_FIELD_VERTICAL_PADDING * 2,
   sheetTextFieldVerticalPadding: SHEET_TEXT_FIELD_VERTICAL_PADDING,
-  sheetAmountFontSize: 22,
-  sheetAmountLineHeight: 28,
+  sheetAmountFontSize: AppFontSize.display,
+  sheetAmountLineHeight: AppLineHeight.display,
   sheetPadding: 16,
   sheetSectionGap: 12,
   segmentInset: 4,
@@ -90,15 +91,15 @@ export const EntryComposerUi = {
   detailsHeadingGap: 4,
   detailsRowHeight: 28,
   detailsRowVerticalPadding: 4,
-  detailsFontSize: 12,
+  detailsFontSize: AppFontSize.caption,
   fieldHeight: 44,
   summaryRowHeight: 36,
   summaryRowGap: 2,
   pendingHeaderHeight: 24,
-  pendingTitleFontSize: 17,
+  pendingTitleFontSize: AppFontSize.label,
   cancelIconSize: 16,
-  fontSize: 14,
-  summaryFontSize: 13,
+  fontSize: AppFontSize.body,
+  summaryFontSize: AppFontSize.body,
   editIconSize: 12,
   bookTabMaxWidth: 160,
   bookDropdownIconSize: 12,

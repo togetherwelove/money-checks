@@ -1,3 +1,4 @@
+import { AppFontSize, AppLineHeight } from "./typography";
 export const MenuDesign = {
   horizontalPadding: 16,
   verticalPadding: 12,
@@ -7,14 +8,14 @@ export const MenuDesign = {
   contentGap: 12,
   textGap: 4,
   rowMinHeight: 60,
-  sectionFontSize: 12,
-  sectionLineHeight: 18,
-  titleFontSize: 14,
-  titleLineHeight: 20,
-  bodyFontSize: 14,
-  bodyLineHeight: 22,
-  descriptionFontSize: 12,
-  descriptionLineHeight: 18,
+  sectionFontSize: AppFontSize.caption,
+  sectionLineHeight: AppLineHeight.caption,
+  titleFontSize: AppFontSize.body,
+  titleLineHeight: AppLineHeight.body,
+  bodyFontSize: AppFontSize.body,
+  bodyLineHeight: AppLineHeight.body,
+  descriptionFontSize: AppFontSize.caption,
+  descriptionLineHeight: AppLineHeight.caption,
   controlIconSize: 16,
   fontWeight: "700",
 } as const;

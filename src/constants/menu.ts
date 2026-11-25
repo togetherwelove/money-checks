@@ -1,3 +1,4 @@
+import { AppFontSize, AppLineHeight } from "./typography";
 export const MenuCopy = {
   sections: {
     account: "내 계정",
@@ -27,9 +28,9 @@ export const FooterTabBarUi = {
   disabledOpacity: 0.45,
   iconButtonSize: 30,
   iconSize: 24,
-  labelFontSize: 11,
+  labelFontSize: AppFontSize.caption,
   labelGap: 2,
-  labelLineHeight: 12,
+  labelLineHeight: AppLineHeight.caption,
   pressedTabOpacity: 0.7,
   tabGap: 2,
   tabPaddingHorizontal: 4,

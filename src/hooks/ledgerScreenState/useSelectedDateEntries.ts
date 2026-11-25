@@ -15,6 +15,10 @@ type SelectedDateEntriesState = {
   selectedEntriesError: string | null;
 };
 
+function fetchSelectedDateEntries(bookId: string, date: string) {
+  return fetchLedgerEntries(bookId, date, date, { orderBy: "created_at", ascending: true });
+}
+
 export function useSelectedDateEntries(
   activeBookId: string | null,
   selectedDate: string,
@@ -92,7 +96,7 @@ export function useSelectedDateEntries(
       step: "load_selected_date_entries",
     });
 
-    void fetchLedgerEntries(activeBookId, selectedDate, selectedDate)
+    void fetchSelectedDateEntries(activeBookId, selectedDate)
       .then((nextEntries) => {
         trace("loaded_selected_date_entries", { entryCount: nextEntries.length });
         if (!isMounted) {
@@ -168,7 +172,7 @@ export function useSelectedDateEntries(
           selectedDate,
           step: "refresh_selected_date_entries",
         });
-        const nextEntries = await fetchLedgerEntries(activeBookId, selectedDate, selectedDate);
+        const nextEntries = await fetchSelectedDateEntries(activeBookId, selectedDate);
         trace("refreshed_selected_date_entries", { entryCount: nextEntries.length });
         setEntriesByDate((currentEntriesByDate) => ({
           ...currentEntriesByDate,

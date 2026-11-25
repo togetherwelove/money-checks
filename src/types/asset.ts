@@ -35,6 +35,8 @@ export type PersonalAsset = {
   note: string;
   deleted_on: string | null;
   created_at: string;
+  current_balance: number;
+  last_balance_checked_on?: string | null;
 };
 export type AssetValuation = {
   id: string;

@@ -105,7 +105,8 @@ test("summary day keeps 31 wheel values, applies only on confirmation and resets
     "react/jsx-runtime": { jsx, jsxs: jsx },
     "react-native": { View: "View", StyleSheet: { create: (value) => value } },
     "@react-native-picker/picker": { Picker: Object.assign(() => {}, { Item: "Item" }) },
-    "src/components/NativePickerSheet.tsx": { NativePickerSheet: "Sheet" },
+    "src/components/ComposerBlockingModal.tsx": { ComposerBlockingModal: "Modal" },
+    "../entryComposer/EntryComposerHeader": { EntryComposerHeader: "Header" },
     "src/components/ActionButton.tsx": { ActionButton: "Button" },
   });
   const { CalendarSummaryBaseDayPickerModal } = load(
@@ -122,14 +123,17 @@ test("summary day keeps 31 wheel values, applies only on confirmation and resets
   };
   const render = () => h.render(() => CalendarSummaryBaseDayPickerModal(props));
   let tree = render();
-  assert.equal(tree.type, "Sheet");
+  assert.equal(tree.type, "Modal");
+  assert.equal(tree.props.transparent, true);
+  assert.equal(tree.props.presentationStyle, "overFullScreen");
+  assert.equal(tree.props.children.props.style.justifyContent, "center");
   assert.equal(nodes(tree).filter((node) => node.type === "Item").length, 31);
   nodes(tree)
     .find((node) => node.props.onValueChange)
     .props.onValueChange(31);
   tree = render();
   assert.deepEqual(selected, []);
-  tree.props.onClose();
+  tree.props.onRequestClose();
   render();
   props.isOpen = true;
   tree = render();
@@ -138,7 +142,9 @@ test("summary day keeps 31 wheel values, applies only on confirmation and resets
     .find((node) => node.props.onValueChange)
     .props.onValueChange(1);
   tree = render();
-  tree.props.action.onPress();
+  nodes(tree)
+    .find((node) => node.type === "Header")
+    .props.onAction();
   assert.deepEqual(selected, [1]);
 });
 

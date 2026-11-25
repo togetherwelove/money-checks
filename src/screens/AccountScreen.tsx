@@ -1,13 +1,18 @@
+import { AppFontSize, AppLineHeight } from "../constants/typography";
+import { Feather } from "../components/AppIcons";
+import { TextLinkButton } from "../components/TextLinkButton";
+import { IconActionButton } from "../components/IconActionButton";
+import { AccountDeletionMessages } from "../constants/accountDeletion";
+import { SettingsGroup } from "../components/appSettings/SettingsGroup";
+import { SettingsRow } from "../components/appSettings/SettingsRow";
+import { getSettingsGroupStyles, SettingsGroupDesign } from "../constants/settingsGroupStyles";
 import { createThemeValue } from "../lib/appTheme";
 import { useAppTheme } from "../hooks/useAppTheme";
 import { type ReactNode, useEffect, useState } from "react";
 import { Alert, Keyboard, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import { getMenuStyles } from "../constants/menuStyles";
 import { AppScrollBehavior } from "../constants/scroll";
 
-import { ActionButton } from "../components/ActionButton";
 import { AppFooterContentInset } from "../components/AppFooterContentInset";
-import { TextLinkButton } from "../components/TextLinkButton";
 import { AdTrackingPermissionCard } from "../components/accountScreen/AdTrackingPermissionCard";
 import { DeleteAccountModal } from "../components/accountScreen/DeleteAccountModal";
 import { showDeleteSubscriptionWarning } from "../components/accountScreen/showDeleteSubscriptionWarning";
@@ -19,7 +24,7 @@ import {
   type SubscriptionTier,
   SubscriptionTiers,
 } from "../constants/subscription";
-import { getBrandPlusTextStyle, getUnderlineFormInputTextStyle } from "../constants/uiStyles";
+import { getBrandPlusTextStyle } from "../constants/uiStyles";
 import type { BusyTaskTracker } from "../hooks/ledgerScreenState/types";
 import type { AdTrackingPermissionState } from "../lib/ads/trackingTransparency";
 import { isApplePrivateRelayEmail } from "../lib/auth/applePrivateRelayEmail";
@@ -165,24 +170,17 @@ export function AccountScreen({
       >
         {screenTitle}
         <View style={styles.sections}>
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>{AppMessages.accountSessionTitle}</Text>
-            <InfoRow label={AppMessages.accountEmail} value={<AccountEmailValue email={email} />} />
+          <SettingsGroup>
+            <AccountEmailRow email={email} />
             <InfoRow label={AppMessages.accountProvider} value={accountProviderLabel} />
             <InfoRow
               action={
-                <>
-                  {subscriptionTier === SubscriptionTiers.plus ? (
-                    <TextLinkButton
-                      label={SubscriptionMessages.manageAction}
-                      onPress={handleOpenSubscriptionManagement}
-                    />
-                  ) : null}
-                  <TextLinkButton
-                    label={SubscriptionMessages.restoreAction}
-                    onPress={handleRestorePurchases}
-                  />
-                </>
+                <IconActionButton
+                  accessibilityLabel={SubscriptionMessages.restoreAction}
+                  icon="refresh-cw"
+                  onPress={handleRestorePurchases}
+                  size="compact"
+                />
               }
               label={SubscriptionMessages.statusLabel}
               value={
@@ -195,28 +193,42 @@ export function AccountScreen({
                 )
               }
             />
-          </View>
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>{AppMessages.accountNicknameTitle}</Text>
-            <TextInput
-              autoCapitalize="words"
-              autoComplete="nickname"
-              autoCorrect={false}
-              editable={!isSavingDisplayName}
-              importantForAutofill="no"
-              onChangeText={(value) => {
-                setDisplayName(value);
-              }}
-              onSubmitEditing={handlePressSaveDisplayName}
-              placeholder={fallbackDisplayName || AppMessages.accountNicknamePlaceholder}
-              placeholderTextColor={getAppColors().mutedText}
-              returnKeyType="done"
-              style={styles.inlineInput}
-              submitBehavior="blurAndSubmit"
-              textContentType="none"
-              value={displayName}
-            />
-          </View>
+            {subscriptionTier === SubscriptionTiers.plus ? (
+              <SettingsRow
+                label={SubscriptionMessages.manageAction}
+                onPress={handleOpenSubscriptionManagement}
+              />
+            ) : null}
+          </SettingsGroup>
+          <SettingsGroup title={AppMessages.accountNicknameTitle}>
+            <View style={getSettingsGroupStyles().singleLineField}>
+              <View>
+                <TextInput
+                  autoCapitalize="words"
+                  autoComplete="nickname"
+                  autoCorrect={false}
+                  editable={!isSavingDisplayName}
+                  importantForAutofill="no"
+                  onChangeText={(value) => {
+                    setDisplayName(value);
+                  }}
+                  onSubmitEditing={handlePressSaveDisplayName}
+                  placeholder={fallbackDisplayName || AppMessages.accountNicknamePlaceholder}
+                  placeholderTextColor={getAppColors().mutedText}
+                  returnKeyType="done"
+                  style={getSettingsGroupStyles().singleLineInput}
+                  submitBehavior="blurAndSubmit"
+                  textContentType="none"
+                  value={displayName}
+                />
+                <View
+                  pointerEvents="none"
+                  accessible={false}
+                  style={getSettingsGroupStyles().inputUnderline}
+                />
+              </View>
+            </View>
+          </SettingsGroup>
           {showAdTrackingPermissionCard ? (
             <AdTrackingPermissionCard
               onOpenSettings={onOpenAdTrackingSettings}
@@ -224,18 +236,26 @@ export function AccountScreen({
               permissionState={adTrackingPermissionState}
             />
           ) : null}
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>{AppMessages.accountActionTitle}</Text>
-            <View style={styles.actionRow}>
-              <ActionButton
+          <View style={styles.accountActions}>
+            <SettingsGroup>
+              <SettingsRow
                 label={AppMessages.authSignOut}
+                leading={
+                  <Feather
+                    name="log-out"
+                    size={SettingsGroupDesign.iconSize}
+                    color={getAppColors().text}
+                  />
+                }
                 onPress={handleConfirmSignOut}
-                size="inline"
-                variant="secondary"
               />
-            </View>
-            <View style={styles.deleteActionRow}>
-              <TextLinkButton label="계정 삭제" onPress={handleOpenDeleteFlow} tone="destructive" />
+            </SettingsGroup>
+            <View style={styles.deleteAction}>
+              <TextLinkButton
+                label={AccountDeletionMessages.deleteAction}
+                onPress={handleOpenDeleteFlow}
+                tone="destructive"
+              />
             </View>
           </View>
           <AppFooterContentInset />
@@ -246,76 +266,92 @@ export function AccountScreen({
   );
 }
 
-function AccountEmailValue({ email }: { email: string }) {
+function AccountEmailRow({ email }: { email: string }) {
   const styles = getStyles();
   useAppTheme();
   const isPrivateRelayEmail = isApplePrivateRelayEmail(email);
 
   return (
-    <>
-      <Text style={styles.value}>{email}</Text>
-      {isPrivateRelayEmail ? (
-        <View style={styles.privateRelayBadge}>
-          <Text style={styles.privateRelayBadgeText}>
-            {AppMessages.accountEmailApplePrivateRelayLabel}
-          </Text>
-        </View>
-      ) : null}
-    </>
+    <View style={getSettingsGroupStyles().row}>
+      <Text style={getSettingsGroupStyles().label}>{AppMessages.accountEmail}</Text>
+      <View style={styles.emailValueRow}>
+        <Text
+          selectable
+          numberOfLines={1}
+          ellipsizeMode="middle"
+          accessibilityLabel={email}
+          style={styles.email}
+        >
+          {email}
+        </Text>
+        {isPrivateRelayEmail ? (
+          <View style={styles.privateRelayBadge}>
+            <Text style={styles.privateRelayBadgeText}>
+              {AppMessages.accountEmailApplePrivateRelayLabel}
+            </Text>
+          </View>
+        ) : null}
+      </View>
+    </View>
   );
 }
 
 function InfoRow({
-  action = null,
   label,
   value,
+  action,
 }: {
-  action?: ReactNode;
   label: string;
   value: ReactNode;
+  action?: ReactNode;
 }) {
   const styles = getStyles();
   useAppTheme();
   return (
-    <View style={styles.infoRow}>
-      <Text style={styles.label}>{label}</Text>
-      <View style={styles.valueRow}>
-        {typeof value === "string" ? <Text style={styles.value}>{value}</Text> : value}
-        {action}
-      </View>
-    </View>
+    <SettingsRow
+      label={label}
+      labelAccessory={action}
+      trailing={
+        <View style={styles.valueRow}>
+          {typeof value === "string" ? <Text style={styles.value}>{value}</Text> : value}
+        </View>
+      }
+    />
   );
 }
 
 const getStyles = createThemeValue(() =>
   StyleSheet.create({
     sections: {
-      gap: getMenuStyles().sections.gap,
+      gap: getSettingsGroupStyles().sections.gap,
     },
     screen: {
       flex: 1,
       backgroundColor: getAppColors().screenBackground,
     },
     content: {
-      ...getMenuStyles().content,
+      ...getSettingsGroupStyles().page,
     },
-    card: {
-      ...getMenuStyles().panel,
+    accountActions: { gap: SettingsGroupDesign.titleGap },
+    deleteAction: {
+      alignSelf: "flex-end",
+      paddingHorizontal: SettingsGroupDesign.horizontalPadding,
     },
-    cardTitle: getMenuStyles().sectionTitle,
-    infoRow: {
-      gap: 4,
-      paddingVertical: 4,
+    emailValueRow: {
+      flex: 1,
+      minWidth: 0,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "flex-end",
+      gap: SettingsGroupDesign.textGap,
     },
-    label: getMenuStyles().description,
-    inlineInput: {
-      ...getUnderlineFormInputTextStyle(),
+    email: {
+      ...getSettingsGroupStyles().value,
+      fontSize: SettingsGroupDesign.compactValueFontSize,
+      minWidth: 0,
+      flexShrink: 1,
     },
-    value: {
-      color: getAppColors().text,
-      fontSize: 14,
-      fontWeight: "700",
-    },
+    value: getSettingsGroupStyles().value,
     plusLabelText: {
       ...getBrandPlusTextStyle(),
     },
@@ -329,22 +365,16 @@ const getStyles = createThemeValue(() =>
     },
     privateRelayBadgeText: {
       color: getAppColors().primary,
-      fontSize: 11,
+      fontSize: AppFontSize.caption,
       fontWeight: "800",
-      lineHeight: 14,
+      lineHeight: AppLineHeight.caption,
     },
     valueRow: {
       flexDirection: "row",
       alignItems: "center",
       flexWrap: "wrap",
-      gap: 8,
-    },
-    actionRow: {
-      paddingTop: 2,
-    },
-    deleteActionRow: {
-      flexDirection: "row",
       justifyContent: "flex-end",
+      gap: 8,
     },
   }),
 );

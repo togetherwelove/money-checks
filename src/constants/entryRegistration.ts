@@ -1,3 +1,4 @@
+import { AppFontSize, AppLineHeight } from "./typography";
 export const EntryRegistrationCopy = {
   amountClearAccessibilityLabel: "금액 지우기",
   amountRequiredError: "금액을 입력해 주세요.",
@@ -64,8 +65,8 @@ export const EntryNativeSheetUi = {
 export const EntryTypeToggleUi = {
   containerHeight: 26,
   indicatorHeight: 2,
-  labelFontSize: 14,
-  labelLineHeight: 18,
+  labelFontSize: AppFontSize.body,
+  labelLineHeight: AppLineHeight.body,
   labelMarginHorizontal: 4,
   optionMinWidth: 48,
   optionPaddingHorizontal: 10,

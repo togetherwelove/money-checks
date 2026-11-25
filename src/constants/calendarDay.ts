@@ -1,5 +1,6 @@
 import { createThemeValue } from "../lib/appTheme";
 import { getAppHeatmapColors, getAppColors } from "./colors";
+import { AppFontSize, CalendarAmountTypography } from "./typography";
 
 export const getCalendarDayUi = createThemeValue(
   () =>
@@ -10,11 +11,11 @@ export const getCalendarDayUi = createThemeValue(
       sundayTextColor: getAppColors().mutedStrongText,
       weekendTextOpacity: 0.72,
       readOnlyDayOpacity: 0.72,
-      dayNumberFontSize: 15,
-      weekdayFontSize: 12,
+      dayNumberFontSize: AppFontSize.label,
+      weekdayFontSize: AppFontSize.caption,
       weekdayPaddingVertical: 8,
-      amountFontSize: 9,
-      amountLineHeight: 11,
+      amountFontSize: CalendarAmountTypography.fontSize,
+      amountLineHeight: CalendarAmountTypography.lineHeight,
       amountMinimumScale: 0.55,
     }) as const,
 );

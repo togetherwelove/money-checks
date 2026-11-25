@@ -55,8 +55,8 @@ const baseline = (asset_id, amount) => ({
 });
 const portfolio = {
   assets: [
-    { id: "cash", kind: "cash", deleted_on: null },
-    { id: "loan", kind: "loan", deleted_on: null },
+    { id: "cash", kind: "cash", current_balance: 900, deleted_on: null },
+    { id: "loan", kind: "loan", current_balance: 4920, deleted_on: null },
   ],
   valuations: [baseline("cash", 1000), baseline("loan", 5000)],
   movements: [
@@ -78,15 +78,18 @@ const portfolio = {
 };
 
 test("cash and principal affect net worth once, and a manual checkpoint includes prior movements", () => {
-  assert.equal(assetBalance(portfolio, "cash", "2026-01-03"), 900);
-  assert.equal(assetBalance(portfolio, "cash", "2026-01-03", "payment"), 1000);
+  assert.equal(assetBalance(portfolio, "cash"), 900);
+  assert.equal(assetBalance(portfolio, "cash", "payment"), 1000);
   assert.equal(portfolioSummary(portfolio, "2026-01-03").net, -4020);
   const reset = {
     ...portfolio,
+    assets: portfolio.assets.map((asset) =>
+      asset.id === "cash" ? { ...asset, current_balance: 700 } : asset,
+    ),
     valuations: [...portfolio.valuations, { ...baseline("cash", 700), valued_on: "2026-01-03" }],
   };
-  assert.equal(assetBalance(reset, "cash", "2026-01-04"), 700);
-  assert.equal(assetBalance(reset, "cash", "2026-01-02"), 900);
+  assert.equal(assetBalance(reset, "cash"), 700);
+  assert.equal(assetBalance(reset, "cash", "payment"), 800);
 });
 
 test("repayments require a loan, never exceed paid amounts, and reject installment and overdrawn links", () => {
@@ -157,10 +160,10 @@ test("loan selection fills calculated amounts and the configured account while k
   const jsx = (type, props) => ({ type, props });
   const options = {
     assets: [
-      { id: "cash1", name: "급여 통장", kind: "cash" },
-      { id: "cash2", name: "생활비 통장", kind: "cash" },
-      { id: "loan1", name: "주택 대출", kind: "loan" },
-      { id: "loan2", name: "신용 대출", kind: "loan" },
+      { id: "cash1", current_balance: 10000, name: "급여 통장", kind: "cash" },
+      { id: "cash2", current_balance: 10000, name: "생활비 통장", kind: "cash" },
+      { id: "loan1", current_balance: 1200, name: "주택 대출", kind: "loan" },
+      { id: "loan2", current_balance: 2400, name: "신용 대출", kind: "loan" },
     ],
     valuations: [
       baseline("cash1", 10000),

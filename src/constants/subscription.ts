@@ -1,7 +1,8 @@
+import { AppFontSize, AppLineHeight } from "./typography";
 export const SubscriptionHeroUi = {
   brandDescriptionGap: 16,
-  brandFontSize: 32,
-  brandLineHeight: 42,
+  brandFontSize: AppFontSize.display,
+  brandLineHeight: AppLineHeight.display,
 } as const;
 
 export const SubscriptionTiers = {

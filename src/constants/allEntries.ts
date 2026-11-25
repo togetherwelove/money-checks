@@ -1,3 +1,4 @@
+import { AppFontSize } from "./typography";
 import type { LedgerEntryType } from "../types/ledger";
 
 export const AllEntriesEntryTypeFilters = {
@@ -32,6 +33,8 @@ export const AllEntriesFilterCopy = {
   removeFilterAccessibilitySuffix: "필터 해제",
   resetAccessibilityLabel: "검색어와 전체 내역 필터 초기화",
   resetLabel: "초기화",
+  resetDraftLabel: "전체 초기화",
+  resetDraftAccessibilityLabel: "기간과 분류 필터 초기화",
   searchPlaceholder: "내용과 메모 검색",
 } as const;
 
@@ -39,22 +42,24 @@ export const AllEntriesFilterUi = {
   activeFilterChipHorizontalPadding: 10,
   activeFilterChipHeight: 30,
   activeFilterChipIconSize: 13,
-  activeFilterChipLabelFontSize: 12,
-  badgeFontSize: 10,
+  activeFilterChipLabelFontSize: AppFontSize.caption,
+  badgeFontSize: AppFontSize.caption,
   badgeMinimumSize: 18,
   categoryChipHorizontalPadding: 12,
   categoryChipMinimumHeight: 40,
   categoryChipRadius: 999,
   categoryIconSize: 14,
-  categoryLabelFontSize: 13,
+  categoryLabelFontSize: AppFontSize.body,
   filterButtonHorizontalPadding: 12,
-  filterButtonLabelFontSize: 13,
+  filterButtonLabelFontSize: AppFontSize.body,
   filterButtonMinimumHeight: 44,
   iconSize: 15,
-  resetLabelFontSize: 12,
-  sectionLabelFontSize: 12,
-  typeOptionFontSize: 13,
-  typeOptionMinimumHeight: 40,
+  resetLabelFontSize: AppFontSize.caption,
+  sectionLabelFontSize: AppFontSize.caption,
+  typeOptionFontSize: AppFontSize.body,
+  typeOptionMinimumHeight: 36,
+  typeOptionsMaxWidth: 216,
+  typeOptionHitSlop: { top: 4, bottom: 4 },
 } as const;
 
 export function formatAllEntriesApplyLabel(filterCount: number): string {
@@ -70,3 +75,46 @@ export function formatAllEntriesEntryTypeFilterLabel(
     AllEntriesEntryTypeFilterOptions.find((option) => option.value === entryTypeFilter)?.label ?? ""
   );
 }
+
+export type AllEntriesDateRange = { startDate: string; endDate: string };
+export type ReportCategory = { id: string; label: string };
+export type OpenReportCategoryEntries = (
+  categories: ReportCategory[],
+  entryType: LedgerEntryType,
+  dateRange?: AllEntriesDateRange,
+) => void;
+export type ReportCategoryFilter = {
+  bookId: string;
+  requestId: number;
+  categories: ReportCategory[];
+  entryType: LedgerEntryType;
+  dateRange?: AllEntriesDateRange;
+};
+export const AllEntriesPeriodCopy = {
+  title: "기간",
+  all: "전체 기간",
+  custom: "기간 지정",
+  start: "시작일",
+  end: "종료일",
+  expense: "총 지출",
+  income: "총 수입",
+  loading: "합계 계산 중…",
+  error: "합계를 불러오지 못했어요.",
+} as const;
+
+export const AllEntriesPeriodPresets = [
+  { value: "this-month", label: "이번 달" },
+  { value: "last-month", label: "지난달" },
+  { value: "this-year", label: "올해" },
+] as const;
+export type AllEntriesPeriodPreset = (typeof AllEntriesPeriodPresets)[number]["value"];
+
+export const AllEntriesFilterDesign = {
+  categoryColumns: 3,
+  categoryTileHeight: 72,
+  categoryTilePadding: 6,
+  categoryTileContentGap: 4,
+  tileRadius: 16,
+  selectionIconSize: 12,
+  selectionBadgeSize: 18,
+} as const;

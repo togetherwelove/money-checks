@@ -4,6 +4,7 @@ import { LedgerBookManagementContent } from "./LedgerBookManagementContent";
 
 export type LedgerBookManagementViewProps = Pick<
   ComponentProps<typeof LedgerBookManagementContent>,
+  | "managementInline"
   | "badgedBookIds"
   | "onBeforeCopyShareCode"
   | "onBeforeSendJoinRequest"
@@ -21,6 +22,7 @@ export function LedgerBookManagementView({ state, ...props }: LedgerBookManageme
   return (
     <LedgerBookManagementContent
       {...props}
+      isBusy={state.isBusy}
       accessibleBooks={state.accessibleBooks}
       activeBook={state.activeBook}
       onApproveJoinRequest={state.approveLedgerJoinRequest}

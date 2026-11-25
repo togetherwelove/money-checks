@@ -1,3 +1,5 @@
+import { AppFontSize } from "../constants/typography";
+import { SettingsGroupDesign, getSettingsGroupStyles } from "../constants/settingsGroupStyles";
 import { createThemeValue } from "../lib/appTheme";
 import { useAppTheme } from "../hooks/useAppTheme";
 import { AppScrollBehavior } from "../constants/scroll";
@@ -22,6 +24,7 @@ type LedgerBookMembersProps = {
   currentUserId: string;
   isManagementDisabled?: boolean;
   members: LedgerBookMember[];
+  memberLimit: number | null;
   onOpenSubscription: () => void;
   onKickMember: (targetUserId: string) => Promise<boolean>;
   onTransferOwnership: (targetUserId: string) => Promise<boolean>;
@@ -32,6 +35,7 @@ export function LedgerBookMembers({
   currentUserId,
   isManagementDisabled = false,
   members,
+  memberLimit,
   onOpenSubscription,
   onKickMember,
   onTransferOwnership,
@@ -48,7 +52,7 @@ export function LedgerBookMembers({
   );
   const shouldScrollMembers = members.length > LedgerBookMembersUi.maxVisibleMembers;
   const memberListContent = (
-    <View style={styles.memberList}>
+    <View>
       {members.map((member, memberIndex) => {
         const isOwner = member.role === "owner";
         const canKickMember =
@@ -63,6 +67,15 @@ export function LedgerBookMembers({
             key={member.userId}
             style={[styles.memberRow, memberIndex > 0 ? styles.memberRowDivider : null]}
           >
+            <View
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+              style={[styles.memberAvatar, isOwner ? styles.ownerAvatar : null]}
+            >
+              <Text style={styles.memberAvatarText}>
+                {Array.from(member.displayName.trim())[0]}
+              </Text>
+            </View>
             <View style={styles.memberIdentity}>
               <Text numberOfLines={1} style={styles.memberName}>
                 {member.displayName}
@@ -139,7 +152,12 @@ export function LedgerBookMembers({
 
   return (
     <View style={styles.section}>
-      <Text style={styles.memberTitle}>{AppMessages.accountMembersTitle}</Text>
+      <View style={styles.memberHeading}>
+        <Text style={styles.memberTitle}>{AppMessages.accountMembersTitle}</Text>
+        <Text style={styles.memberCount}>
+          {members.length}/{memberLimit ?? LedgerBookMembersUi.unknownMemberLimit}
+        </Text>
+      </View>
       {shouldScrollMembers ? (
         <ScrollView
           {...AppScrollBehavior}
@@ -280,37 +298,47 @@ function confirmTransferOwnership(
 const getStyles = createThemeValue(() =>
   StyleSheet.create({
     section: {
-      gap: 6,
+      gap: SettingsGroupDesign.titleGap,
     },
-    memberList: {
-      overflow: "hidden",
-      borderWidth: 0,
-      borderBottomWidth: 1,
-      borderBottomColor: getAppColors().border,
-      borderRadius: 0,
-      backgroundColor: getAppColors().screenBackground,
+    memberAvatar: {
+      width: LedgerBookMembersUi.avatarSize,
+      height: LedgerBookMembersUi.avatarSize,
+      borderRadius: LedgerBookMembersUi.avatarSize / 2,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: getAppColors().surfaceStrong,
+    },
+    ownerAvatar: {
+      borderWidth: SettingsGroupDesign.borderWidth,
+      borderColor: getAppColors().primary,
+    },
+    memberAvatarText: {
+      color: getAppColors().primary,
+      fontSize: LedgerBookMembersUi.avatarFontSize,
+      fontWeight: "600",
     },
     memberListScroll: {
       maxHeight: LedgerBookMembersLayout.listMaxHeight,
     },
-    memberTitle: {
-      color: getAppColors().mutedStrongText,
-      fontSize: LedgerBookMembersUi.labelFontSize,
-      fontWeight: "700",
-      lineHeight: LedgerBookMembersUi.labelLineHeight,
-      marginBottom: LedgerBookMembersUi.labelBottomMargin,
+    memberHeading: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: SettingsGroupDesign.titleGap,
     },
+    memberCount: getSettingsGroupStyles().count,
+    memberTitle: { ...getSettingsGroupStyles().heading, paddingHorizontal: 0 },
     memberRow: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      gap: 8,
-      minHeight: LedgerBookMembersUi.rowHeight,
-      paddingHorizontal: LedgerBookMembersUi.rowHorizontalPadding,
-      paddingVertical: LedgerBookMembersUi.rowVerticalPadding,
+      gap: SettingsGroupDesign.contentGap,
+      minHeight: getSettingsGroupStyles().row.minHeight,
+      paddingHorizontal: 0,
+      paddingVertical: getSettingsGroupStyles().row.paddingVertical,
     },
     memberRowDivider: {
-      borderTopWidth: 1,
+      borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: getAppColors().border,
     },
     memberIdentity: {
@@ -320,16 +348,10 @@ const getStyles = createThemeValue(() =>
       alignItems: "center",
       gap: LedgerBookMembersUi.memberIdentityGap,
     },
-    memberName: {
-      color: getAppColors().text,
-      fontSize: 13,
-      fontWeight: "600",
-      lineHeight: LedgerBookMembersUi.rowTextLineHeight,
-      flexShrink: 1,
-    },
+    memberName: { ...getSettingsGroupStyles().label, flexShrink: 1 },
     selfBadge: {
       color: getAppColors().mutedText,
-      fontSize: 11,
+      fontSize: AppFontSize.caption,
       fontWeight: "700",
       lineHeight: LedgerBookMembersUi.badgeLineHeight,
       backgroundColor: getAppColors().surface,
@@ -342,7 +364,7 @@ const getStyles = createThemeValue(() =>
     },
     memberRoleBadge: {
       color: getAppColors().mutedText,
-      fontSize: 11,
+      fontSize: AppFontSize.caption,
       fontWeight: "700",
       lineHeight: LedgerBookMembersUi.badgeLineHeight,
       borderRadius: LedgerBookMembersUi.roleBadgeHorizontalPadding,

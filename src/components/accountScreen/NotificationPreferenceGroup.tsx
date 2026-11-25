@@ -1,10 +1,8 @@
-import { createThemeValue } from "../../lib/appTheme";
 import { useAppTheme } from "../../hooks/useAppTheme";
-import { StyleSheet, Text, View } from "react-native";
-import { getMenuStyles } from "../../constants/menuStyles";
+import { View } from "react-native";
+import { getSettingsGroupStyles } from "../../constants/settingsGroupStyles";
+import { SettingsGroup } from "../appSettings/SettingsGroup";
 
-import { AppSettingsUi } from "../../constants/appSettings";
-import { OneLineTextFitProps } from "../../constants/textLayout";
 import type {
   NotificationThresholdKey,
   NotificationThresholdPeriod,
@@ -33,56 +31,34 @@ export function NotificationPreferenceGroup({
   onChangeThresholdValue,
   onToggle,
 }: NotificationPreferenceGroupProps) {
-  const styles = getStyles();
   useAppTheme();
   const thresholdSettings = group.thresholdSettings;
 
   return (
-    <View style={styles.group}>
-      <View style={styles.headingBlock}>
-        <Text {...OneLineTextFitProps} style={styles.title}>
-          {group.title}
-        </Text>
-      </View>
+    <View style={getSettingsGroupStyles().sections}>
       {thresholdSettings ? (
-        <View style={styles.thresholdBlock}>
-          <NotificationThresholdField
-            settings={thresholdSettings}
-            onChangePeriod={onChangeThresholdPeriod}
-            onChangeValue={(value) => onChangeThresholdValue(thresholdSettings.selectedKey, value)}
-            onToggleEnabled={onChangeThresholdEnabled}
-          />
-        </View>
-      ) : null}
-      {group.items.length ? (
-        <View style={styles.list}>
-          {group.items.map((item, index) => (
-            <NotificationPreferenceRow
-              isLast={index === group.items.length - 1}
-              item={item}
-              key={item.type}
-              onToggle={(enabled) => onToggle(item.eventTypes ?? item.type, enabled)}
+        <SettingsGroup>
+          <View style={getSettingsGroupStyles().singleLineField}>
+            <NotificationThresholdField
+              settings={thresholdSettings}
+              onChangePeriod={onChangeThresholdPeriod}
+              onChangeValue={(value) =>
+                onChangeThresholdValue(thresholdSettings.selectedKey, value)
+              }
+              onToggleEnabled={onChangeThresholdEnabled}
             />
-          ))}
-        </View>
+          </View>
+        </SettingsGroup>
       ) : null}
+      {group.items.map((item) => (
+        <SettingsGroup key={item.type} description={item.helpMessage}>
+          <NotificationPreferenceRow
+            isLast
+            item={item}
+            onToggle={(enabled) => onToggle(item.eventTypes ?? item.type, enabled)}
+          />
+        </SettingsGroup>
+      ))}
     </View>
   );
 }
-
-const getStyles = createThemeValue(() =>
-  StyleSheet.create({
-    group: {
-      gap: AppSettingsUi.sectionGap,
-    },
-    headingBlock: {
-      minWidth: 0,
-    },
-    title: getMenuStyles().sectionTitle,
-    thresholdBlock: {
-      ...getMenuStyles().group,
-      paddingHorizontal: getMenuStyles().row.paddingHorizontal,
-    },
-    list: getMenuStyles().group,
-  }),
-);

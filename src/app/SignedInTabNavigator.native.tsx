@@ -27,6 +27,7 @@ const getOptions = createThemeValue(
     headerShown: false,
     lazy: false,
     tabBarActiveTintColor: getAppColors().primary,
+    tabBarLabelStyle: Ui.labelStyle,
     tabBarMinimizeBehavior: "none",
     tabBarControllerMode: "tabBar",
     overrideScrollViewContentInsetAdjustmentBehavior: false,

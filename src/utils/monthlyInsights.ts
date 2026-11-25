@@ -6,16 +6,16 @@ import {
 } from "../constants/ledgerDisplay";
 import type {
   LedgerEntry,
-  MonthlyCategoryExpense,
-  MonthlyCategoryIncome,
+  MonthlyCategoryBreakdown,
   MonthlyChangeDirection,
   MonthlyComparisonMetric,
   MonthlyInsights,
-  MonthlyMemberExpense,
-  MonthlyMemberIncome,
+  MonthlyMemberBreakdown,
   MonthlyTrendPoint,
 } from "../types/ledger";
 import { addMonths } from "./calendar";
+import type { AllEntriesDateRange } from "../constants/allEntries";
+import { buildCumulativeExpenses, buildMonthlyExpenseComparison } from "./cumulativeExpenses";
 
 export const MONTHLY_TREND_MONTH_COUNT = 6;
 
@@ -54,6 +54,11 @@ export function buildMonthlyInsightsFromMonths(
 
   return {
     comparisonBasis: "month",
+    dailyExpenseComparison: buildMonthlyExpenseComparison(
+      currentMonthDate,
+      currentMonthEntries,
+      previousMonthEntries,
+    ),
     categoryExpenses: buildCategoryExpenses(currentMonthEntries),
     categoryIncomes: buildCategoryIncomes(currentMonthEntries),
     currentMonthLabel: formatMonthLabel(currentMonthDate),
@@ -67,12 +72,16 @@ export function buildMonthlyInsightsFromMonths(
 }
 
 export function buildPeriodInsights({
+  currentRange,
+  previousRange,
   currentLabel,
   currentPeriodEntries,
   previousLabel,
   previousPeriodEntries,
   trendPeriods,
 }: {
+  currentRange: AllEntriesDateRange;
+  previousRange: AllEntriesDateRange;
   currentLabel: string;
   currentPeriodEntries: LedgerEntry[];
   previousLabel: string;
@@ -81,6 +90,10 @@ export function buildPeriodInsights({
 }): MonthlyInsights {
   return {
     comparisonBasis: "period",
+    dailyExpenseComparison: {
+      current: buildCumulativeExpenses(currentPeriodEntries, currentRange),
+      previous: buildCumulativeExpenses(previousPeriodEntries, previousRange),
+    },
     categoryExpenses: buildCategoryExpenses(currentPeriodEntries),
     categoryIncomes: buildCategoryIncomes(currentPeriodEntries),
     currentMonthLabel: currentLabel,
@@ -129,68 +142,84 @@ function buildComparisonMetric(
   };
 }
 
-function buildCategoryExpenses(entries: LedgerEntry[]): MonthlyCategoryExpense[] {
+function buildCategoryExpenses(entries: LedgerEntry[]): MonthlyCategoryBreakdown[] {
   return buildCategoryBreakdown(entries, "expense");
 }
 
-function buildCategoryIncomes(entries: LedgerEntry[]): MonthlyCategoryIncome[] {
+function buildCategoryIncomes(entries: LedgerEntry[]): MonthlyCategoryBreakdown[] {
   return buildCategoryBreakdown(entries, "income");
 }
 
 function buildCategoryBreakdown(
   entries: LedgerEntry[],
   type: "expense" | "income",
-): MonthlyCategoryExpense[] {
+): MonthlyCategoryBreakdown[] {
   const typedEntries = entries.filter((entry) => entry.type === type);
   const totalAmount = typedEntries.reduce((sum, entry) => sum + entry.amount, 0);
   if (!totalAmount) {
     return [];
   }
 
-  const amountByCategory = new Map<string, number>();
+  const amountByCategory = new Map<
+    string,
+    { amount: number; category: string; categoryId: string; date: string }
+  >();
   for (const entry of typedEntries) {
-    const categoryLabel = entry.category.trim() || EMPTY_CATEGORY_LABEL;
-    amountByCategory.set(categoryLabel, (amountByCategory.get(categoryLabel) ?? 0) + entry.amount);
+    const category = entry.category.trim() || EMPTY_CATEGORY_LABEL;
+    const categoryId = entry.categoryId?.trim() ?? "";
+    const key = categoryId ? `id:${categoryId}` : `label:${category}`;
+    const current = amountByCategory.get(key);
+    amountByCategory.set(key, {
+      amount: (current?.amount ?? 0) + entry.amount,
+      category: current && current.date > entry.date ? current.category : category,
+      categoryId,
+      date: current && current.date > entry.date ? current.date : entry.date,
+    });
   }
 
-  return [...amountByCategory.entries()]
-    .sort((left, right) => right[1] - left[1])
-    .map(([category, amount]) => ({
+  return [...amountByCategory.values()]
+    .sort((left, right) => right.amount - left.amount)
+    .map(({ category, categoryId, amount }) => ({
       amount,
       category,
+      categoryId,
       share: amount / totalAmount,
     }));
 }
 
-function buildMemberExpenses(entries: LedgerEntry[]): MonthlyMemberExpense[] {
+function buildMemberExpenses(entries: LedgerEntry[]): MonthlyMemberBreakdown[] {
   return buildMemberBreakdown(entries, "expense");
 }
 
-function buildMemberIncomes(entries: LedgerEntry[]): MonthlyMemberIncome[] {
+function buildMemberIncomes(entries: LedgerEntry[]): MonthlyMemberBreakdown[] {
   return buildMemberBreakdown(entries, "income");
 }
 
 function buildMemberBreakdown(
   entries: LedgerEntry[],
   type: "expense" | "income",
-): MonthlyMemberExpense[] {
+): MonthlyMemberBreakdown[] {
   const typedEntries = entries.filter((entry) => entry.type === type);
   const totalAmount = typedEntries.reduce((sum, entry) => sum + entry.amount, 0);
   if (!totalAmount) {
     return [];
   }
 
-  const amountByMember = new Map<string, number>();
+  const amountByMember = new Map<string, { amount: number; memberName: string }>();
   for (const entry of typedEntries) {
+    const memberId = entry.targetMemberId || entry.authorId;
     const memberName =
       entry.targetMemberName?.trim() || entry.authorName?.trim() || DEFAULT_MEMBER_DISPLAY_NAME;
-    amountByMember.set(memberName, (amountByMember.get(memberName) ?? 0) + entry.amount);
+    const key = memberId ? `id:${memberId}` : `name:${memberName}`;
+    const current = amountByMember.get(key);
+    amountByMember.set(key, { amount: (current?.amount ?? 0) + entry.amount, memberName });
   }
 
   return [...amountByMember.entries()]
-    .sort((left, right) => right[1] - left[1])
-    .map(([memberName, amount]) => ({
+    .sort((left, right) => right[1].amount - left[1].amount)
+    .map(([memberKey, { memberName, amount }]) => ({
       amount,
+      memberKey,
       memberName,
       share: amount / totalAmount,
     }));

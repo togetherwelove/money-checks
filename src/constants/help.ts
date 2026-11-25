@@ -1,3 +1,4 @@
+import { AppFontSize } from "./typography";
 import { AppLinks } from "./appLinks";
 import { LegalLinks } from "./legal";
 
@@ -14,7 +15,7 @@ export const HelpCopy = {
 export const HelpUi = {
   iconSize: 18,
   rowVerticalPadding: 16,
-  questionFontSize: 15,
+  questionFontSize: AppFontSize.label,
 } as const;
 
 export const HelpLinkItems = [
@@ -27,15 +28,5 @@ export const HelpLinkItems = [
     label: "오픈소스 라이선스",
     description: "앱에서 사용하는 오픈소스 소프트웨어 고지",
     url: LegalLinks.openSourceLicensesUrl,
-  },
-  {
-    label: "개인정보 처리방침",
-    description: "개인정보 수집, 이용, 보관 및 권리 안내",
-    url: LegalLinks.privacyPolicyUrl,
-  },
-  {
-    label: "이용약관",
-    description: "서비스 이용 조건, 구독 및 책임 범위 안내",
-    url: LegalLinks.termsOfUseUrl,
   },
 ] as const;

@@ -2,6 +2,7 @@ import { AppScrollBehavior } from "../../constants/scroll";
 import type { ReactNode } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { AppLayout } from "../../constants/layout";
+import type { OpenReportCategoryEntries } from "../../constants/allEntries";
 import type { ChartMonthData } from "../../hooks/ledgerScreenState/types";
 import { MonthlyInsightsSection } from "../MonthlyInsightsSection";
 import { AppFooterContentInset } from "../AppFooterContentInset";
@@ -9,13 +10,16 @@ import { AppFooterContentInset } from "../AppFooterContentInset";
 type ChartMonthPageContentProps = {
   activeBookId?: string | null;
   month: ChartMonthData;
+  onOpenReportCategoryEntries?: OpenReportCategoryEntries;
   screenTitle: ReactNode;
+  isActive?: boolean;
 };
 
 export function ChartMonthPageContent({
-  activeBookId = null,
   month,
+  onOpenReportCategoryEntries,
   screenTitle,
+  isActive = true,
 }: ChartMonthPageContentProps) {
   return (
     <View style={styles.page}>
@@ -28,9 +32,14 @@ export function ChartMonthPageContent({
       >
         <View style={styles.title}>{screenTitle}</View>
         <MonthlyInsightsSection
-          activeBookId={activeBookId}
+          isActive={isActive}
           insights={month.monthlyInsights}
           scope={month.scope}
+          onOpenCategories={
+            onOpenReportCategoryEntries &&
+            ((categories, entryType) =>
+              onOpenReportCategoryEntries(categories, entryType, month.dateRange))
+          }
         />
         <AppFooterContentInset />
       </ScrollView>

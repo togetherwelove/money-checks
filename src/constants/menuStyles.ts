@@ -13,6 +13,13 @@ export const getMenuStyles = createThemeValue(() =>
       paddingTop: MenuDesign.screenTopPadding,
     },
     sections: { gap: MenuDesign.sectionGap },
+    legalLinks: {
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      gap: MenuDesign.contentGap,
+      paddingVertical: MenuDesign.verticalPadding,
+    },
     section: { gap: MenuDesign.contentGap },
     sectionTitle: {
       color: getAppColors().mutedText,

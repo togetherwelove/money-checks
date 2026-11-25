@@ -1,3 +1,4 @@
+import { AppFontSize } from "../constants/typography";
 import { createThemeValue } from "../lib/appTheme";
 import { useAppTheme } from "../hooks/useAppTheme";
 import { AppScrollBehavior } from "../constants/scroll";
@@ -245,7 +246,7 @@ const getStyles = createThemeValue(() =>
     },
     error: {
       color: getAppColors().expense,
-      fontSize: 12,
+      fontSize: AppFontSize.caption,
     },
     errorRetry: {
       gap: 2,
@@ -259,7 +260,7 @@ const getStyles = createThemeValue(() =>
     },
     errorRetryLabel: {
       color: getAppColors().primary,
-      fontSize: 12,
+      fontSize: AppFontSize.caption,
       fontWeight: "700",
     },
   }),

@@ -1,54 +1,63 @@
+import { AppFontSize, AppLineHeight } from "../../constants/typography";
+import { getSettingsGroupStyles, SettingsGroupDesign } from "../../constants/settingsGroupStyles";
 import { createThemeValue } from "../../lib/appTheme";
 import { StyleSheet } from "react-native";
 
 import { AuthControls } from "../../constants/authControls";
 import { getAppColors } from "../../constants/colors";
-import { AppLayout } from "../../constants/layout";
 import { SharedLedgerPanelUi } from "../../constants/sharedLedgerPanel";
-import { getFormInputTextStyle } from "../../constants/uiStyles";
 
 export const getSharedLedgerPanelStyles = createThemeValue(() =>
   StyleSheet.create({
+    currentBookCapsule: {
+      ...getSettingsGroupStyles().card,
+      ...getSettingsGroupStyles().row,
+      minHeight: SettingsGroupDesign.singleLineHeight,
+      borderBottomWidth: SettingsGroupDesign.borderWidth,
+      gap: SettingsGroupDesign.textGap,
+    },
+    membersDirectory: { paddingHorizontal: SettingsGroupDesign.horizontalPadding },
+    bookListHeading: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingEnd: SettingsGroupDesign.horizontalPadding,
+    },
+    otherBookList: { paddingHorizontal: SettingsGroupDesign.horizontalPadding },
+    otherBookRow: {
+      ...getSettingsGroupStyles().row,
+      paddingHorizontal: 0,
+      backgroundColor: "transparent",
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: getAppColors().border,
+      gap: SettingsGroupDesign.titleGap,
+    },
     panel: {
-      gap: AppLayout.cardContentPadding,
+      gap: SettingsGroupDesign.sectionGap,
     },
-    section: {
-      gap: 8,
-      borderWidth: AppLayout.dividerWidth,
-      borderColor: getAppColors().border,
-      borderRadius: AppLayout.groupRadius,
-      backgroundColor: getAppColors().screenBackground,
-      overflow: "hidden",
-    },
-    primarySection: {
-      backgroundColor: getAppColors().surfaceMuted,
-    },
+    section: { ...getSettingsGroupStyles().card, gap: SettingsGroupDesign.textGap },
+    primarySection: { backgroundColor: getAppColors().surface },
     sectionHeader: {
       flexDirection: "row",
       alignItems: "center",
       gap: 8,
       minHeight: AuthControls.inlineControlHeight,
-      paddingHorizontal: AppLayout.cardContentPadding,
-      paddingTop: AppLayout.cardContentPadding,
+      paddingHorizontal: SettingsGroupDesign.horizontalPadding,
+      paddingTop: SettingsGroupDesign.verticalPadding,
+      paddingBottom: SettingsGroupDesign.textGap,
     },
     sectionContent: {
-      paddingHorizontal: AppLayout.cardContentPadding,
+      paddingHorizontal: SettingsGroupDesign.horizontalPadding,
     },
     sectionContentInset: {
       gap: 8,
-      paddingHorizontal: AppLayout.cardContentPadding,
-      paddingVertical: AppLayout.cardContentPadding,
+      paddingHorizontal: SettingsGroupDesign.horizontalPadding,
+      paddingVertical: SettingsGroupDesign.verticalPadding,
     },
     sectionBottomInset: {
-      paddingBottom: AppLayout.cardContentPadding,
+      paddingBottom: SettingsGroupDesign.verticalPadding,
     },
-    sectionTitle: {
-      color: getAppColors().text,
-      fontSize: SharedLedgerPanelUi.sectionTitleFontSize,
-      fontWeight: "800",
-      includeFontPadding: false,
-      lineHeight: SharedLedgerPanelUi.sectionTitleLineHeight,
-    },
+    sectionTitle: getSettingsGroupStyles().label,
     sectionTitleRow: {
       flexDirection: "row",
       alignItems: "center",
@@ -56,12 +65,7 @@ export const getSharedLedgerPanelStyles = createThemeValue(() =>
       gap: 6,
       minHeight: AuthControls.inlineControlHeight,
     },
-    bookName: {
-      flexShrink: 1,
-      color: getAppColors().text,
-      fontSize: SharedLedgerPanelUi.sectionTitleFontSize,
-      fontWeight: "800",
-    },
+    bookName: { ...getSettingsGroupStyles().label, flexShrink: 1 },
     bookNameHeaderTitle: {
       flex: 1,
     },
@@ -79,7 +83,7 @@ export const getSharedLedgerPanelStyles = createThemeValue(() =>
       gap: 8,
     },
     bookNameHeaderInput: {
-      ...getFormInputTextStyle(),
+      ...getSettingsGroupStyles().input,
       flex: 1,
     },
     bookNameActionSlot: {
@@ -88,12 +92,12 @@ export const getSharedLedgerPanelStyles = createThemeValue(() =>
     },
     bookNameCancelAction: {
       color: getAppColors().mutedText,
-      fontSize: 13,
+      fontSize: AppFontSize.body,
       fontWeight: "700",
     },
     codeBlock: {
       gap: 8,
-      paddingHorizontal: AppLayout.cardContentPadding,
+      paddingHorizontal: SettingsGroupDesign.horizontalPadding,
     },
     shareCodePreviewRow: {
       flexDirection: "row",
@@ -102,52 +106,33 @@ export const getSharedLedgerPanelStyles = createThemeValue(() =>
     },
     shareCodePreviewValue: {
       color: getAppColors().mutedStrongText,
-      fontSize: 12,
+      fontSize: AppFontSize.caption,
       fontWeight: "700",
       letterSpacing: 1.2,
     },
     shareCodeRow: {
       flexDirection: "row",
     },
-    copyActionContent: {
+    capsuleActionContent: {
       flexDirection: "row",
       alignItems: "center",
-      justifyContent: "center",
-      gap: SharedLedgerPanelUi.copyActionGap,
+      justifyContent: "flex-start",
+      alignSelf: "stretch",
+      gap: SettingsGroupDesign.contentGap,
     },
-    copyActionText: {
-      color: getAppColors().onPrimary,
-      fontSize: SharedLedgerPanelUi.copyActionTextFontSize,
-      fontWeight: "700",
-    },
+    capsuleActionText: getSettingsGroupStyles().label,
     helpText: {
       color: getAppColors().mutedText,
-      fontSize: 12,
-      lineHeight: 18,
+      fontSize: AppFontSize.caption,
+      lineHeight: AppLineHeight.caption,
     },
-    hintText: {
-      color: getAppColors().mutedStrongText,
-      fontSize: 11,
-      includeFontPadding: false,
-      lineHeight: 16,
-    },
-    input: {
-      paddingHorizontal: 0,
-      paddingVertical: 10,
-      borderWidth: 0,
-      borderBottomWidth: 1,
-      borderBottomColor: getAppColors().border,
-      borderRadius: 0,
-      backgroundColor: getAppColors().transparent,
-      color: getAppColors().text,
-      fontSize: 16,
-      textTransform: "uppercase",
-    },
+    hintText: getSettingsGroupStyles().count,
+    input: { ...getSettingsGroupStyles().input, textTransform: "uppercase" },
     disabledInput: {
       opacity: 0.55,
     },
     statusText: {
-      fontSize: 12,
+      fontSize: AppFontSize.caption,
       fontWeight: "600",
     },
     successText: {
@@ -161,33 +146,28 @@ export const getSharedLedgerPanelStyles = createThemeValue(() =>
     },
     ledgerBookList: {
       gap: 0,
-      paddingHorizontal: AppLayout.cardContentPadding,
+      paddingStart: SettingsGroupDesign.horizontalPadding,
     },
     ledgerBookMembersBlock: {
       paddingTop: SharedLedgerPanelUi.ledgerBookMembersBlockTopPadding,
     },
     ledgerBookItem: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: 8,
-      paddingHorizontal: 10,
-      paddingVertical: 9,
-      borderWidth: 0,
-      borderBottomWidth: 1,
+      ...getSettingsGroupStyles().row,
+      paddingStart: 0,
+      borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: getAppColors().border,
-      borderRadius: 0,
-      backgroundColor: getAppColors().screenBackground,
     },
+    lastLedgerBookItem: { borderBottomWidth: 0 },
     activeLedgerBookItem: {
       borderBottomColor: getAppColors().primary,
-      backgroundColor: getAppColors().surfaceMuted,
+      backgroundColor: getAppColors().surface,
     },
     readOnlyLedgerBookItem: {
       opacity: 0.78,
     },
     ledgerBookItemContent: {
       flex: 1,
+      minWidth: 0,
       gap: 5,
     },
     ledgerBookItemNameRow: {
@@ -195,12 +175,7 @@ export const getSharedLedgerPanelStyles = createThemeValue(() =>
       alignItems: "center",
       gap: 6,
     },
-    ledgerBookItemName: {
-      flexShrink: 1,
-      color: getAppColors().text,
-      fontSize: 14,
-      fontWeight: "800",
-    },
+    ledgerBookItemName: { ...getSettingsGroupStyles().label, flexShrink: 1 },
     activeLedgerBookItemName: {
       color: getAppColors().primary,
     },
@@ -212,12 +187,12 @@ export const getSharedLedgerPanelStyles = createThemeValue(() =>
     },
     readOnlyLedgerBookChipText: {
       color: getAppColors().expense,
-      fontSize: 10,
+      fontSize: AppFontSize.caption,
       fontWeight: "800",
     },
     ledgerBookItemMeta: {
       color: getAppColors().mutedStrongText,
-      fontSize: 11,
+      fontSize: AppFontSize.caption,
       fontWeight: "600",
     },
     ledgerBookItemMetaRow: {
@@ -236,23 +211,21 @@ export const getSharedLedgerPanelStyles = createThemeValue(() =>
       flexDirection: "row",
       alignItems: "center",
       gap: 8,
-      paddingHorizontal: AppLayout.cardContentPadding,
+      paddingHorizontal: SettingsGroupDesign.horizontalPadding,
     },
     createBookInput: {
-      ...getFormInputTextStyle(),
+      ...getSettingsGroupStyles().input,
       flex: 1,
     },
     disconnectActionRow: {
-      flexDirection: "row",
-      justifyContent: "flex-end",
-      paddingHorizontal: AppLayout.cardContentPadding,
-      paddingTop: 2,
+      alignSelf: "flex-end",
+      paddingHorizontal: SettingsGroupDesign.horizontalPadding,
     },
     subsection: {
       gap: 8,
       borderTopWidth: 1,
       borderTopColor: getAppColors().border,
-      paddingTop: AppLayout.cardContentPadding,
+      paddingTop: SettingsGroupDesign.verticalPadding,
     },
   }),
 );

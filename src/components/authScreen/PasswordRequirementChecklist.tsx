@@ -1,3 +1,4 @@
+import { AppFontSize, AppLineHeight } from "../../constants/typography";
 import { createThemeValue } from "../../lib/appTheme";
 import { useAppTheme } from "../../hooks/useAppTheme";
 import { StyleSheet, Text, View } from "react-native";
@@ -75,9 +76,9 @@ const getStyles = createThemeValue(() =>
     },
     title: {
       color: getAppColors().mutedText,
-      fontSize: 12,
+      fontSize: AppFontSize.caption,
       fontWeight: "700",
-      lineHeight: 18,
+      lineHeight: AppLineHeight.caption,
     },
     list: {
       gap: 6,
@@ -102,9 +103,9 @@ const getStyles = createThemeValue(() =>
       borderColor: getAppColors().border,
     },
     itemText: {
-      fontSize: 12,
+      fontSize: AppFontSize.caption,
       fontWeight: "600",
-      lineHeight: 18,
+      lineHeight: AppLineHeight.caption,
     },
     itemTextMet: {
       color: getAppColors().success,

@@ -1,3 +1,4 @@
+import { AppFontSize } from "../constants/typography";
 import { createThemeValue } from "../lib/appTheme";
 import { useAppTheme } from "../hooks/useAppTheme";
 import { StyleSheet, Text, View } from "react-native";
@@ -27,12 +28,12 @@ const getStyles = createThemeValue(() =>
     },
     title: {
       color: getAppColors().mutedText,
-      fontSize: 11,
+      fontSize: AppFontSize.caption,
       fontWeight: "700",
     },
     copyright: {
       color: getAppColors().mutedStrongText,
-      fontSize: 11,
+      fontSize: AppFontSize.caption,
       fontWeight: "600",
     },
   }),

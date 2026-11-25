@@ -1,11 +1,12 @@
-import { FixedColors } from "../../constants/fixedColors";
+import { AppFontSize } from "../../constants/typography";
+import { getSwitchAppearance } from "../../constants/switchAppearance";
+import { getSettingsGroupStyles, SettingsGroupDesign } from "../../constants/settingsGroupStyles";
 import { createThemeValue } from "../../lib/appTheme";
 import { useAppTheme } from "../../hooks/useAppTheme";
 import { MenuView, type MenuAction } from "@react-native-menu/menu";
 import { useMemo } from "react";
 import { Keyboard, Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import { AppSettingsUi } from "../../constants/appSettings";
-import { getAppSettingsRowStyles } from "../../constants/appSettingsStyles";
 import { getAppColors } from "../../constants/colors";
 import { CurrencyUnitLabels } from "../../constants/currency";
 import { AppTextBreakProps } from "../../constants/textLayout";
@@ -113,9 +114,9 @@ export function NotificationThresholdField({
           </View>
         </View>
         <Switch
+          accessibilityLabel={NotificationUiCopy.thresholdPeriodPickerTitle}
           onValueChange={onToggleEnabled}
-          thumbColor={settings.enabled ? FixedColors.white : getAppColors().surface}
-          trackColor={{ false: getAppColors().border, true: getAppColors().primary }}
+          {...getSwitchAppearance()}
           value={settings.enabled}
         />
       </View>
@@ -145,7 +146,7 @@ const getStyles = createThemeValue(() =>
       borderCurve: "continuous",
       borderRadius: 0,
       color: getAppColors().text,
-      fontSize: 14,
+      fontSize: AppFontSize.body,
       fontWeight: "600",
       minHeight: 36,
       paddingHorizontal: NotificationThresholdAmountInput.horizontalPadding,
@@ -167,19 +168,19 @@ const getStyles = createThemeValue(() =>
     },
     amountSuffix: {
       color: getAppColors().text,
-      fontSize: 13,
+      fontSize: AppFontSize.body,
       fontWeight: "700",
     },
     currency: {
       color: getAppColors().mutedText,
-      fontSize: 12,
+      fontSize: AppFontSize.caption,
       fontWeight: "600",
       paddingEnd: 4,
     },
     field: {
       gap: 10,
-      minHeight: AppSettingsUi.rowMinHeight,
-      paddingVertical: 10,
+      minHeight: SettingsGroupDesign.fieldMinHeight,
+      paddingVertical: 0,
     },
     amountField: {
       alignItems: "center",
@@ -195,7 +196,7 @@ const getStyles = createThemeValue(() =>
       minHeight: 36,
       paddingHorizontal: 0,
     },
-    periodText: getAppSettingsRowStyles().title,
+    periodText: getSettingsGroupStyles().label,
     periodButtonPressed: {
       opacity: 0.72,
     },

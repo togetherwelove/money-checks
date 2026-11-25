@@ -16,31 +16,22 @@ for (const showAnnualReportDownload of [false, true]) {
           items.filter((item) => "targetScreen" in item),
           (item) => item.targetScreen,
         ).sort(),
-        [
-          "account",
-          "app-settings",
-          "contact-support",
-          "help",
-          "notification-settings",
-          "share",
-          "subscription",
-          "support",
-        ],
+        ["account", "app-settings", "help", "notification-settings", "share", "support"],
       );
       assert.equal(
         items.filter((item) => item.action === "annual-report-download").length,
         Number(showAnnualReportDownload),
       );
-      assert.equal(sections.length, 4);
+      assert.equal(sections.length, showAnnualReportDownload ? 4 : 3);
       assert.deepEqual(
         Array.from(sections, (section) => section.label),
-        ["내 계정", "가계부", "설정", "이용 및 지원"],
+        ["내 계정", ...(showAnnualReportDownload ? ["가계부"] : []), "설정", "이용 및 지원"],
       );
       assert.ok(sections.every((section) => section.items.length > 0));
       for (const item of items) {
         assert.equal(getAppMenuItemId(item), item.targetScreen ?? item.action);
         assert.ok(item.label);
-        if (item.action === "annual-report-download") assert.equal(item.icon, undefined);
+        if (item.action === "annual-report-download") assert.equal(item.icon, "file-excel-outline");
         else assert.ok(item.icon);
       }
     },

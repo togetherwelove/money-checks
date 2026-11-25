@@ -1,3 +1,5 @@
+import { AppFontSize } from "../constants/typography";
+import { getSettingsGroupStyles } from "../constants/settingsGroupStyles";
 import { createThemeValue } from "../lib/appTheme";
 import { useAppTheme } from "../hooks/useAppTheme";
 import { StyleSheet, Text, View } from "react-native";
@@ -161,10 +163,7 @@ const getStyles = createThemeValue(() =>
       gap: 8,
     },
     title: {
-      color: getAppColors().text,
-      fontSize: SharedLedgerPanelUi.sectionTitleFontSize,
-      fontWeight: "800",
-      lineHeight: SharedLedgerPanelUi.sectionTitleLineHeight,
+      ...getSettingsGroupStyles().label,
       paddingTop: 2,
     },
     list: {
@@ -201,7 +200,7 @@ const getStyles = createThemeValue(() =>
     },
     avatarText: {
       color: getAppColors().primary,
-      fontSize: 12,
+      fontSize: AppFontSize.caption,
       fontWeight: "800",
     },
     requestMeta: {
@@ -209,14 +208,10 @@ const getStyles = createThemeValue(() =>
       minWidth: 0,
       gap: SharedLedgerPanelUi.joinRequestMetaGap,
     },
-    name: {
-      color: getAppColors().text,
-      fontSize: 13,
-      fontWeight: "800",
-    },
+    name: getSettingsGroupStyles().label,
     requestedAt: {
       color: getAppColors().mutedStrongText,
-      fontSize: 11,
+      fontSize: AppFontSize.caption,
       fontWeight: "600",
     },
     statusBadgeSlot: {
@@ -228,7 +223,7 @@ const getStyles = createThemeValue(() =>
     },
     status: {
       color: getAppColors().mutedStrongText,
-      fontSize: 11,
+      fontSize: AppFontSize.caption,
       fontWeight: "700",
       lineHeight: SharedLedgerPanelUi.joinRequestStatusTextLineHeight,
       textAlign: "right",

@@ -5,7 +5,6 @@ import { addFrequentEntry } from "./lib/frequentEntries";
 import { appStorage as frequentEntryStorage } from "./lib/appStorage";
 import { FrequentEntryCopy } from "./constants/frequentEntries";
 import { LedgerEntryAppendRow } from "./components/LedgerEntryAppendRow";
-import { EntryAppendCopy } from "./constants/entryAppend";
 import { useTrackedTask } from "./hooks/useTrackedTask";
 import {
   resolveLedgerSaveErrorMessage,
@@ -229,6 +228,7 @@ function SignedInApp({
   const styles = getStyles();
   const colorScheme = useAppTheme();
   const navigationRef = useRef(createNavigationContainerRef<SignedInTabParamList>()).current;
+  const reportCategoryRequestId = useRef(0);
   const [isNavigationMounted, setIsNavigationMounted] = useState(false);
   const entryComposerRef = useRef<EntryComposerHandle>(null);
   const composerSheet = useSheetTransition();
@@ -876,12 +876,6 @@ function SignedInApp({
                     entryAppend={
                       <LedgerEntryAppendRow
                         selectedDate={ledgerState.selectedDate}
-                        hintLabel={
-                          currentScreen === "calendar" &&
-                          ledgerState.selectedEntries.length === 0
-                            ? EntryAppendCopy.emptyHint
-                            : undefined
-                        }
                         disabled={
                           !isSignedInInteractionReady ||
                           ledgerState.isReadOnlyDueToPlanLimit ||
@@ -950,6 +944,19 @@ function SignedInApp({
                     onDuplicateEntry={handleDuplicateEntry}
                     onOpenAdTrackingSettings={handleOpenAdTrackingSettings}
                     onOpenSubscription={handleOpenSubscription}
+                    onOpenReportCategoryEntries={(categories, entryType, dateRange) => {
+                      const bookId = ledgerState.activeBook?.id;
+                      if (!bookId || !navigationRef.isReady()) return;
+                      navigateToSingleInstanceStackScreen(navigationRef, "all-entries", {
+                        reportCategoryFilter: {
+                          bookId,
+                          requestId: ++reportCategoryRequestId.current,
+                          categories,
+                          entryType,
+                          dateRange,
+                        },
+                      });
+                    }}
                     onOpenSubscriptionManagement={handleOpenSubscriptionManagement}
                     onPurchasePlus={handlePurchasePlus}
                     onPurchaseSupportPackage={handlePurchaseSupportPackage}
@@ -969,6 +976,8 @@ function SignedInApp({
                     menuSections={menuSections}
                     onSelectMenuItem={(item) => {
                       if ("targetScreen" in item) navigateToStackScreen(item.targetScreen);
+                      else if (item.action === "contact-support")
+                        navigateToStackScreen("contact-support");
                       else if (item.action === "annual-report-download")
                         void annualReport.handleDownloadReport();
                     }}
@@ -993,6 +1002,7 @@ function SignedInApp({
                     showAdTrackingPermissionCard={showAdTrackingPermissionCard}
                     showNotificationSettings={notifications.showNotificationSettings}
                     showsBannerAd={showsAdMobAds}
+                    reservesBannerAdSpace={subscription.isLoading || shouldServeAdMobAds}
                     subscriptionTier={subscription.currentTier}
                     supportPackages={supportPackages.packages}
                     supportPackagesLoading={supportPackages.isLoading}

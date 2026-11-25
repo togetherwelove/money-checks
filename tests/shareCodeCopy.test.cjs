@@ -145,7 +145,12 @@ test("rapid taps start a single copy flow, retain its lock through the question,
   const load = modules({
     react: h.react,
     "react/jsx-runtime": { jsx, jsxs: jsx },
-    "react-native": { View: "View", Text: "Text", TextInput: "Input" },
+    "react-native": {
+      View: "View",
+      Text: "Text",
+      TextInput: "Input",
+      StyleSheet: { create: (styles) => styles },
+    },
     "@expo/vector-icons": { Feather: "Icon" },
     "src/lib/copyLedgerShareCode.ts": {
       copyLedgerShareCode: (...args) => {
@@ -179,6 +184,8 @@ test("rapid taps start a single copy flow, retain its lock through the question,
   const render = (extra) => h.render(() => SharedLedgerBookCard({ ...props, ...extra }));
   const button = (tree) => nodes(tree).find((node) => node.type === "Button");
   const initial = button(render());
+  assert.equal(initial.props.shape, "capsule");
+  assert.equal(initial.props.variant, "secondary");
   initial.props.onPress();
   initial.props.onPress();
   assert.equal(requests.length, 1);

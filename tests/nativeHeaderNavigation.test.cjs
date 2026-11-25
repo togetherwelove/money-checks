@@ -100,6 +100,22 @@ test("FAQ retains its route but no longer renders a second title in the content"
   assert.equal(faq.props.children().props.screenTitle, null);
 });
 
+test("the calendar summary menu applies a selected day before activating its custom period", () => {
+  const changes = [];
+  const tree = navigator(undefined, {
+    onChangeCalendarSummaryMode: (value) => changes.push(value),
+    onChangeCalendarSummaryBaseDay: (day) => changes.push(day),
+  });
+  const calendar = tree.props.children.find((screen) => screen.props.name === "calendar");
+  const home = calendar.props.children();
+  home.props.onSelectSummaryMode("all");
+  assert.deepEqual(changes, ["all"]);
+  home.props.onSelectSummaryMode("selected-month");
+  assert.deepEqual(changes, ["all"]);
+  home.props.onSelectSummaryMode("selected-month", 15);
+  assert.deepEqual(changes, ["all", 15, "selected-month"]);
+});
+
 test("book sharing remains a child screen rendered by the shared management view", () => {
   const screen = navigator(undefined, { renderLedgerBooks: () => "books" }).props.children.find(
     (screen) => screen.props.name === "share",
@@ -191,4 +207,20 @@ test("home today action selects the current local date and stays disabled when a
   assert.equal(inactive.disabled, true);
   inactive.onPress();
   assert.deepEqual(selected, [today]);
+});
+
+test("developer contact opens as a native form sheet with a close control", () => {
+  const screen = navigator().props.children.find(
+    (screen) => screen.props.name === "contact-support",
+  );
+  let closed = 0;
+  const options = screen.props.options({ navigation: { goBack: () => closed++ } });
+  assert.equal(options.presentation, "formSheet");
+  assert.equal(options.animation, "slide_from_bottom");
+  assert.equal(options.headerBackVisible, false);
+  assert.equal(options.sheetGrabberVisible, true);
+  const close = options.unstable_headerLeftItems()[0];
+  assert.equal(close.icon.name, "xmark");
+  close.onPress();
+  assert.equal(closed, 1);
 });

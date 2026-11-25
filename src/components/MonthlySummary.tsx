@@ -1,17 +1,31 @@
 import { createThemeValue } from "../lib/appTheme";
 import { useAppTheme } from "../hooks/useAppTheme";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { MenuView } from "@react-native-menu/menu";
 
-import { CalendarSummaryLabels } from "../constants/calendarSummary";
+import {
+  formatCalendarSummaryBalanceLabel,
+  CalendarSummaryLabels,
+  CalendarSummaryBaseDayOptions,
+  CalendarSummaryModeOptions,
+  CalendarSummaryModes,
+  type CalendarSummaryMode,
+} from "../constants/calendarSummary";
+import { getCashflowTotalStyles } from "../constants/cashflowTotalStyles";
 import { getAppColors } from "../constants/colors";
 import { MonthlySummaryUi as Ui } from "../constants/home";
+import { AppLayout } from "../constants/layout";
+import { OneLineTextFitProps } from "../constants/textLayout";
 import { useExpenseTextColor } from "../contexts/ExpenseTextColorContext";
 import { formatCurrency } from "../utils/calendar";
 
 type MonthlySummaryProps = {
   balanceAmount: number;
   balanceLabel?: string;
+  calendarSummaryMode: CalendarSummaryMode;
+  calendarSummaryBaseDay?: number | null;
+  onSelectSummaryMode?: (mode: CalendarSummaryMode, day?: number) => void;
   summaryLabel: string;
   totalExpense: string;
   totalIncome: string;
@@ -20,6 +34,9 @@ type MonthlySummaryProps = {
 export function MonthlySummary({
   balanceAmount,
   balanceLabel,
+  calendarSummaryMode,
+  calendarSummaryBaseDay,
+  onSelectSummaryMode,
   summaryLabel,
   totalExpense,
   totalIncome,
@@ -32,16 +49,16 @@ export function MonthlySummary({
   const balanceValue =
     balanceLabel ??
     `${balanceAmount > 0 ? "+" : balanceAmount < 0 ? "-" : ""}${formatCurrency(Math.abs(balanceAmount))}`;
-  const stacked =
-    (contentWidth > 0 && contentWidth < Ui.minimumRowWidth * fontScale) ||
-    Math.max(totalExpense.length, totalIncome.length, balanceValue.length) >
-      Ui.maximumInlineAmountLength;
+  const stacked = contentWidth > 0 && contentWidth < Ui.minimumRowWidth * fontScale;
+  const balanceTitle = formatCalendarSummaryBalanceLabel(calendarSummaryMode, summaryLabel);
+  const balanceMetricLabel = (
+    <Text {...OneLineTextFitProps} style={styles.metricLabel}>
+      {balanceTitle}
+    </Text>
+  );
 
   return (
     <View style={styles.container}>
-      <Text accessibilityRole="header" style={styles.summaryLabel}>
-        {summaryLabel}
-      </Text>
       <View
         onLayout={(event) => setContentWidth(event.nativeEvent.layout.width)}
         style={[styles.metrics, stacked && styles.stackedMetrics]}
@@ -59,10 +76,57 @@ export function MonthlySummary({
           stacked={stacked}
         />
         <SummaryMetric
-          label={CalendarSummaryLabels.balance}
+          label={balanceTitle}
+          labelContent={
+            onSelectSummaryMode ? (
+              <MenuView
+                actions={CalendarSummaryModeOptions.map(({ value, label }) => ({
+                  id: value,
+                  title: label,
+                  state: value === calendarSummaryMode ? "on" : "off",
+                  subactions:
+                    value === CalendarSummaryModes.selectedMonth
+                      ? CalendarSummaryBaseDayOptions.map((day) => ({
+                          id: String(day.value),
+                          title: day.label,
+                          state:
+                            calendarSummaryMode === value && calendarSummaryBaseDay === day.value
+                              ? "on"
+                              : "off",
+                        }))
+                      : undefined,
+                }))}
+                onPressAction={({ nativeEvent }) => {
+                  const day = CalendarSummaryBaseDayOptions.find(
+                    ({ value }) => String(value) === nativeEvent.event,
+                  );
+                  if (day) {
+                    onSelectSummaryMode(CalendarSummaryModes.selectedMonth, day.value);
+                    return;
+                  }
+                  const option = CalendarSummaryModeOptions.find(
+                    ({ value }) => value === nativeEvent.event,
+                  );
+                  if (option && option.value !== CalendarSummaryModes.selectedMonth)
+                    onSelectSummaryMode(option.value);
+                }}
+                style={[styles.settingsMenu, !stacked && styles.trailingLabel]}
+              >
+                <View
+                  accessibilityLabel={`${balanceTitle}, ${CalendarSummaryLabels.changePeriod}`}
+                  accessibilityRole="button"
+                  style={styles.settingsButton}
+                >
+                  {balanceMetricLabel}
+                  <View style={styles.settingsTriangle} />
+                </View>
+              </MenuView>
+            ) : null
+          }
           value={balanceValue}
           color={!balanceLabel && balanceAmount > 0 ? getAppColors().income : getAppColors().text}
           stacked={stacked}
+          trailing
         />
       </View>
     </View>
@@ -71,35 +135,68 @@ export function MonthlySummary({
 
 function SummaryMetric({
   label,
+  labelContent,
   value,
   color,
   stacked,
+  trailing = false,
 }: {
   label: string;
+  labelContent?: ReactNode;
   value: string;
   color: string;
   stacked: boolean;
+  trailing?: boolean;
 }) {
   const styles = getStyles();
   useAppTheme();
   return (
     <View style={[styles.metric, stacked && styles.stackedMetric]}>
-      <Text style={styles.metricLabel}>{label}</Text>
-      <Text style={[styles.metricValue, { color }, stacked && styles.stackedValue]}>{value}</Text>
+      {labelContent ?? (
+        <Text
+          {...OneLineTextFitProps}
+          style={[styles.metricLabel, trailing && !stacked && styles.trailingValue]}
+        >
+          {label}
+        </Text>
+      )}
+      <Text
+        {...OneLineTextFitProps}
+        style={[
+          styles.metricValue,
+          { color },
+          trailing && styles.trailingValue,
+          stacked && styles.stackedValue,
+        ]}
+      >
+        {value}
+      </Text>
     </View>
   );
 }
 
 const getStyles = createThemeValue(() =>
   StyleSheet.create({
-    container: { gap: Ui.contentGap, paddingVertical: Ui.verticalPadding },
-    summaryLabel: {
+    container: { ...getCashflowTotalStyles().totalsCard },
+    settingsMenu: { alignSelf: "flex-start", maxWidth: "100%", flexShrink: 1 },
+    settingsButton: {
+      alignItems: "center",
+      flexDirection: "row",
+      gap: AppLayout.compactGap,
+      maxWidth: "100%",
       flexShrink: 1,
-      color: getAppColors().text,
-      fontSize: Ui.titleFontSize,
-      fontWeight: "700",
     },
-    metrics: { flexDirection: "row", gap: Ui.contentGap },
+    settingsTriangle: {
+      width: 0,
+      height: 0,
+      borderLeftWidth: AppLayout.compactGap,
+      borderRightWidth: AppLayout.compactGap,
+      borderTopWidth: AppLayout.compactGap,
+      borderLeftColor: "transparent",
+      borderRightColor: "transparent",
+      borderTopColor: getCashflowTotalStyles().totalLabel.color,
+    },
+    metrics: { flexDirection: "row", justifyContent: "space-between", gap: Ui.contentGap },
     stackedMetrics: { flexDirection: "column" },
     metric: { flex: 1, minWidth: 0, gap: Ui.metricGap },
     stackedMetric: {
@@ -109,16 +206,12 @@ const getStyles = createThemeValue(() =>
       justifyContent: "space-between",
     },
     metricLabel: {
+      ...getCashflowTotalStyles().totalLabel,
       flexShrink: 1,
-      color: getAppColors().mutedStrongText,
-      fontSize: Ui.labelFontSize,
-      fontWeight: "500",
     },
-    metricValue: {
-      fontSize: Ui.metricValueFontSize,
-      fontWeight: "600",
-      fontVariant: ["tabular-nums"],
-    },
+    metricValue: getCashflowTotalStyles().totalAmount,
+    trailingLabel: { alignSelf: "flex-end" },
+    trailingValue: { textAlign: "right" },
     stackedValue: { flexShrink: 1, textAlign: "right" },
   }),
 );

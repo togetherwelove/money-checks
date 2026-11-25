@@ -1,7 +1,8 @@
 import { memo } from "react";
-import { StyleSheet, View } from "react-native";
+import { Animated, StyleSheet } from "react-native";
 import { MonthCalendar } from "../MonthCalendar";
 import type { MonthPage } from "./monthCalendarPagerUtils";
+import type { CalendarWeekFrame } from "./monthCalendarPagerTypes";
 
 type MonthCalendarSectionProps = {
   isCalendarHeatmapEnabled: boolean;
@@ -10,6 +11,9 @@ type MonthCalendarSectionProps = {
   onSelectDate: (isoDate: string) => void;
   page: MonthPage;
   selectedDate: string;
+  collapsedWeekIndex?: number;
+  translateY?: Animated.AnimatedInterpolation<number>;
+  onWeekLayout?: (pageKey: string, index: number, frame: CalendarWeekFrame) => void;
 };
 
 function MonthCalendarSectionComponent({
@@ -19,11 +23,14 @@ function MonthCalendarSectionComponent({
   onSelectDate,
   page,
   selectedDate,
+  collapsedWeekIndex,
+  translateY,
+  onWeekLayout,
 }: MonthCalendarSectionProps) {
   return (
-    <View
+    <Animated.View
       collapsable={false}
-      style={styles.section}
+      style={[styles.section, translateY && { transform: [{ translateY }] }]}
       onLayout={(event) => onCalendarHeightChange(page.key, event.nativeEvent.layout.height)}
     >
       <MonthCalendar
@@ -32,8 +39,14 @@ function MonthCalendarSectionComponent({
         isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
         onSelectDate={onSelectDate}
         selectedDate={selectedDate}
+        collapsedWeekIndex={collapsedWeekIndex}
+        onWeekLayout={
+          onWeekLayout &&
+          ((index, layout) =>
+            onWeekLayout(page.key, index, { top: layout.y, height: layout.height }))
+        }
       />
-    </View>
+    </Animated.View>
   );
 }
 

@@ -1,3 +1,4 @@
+import { AppFontSize, AppLineHeight } from "../constants/typography";
 import { createThemeValue } from "../lib/appTheme";
 import { useAppTheme } from "../hooks/useAppTheme";
 import { useEffect, useRef, useState } from "react";
@@ -134,9 +135,9 @@ const getStyles = createThemeValue(() =>
     input: getUnderlineFormInputTextStyle(),
     accountDescription: {
       color: getAppColors().mutedStrongText,
-      fontSize: 12,
+      fontSize: AppFontSize.caption,
       fontWeight: "600",
-      lineHeight: 18,
+      lineHeight: AppLineHeight.caption,
     },
     errorText: {
       color: getAppColors().expense,

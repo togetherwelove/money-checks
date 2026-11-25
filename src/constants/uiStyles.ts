@@ -1,3 +1,4 @@
+import { AppFontSize, AppLineHeight } from "./typography";
 import { createThemeValue } from "../lib/appTheme";
 import type { TextStyle, ViewStyle } from "react-native";
 
@@ -7,8 +8,8 @@ import { AppLayout } from "./layout";
 
 const CARD_PADDING = 16;
 const FORM_INPUT_BORDER_WIDTH = 1;
-const FORM_INPUT_FONT_SIZE = 16;
-const FORM_INPUT_LINE_HEIGHT = 20;
+const FORM_INPUT_FONT_SIZE = AppFontSize.label;
+const FORM_INPUT_LINE_HEIGHT = AppLineHeight.label;
 const FORM_INPUT_HEIGHT = FORM_INPUT_LINE_HEIGHT + AuthControls.verticalPadding * 2 + 2;
 
 const getFormInputBaseStyle = createThemeValue(
@@ -89,7 +90,7 @@ export const getInsetPanelStyle = createThemeValue(
 export const getCardTitleTextStyle = createThemeValue(
   (): TextStyle => ({
     color: getAppColors().text,
-    fontSize: 15,
+    fontSize: AppFontSize.label,
     fontWeight: "800",
   }),
 );
@@ -97,7 +98,7 @@ export const getCardTitleTextStyle = createThemeValue(
 export const getScreenTitleTextStyle = createThemeValue(
   (): TextStyle => ({
     color: getAppColors().text,
-    fontSize: 22,
+    fontSize: AppFontSize.title,
     fontWeight: "800",
   }),
 );
@@ -112,7 +113,7 @@ export const SettingValueActionStyle: ViewStyle = {
 export const getSettingValueTextStyle = createThemeValue(
   (): TextStyle => ({
     color: getAppColors().text,
-    fontSize: 13,
+    fontSize: AppFontSize.body,
     fontWeight: "800",
   }),
 );
@@ -120,7 +121,7 @@ export const getSettingValueTextStyle = createThemeValue(
 export const getFormLabelTextStyle = createThemeValue(
   (): TextStyle => ({
     color: getAppColors().mutedText,
-    fontSize: 12,
+    fontSize: AppFontSize.caption,
     fontWeight: "700",
   }),
 );
@@ -128,7 +129,7 @@ export const getFormLabelTextStyle = createThemeValue(
 export const getCompactLabelTextStyle = createThemeValue(
   (): TextStyle => ({
     color: getAppColors().mutedText,
-    fontSize: 11,
+    fontSize: AppFontSize.caption,
     fontWeight: "600",
   }),
 );
@@ -136,7 +137,7 @@ export const getCompactLabelTextStyle = createThemeValue(
 export const getBrandPlusTextStyle = createThemeValue(
   (): TextStyle => ({
     color: getAppColors().accent,
-    fontSize: 14,
+    fontSize: AppFontSize.body,
     fontStyle: "italic",
     fontWeight: "800",
     letterSpacing: 0.8,
@@ -199,24 +200,24 @@ export const ResponsivePageContentStyle: ViewStyle = {
 };
 
 export const StatusMessageTextStyle: TextStyle = {
-  fontSize: 12,
+  fontSize: AppFontSize.caption,
   fontWeight: "600",
-  lineHeight: 18,
+  lineHeight: AppLineHeight.caption,
 };
 
 export const getNoteTextStyle = createThemeValue(
   (): TextStyle => ({
     color: getAppColors().mutedStrongText,
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: AppFontSize.caption,
+    lineHeight: AppLineHeight.caption,
   }),
 );
 
 export const getSupportingTextStyle = createThemeValue(
   (): TextStyle => ({
     color: getAppColors().mutedText,
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: AppFontSize.caption,
+    lineHeight: AppLineHeight.caption,
   }),
 );
 
@@ -227,6 +228,6 @@ export const ModalActionRowStyle: ViewStyle = {
 };
 
 export const ActionButtonLabelTextStyle: TextStyle = {
-  fontSize: 15,
+  fontSize: AppFontSize.label,
   fontWeight: "700",
 };

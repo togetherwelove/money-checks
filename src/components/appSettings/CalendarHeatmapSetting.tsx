@@ -1,3 +1,5 @@
+import { getSwitchAppearance } from "../../constants/switchAppearance";
+import { getSettingsGroupStyles } from "../../constants/settingsGroupStyles";
 import { createThemeValue } from "../../lib/appTheme";
 import { useAppTheme } from "../../hooks/useAppTheme";
 import { Pressable, StyleSheet, Switch, Text, View } from "react-native";
@@ -5,7 +7,7 @@ import { AppSettingsUi, AppSettingsCopy as Copy } from "../../constants/appSetti
 import { getAppSettingsRowStyles } from "../../constants/appSettingsStyles";
 import { getAppColors } from "../../constants/colors";
 import { AppLayout } from "../../constants/layout";
-import { CompactTextProps, OneLineTextFitProps } from "../../constants/textLayout";
+import { CompactTextProps } from "../../constants/textLayout";
 import { getBrandPlusTextStyle } from "../../constants/uiStyles";
 import { Feather } from "../AppIcons";
 
@@ -49,16 +51,13 @@ export function CalendarHeatmapSetting({
             </Text>
           </View>
         </View>
-        <Text {...OneLineTextFitProps} style={getAppSettingsRowStyles().description}>
-          {Copy.heatmapDescription}
-        </Text>
       </View>
       <View pointerEvents={isPlusActive ? "auto" : "none"}>
         <Switch
           accessibilityLabel={Copy.heatmapTitle}
           disabled={!isPlusActive}
           onValueChange={onToggle}
-          trackColor={getTrackColor()}
+          {...getSwitchAppearance()}
           value={isPlusActive && isEnabled}
         />
       </View>
@@ -66,10 +65,6 @@ export function CalendarHeatmapSetting({
   );
 }
 
-const getTrackColor = createThemeValue(() => ({
-  false: getAppColors().border,
-  true: getAppColors().primary,
-}));
 const getStyles = createThemeValue(() =>
   StyleSheet.create({
     content: { flexDirection: "row", alignItems: "center", gap: AppSettingsUi.sectionGap },
@@ -81,7 +76,7 @@ const getStyles = createThemeValue(() =>
       alignItems: "center",
       gap: AppLayout.compactGap,
     },
-    title: { ...getAppSettingsRowStyles().title, flexShrink: 1 },
+    title: { ...getSettingsGroupStyles().label, flexShrink: 1 },
     badge: { flexDirection: "row", alignItems: "center", gap: AppLayout.compactGap },
   }),
 );

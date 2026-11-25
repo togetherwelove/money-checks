@@ -18,3 +18,10 @@ test("moving backward above the viewport reveals the selected row", () => {
 test("a wider grid uses the new row positions when keeping the selected tile visible", () => {
   assert.equal(resolveCategoryGridScrollY(11, 60, 6, 132, 120), 66);
 });
+
+test("padded groups preserve visible tiles and reveal the entire bottom row", () => {
+  assert.equal(resolveCategoryGridScrollY(0, 60, 4, 0, 200, 8), 0);
+  assert.equal(resolveCategoryGridScrollY(6, 60, 4, 10, 200, 8), 10);
+  assert.equal(resolveCategoryGridScrollY(12, 60, 4, 0, 200, 8), 74);
+  assert.equal(resolveCategoryGridScrollY(0, 60, 4, 132, 120, 8), 0);
+});

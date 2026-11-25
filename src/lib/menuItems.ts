@@ -1,15 +1,15 @@
 import { AnnualReportCopy } from "../constants/annualReport";
-import { AllMenuCopy } from "../constants/allMenu";
+import { AllMenuCopy, AllMenuIcons } from "../constants/allMenu";
 import { AppSettingsCopy } from "../constants/appSettings";
 import { MenuCopy } from "../constants/menu";
 import type { LedgerAppScreen } from "../types/app";
 import type { CategoryIconName } from "../types/category";
 import { getAppScreenLabel } from "./appScreenLabels";
 
-export type AppMenuAction = "annual-report-download" | "manage-categories";
+export type AppMenuAction = "annual-report-download" | "manage-categories" | "contact-support";
 
 type AppMenuItemDisplay = {
-  icon?: CategoryIconName;
+  icon?: CategoryIconName | typeof AllMenuIcons.excelExport;
   label: string;
   description?: string;
   disabled?: boolean;
@@ -30,6 +30,7 @@ export type AppMenuActionItem = AppMenuItemDisplay & {
 export type AppMenuItem = AppMenuActionItem | AppMenuNavigationItem;
 
 export type AppMenuSection = {
+  keepTogether?: boolean;
   items: AppMenuItem[];
   label: string;
 };
@@ -37,6 +38,12 @@ export type AppMenuSection = {
 export function getAppMenuItemId(item: AppMenuItem): string {
   return "targetScreen" in item ? item.targetScreen : item.action;
 }
+
+export const AllMenuSubscriptionItem: AppMenuNavigationItem = {
+  icon: "credit-card",
+  label: getAppScreenLabel("subscription"),
+  targetScreen: "subscription",
+};
 
 export function buildAllMenuSections(
   options: {
@@ -71,16 +78,22 @@ export function buildAllMenuSections(
       disabled: !options.canManageCategories,
     },
   ];
+  const reportItems: AppMenuItem[] = [];
   if (options.showAnnualReportDownload) {
-    ledgerItems.push({
+    reportItems.push({
       action: "annual-report-download",
+      icon: AllMenuIcons.excelExport,
       label: AnnualReportCopy.headerAccessibilityLabel,
     });
   }
 
   return [
-    { label: MenuCopy.sections.account, items: accountItems },
-    { label: MenuCopy.sections.ledger, items: ledgerItems },
+    {
+      label: MenuCopy.sections.account,
+      items: [...accountItems, ...ledgerItems],
+      keepTogether: true,
+    },
+    ...(reportItems.length ? [{ label: MenuCopy.sections.ledger, items: reportItems }] : []),
     {
       label: MenuCopy.sections.settings,
       items: [
@@ -96,11 +109,6 @@ export function buildAllMenuSections(
       label: MenuCopy.sections.support,
       items: [
         {
-          icon: "credit-card",
-          label: getAppScreenLabel("subscription"),
-          targetScreen: "subscription",
-        },
-        {
           icon: "gift",
           label: getAppScreenLabel("support"),
           targetScreen: "support",
@@ -113,9 +121,28 @@ export function buildAllMenuSections(
         {
           icon: "mail",
           label: getAppScreenLabel("contact-support"),
-          targetScreen: "contact-support",
+          action: "contact-support",
         },
       ],
     },
   ];
+}
+
+export function groupAppMenuItems(items: AppMenuItem[], keepTogether = false) {
+  if (keepTogether && items.length) {
+    return [
+      {
+        key: getAppMenuItemId(items[0]),
+        items,
+        description: items.find((item) => item.description)?.description,
+      },
+    ];
+  }
+  const groups: { key: string; items: AppMenuItem[]; description?: string }[] = [];
+  for (const item of items) {
+    const previous = groups[groups.length - 1];
+    if (!item.description && previous && !previous.description) previous.items.push(item);
+    else groups.push({ key: getAppMenuItemId(item), items: [item], description: item.description });
+  }
+  return groups;
 }

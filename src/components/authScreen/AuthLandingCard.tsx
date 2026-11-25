@@ -1,3 +1,4 @@
+import { AppFontSize } from "../../constants/typography";
 import { createThemeValue } from "../../lib/appTheme";
 import { useAppTheme } from "../../hooks/useAppTheme";
 import { StyleSheet, Text, View } from "react-native";
@@ -78,7 +79,7 @@ const getStyles = createThemeValue(() =>
     },
     dividerLabel: {
       color: getAppColors().mutedText,
-      fontSize: 12,
+      fontSize: AppFontSize.caption,
       fontWeight: "700",
     },
   }),

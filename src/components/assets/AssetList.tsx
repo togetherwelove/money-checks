@@ -1,20 +1,11 @@
 import { useAppTheme } from "../../hooks/useAppTheme";
 import { Pressable, Text, View } from "react-native";
 import { Feather } from "../AppIcons";
-import { AppSettingsUi } from "../../constants/appSettings";
 import { AssetConfig, AssetCopy as Copy } from "../../constants/assets";
-import { getAssetStyles } from "../../constants/assetStyles";
 import { getAppColors } from "../../constants/colors";
-import { AssetLinkCopy } from "../../constants/assetLink";
+import { getSettingsGroupStyles, SettingsGroupDesign } from "../../constants/settingsGroupStyles";
 import type { AssetPortfolio, PersonalAsset } from "../../types/asset";
-import {
-  assetKind,
-  isAssetDebt,
-  assetBalance,
-  assetActivity,
-  formatAssetAmount,
-  latestValuation,
-} from "../../utils/assets";
+import { assetKind, isAssetDebt, assetBalance, formatAssetAmount } from "../../utils/assets";
 
 export function AssetList({
   portfolio,
@@ -24,6 +15,7 @@ export function AssetList({
   onSelect: (asset: PersonalAsset) => void;
 }) {
   useAppTheme();
+  const styles = getSettingsGroupStyles();
   const active = portfolio.assets
     .filter((asset) => !asset.deleted_on)
     .sort(
@@ -32,56 +24,41 @@ export function AssetList({
         left.name.localeCompare(right.name, AssetConfig.locale),
     );
   return (
-    <View style={getAssetStyles().section}>
-      {active.map((asset) => {
-        const value = latestValuation(portfolio.valuations, asset.id);
-        const activity = assetActivity(portfolio, asset.id);
-        return (
+    <View style={styles.card}>
+      {active.map((asset, index) => (
+        <View key={asset.id}>
+          {index > 0 ? <View style={styles.divider} /> : null}
           <Pressable
-            key={asset.id}
             accessibilityRole="button"
             accessibilityLabel={`${asset.name}${Copy.separator}${Copy.view}`}
-            style={({ pressed }) => [
-              getAssetStyles().card,
-              getAssetStyles().assetCard,
-              isAssetDebt(asset.kind) ? getAssetStyles().debtTint : getAssetStyles().assetTint,
-              pressed && getAssetStyles().assetCardPressed,
-            ]}
+            style={({ pressed }) => [styles.row, pressed && styles.pressed]}
             onPress={() => onSelect(asset)}
           >
-            <View style={[getAssetStyles().row, getAssetStyles().assetHeadingRow]}>
-              <Text style={[getAssetStyles().text, getAssetStyles().grow]}>{asset.name}</Text>
-              <Text style={getAssetStyles().title}>
-                {formatAssetAmount(assetBalance(portfolio, asset.id))}
+            <View style={styles.content}>
+              <Text style={styles.label}>{asset.name}</Text>
+              <Text style={styles.count}>
+                {assetKind(asset.kind).label}
+                {Copy.separator}
+                {asset.is_shared ? Copy.shared : Copy.private}
               </Text>
-              <Feather
-                name="chevron-right"
-                size={AppSettingsUi.selectionChevronIconSize}
-                color={getAppColors().primary}
-              />
             </View>
-            <Text style={getAssetStyles().hint}>
-              {assetKind(asset.kind).label}
-              {Copy.separator}
-              {asset.is_shared ? Copy.shared : Copy.private}
-              {Copy.separator}
-              {activity.date}
-              {Copy.separator}
-              {activity.automatic ? AssetLinkCopy.automatic : Copy.manual}
-              {asset.kind === "property"
-                ? `${Copy.separator}${Copy.share} ${value?.details.share}${Copy.percent}`
-                : ""}
+            <Text
+              style={[
+                styles.value,
+                styles.accessoryLabel,
+                isAssetDebt(asset.kind) && styles.destructive,
+              ]}
+            >
+              {formatAssetAmount(assetBalance(portfolio, asset.id))}
             </Text>
-            <Text style={getAssetStyles().hint}>
-              {asset.kind === "cash" || asset.kind === "loan" || asset.kind === "other-debt"
-                ? Copy.balanceOn
-                : Copy.recordedOn}
-              {Copy.separator}
-              {value?.valued_on}
-            </Text>
+            <Feather
+              name="chevron-right"
+              size={SettingsGroupDesign.iconSize}
+              color={getAppColors().mutedStrongText}
+            />
           </Pressable>
-        );
-      })}
+        </View>
+      ))}
     </View>
   );
 }

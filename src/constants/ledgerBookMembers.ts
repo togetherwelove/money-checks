@@ -1,8 +1,14 @@
+import { AppFontSize, AppLineHeight } from "./typography";
+import { SettingsGroupDesign } from "./settingsGroupStyles";
+
 export const LedgerBookMembersUi = {
+  unknownMemberLimit: "—",
+  avatarSize: 36,
+  avatarFontSize: AppFontSize.label,
   maxVisibleMembers: 5,
-  rowHeight: 34,
-  rowTextLineHeight: 18,
-  badgeLineHeight: 14,
+  rowHeight: SettingsGroupDesign.rowMinHeight,
+  rowTextLineHeight: AppLineHeight.body,
+  badgeLineHeight: AppLineHeight.caption,
   memberIdentityGap: 6,
   roleBadgeHorizontalPadding: 7,
   roleBadgeVerticalPadding: 2,
@@ -15,8 +21,8 @@ export const LedgerBookMembersUi = {
   disabledActionButtonOpacity: 0.45,
   rowHorizontalPadding: 10,
   rowVerticalPadding: 5,
-  labelFontSize: 11,
-  labelLineHeight: 16,
+  labelFontSize: AppFontSize.caption,
+  labelLineHeight: AppLineHeight.caption,
   labelBottomMargin: 2,
 } as const;
 

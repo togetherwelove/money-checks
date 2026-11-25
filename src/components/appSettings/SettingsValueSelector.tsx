@@ -1,3 +1,4 @@
+import { getSettingsGroupStyles } from "../../constants/settingsGroupStyles";
 import { useAppTheme } from "../../hooks/useAppTheme";
 import { Feather } from "../AppIcons";
 import { type MenuAction, MenuView, type NativeActionEvent } from "@react-native-menu/menu";
@@ -6,7 +7,7 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { AppSettingsUi } from "../../constants/appSettings";
 import { getAppColors } from "../../constants/colors";
-import { SettingValueActionStyle, getSettingValueTextStyle } from "../../constants/uiStyles";
+import { SettingValueActionStyle } from "../../constants/uiStyles";
 
 type SettingsValueSelectorProps<Value extends string> = {
   value: Value;
@@ -40,7 +41,7 @@ export function SettingsValueSelector<Value extends string>({
   return (
     <MenuView actions={menuActions} onPressAction={handlePressAction} style={styles.container}>
       <View accessibilityRole="button" style={SettingValueActionStyle}>
-        <Text style={getSettingValueTextStyle()}>{selectedOption.label}</Text>
+        <Text style={getSettingsGroupStyles().value}>{selectedOption.label}</Text>
         <Feather
           color={getAppColors().mutedStrongText}
           name="chevron-down"

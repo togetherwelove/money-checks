@@ -1,4 +1,5 @@
 import type { NavigatorScreenParams } from "@react-navigation/native";
+import type { ReportCategoryFilter } from "../constants/allEntries";
 import type { LedgerAppScreen } from "../types/app";
 
 export type SignedInStackScreen = Exclude<LedgerAppScreen, "entry">;
@@ -21,7 +22,7 @@ export type SignedInTabParamList = {
 export type SignedInStackParamList = {
   assets: undefined;
   account: undefined;
-  "all-entries": undefined;
+  "all-entries": { reportCategoryFilter: ReportCategoryFilter } | undefined;
   "all-menu": undefined;
   "app-settings": undefined;
   calendar: undefined;

@@ -1,12 +1,14 @@
+import { SettingsGroup } from "../components/appSettings/SettingsGroup";
+import { SettingsRow } from "../components/appSettings/SettingsRow";
+import { getSettingsGroupStyles, SettingsGroupDesign } from "../constants/settingsGroupStyles";
 import { ThemeSettings, ThemeModeOptions } from "../constants/theme";
 import { getThemeMode, setThemeMode } from "../lib/appTheme";
 import { createThemeValue } from "../lib/appTheme";
 import { useAppTheme } from "../hooks/useAppTheme";
 import { type ReactNode, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { Feather } from "../components/AppIcons";
 import { CalendarSummaryBaseDayPickerModal } from "../components/appSettings/CalendarSummaryBaseDayPickerModal";
-import { getMenuStyles } from "../constants/menuStyles";
 
 import { AppFooterContentInset } from "../components/AppFooterContentInset";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
@@ -14,14 +16,9 @@ import { CalendarHeatmapSetting } from "../components/appSettings/CalendarHeatma
 import { ExpenseTextColorSelector } from "../components/appSettings/ExpenseTextColorSelector";
 import { SettingsValueSelector } from "../components/appSettings/SettingsValueSelector";
 import { AppSettingsCopy, AppSettingsUi } from "../constants/appSettings";
-import { getAppSettingsRowStyles } from "../constants/appSettingsStyles";
-import {
-  type CalendarSummaryMode,
-  CalendarSummaryModeOptions,
-  CalendarSummaryModes,
-} from "../constants/calendarSummary";
+import { type CalendarSummaryMode, CalendarSummaryModes } from "../constants/calendarSummary";
 import { getAppColors } from "../constants/colors";
-import { SettingValueActionStyle, getSettingValueTextStyle } from "../constants/uiStyles";
+import { SettingValueActionStyle } from "../constants/uiStyles";
 import { useExpenseTextColor } from "../contexts/ExpenseTextColorContext";
 
 export type AppSettingsScreenProps = {
@@ -30,7 +27,6 @@ export type AppSettingsScreenProps = {
   isCalendarHeatmapEnabled: boolean;
   isPlusActive: boolean;
   onChangeCalendarSummaryBaseDay: (day: number) => void;
-  onChangeCalendarSummaryMode: (mode: CalendarSummaryMode) => void;
   onOpenSubscription: () => void;
   onToggleCalendarHeatmap: (enabled: boolean) => void;
   screenTitle: ReactNode;
@@ -42,7 +38,6 @@ export function AppSettingsScreen({
   isCalendarHeatmapEnabled,
   isPlusActive,
   onChangeCalendarSummaryBaseDay,
-  onChangeCalendarSummaryMode,
   onOpenSubscription,
   onToggleCalendarHeatmap,
   screenTitle,
@@ -56,46 +51,26 @@ export function AppSettingsScreen({
     <KeyboardAwareScrollView contentContainerStyle={styles.content} style={styles.screen}>
       {screenTitle}
       <View style={styles.sections}>
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{AppSettingsCopy.featureSectionTitle}</Text>
-          <View style={styles.settingListGroup}>
-            <View style={styles.settingCard}>
-              <View style={styles.settingTextBlock}>
-                <Text style={styles.settingTitle}>{ThemeSettings.title}</Text>
-              </View>
+        <SettingsGroup>
+          <SettingsRow
+            label={ThemeSettings.title}
+            trailing={
               <SettingsValueSelector
                 value={getThemeMode()}
                 options={ThemeModeOptions}
                 onChange={setThemeMode}
               />
-            </View>
-            <View style={styles.settingCard}>
-              <View style={styles.settingTextBlock}>
-                <Text style={styles.settingTitle}>{AppSettingsCopy.summaryModeTitle}</Text>
-                <Text style={styles.settingDescription}>
-                  {AppSettingsCopy.summaryModeDescription}
-                </Text>
-              </View>
-              <SettingsValueSelector
-                value={calendarSummaryMode}
-                options={CalendarSummaryModeOptions}
-                onChange={onChangeCalendarSummaryMode}
-              />
-            </View>
-            {isSelectedMonthSummaryMode ? (
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => setIsSummaryBaseDayPickerOpen(true)}
-                style={({ pressed }) => [
-                  styles.settingCard,
-                  pressed ? styles.pressedSettingCard : null,
-                ]}
-              >
-                <View style={styles.settingTextBlock}>
-                  <Text style={styles.settingTitle}>{AppSettingsCopy.summaryBaseDayTitle}</Text>
-                </View>
+            }
+          />
+        </SettingsGroup>
+        {isSelectedMonthSummaryMode ? (
+          <SettingsGroup>
+            <SettingsRow
+              label={AppSettingsCopy.summaryBaseDayTitle}
+              onPress={() => setIsSummaryBaseDayPickerOpen(true)}
+              trailing={
                 <View style={SettingValueActionStyle}>
-                  <Text style={getSettingValueTextStyle()}>
+                  <Text style={getSettingsGroupStyles().value}>
                     {calendarSummaryBaseDay
                       ? `${calendarSummaryBaseDay}일`
                       : AppSettingsCopy.summaryBaseDayPlaceholder}
@@ -106,32 +81,31 @@ export function AppSettingsScreen({
                     size={AppSettingsUi.selectionChevronIconSize}
                   />
                 </View>
-              </Pressable>
-            ) : null}
-            <View style={styles.settingCard}>
-              <View style={styles.settingTextBlock}>
-                <Text style={styles.settingTitle}>{AppSettingsCopy.expenseTextColorTitle}</Text>
-                <Text style={styles.settingDescription}>
-                  {AppSettingsCopy.expenseTextColorDescription}
-                </Text>
-              </View>
+              }
+            />
+          </SettingsGroup>
+        ) : null}
+        <SettingsGroup description={AppSettingsCopy.expenseTextColorDescription}>
+          <SettingsRow
+            label={AppSettingsCopy.expenseTextColorTitle}
+            trailing={
               <ExpenseTextColorSelector
                 mode={expenseTextColor.mode}
                 onChange={expenseTextColor.updateMode}
               />
-            </View>
-            <View style={[styles.settingCard, styles.lastSettingCard]}>
-              <View style={styles.settingTextBlock}>
-                <CalendarHeatmapSetting
-                  isPlusActive={isPlusActive}
-                  isEnabled={isCalendarHeatmapEnabled}
-                  onToggle={onToggleCalendarHeatmap}
-                  onOpenSubscription={onOpenSubscription}
-                />
-              </View>
-            </View>
+            }
+          />
+        </SettingsGroup>
+        <SettingsGroup description={AppSettingsCopy.heatmapDescription}>
+          <View style={getSettingsGroupStyles().singleLineField}>
+            <CalendarHeatmapSetting
+              isPlusActive={isPlusActive}
+              isEnabled={isCalendarHeatmapEnabled}
+              onToggle={onToggleCalendarHeatmap}
+              onOpenSubscription={onOpenSubscription}
+            />
           </View>
-        </View>
+        </SettingsGroup>
         <AppFooterContentInset />
       </View>
       <CalendarSummaryBaseDayPickerModal
@@ -149,27 +123,12 @@ export function AppSettingsScreen({
 
 const getStyles = createThemeValue(() =>
   StyleSheet.create({
-    sections: {
-      gap: AppSettingsUi.sectionSpacing,
-    },
+    sections: getSettingsGroupStyles().sections,
     content: {
-      ...getMenuStyles().content,
+      ...getSettingsGroupStyles().page,
+      paddingTop: SettingsGroupDesign.pageTopPadding,
       paddingBottom: AppSettingsUi.contentBottomPadding,
     },
-    screen: {
-      flex: 1,
-      backgroundColor: getAppColors().screenBackground,
-    },
-    section: {
-      gap: AppSettingsUi.sectionGap,
-    },
-    sectionTitle: getMenuStyles().sectionTitle,
-    pressedSettingCard: getAppSettingsRowStyles().pressed,
-    settingCard: getAppSettingsRowStyles().row,
-    settingListGroup: getMenuStyles().group,
-    lastSettingCard: getAppSettingsRowStyles().lastRow,
-    settingDescription: getAppSettingsRowStyles().description,
-    settingTextBlock: getAppSettingsRowStyles().textBlock,
-    settingTitle: getAppSettingsRowStyles().title,
+    screen: { flex: 1, backgroundColor: getAppColors().screenBackground },
   }),
 );

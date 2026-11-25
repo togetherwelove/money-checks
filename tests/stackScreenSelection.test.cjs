@@ -70,7 +70,7 @@ async function setup() {
   return {
     actions,
     state: () => state,
-    navigate: (screen) => navigateToSingleInstanceStackScreen(navigation, screen),
+    navigate: (screen, params) => navigateToSingleInstanceStackScreen(navigation, screen, params),
     goBack: () =>
       navigation.dispatch({
         ...CommonActions.goBack(),
@@ -98,6 +98,38 @@ test("150 primary tab switches retain root route order and each real screen inst
     }
   }
   assert.ok(ui.actions.every((action) => action.type === "JUMP_TO"));
+});
+
+test("report category shortcuts pass the filters to the existing all-entries tab", async () => {
+  const ui = await setup();
+  ui.navigate("all-entries");
+  const original = ui.state().routes[ui.state().index].state.routes[0];
+  ui.navigate("help");
+  ui.navigate("charts");
+  const filter = {
+    bookId: "book",
+    requestId: 1,
+    entryType: "expense",
+    categories: [{ id: "food", label: "식비" }],
+    dateRange: { startDate: "2026-11-01", endDate: "2026-11-30" },
+  };
+  const active = () => ui.state().routes[ui.state().index];
+  ui.navigate("all-entries", { reportCategoryFilter: filter });
+  assert.equal(active().name, "entries-tab");
+  assert.equal(active().state.routes.length, 1);
+  assert.equal(active().state.routes[0].key, original.key);
+  assert.deepEqual(active().state.routes[0].params.reportCategoryFilter, filter);
+
+  ui.navigate("charts");
+  const repeat = {
+    ...filter,
+    requestId: 2,
+    entryType: "income",
+    categories: [{ id: "salary", label: "월급" }],
+  };
+  ui.navigate("all-entries", { reportCategoryFilter: repeat });
+  assert.equal(ui.actions.at(-1).type, "SET_PARAMS");
+  assert.deepEqual(active().state.routes[0].params.reportCategoryFilter, repeat);
 });
 
 test("secondary navigation targets only the active tab stack and returns to an existing screen with popTo", async () => {

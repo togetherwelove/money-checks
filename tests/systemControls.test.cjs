@@ -30,12 +30,17 @@ const chartState = hooks();
 const load = modules({
   react: chartState.react,
   "src/components/monthlyInsights/TrendChartTooltip.tsx": { TrendChartTooltip: "Tooltip" },
+  "src/components/monthlyInsights/ExpenseComparisonGraphic.tsx": {
+    ExpenseComparisonGraphic: "ExpenseGraphic",
+  },
+  "@react-navigation/native": { useIsFocused: () => true },
   "src/components/AppIcons.tsx": { Feather: "Icon" },
   "react/jsx-runtime": { jsx, jsxs: jsx },
   "react-native": {
     StyleSheet: { create: (value) => value },
     Text: "RNText",
     Pressable: "Pressable",
+    Switch: "RNSwitch",
     View: "View",
     Platform: { Version: 26 },
     Keyboard: { dismiss() {} },
@@ -60,11 +65,17 @@ const load = modules({
       "scrollContentBackground",
       "listSectionSpacing",
       "fixedSize",
+      "lineLimit",
+      "multilineTextAlignment",
       "font",
       "foregroundStyle",
       "listRowInsets",
+      "listRowSeparator",
+      "padding",
+      "cornerRadius",
       "frame",
       "pickerStyle",
+      "tint",
       "disabled",
       "tag",
     ].map((name) => [name, (value) => ({ name, value })]),
@@ -83,6 +94,7 @@ test("system symbols cover every selectable category icon without changing store
   const { CATEGORY_ICON_PICKER_OPTIONS } = load("src/constants/categories.ts");
   const { SystemIcons } = load("src/constants/systemIcons.ts");
   for (const icon of CATEGORY_ICON_PICKER_OPTIONS) assert.ok(SystemIcons[icon], icon);
+  assert.equal(SystemIcons["refresh-cw"], "arrow.clockwise");
 });
 
 test("native display settings preserve summary, base day and paid feature gating", () => {
@@ -113,6 +125,16 @@ test("native display settings preserve summary, base day and paid feature gating
     onToggleNotificationPreference: (types, enabled) => calls.push(["notify", types, enabled]),
   };
   const all = nodes(AppSettingsScreen(props));
+  for (const node of all) {
+    if (node.type === "Text" || node.type === "RNText") continue;
+    const children = [node.props.children].flat(Infinity);
+    assert.equal(
+      children.some((child) => typeof child === "string" || typeof child === "number"),
+      false,
+      `Raw text under ${node.type} crashes the native renderer`,
+    );
+  }
+
   assert.equal(all[1].type, "List");
   assert.equal(
     all[1].props.modifiers.find((m) => m.name === "scrollContentBackground").value,
@@ -159,25 +181,197 @@ test("native notification detail preserves grouped preference actions after leav
   assert.deepEqual(calls, [[events, false]]);
 });
 
-test("iOS donut preserves legend-assigned colors and proportions with no visible zero slice", () => {
-  const { BreakdownDonutGraphic } = load(
-    "src/components/monthlyInsights/BreakdownDonutGraphic.ios.tsx",
+test("the report shows expense and income together and compares spending with the prior period", () => {
+  const { MonthlyCashflowSummary, MonthlyCashflowTotals } = load(
+    "src/components/monthlyInsights/MonthlyCashflowSummary.tsx",
   );
-  const tree = BreakdownDonutGraphic({
-    items: [
-      { key: "food", label: "Food", amount: 30, share: 1, color: "#123456" },
-      { key: "empty", label: "Empty", amount: 0, share: 0, color: "#ffffff" },
-    ],
+  const readText = (node) => {
+    if (typeof node === "string") return node;
+    if (Array.isArray(node)) return node.map(readText).join("");
+    return node?.props ? readText(node.props.children) : "";
+  };
+  const dailyComparison = { current: [], previous: [] };
+  const render = (expense, previousPeriod) =>
+    MonthlyCashflowSummary({
+      expense,
+      previousPeriod,
+      dailyExpenseComparison: dailyComparison,
+    });
+  const decreased = {
+    currentAmount: 100,
+    previousAmount: 160,
+    deltaAmount: 60,
+    direction: "decrease",
+  };
+  const totals = MonthlyCashflowTotals({ expense: 100, income: 400 }).props.children;
+  const comparison = render(decreased, "지난달").props.children;
+  assert.equal(totals.props.style.flexDirection, "row");
+  assert.deepEqual(Array.from(totals.props.children, readText), ["지출100원", "수입400원"]);
+  assert.equal(readText(comparison), "지난달보다\n60원 덜 썼어요.");
+  assert.equal(comparison.props.style.flexDirection, "row");
+  const [copy, graph] = comparison.props.children;
+  const [sentence, legend] = copy.props.children;
+  assert.equal(sentence.props.style.textAlign, "left");
+  assert.equal(legend.props.previousPeriod, "지난달");
+  assert.equal(graph.props.comparison, dailyComparison);
+  assert.match(
+    readText(render({ ...decreased, currentAmount: 220, direction: "increase" }, "이전 기간")),
+    /이전 기간보다\n60원 더 썼어요/,
+  );
+  assert.match(
+    readText(
+      render({ ...decreased, currentAmount: 160, deltaAmount: 0, direction: "same" }, "지난달"),
+    ),
+    /지난달과 같은 금액을 썼어요/,
+  );
+  assert.match(
+    readText(render({ ...decreased, previousAmount: 0, direction: "increase" }, "지난달")),
+    /지난달 지출 기록이 없어요/,
+  );
+  assert.equal(render(decreased).props.children, null);
+});
+
+test("the spending legend below the comparison uses the same distinct colors as its graph", () => {
+  const { ExpenseComparisonLegend } = load(
+    "src/components/monthlyInsights/ExpenseComparisonLegend.tsx",
+  );
+  const { getExpenseComparisonColors } = load("src/constants/monthlyInsightCharts.ts");
+  const colors = getExpenseComparisonColors();
+  const monthly = ExpenseComparisonLegend({
+    previousPeriod: "지난달",
+    comparison: {
+      previous: [{ date: "2026-10-01", amount: 0 }],
+      current: [{ date: "2026-11-01", amount: 0 }],
+    },
   });
-  const slices = nodes(tree).filter((node) => node.type === "Circle" && node.props.strokeDasharray);
   assert.deepEqual(
-    slices.map((node) => node.props.stroke),
-    ["#123456", "#ffffff"],
+    Array.from(monthly.props.children, (item) => item.props.children[1].props.children),
+    ["10월", "11월"],
   );
-  const [filled, empty] = slices.map((node) => node.props.strokeDasharray.split(" ").map(Number));
-  assert.equal(filled[0], filled[1]);
-  assert.equal(empty[0], 0);
-  assert.equal(slices[1].props.strokeDashoffset, -filled[1]);
+  for (const [previousPeriod, currentPeriod] of [
+    ["지난달", "이번달"],
+    ["이전 기간", "이번 기간"],
+  ]) {
+    const [previous, current] = ExpenseComparisonLegend({ previousPeriod }).props.children;
+    assert.equal(previous.props.children[1].props.children, previousPeriod);
+    assert.equal(current.props.children[1].props.children, currentPeriod);
+    assert.equal(previous.props.children[0].props.style[1].backgroundColor, colors.previous);
+    assert.equal(current.props.children[0].props.style[1].backgroundColor, colors.current);
+  }
+  assert.notEqual(colors.previous, colors.current);
+});
+
+test("the share bar shows five categories and opens the exact categories for each row", () => {
+  const { MonthlyShareBreakdown } = load(
+    "src/components/monthlyInsights/MonthlyShareBreakdown.tsx",
+  );
+  const categories = [
+    { category: "의료", categoryId: "medical", amount: 15 },
+    { category: "문화", categoryId: "culture", amount: 8 },
+    { category: "식비", categoryId: "food", amount: 40 },
+    { category: "선물", categoryId: "gift", amount: 5 },
+    { category: "교통", categoryId: "transport", amount: 25 },
+    { category: "쇼핑", categoryId: "shopping", amount: 4 },
+    { category: "여행", categoryId: "travel", amount: 3 },
+  ];
+  const opened = [];
+  const render = (categories, entryType = "expense") =>
+    nodes(
+      chartState.render(() =>
+        MonthlyShareBreakdown({
+          categories,
+          members: [],
+          entryType,
+          onOpenCategories: (selected, type) =>
+            opened.push([type, ...Array.from(selected, (item) => item.id)]),
+        }),
+      ),
+    );
+  const bars = (tree) =>
+    tree.filter(
+      (node) => node.props.accessibilityElementsHidden && node.props.style.flexDirection === "row",
+    );
+  const tree = render(categories);
+  assert.equal(bars(tree).length, 1);
+  assert.deepEqual(
+    Array.from(bars(tree)[0].props.children, (segment) =>
+      Math.round(segment.props.style.flex * 100),
+    ),
+    [40, 25, 15, 8, 5, 7],
+  );
+  assert.equal(
+    new Set(
+      Array.from(bars(tree)[0].props.children, (segment) => segment.props.style.backgroundColor),
+    ).size,
+    6,
+  );
+  const rows = tree.filter((node) => node.props.accessibilityRole === "button");
+  assert.equal(rows.length, 6);
+  assert.ok(rows.every((row) => nodes(row).some((child) => child.props.name === "chevron-right")));
+  rows[0].props.onPress();
+  rows[5].props.onPress();
+  bars(tree)[0].props.children[1].props.onPress();
+  const income = render([{ category: "월급", categoryId: "salary", amount: 100 }], "income");
+  assert.equal(
+    income.find((node) => node.props.accessibilityRole === "header").props.children,
+    "수입 비중",
+  );
+  income.find((node) => node.props.accessibilityRole === "button").props.onPress();
+  assert.deepEqual(opened, [
+    ["expense", "food"],
+    ["expense", "shopping", "travel"],
+    ["expense", "transport"],
+    ["income", "salary"],
+  ]);
+  assert.equal(bars(render(categories.slice(0, 3)))[0].props.children.length, 3);
+  assert.equal(bars(render([])).length, 0);
+});
+
+test("income defaults to member breakdown and share switches remain independent", () => {
+  chartState.unmount();
+  const { MonthlyShareBreakdown } = load(
+    "src/components/monthlyInsights/MonthlyShareBreakdown.tsx",
+  );
+  const categories = [{ category: "식비", categoryId: "food", amount: 100 }];
+  const members = [
+    { memberKey: "one", memberName: "가족", amount: 70 },
+    { memberKey: "two", memberName: "다른 구성원", amount: 30 },
+  ];
+  const render = () =>
+    chartState
+      .render(() => [
+        MonthlyShareBreakdown({
+          categories,
+          members,
+          entryType: "expense",
+          onOpenCategories: () => assert.fail("member rows should not use a category filter"),
+        }),
+        MonthlyShareBreakdown({ categories, members, entryType: "income" }),
+      ])
+      .map(nodes);
+  const hasText = (tree, value) =>
+    tree.some((node) => node.type === "RNText" && node.props.children === value);
+  const switchProps = (tree) => tree.find((node) => node.type === "RNSwitch").props;
+  let [expense, income] = render();
+  assert.equal(switchProps(expense).value, false);
+  assert.equal(switchProps(income).value, true);
+  assert.ok(hasText(income, "가족"));
+  switchProps(income).onValueChange(false);
+  switchProps(expense).onValueChange(true);
+  [expense, income] = render();
+  assert.equal(switchProps(expense).value, true);
+  assert.equal(switchProps(income).value, false);
+  assert.ok(hasText(expense, "가족"));
+  assert.ok(hasText(expense, "70원 · 70%"));
+  assert.ok(hasText(income, "식비"));
+  assert.ok(expense.every((node) => node.props.accessibilityRole !== "button"));
+  switchProps(income).onValueChange(true);
+  switchProps(expense).onValueChange(false);
+  [expense, income] = render();
+  assert.ok(hasText(expense, "식비"));
+  assert.ok(hasText(income, "가족"));
+  switchProps(income).onValueChange(false);
+  render();
 });
 
 test("iOS trend preserves both series, monthly labels and proportional line positions", () => {
@@ -293,4 +487,23 @@ test("additional info menu trigger contains only the selected value and leaves i
     .map((node) => node.props.children);
   assert.deepEqual(triggerText, ["Selected"]);
   assert.equal(menu.props.children, option);
+});
+
+test("single-line menu rows and inputs share a capsule height of twice the group radius", () => {
+  const { getSettingsGroupStyles, SettingsGroupDesign: design } = load(
+    "src/constants/settingsGroupStyles.ts",
+  );
+  const styles = getSettingsGroupStyles();
+  const borderHeight = styles.card.borderWidth * 2;
+  assert.equal(styles.row.minHeight + borderHeight, styles.card.borderRadius * 2);
+  assert.equal(styles.singleLineField.minHeight + borderHeight, design.singleLineHeight);
+  assert.equal(
+    styles.singleLineInput.minHeight + styles.singleLineField.paddingVertical * 2 + borderHeight,
+    design.singleLineHeight,
+  );
+  const { getNativeSettingsGroupStyles } = load("src/constants/nativeSettingsGroupStyles.ios.ts");
+  const nativeRowFrame = getNativeSettingsGroupStyles().row.find(
+    (modifier) => modifier.name === "frame",
+  );
+  assert.equal(nativeRowFrame.value.minHeight + borderHeight, design.singleLineHeight);
 });

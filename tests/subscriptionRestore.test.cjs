@@ -33,20 +33,24 @@ const { SubscriptionMessages, SubscriptionTiers } = evaluate(
 
 test("paywall shows renewal disclosures and restore without expanding, and never advertises a fallback price", () => {
   const jsx = (type, props) => ({ type, props });
-  const { SubscriptionScreen } = evaluate(
-    fs.readFileSync(path.join(root, "src/screens/SubscriptionScreen.tsx"), "utf8"),
-    {
-      "react/jsx-runtime": { jsx, jsxs: jsx },
-      "react-native": { View: "View", Text: "Text", StyleSheet: { create: (value) => value } },
-      "../constants/subscription": { SubscriptionMessages, SubscriptionHeroUi: {} },
-      "../constants/colors": { getAppColors: () => ({}) },
-      "../constants/uiStyles": {
-        getBrandPlusTextStyle: () => ({}),
-        getUnderlineFormInputTextStyle: () => ({}),
-      },
-      "../constants/menuStyles": { getMenuStyles: () => ({ sections: { gap: 0 } }) },
+  const { modules } = require("./annualReportHelpers.cjs");
+  const load = modules({
+    "react/jsx-runtime": { jsx, jsxs: jsx },
+    "react-native": {
+      View: "View",
+      Text: "Text",
+      StyleSheet: { create: (value) => value },
+      Linking: { openURL: async () => {} },
     },
-  );
+    "src/components/ActionButton.tsx": { ActionButton: "Purchase" },
+    "src/components/KeyboardAwareScrollView.tsx": { KeyboardAwareScrollView: "Scroll" },
+    "src/components/AppFooterContentInset.tsx": { AppFooterContentInset: "Footer" },
+    "src/components/SubscriptionBenefits.tsx": { SubscriptionBenefits: "Benefits" },
+    "src/components/TextLinkButton.tsx": { TextLinkButton: "Link" },
+    "src/lib/nativeToast.ts": { showNativeToast() {} },
+  });
+  const { SubscriptionScreen } = load("src/screens/SubscriptionScreen.tsx");
+  const { SubscriptionPageCopy } = load("src/constants/subscriptionPage.ts");
   function flatten(node) {
     if (Array.isArray(node)) return node.flatMap(flatten);
     if (!node?.props) return [];
@@ -65,11 +69,26 @@ test("paywall shows renewal disclosures and restore without expanding, and never
   const nodes = flatten(SubscriptionScreen(props));
   assert.ok(nodes.some((node) => node.props.children === SubscriptionMessages.renewalNotice));
   assert.equal(nodes.filter((node) => node.props.children === props.plusPriceLabel).length, 1);
-  assert.ok(nodes.some((node) => node.props.children === SubscriptionMessages.heroDescription));
+  assert.ok(nodes.some((node) => node.props.children === SubscriptionPageCopy.headline));
+  assert.ok(nodes.some((node) => node.props.children === SubscriptionPageCopy.description));
   assert.ok(nodes.some((node) => node.props.label === "개인정보 처리방침"));
   assert.ok(nodes.some((node) => node.props.label === "이용약관"));
   nodes.find((node) => node.props.label === SubscriptionMessages.restoreAction).props.onPress();
   assert.equal(restored, 1);
+  const purchase = nodes.find((node) => node.props.label === SubscriptionMessages.purchaseAction);
+  assert.equal(purchase.props.onPress, props.onPurchasePlus);
+  const active = flatten(SubscriptionScreen({ ...props, isPlusActive: true }));
+  assert.equal(
+    active.some((node) => node.props.label === SubscriptionMessages.purchaseAction),
+    false,
+  );
+  assert.ok(active.some((node) => node.props.children === SubscriptionMessages.plusSummary));
+  const noPackage = flatten(SubscriptionScreen({ ...props, hasAvailablePlusPackage: false }));
+  assert.equal(
+    noPackage.some((node) => node.props.label === SubscriptionMessages.purchaseAction),
+    false,
+  );
+  assert.ok(nodes.some((node) => node.type === "Footer"));
   const unavailable = flatten(SubscriptionScreen({ ...props, plusPriceLabel: null }));
   assert.equal(
     unavailable.some((node) => node.props.label === SubscriptionMessages.purchaseAction),
@@ -107,6 +126,10 @@ for (const tier of [SubscriptionTiers.free, SubscriptionTiers.plus]) {
           getUnderlineFormInputTextStyle: () => ({}),
         },
         "../constants/menuStyles": { getMenuStyles: () => ({ sections: { gap: 0 } }) },
+        "../constants/settingsGroupStyles": {
+          SettingsGroupDesign: {},
+          getSettingsGroupStyles: () => ({ sections: { gap: 0 } }),
+        },
       },
     );
     const nodes = [];
@@ -129,9 +152,10 @@ for (const tier of [SubscriptionTiers.free, SubscriptionTiers.plus]) {
       }),
     );
     const restoreButtons = nodes.filter(
-      (node) => node.props.label === SubscriptionMessages.restoreAction,
+      (node) => node.props.accessibilityLabel === SubscriptionMessages.restoreAction,
     );
     assert.equal(restoreButtons.length, 1);
+    assert.equal(restoreButtons[0].props.icon, "refresh-cw");
     restoreButtons[0].props.onPress();
     assert.equal(restored, 1);
     const manage = nodes.find((node) => node.props.label === SubscriptionMessages.manageAction);

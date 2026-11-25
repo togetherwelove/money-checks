@@ -1,3 +1,4 @@
+import { AppFontSize } from "../constants/typography";
 import { createThemeValue } from "../lib/appTheme";
 import { useAppTheme } from "../hooks/useAppTheme";
 import { type ReactNode, useCallback, useMemo } from "react";
@@ -18,6 +19,7 @@ import {
 import { getAppColors } from "../constants/colors";
 import { MonthlySummaryUi } from "../constants/home";
 import { AppLayout } from "../constants/layout";
+import { BannerAdLayout } from "../constants/ads";
 import { formatMonthLabel, formatYearLabel } from "../constants/ledgerDisplay";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
 import type { LedgerEntry } from "../types/ledger";
@@ -55,11 +57,14 @@ type HomeScreenProps = {
   onAddFrequentEntry?: (entry: LedgerEntry) => void;
   onDuplicateEntry: (entry: LedgerEntry) => void;
   onEditSelectedEntry: (entry: LedgerEntry) => void;
+  calendarSummaryBaseDay?: number | null;
+  onSelectSummaryMode?: (mode: CalendarSummaryMode, day?: number) => void;
   onPrepayInstallmentEntry: InstallmentPrepaymentHandler;
   onSelectCalendarDate: (isoDate: string) => void;
   screenTitle: (label: string) => ReactNode;
   isCalendarHeatmapEnabled: boolean;
   showsBannerAd: boolean;
+  reservesBannerAdSpace?: boolean;
   state: HomeScreenState;
   entryAppend?: ReactNode;
 };
@@ -70,11 +75,14 @@ export function HomeScreen({
   onAddFrequentEntry,
   onDuplicateEntry,
   onEditSelectedEntry,
+  calendarSummaryBaseDay,
+  onSelectSummaryMode,
   onPrepayInstallmentEntry,
   onSelectCalendarDate,
   screenTitle,
   isCalendarHeatmapEnabled,
   showsBannerAd,
+  reservesBannerAdSpace = showsBannerAd,
   state,
   entryAppend,
 }: HomeScreenProps) {
@@ -104,7 +112,9 @@ export function HomeScreen({
 
   return (
     <View style={[styles.screen, styles.screenContent]}>
-      <View style={styles.adPanel}>{bannerAd}</View>
+      <View style={[styles.adPanel, reservesBannerAdSpace && styles.reservedAdPanel]}>
+        {bannerAd}
+      </View>
       <HomeAdaptiveLayout
         calendar={
           <View>
@@ -138,6 +148,7 @@ export function HomeScreen({
                 isReadOnlyDueToPlanLimit={isReadOnlyDueToPlanLimit}
                 nextPage={state.nextMonthPage}
                 onMoveMonth={handleMoveMonth}
+                onMoveWeekDate={state.handleSelectDate}
                 onSelectDate={onSelectCalendarDate}
                 previousPage={state.previousMonthPage}
                 selectedDate={selectedDate}
@@ -146,11 +157,14 @@ export function HomeScreen({
           </View>
         }
         transactionHeader={
-          <View style={styles.transactionSection}>
+          <View>
             <View style={styles.transactionSummaryPanel}>
               <MonthlySummary
                 balanceAmount={displayedSummary.balanceAmount}
                 balanceLabel={displayedSummary.balanceLabel}
+                calendarSummaryMode={calendarSummaryMode}
+                calendarSummaryBaseDay={calendarSummaryBaseDay}
+                onSelectSummaryMode={onSelectSummaryMode}
                 summaryLabel={displayedSummary.summaryLabel}
                 totalExpense={displayedSummary.totalExpense}
                 totalIncome={displayedSummary.totalIncome}
@@ -222,11 +236,8 @@ const getStyles = createThemeValue(() =>
     calendarAdSection: {
       gap: AppLayout.calendarGap,
     },
-    transactionSection: {
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderColor: getAppColors().border,
-    },
     adPanel: { flexShrink: 0 },
+    reservedAdPanel: { height: BannerAdLayout.height + StyleSheet.hairlineWidth },
     selectedDateHeader: {
       flexDirection: "row",
       alignItems: "center",
@@ -246,14 +257,12 @@ const getStyles = createThemeValue(() =>
       fontSize: MonthlySummaryUi.dateLabelFontSize,
     },
     transactionSummaryPanel: {
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderColor: getAppColors().border,
-      paddingVertical: AppLayout.compactGap,
+      paddingBottom: AppLayout.compactGap,
       paddingHorizontal: AppLayout.screenPadding,
     },
     error: {
       color: getAppColors().expense,
-      fontSize: 12,
+      fontSize: AppFontSize.caption,
     },
     errorRetry: {
       gap: 2,
@@ -267,7 +276,7 @@ const getStyles = createThemeValue(() =>
     },
     errorRetryLabel: {
       color: getAppColors().primary,
-      fontSize: 12,
+      fontSize: AppFontSize.caption,
       fontWeight: "700",
     },
   }),

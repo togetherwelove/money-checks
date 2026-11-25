@@ -1,3 +1,6 @@
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import { AllMenuIcons } from "../../constants/allMenu";
+import { getSettingsGroupStyles, SettingsGroupDesign } from "../../constants/settingsGroupStyles";
 import { useAppTheme } from "../../hooks/useAppTheme";
 import { Pressable, Text, View } from "react-native";
 import { AppSettingsUi } from "../../constants/appSettings";
@@ -10,23 +13,23 @@ import { Feather } from "../AppIcons";
 
 export function SettingsActionRow({
   label,
-  description,
   disabled = false,
   hasBadge = false,
   embeddedInNativeRow = false,
+  grouped = false,
   isLast = false,
   leadingIcon,
   trailingIcon = "chevron-right",
   onPress,
 }: {
   label: string;
-  description?: string;
   disabled?: boolean;
   hasBadge?: boolean;
   embeddedInNativeRow?: boolean;
+  grouped?: boolean;
   isLast?: boolean;
-  leadingIcon?: CategoryIconName;
-  trailingIcon?: "chevron-right" | "download";
+  leadingIcon?: CategoryIconName | typeof AllMenuIcons.excelExport;
+  trailingIcon?: "chevron-right" | "download" | null;
   onPress: () => void;
 }) {
   useAppTheme();
@@ -43,37 +46,53 @@ export function SettingsActionRow({
         getAppSettingsRowStyles().row,
         isLast && getAppSettingsRowStyles().lastRow,
         embeddedInNativeRow && getAppSettingsRowStyles().embeddedAction,
+        grouped && getSettingsGroupStyles().row,
         disabled && getAppSettingsRowStyles().disabled,
         pressed && getAppSettingsRowStyles().pressed,
       ]}
     >
-      {leadingIcon ? (
+      {leadingIcon === AllMenuIcons.excelExport ? (
+        <MaterialCommunityIcons
+          name={AllMenuIcons.excelExport}
+          size={grouped ? SettingsGroupDesign.iconSize : AppSettingsUi.selectionChevronIconSize}
+          color={getAppColors().text}
+        />
+      ) : leadingIcon ? (
         <Feather
           name={leadingIcon}
-          size={AppSettingsUi.selectionChevronIconSize}
+          size={grouped ? SettingsGroupDesign.iconSize : AppSettingsUi.selectionChevronIconSize}
           color={getAppColors().text}
         />
       ) : (
-        <View accessible={false} style={getAppSettingsRowStyles().leadingIconSpace} />
+        <View
+          accessible={false}
+          style={
+            grouped
+              ? getSettingsGroupStyles().leadingIconSpace
+              : getAppSettingsRowStyles().leadingIconSpace
+          }
+        />
       )}
-      <View style={getAppSettingsRowStyles().textBlock}>
-        <Text {...CompactTextProps} style={getAppSettingsRowStyles().title}>
+      <View
+        style={[getAppSettingsRowStyles().textBlock, grouped && getSettingsGroupStyles().textBlock]}
+      >
+        <Text
+          {...CompactTextProps}
+          style={[getAppSettingsRowStyles().title, grouped && getSettingsGroupStyles().label]}
+        >
           {label}
         </Text>
-        {description ? (
-          <Text {...CompactTextProps} style={getAppSettingsRowStyles().description}>
-            {description}
-          </Text>
-        ) : null}
       </View>
       {hasBadge ? (
         <View accessible={false} style={getAppSettingsRowStyles().notificationDot} />
       ) : null}
-      <Feather
-        name={trailingIcon}
-        size={AppSettingsUi.selectionChevronIconSize}
-        color={getAppColors().mutedStrongText}
-      />
+      {trailingIcon ? (
+        <Feather
+          name={trailingIcon}
+          size={grouped ? SettingsGroupDesign.iconSize : AppSettingsUi.selectionChevronIconSize}
+          color={getAppColors().mutedStrongText}
+        />
+      ) : null}
     </Pressable>
   );
 }

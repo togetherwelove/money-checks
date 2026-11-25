@@ -1,5 +1,10 @@
 import { AssetConfig } from "../constants/assets";
-import type { AssetDraft, AssetPortfolio, AssetValuation, PersonalAsset } from "../types/asset";
+import type {
+  AssetDraft,
+  AssetPortfolio,
+  AssetValuation,
+  PersonalAsset,
+} from "../types/asset";
 import type { AssetMovement } from "../types/assetLink";
 import { loanSettingsError } from "../utils/loanRepayment";
 import { assetDraftError, assetToday } from "../utils/assets";
@@ -18,7 +23,10 @@ async function readAllRows<T>(
 ): Promise<T[]> {
   const rows: T[] = [];
   for (let offset = 0; ; offset += AssetConfig.historyPageSize) {
-    let query = supabase.from(table).select("*").eq("book_id", bookId);
+    let query = supabase
+      .from(table)
+      .select("*")
+      .eq("book_id", bookId);
     for (const column of AssetTableOrderColumns[table]) query = query.order(column);
     const { data, error } = await query.range(offset, offset + AssetConfig.historyPageSize - 1);
     if (error) {
@@ -37,11 +45,14 @@ export async function fetchPersonalAssets(bookId: string): Promise<AssetPortfoli
   ]);
   return { assets, valuations, movements };
 }
+
+
 export async function savePersonalAsset(
   id: string | null,
   draft: AssetDraft,
   bookId: string,
   shared = false,
+  replaceBalance = true,
 ) {
   const validation = assetDraftError(draft) ?? loanSettingsError(draft);
   if (validation) throw new Error(validation);
@@ -53,7 +64,7 @@ export async function savePersonalAsset(
     p_name: draft.name.trim(),
     p_note: draft.note,
     p_date: draft.date,
-    p_details: draft,
+    p_details: { ...draft, replaceBalance },
   });
   if (error) throw error;
 }

@@ -1,3 +1,6 @@
+import { AppFontSize, AppLineHeight } from "../../constants/typography";
+import { SettingsGroup } from "../appSettings/SettingsGroup";
+import { getSettingsGroupStyles } from "../../constants/settingsGroupStyles";
 import { createThemeValue } from "../../lib/appTheme";
 import { useAppTheme } from "../../hooks/useAppTheme";
 import { useState } from "react";
@@ -5,11 +8,7 @@ import { StyleSheet, Text, TextInput, View } from "react-native";
 
 import { getAppColors } from "../../constants/colors";
 import { AccountDeletionMessages } from "../../constants/accountDeletion";
-import {
-  getCompactLabelTextStyle,
-  getFormInputTextStyle,
-  StatusMessageTextStyle,
-} from "../../constants/uiStyles";
+import { getCompactLabelTextStyle, StatusMessageTextStyle } from "../../constants/uiStyles";
 import { deleteOwnAccount } from "../../lib/auth/deleteAccount";
 import { ActionButton } from "../ActionButton";
 import { NativePickerSheet } from "../NativePickerSheet";
@@ -64,19 +63,23 @@ export function DeleteAccountModal({ isOpen, onClose }: DeleteAccountModalProps)
       <Text style={styles.warning}>
         계정 삭제 시 프로필, 가계부 기록, 참여 정보가 완전히 삭제돼요. 이 작업은 되돌릴 수 없어요.
       </Text>
-      <Text style={styles.label}>확인 문구</Text>
-      <TextInput
-        editable={!isDeleting}
-        onChangeText={(value) => {
-          setConfirmText(value);
-          if (statusMessage) {
-            setStatusMessage(null);
-          }
-        }}
-        placeholder="'삭제'를 입력하면 계정이 완전히 삭제돼요."
-        style={styles.input}
-        value={confirmText}
-      />
+      <SettingsGroup>
+        <View style={getSettingsGroupStyles().body}>
+          <Text style={styles.label}>확인 문구</Text>
+          <TextInput
+            editable={!isDeleting}
+            onChangeText={(value) => {
+              setConfirmText(value);
+              if (statusMessage) {
+                setStatusMessage(null);
+              }
+            }}
+            placeholder="'삭제'를 입력하면 계정이 완전히 삭제돼요."
+            style={styles.input}
+            value={confirmText}
+          />
+        </View>
+      </SettingsGroup>
       {statusMessage ? <Text style={styles.status}>{statusMessage}</Text> : null}
       <View style={styles.actionRow}>
         <ActionButton
@@ -104,12 +107,12 @@ const getStyles = createThemeValue(() =>
   StyleSheet.create({
     warning: {
       color: getAppColors().expense,
-      fontSize: 12,
-      lineHeight: 18,
+      fontSize: AppFontSize.caption,
+      lineHeight: AppLineHeight.caption,
       fontWeight: "700",
     },
     label: getCompactLabelTextStyle(),
-    input: getFormInputTextStyle(),
+    input: getSettingsGroupStyles().input,
     status: {
       color: getAppColors().expense,
       ...StatusMessageTextStyle,

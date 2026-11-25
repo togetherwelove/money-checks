@@ -1,6 +1,7 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 const { modules } = require("./annualReportHelpers.cjs");
+const { AppFontSize } = require("./typographyTestValues.cjs");
 
 const jsx = (type, props) => ({ type, props });
 const modifierNames = [
@@ -125,9 +126,16 @@ for (const platform of ["ios", "android"]) {
       const pickerModifiers = picker.props.modifiers;
       assert.deepEqual(
         Array.from(pickerModifiers, (modifier) => modifier.name),
-        ["pickerStyle", "controlSize", "glassEffect", "disabled"],
+        ["pickerStyle", "font", "controlSize", "glassEffect", "disabled"],
       );
-      assert.equal(pickerModifiers[1].value, "regular");
+      assert.equal(
+        pickerModifiers.find((modifier) => modifier.name === "controlSize").value,
+        "regular",
+      );
+      assert.equal(
+        pickerModifiers.find((modifier) => modifier.name === "font").value.size,
+        AppFontSize.label,
+      );
       const pickerHost = active.all.find(
         (node) => node.type === "Host" && node.props.children.type === "Picker",
       );

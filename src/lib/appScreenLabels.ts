@@ -10,7 +10,7 @@ export const AppScreenLabels: Record<LedgerAppScreen, string> = {
   "all-menu": "메뉴",
   "app-settings": "화면·표시 설정",
   calendar: AppMessages.calendarTab,
-  charts: "차트",
+  charts: AppMessages.chartScreenTitle,
   "contact-support": "개발자 문의",
   entry: "입출금 등록",
   help: "도움말",

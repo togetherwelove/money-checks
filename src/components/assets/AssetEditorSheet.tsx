@@ -10,14 +10,13 @@ import {
   assetKind,
   createAssetDraft,
   draftFromAsset,
-  formatAssetAmount,
+  assetAmount,
 } from "../../utils/assets";
 import { NativeSelectionSheet } from "../NativeSelectionSheet";
 import { KeyboardAwareScrollView } from "../KeyboardAwareScrollView";
 import { AssetDraftFields } from "./AssetDraftFields";
 import { editableLoanSettings, loanSettingsError } from "../../utils/loanRepayment";
 import { AssetLinkCopy } from "../../constants/assetLink";
-import type { AssetMovement } from "../../types/assetLink";
 
 export function AssetEditorSheet({
   asset,
@@ -27,7 +26,6 @@ export function AssetEditorSheet({
   currentAmount,
   userId,
   bookId,
-  movements = [],
 }: {
   asset: PersonalAsset | null;
   history: AssetValuation[];
@@ -36,7 +34,6 @@ export function AssetEditorSheet({
   currentAmount?: number;
   userId?: string;
   bookId: string;
-  movements?: AssetMovement[];
 }) {
   useAppTheme();
   const [initial] = useState(() =>
@@ -44,7 +41,7 @@ export function AssetEditorSheet({
       asset && history[0]
         ? {
             ...draftFromAsset(asset, history[0]),
-            ...((asset.kind === "cash" || asset.kind === "loan") && currentAmount !== undefined
+            ...(asset.kind !== "property" && currentAmount !== undefined
               ? { amount: String(currentAmount) }
               : {}),
           }
@@ -79,7 +76,14 @@ export function AssetEditorSheet({
     setError(null);
     try {
       if (remove && asset) await deletePersonalAsset(asset.id);
-      else await savePersonalAsset(asset?.id ?? null, draft, bookId, shared);
+      else
+        await savePersonalAsset(
+          asset?.id ?? null,
+          draft,
+          bookId,
+          shared,
+          !asset || assetAmount(draft) !== assetAmount(initial),
+        );
     } catch {
       setError(remove ? Copy.deleteError : Copy.saveError);
       savingRef.current = false;
@@ -101,7 +105,7 @@ export function AssetEditorSheet({
           ? undefined
           : {
               label: Copy.save,
-              disabled: readOnly || Boolean(validation),
+              disabled: Boolean(validation),
               loading: saving,
               onPress: () => {
                 void persist();
@@ -175,35 +179,6 @@ export function AssetEditorSheet({
           <Text accessibilityRole="alert" style={getAssetStyles().error}>
             {error}
           </Text>
-        ) : null}
-        {history.length ? (
-          <View style={getAssetStyles().section}>
-            <Text style={getAssetStyles().title}>{Copy.history}</Text>
-            <Text style={getAssetStyles().hint}>{Copy.historyHint}</Text>
-            {history.map((value) => (
-              <View key={value.id} style={getAssetStyles().row}>
-                <Text style={getAssetStyles().hint}>
-                  {value.valued_on}
-                  {Copy.separator}
-                  {Copy.manual}
-                </Text>
-                <Text style={getAssetStyles().text}>{formatAssetAmount(Number(value.amount))}</Text>
-              </View>
-            ))}
-          </View>
-        ) : null}
-        {movements.length ? (
-          <View style={getAssetStyles().section}>
-            <Text style={getAssetStyles().title}>{AssetLinkCopy.movementHistory}</Text>
-            {movements.map((movement) => (
-              <View key={movement.entry_id} style={getAssetStyles().row}>
-                <Text style={getAssetStyles().hint}>{movement.occurred_on}</Text>
-                <Text style={getAssetStyles().text}>
-                  {formatAssetAmount(Number(movement.amount))}
-                </Text>
-              </View>
-            ))}
-          </View>
         ) : null}
         {asset && !readOnly ? (
           <Pressable

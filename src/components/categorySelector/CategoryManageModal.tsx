@@ -1,3 +1,5 @@
+import { AppFontSize } from "../../constants/typography";
+import { getSettingsGroupStyles, SettingsGroupDesign } from "../../constants/settingsGroupStyles";
 import { createThemeValue } from "../../lib/appTheme";
 import { useAppTheme } from "../../hooks/useAppTheme";
 import { NativeSelectionSheet } from "../NativeSelectionSheet";
@@ -101,6 +103,7 @@ export function CategoryManageModal({
             columns,
             listScrollYRef.current,
             listViewportHeightRef.current,
+            SettingsGroupDesign.titleGap,
           ),
         });
       }, CATEGORY_MANAGE_SCROLL_SETTLE_DELAY_MS);
@@ -271,24 +274,26 @@ export function CategoryManageModal({
           }}
           showsVerticalScrollIndicator
         >
-          <View
-            style={{ height: isLoading ? 0 : gridHeight }}
-            onLayout={(event) => setGridWidth(event.nativeEvent.layout.width)}
-          >
-            {!isLoading &&
-              orderedCategories.map((category, index) => (
-                <CategoryManageTile
-                  onEdit={onEdit}
-                  onDelete={onDelete}
-                  disabled={saving || isBusy || isLoading}
-                  category={category}
-                  cellSize={cellSize}
-                  position={resolveCategoryGridPosition(index, cellSize, columns)}
-                  isSelected={category.id === selectedCategoryId}
-                  key={category.id}
-                  onPress={() => selectCategory(category.id)}
-                />
-              ))}
+          <View style={styles.gridCard}>
+            <View
+              style={{ height: isLoading ? 0 : gridHeight }}
+              onLayout={(event) => setGridWidth(event.nativeEvent.layout.width)}
+            >
+              {!isLoading &&
+                orderedCategories.map((category, index) => (
+                  <CategoryManageTile
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                    disabled={saving || isBusy || isLoading}
+                    category={category}
+                    cellSize={cellSize}
+                    position={resolveCategoryGridPosition(index, cellSize, columns)}
+                    isSelected={category.id === selectedCategoryId}
+                    key={category.id}
+                    onPress={() => selectCategory(category.id)}
+                  />
+                ))}
+            </View>
           </View>
         </ScrollView>
         <View style={styles.moveActionRow}>
@@ -366,6 +371,7 @@ const getStyles = createThemeValue(() =>
     saveError: { ...getSupportingTextStyle(), color: getAppColors().expense },
     sheet: { flex: 1, padding: AppLayout.cardContentPadding, gap: AppLayout.cardGap },
     list: { flex: 1 },
+    gridCard: { ...getSettingsGroupStyles().card, padding: SettingsGroupDesign.titleGap },
     moveActionRow: {
       flexDirection: "row",
       gap: AppLayout.cardGap,
@@ -385,7 +391,7 @@ const getStyles = createThemeValue(() =>
     },
     moveButtonText: {
       color: getAppColors().onPrimary,
-      fontSize: 14,
+      fontSize: AppFontSize.body,
       fontWeight: "800",
     },
     disabledMoveButtonText: {

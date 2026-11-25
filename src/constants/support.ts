@@ -1,3 +1,4 @@
+import { AppFontSize } from "./typography";
 import { createThemeValue } from "../lib/appTheme";
 import { getAppColors } from "./colors";
 
@@ -67,8 +68,8 @@ export const SupportUi = {
   iconContainerRadius: 8,
   iconContainerSize: 40,
   iconSize: 24,
-  priceLabelFontSize: 14,
+  priceLabelFontSize: AppFontSize.body,
   rowGap: 12,
-  subtitleFontSize: 12,
-  titleFontSize: 16,
+  subtitleFontSize: AppFontSize.caption,
+  titleFontSize: AppFontSize.label,
 } as const;

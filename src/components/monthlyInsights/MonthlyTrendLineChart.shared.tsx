@@ -2,7 +2,7 @@ import { createThemeValue } from "../../lib/appTheme";
 import { useAppTheme } from "../../hooks/useAppTheme";
 import { useCallback, useEffect, useState } from "react";
 import Svg, { Circle, G, Line } from "react-native-svg";
-import { type StyleProp, StyleSheet, Pressable, Text, type TextStyle, View } from "react-native";
+import { StyleSheet, Pressable, Text, View } from "react-native";
 
 import { getAppColors } from "../../constants/colors";
 import { getCardTitleTextStyle, getCompactLabelTextStyle } from "../../constants/uiStyles";
@@ -11,7 +11,6 @@ import {
   MonthlyInsightChartLayout,
 } from "../../constants/monthlyInsightCharts";
 import { CompactTextProps, OneLineTextFitProps } from "../../constants/textLayout";
-import { useExpenseTextColor } from "../../contexts/ExpenseTextColorContext";
 import type { MonthlyTrendPoint } from "../../types/ledger";
 import { formatChartAxisCurrency } from "../../utils/currency";
 import { TrendChartTooltip } from "./TrendChartTooltip";
@@ -36,7 +35,6 @@ export function MonthlyTrendLineChart({
   }, [trendMonths, title]);
   const selectedIndex = trendMonths.findIndex((point) => point.key === selectedKey);
   const selectedPoint = selectedIndex >= 0 ? trendMonths[selectedIndex] : undefined;
-  const expenseTextStyle = useExpenseTextColor().textStyle;
   const dataMaximum = Math.max(
     ...trendMonths.flatMap((point) => [point.incomeAmount, point.expenseAmount]),
     0,
@@ -53,12 +51,11 @@ export function MonthlyTrendLineChart({
           {title}
         </Text>
         <View style={styles.legend}>
-          <LegendItem color={getAppColors().income} label={MonthlyInsightChartCopy.incomeLabel} />
           <LegendItem
             color={getAppColors().expense}
             label={MonthlyInsightChartCopy.expenseLabel}
-            textStyle={expenseTextStyle}
           />
+          <LegendItem color={getAppColors().income} label={MonthlyInsightChartCopy.incomeLabel} />
         </View>
       </View>
       <View style={styles.chartFrame}>
@@ -234,21 +231,13 @@ function TrendLine({
   );
 }
 
-function LegendItem({
-  color,
-  label,
-  textStyle,
-}: {
-  color: string;
-  label: string;
-  textStyle?: StyleProp<TextStyle>;
-}) {
+function LegendItem({ color, label }: { color: string; label: string }) {
   const styles = getStyles();
   useAppTheme();
   return (
     <View style={styles.legendItem}>
       <View style={[styles.legendDot, { backgroundColor: color }]} />
-      <Text {...CompactTextProps} style={[styles.legendText, textStyle]}>
+      <Text {...CompactTextProps} style={styles.legendText}>
         {label}
       </Text>
     </View>

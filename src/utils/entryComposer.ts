@@ -7,9 +7,10 @@ export function hasEntryComposerValues(
   draft: LedgerEntryDraft,
   selectedDate: string,
   defaultMemberId: string,
+  defaultCashAssetId?: string | null,
 ) {
   return Boolean(
-    draft.assetLink?.cashAssetId ||
+    (draft.assetLink?.cashAssetId && draft.assetLink.cashAssetId !== defaultCashAssetId) ||
       draft.assetLink?.loanAssetId ||
       draft.amount ||
       draft.content ||

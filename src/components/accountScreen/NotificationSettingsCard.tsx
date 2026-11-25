@@ -1,15 +1,13 @@
+import { SettingsGroup } from "../appSettings/SettingsGroup";
+import { getSettingsGroupStyles } from "../../constants/settingsGroupStyles";
 import { createThemeValue } from "../../lib/appTheme";
 import { useAppTheme } from "../../hooks/useAppTheme";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { getMenuStyles } from "../../constants/menuStyles";
 import { Feather } from "../AppIcons";
 
-import { AppSettingsUi } from "../../constants/appSettings";
-import { getAppSettingsRowStyles } from "../../constants/appSettingsStyles";
 import { getAppColors } from "../../constants/colors";
 import { AppLayout } from "../../constants/layout";
 import { AppTextBreakProps } from "../../constants/textLayout";
-import { getSupportingTextStyle } from "../../constants/uiStyles";
 import type { NotificationPermissionState } from "../../lib/notifications/pushNotifications";
 import {
   NotificationSettingsUi,
@@ -56,13 +54,12 @@ export function NotificationSettingsCard({
 
   return (
     <View style={styles.card}>
-      <View style={styles.permissionList}>
+      <SettingsGroup description={statusMessage ?? undefined}>
         {isPermissionGranted ? (
           <View style={styles.permissionRow}>
             <NotificationPermissionContent
               permissionLabel={permissionLabel}
               shouldShowChevron={false}
-              statusMessage={statusMessage}
             />
           </View>
         ) : (
@@ -71,14 +68,10 @@ export function NotificationSettingsCard({
             onPress={onOpenDeviceNotificationSettings}
             style={({ pressed }) => [styles.permissionRow, pressed ? styles.pressedRow : null]}
           >
-            <NotificationPermissionContent
-              permissionLabel={permissionLabel}
-              shouldShowChevron
-              statusMessage={statusMessage}
-            />
+            <NotificationPermissionContent permissionLabel={permissionLabel} shouldShowChevron />
           </Pressable>
         )}
-      </View>
+      </SettingsGroup>
       <View style={styles.preferenceBlock}>
         {preferenceGroups.map((group) => (
           <NotificationPreferenceGroup
@@ -98,11 +91,9 @@ export function NotificationSettingsCard({
 function NotificationPermissionContent({
   permissionLabel,
   shouldShowChevron,
-  statusMessage,
 }: {
   permissionLabel: string;
   shouldShowChevron: boolean;
-  statusMessage: string | null;
 }) {
   const styles = getStyles();
   useAppTheme();
@@ -112,11 +103,6 @@ function NotificationPermissionContent({
         <Text {...AppTextBreakProps} style={styles.label}>
           {NotificationUiCopy.permissionSectionTitle}
         </Text>
-        {statusMessage ? (
-          <Text {...AppTextBreakProps} style={styles.statusText}>
-            {statusMessage}
-          </Text>
-        ) : null}
       </View>
       <View style={styles.permissionAction}>
         <Text {...AppTextBreakProps} numberOfLines={1} style={styles.value}>
@@ -137,18 +123,9 @@ function NotificationPermissionContent({
 const getStyles = createThemeValue(() =>
   StyleSheet.create({
     card: {
-      gap: AppSettingsUi.sectionGap,
+      gap: getSettingsGroupStyles().sections.gap,
     },
-    permissionList: getMenuStyles().group,
-    permissionRow: {
-      ...getMenuStyles().row,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: 12,
-      borderBottomWidth: 0,
-      minHeight: AppSettingsUi.rowMinHeight,
-    },
+    permissionRow: getSettingsGroupStyles().row,
     pressedRow: {
       backgroundColor: getAppColors().surfaceMuted,
     },
@@ -157,22 +134,16 @@ const getStyles = createThemeValue(() =>
       gap: 4,
       minWidth: 0,
     },
-    label: getAppSettingsRowStyles().title,
-    value: {
-      color: getAppColors().text,
-      flexShrink: 1,
-      fontSize: 13,
-      fontWeight: "700",
-    },
+    label: getSettingsGroupStyles().label,
+    value: { ...getSettingsGroupStyles().value, flexShrink: 1 },
     permissionAction: {
       flexDirection: "row",
       alignItems: "center",
       gap: AppLayout.compactGap,
       flexShrink: 0,
     },
-    statusText: getSupportingTextStyle(),
     preferenceBlock: {
-      gap: AppSettingsUi.sectionSpacing,
+      gap: getSettingsGroupStyles().sections.gap,
     },
   }),
 );

@@ -7,6 +7,8 @@ import { StyleSheet, Text, View } from "react-native";
 import { ChartMonthPager } from "../components/chartScreen/ChartMonthPager";
 import { ChartMonthPageContent } from "../components/chartScreen/ChartMonthPageContent";
 import { getAppColors } from "../constants/colors";
+import { BannerAdLayout } from "../constants/ads";
+import type { OpenReportCategoryEntries } from "../constants/allEntries";
 import type { LedgerScreenState } from "../hooks/useLedgerScreenState";
 import { MonthlyInsightChartCopy } from "../constants/monthlyInsightCharts";
 import { getCompactLabelTextStyle } from "../constants/uiStyles";
@@ -15,10 +17,18 @@ import { CompactTextProps } from "../constants/textLayout";
 type ChartScreenProps = {
   renderScreenTitle: (titleLabel: string) => ReactNode;
   showsBannerAd: boolean;
+  reservesBannerAdSpace?: boolean;
   state: LedgerScreenState;
+  onOpenReportCategoryEntries?: OpenReportCategoryEntries;
 };
 
-export function ChartScreen({ renderScreenTitle, showsBannerAd, state }: ChartScreenProps) {
+export function ChartScreen({
+  onOpenReportCategoryEntries,
+  renderScreenTitle,
+  showsBannerAd,
+  reservesBannerAdSpace = showsBannerAd,
+  state,
+}: ChartScreenProps) {
   const styles = getStyles();
   useAppTheme();
   const bannerAd = useMemo(() => (showsBannerAd ? <AppBannerAd /> : null), [showsBannerAd]);
@@ -33,9 +43,12 @@ export function ChartScreen({ renderScreenTitle, showsBannerAd, state }: ChartSc
 
   return (
     <View style={styles.screen}>
-      <View style={styles.adSlot}>{bannerAd}</View>
+      <View style={[styles.adSlot, reservesBannerAdSpace && styles.reservedAdSlot]}>
+        {bannerAd}
+      </View>
       {state.currentChartMonth.scope === "all" ? (
         <ChartMonthPageContent
+          onOpenReportCategoryEntries={onOpenReportCategoryEntries}
           activeBookId={state.activeBook?.id ?? null}
           month={state.currentChartMonth}
           screenTitle={renderScreenTitle(state.currentChartMonth.title)}
@@ -46,6 +59,8 @@ export function ChartScreen({ renderScreenTitle, showsBannerAd, state }: ChartSc
             {MonthlyInsightChartCopy.swipeHint}
           </Text>
           <ChartMonthPager
+            isActive={!state.isLoading && !state.isLoadingChartEntries}
+            onOpenReportCategoryEntries={onOpenReportCategoryEntries}
             activeBookId={state.activeBook?.id ?? null}
             currentMonth={state.currentChartMonth}
             nextMonth={state.nextChartMonth}
@@ -76,6 +91,7 @@ const getStyles = createThemeValue(() =>
   StyleSheet.create({
     swipeHint: { ...getCompactLabelTextStyle(), textAlign: "center" },
     adSlot: { flexShrink: 0 },
+    reservedAdSlot: { height: BannerAdLayout.height + StyleSheet.hairlineWidth },
     pagerLayer: {
       flex: 1,
       minHeight: 0,

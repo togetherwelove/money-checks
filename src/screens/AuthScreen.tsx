@@ -1,3 +1,4 @@
+import { AppFontSize, AppLineHeight } from "../constants/typography";
 import { createThemeValue } from "../lib/appTheme";
 import { useAppTheme } from "../hooks/useAppTheme";
 import { useEffect, useRef, useState } from "react";
@@ -366,13 +367,13 @@ const getStyles = createThemeValue(() =>
     },
     brand: {
       color: getAppColors().mutedText,
-      fontSize: 12,
+      fontSize: AppFontSize.caption,
       fontWeight: "700",
       letterSpacing: 0.4,
     },
     title: {
       color: getAppColors().text,
-      fontSize: 28,
+      fontSize: AppFontSize.display,
       fontWeight: "800",
     },
     titleHighlight: {
@@ -380,8 +381,8 @@ const getStyles = createThemeValue(() =>
     },
     subtitle: {
       color: getAppColors().mutedText,
-      fontSize: 14,
-      lineHeight: 20,
+      fontSize: AppFontSize.body,
+      lineHeight: AppLineHeight.body,
     },
     supportCard: {
       alignItems: "center",
@@ -396,13 +397,13 @@ const getStyles = createThemeValue(() =>
     },
     backLinkText: {
       color: getAppColors().mutedStrongText,
-      fontSize: 13,
+      fontSize: AppFontSize.body,
       fontWeight: "700",
       textDecorationLine: "underline",
     },
     supportLabel: {
       color: getAppColors().mutedStrongText,
-      fontSize: 11,
+      fontSize: AppFontSize.caption,
       fontWeight: "600",
       textAlign: "center",
     },

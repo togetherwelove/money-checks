@@ -1,3 +1,5 @@
+import { SettingsGroup } from "../appSettings/SettingsGroup";
+import { getSettingsGroupStyles } from "../../constants/settingsGroupStyles";
 import { createThemeValue } from "../../lib/appTheme";
 import { useAppTheme } from "../../hooks/useAppTheme";
 import { NativePickerSheet } from "../NativePickerSheet";
@@ -17,7 +19,6 @@ import {
 } from "../../constants/categorySelector";
 import { getAppColors } from "../../constants/colors";
 import {
-  getFormInputTextStyle,
   getFormLabelTextStyle,
   ModalActionRowStyle,
   StatusMessageTextStyle,
@@ -64,48 +65,52 @@ export function CategoryCreateModal({
       title={title}
       onShow={() => inputRef.current?.focus()}
     >
-      <View style={styles.fieldGroup}>
-        <Text style={styles.label}>{CategoryCustomizerCopy.createIconLabel}</Text>
-        <View style={styles.iconGrid}>
-          {CATEGORY_ICON_PICKER_OPTIONS.map((nextIconName) => (
-            <Pressable
-              key={nextIconName}
-              disabled={isBusy}
-              onPress={() => onChangeIcon(nextIconName)}
-              style={[
-                styles.iconButton,
-                iconName === nextIconName ? styles.activeIconButton : null,
-              ]}
-            >
-              <Feather
-                color={
-                  iconName === nextIconName ? getAppColors().primary : getAppColors().mutedText
-                }
-                name={nextIconName}
-                size={18}
-              />
-            </Pressable>
-          ))}
+      <SettingsGroup>
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>{CategoryCustomizerCopy.createIconLabel}</Text>
+          <View style={styles.iconGrid}>
+            {CATEGORY_ICON_PICKER_OPTIONS.map((nextIconName) => (
+              <Pressable
+                key={nextIconName}
+                disabled={isBusy}
+                onPress={() => onChangeIcon(nextIconName)}
+                style={[
+                  styles.iconButton,
+                  iconName === nextIconName ? styles.activeIconButton : null,
+                ]}
+              >
+                <Feather
+                  color={
+                    iconName === nextIconName ? getAppColors().primary : getAppColors().mutedText
+                  }
+                  name={nextIconName}
+                  size={18}
+                />
+              </Pressable>
+            ))}
+          </View>
         </View>
-      </View>
+      </SettingsGroup>
 
-      <View style={styles.fieldGroup}>
-        <Text style={styles.label}>{CategoryCustomizerCopy.createNameLabel}</Text>
-        <TextInput
-          editable={!isBusy}
-          blurOnSubmit
-          maxLength={CUSTOM_CATEGORY_MAX_NAME_LENGTH}
-          onChangeText={onChangeLabel}
-          onSubmitEditing={handleSubmit}
-          placeholder={CategoryCustomizerCopy.namePlaceholder}
-          placeholderTextColor={getAppColors().mutedStrongText}
-          ref={inputRef}
-          returnKeyType="done"
-          style={styles.input}
-          value={label}
-        />
-        {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
-      </View>
+      <SettingsGroup>
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>{CategoryCustomizerCopy.createNameLabel}</Text>
+          <TextInput
+            editable={!isBusy}
+            blurOnSubmit
+            maxLength={CUSTOM_CATEGORY_MAX_NAME_LENGTH}
+            onChangeText={onChangeLabel}
+            onSubmitEditing={handleSubmit}
+            placeholder={CategoryCustomizerCopy.namePlaceholder}
+            placeholderTextColor={getAppColors().mutedStrongText}
+            ref={inputRef}
+            returnKeyType="done"
+            style={styles.input}
+            value={label}
+          />
+          {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+        </View>
+      </SettingsGroup>
 
       <View style={styles.actionRow}>
         <ActionButton
@@ -134,9 +139,7 @@ export function CategoryCreateModal({
 
 const getStyles = createThemeValue(() =>
   StyleSheet.create({
-    fieldGroup: {
-      gap: 8,
-    },
+    fieldGroup: getSettingsGroupStyles().body,
     label: getFormLabelTextStyle(),
     iconGrid: {
       flexDirection: "row",
@@ -158,7 +161,7 @@ const getStyles = createThemeValue(() =>
       borderColor: getAppColors().primary,
       backgroundColor: getAppColors().surfaceStrong,
     },
-    input: getFormInputTextStyle(),
+    input: getSettingsGroupStyles().input,
     errorText: {
       ...StatusMessageTextStyle,
       color: getAppColors().expense,

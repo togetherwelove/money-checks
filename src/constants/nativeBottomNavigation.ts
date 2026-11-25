@@ -1,8 +1,12 @@
 import { getAppScreenLabel } from "../lib/appScreenLabels";
 import { AppMessages } from "./messages";
 import { AssetCopy } from "./assets";
+import { AppFontSize } from "./typography";
 
-export const NativeBottomNavigationUi = { badgeDot: " " } as const;
+export const NativeBottomNavigationUi = {
+  badgeDot: " ",
+  labelStyle: { fontSize: AppFontSize.caption },
+} as const;
 
 export const NativeBottomNavigationTabs = [
   {

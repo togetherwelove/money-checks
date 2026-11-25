@@ -1,14 +1,16 @@
+import { SettingsGroupDesign } from "../../constants/settingsGroupStyles";
+import { AllEntriesCategoryGroup } from "./AllEntriesCategoryGroup";
+import { AllEntriesPeriodFilter } from "./AllEntriesPeriodFilter";
+import type { AllEntriesDateRange } from "../../constants/allEntries";
 import { createThemeValue } from "../../lib/appTheme";
 import { useAppTheme } from "../../hooks/useAppTheme";
 import { NativeSelectionSheet } from "../NativeSelectionSheet";
 import { AppScrollBehavior } from "../../constants/scroll";
-import { Feather } from "../AppIcons";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import {
   type AllEntriesEntryTypeFilter,
-  AllEntriesEntryTypeFilterOptions,
   AllEntriesEntryTypeFilters,
   AllEntriesFilterCopy,
   AllEntriesFilterUi,
@@ -16,58 +18,46 @@ import {
 } from "../../constants/allEntries";
 import { getAppColors } from "../../constants/colors";
 import { AppLayout } from "../../constants/layout";
-import {
-  countAllEntriesFilters,
-  filterCategoriesByEntryType,
-  pruneCategoryIdsForEntryType,
-} from "../../lib/allEntriesFilters";
+import { countAllEntriesFilters } from "../../lib/allEntriesFilters";
 import type { CategoryDefinition } from "../../types/category";
-import type { LedgerEntryType } from "../../types/ledger";
 
 type AllEntriesFilterSheetProps = {
+  dateRange?: AllEntriesDateRange | null;
   categories: readonly CategoryDefinition[];
-  entryTypeFilter: AllEntriesEntryTypeFilter;
   onApply: (
     entryTypeFilter: AllEntriesEntryTypeFilter,
     selectedCategoryIds: readonly string[],
+    dateRange: AllEntriesDateRange | null,
   ) => void;
   onClose: () => void;
   selectedCategoryIds: readonly string[];
 };
 
 export function AllEntriesFilterSheet({
+  dateRange = null,
   categories,
-  entryTypeFilter,
   onApply,
   onClose,
   selectedCategoryIds,
 }: AllEntriesFilterSheetProps) {
+  const [draftDateRange, setDraftDateRange] = useState(dateRange);
   const styles = getStyles();
   useAppTheme();
-  const [draftEntryTypeFilter, setDraftEntryTypeFilter] =
-    useState<AllEntriesEntryTypeFilter>(entryTypeFilter);
   const [draftCategoryIds, setDraftCategoryIds] = useState<string[]>([...selectedCategoryIds]);
   const selectedCategoryIdSet = useMemo(() => new Set(draftCategoryIds), [draftCategoryIds]);
-  const visibleCategories = useMemo(
-    () => filterCategoriesByEntryType(categories, draftEntryTypeFilter),
-    [categories, draftEntryTypeFilter],
-  );
   const expenseCategories = useMemo(
-    () => visibleCategories.filter((category) => category.type === "expense"),
-    [visibleCategories],
+    () => categories.filter((category) => category.type === "expense"),
+    [categories],
   );
   const incomeCategories = useMemo(
-    () => visibleCategories.filter((category) => category.type === "income"),
-    [visibleCategories],
+    () => categories.filter((category) => category.type === "income"),
+    [categories],
   );
-  const filterCount = countAllEntriesFilters(draftEntryTypeFilter, draftCategoryIds);
-
-  const changeEntryTypeFilter = (nextEntryTypeFilter: AllEntriesEntryTypeFilter) => {
-    setDraftEntryTypeFilter(nextEntryTypeFilter);
-    setDraftCategoryIds((currentCategoryIds) =>
-      pruneCategoryIdsForEntryType(categories, currentCategoryIds, nextEntryTypeFilter),
-    );
-  };
+  const filterCount = countAllEntriesFilters(
+    AllEntriesEntryTypeFilters.all,
+    draftCategoryIds,
+    draftDateRange,
+  );
 
   const toggleCategory = (categoryId: string) => {
     setDraftCategoryIds((currentCategoryIds) =>
@@ -78,8 +68,8 @@ export function AllEntriesFilterSheet({
   };
 
   const resetDraftFilters = () => {
-    setDraftEntryTypeFilter(AllEntriesEntryTypeFilters.all);
     setDraftCategoryIds([]);
+    setDraftDateRange(null);
   };
 
   return (
@@ -90,45 +80,11 @@ export function AllEntriesFilterSheet({
       action={{
         label: formatAllEntriesApplyLabel(filterCount),
         onPress: () => {
-          onApply(draftEntryTypeFilter, draftCategoryIds);
+          onApply(AllEntriesEntryTypeFilters.all, draftCategoryIds, draftDateRange);
           onClose();
         },
       }}
     >
-      <View style={styles.typeFilterRow}>
-        <View style={styles.typeOptions}>
-          {AllEntriesEntryTypeFilterOptions.map((option) => (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ selected: draftEntryTypeFilter === option.value }}
-              key={option.value}
-              onPress={() => changeEntryTypeFilter(option.value)}
-              style={[
-                styles.typeOption,
-                draftEntryTypeFilter === option.value ? styles.selectedOption : null,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.typeOptionLabel,
-                  draftEntryTypeFilter === option.value ? styles.selectedOptionLabel : null,
-                ]}
-              >
-                {option.label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={AllEntriesFilterCopy.resetLabel}
-          onPress={resetDraftFilters}
-          style={({ pressed }) => [styles.resetButton, pressed ? styles.pressed : null]}
-        >
-          <Text style={styles.resetLabel}>{AllEntriesFilterCopy.resetLabel}</Text>
-        </Pressable>
-      </View>
-
       <ScrollView
         {...AppScrollBehavior}
         style={styles.scroll}
@@ -136,9 +92,23 @@ export function AllEntriesFilterSheet({
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        <AllEntriesPeriodFilter
+          range={draftDateRange}
+          onChange={setDraftDateRange}
+          headingAction={
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={AllEntriesFilterCopy.resetDraftAccessibilityLabel}
+              onPress={resetDraftFilters}
+              style={({ pressed }) => [styles.resetButton, pressed ? styles.pressed : null]}
+            >
+              <Text style={styles.resetLabel}>{AllEntriesFilterCopy.resetDraftLabel}</Text>
+            </Pressable>
+          }
+        />
         <View style={styles.section}>
           {expenseCategories.length > 0 ? (
-            <CategoryGroup
+            <AllEntriesCategoryGroup
               categories={expenseCategories}
               onToggle={toggleCategory}
               selectedCategoryIdSet={selectedCategoryIdSet}
@@ -147,7 +117,7 @@ export function AllEntriesFilterSheet({
             />
           ) : null}
           {incomeCategories.length > 0 ? (
-            <CategoryGroup
+            <AllEntriesCategoryGroup
               categories={incomeCategories}
               onToggle={toggleCategory}
               selectedCategoryIdSet={selectedCategoryIdSet}
@@ -161,71 +131,9 @@ export function AllEntriesFilterSheet({
   );
 }
 
-function CategoryGroup({
-  categories,
-  onToggle,
-  selectedCategoryIdSet,
-  title,
-  type,
-}: {
-  categories: readonly CategoryDefinition[];
-  onToggle: (categoryId: string) => void;
-  selectedCategoryIdSet: ReadonlySet<string>;
-  title: string;
-  type: LedgerEntryType;
-}) {
-  const styles = getStyles();
-  useAppTheme();
-  return (
-    <View style={styles.categoryGroup}>
-      <Text accessibilityRole="header" style={styles.categoryGroupTitle}>
-        {title}
-      </Text>
-      <View style={styles.categoryGrid}>
-        {categories.map((category) => {
-          const selected = selectedCategoryIdSet.has(category.id);
-          return (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ selected }}
-              key={category.id}
-              onPress={() => onToggle(category.id)}
-              style={[styles.categoryChip, selected ? styles.selectedOption : null]}
-            >
-              <Feather
-                color={selected ? getAppColors().onPrimary : resolveCategoryColor(type)}
-                name={category.iconName}
-                size={AllEntriesFilterUi.categoryIconSize}
-              />
-              <Text
-                numberOfLines={1}
-                style={[styles.categoryChipLabel, selected ? styles.selectedOptionLabel : null]}
-              >
-                {category.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-    </View>
-  );
-}
-
-function resolveCategoryColor(type: LedgerEntryType): string {
-  return type === "income" ? getAppColors().income : getAppColors().expense;
-}
-
 const getStyles = createThemeValue(() =>
   StyleSheet.create({
     scroll: { flex: 1 },
-    typeFilterRow: {
-      alignItems: "center",
-      flexDirection: "row",
-      gap: AppLayout.cardGap,
-      paddingTop: AppLayout.cardGap,
-      paddingHorizontal: AppLayout.cardContentPadding,
-      flexShrink: 0,
-    },
     resetButton: {
       justifyContent: "center",
       minHeight: AllEntriesFilterUi.filterButtonMinimumHeight,
@@ -237,72 +145,13 @@ const getStyles = createThemeValue(() =>
       fontWeight: "700",
     },
     scrollContent: {
-      gap: AppLayout.cardContentPadding,
+      gap: SettingsGroupDesign.sectionGap,
       paddingTop: AppLayout.cardGap,
       paddingBottom: AppLayout.cardContentPadding,
       paddingHorizontal: AppLayout.cardContentPadding,
     },
     section: {
-      gap: AppLayout.cardGap,
-    },
-    typeOptions: {
-      backgroundColor: getAppColors().surfaceStrong,
-      borderRadius: AllEntriesFilterUi.categoryChipRadius,
-      flexDirection: "row",
-      flex: 1,
-      minWidth: 0,
-      padding: AppLayout.compactGap,
-    },
-    typeOption: {
-      alignItems: "center",
-      borderRadius: AllEntriesFilterUi.categoryChipRadius,
-      flex: 1,
-      justifyContent: "center",
-      minHeight: AllEntriesFilterUi.typeOptionMinimumHeight,
-    },
-    typeOptionLabel: {
-      color: getAppColors().mutedText,
-      fontSize: AllEntriesFilterUi.typeOptionFontSize,
-      fontWeight: "700",
-    },
-    selectedOption: {
-      backgroundColor: getAppColors().primary,
-      borderColor: getAppColors().primary,
-    },
-    selectedOptionLabel: {
-      color: getAppColors().onPrimary,
-    },
-    categoryGroup: {
-      gap: AppLayout.compactGap,
-    },
-    categoryGroupTitle: {
-      color: getAppColors().mutedStrongText,
-      fontSize: AllEntriesFilterUi.sectionLabelFontSize,
-      fontWeight: "700",
-    },
-    categoryGrid: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      gap: AppLayout.compactGap,
-    },
-    categoryChip: {
-      alignItems: "center",
-      backgroundColor: getAppColors().surface,
-      borderColor: getAppColors().border,
-      borderRadius: AllEntriesFilterUi.categoryChipRadius,
-      borderWidth: 1,
-      flexDirection: "row",
-      gap: AppLayout.compactGap,
-      maxWidth: "100%",
-      minHeight: AllEntriesFilterUi.categoryChipMinimumHeight,
-      paddingHorizontal: AllEntriesFilterUi.categoryChipHorizontalPadding,
-    },
-    categoryChipLabel: {
-      color: getAppColors().text,
-      flexShrink: 1,
-      fontSize: AllEntriesFilterUi.categoryLabelFontSize,
-      fontWeight: "700",
-      maxWidth: "100%",
+      gap: SettingsGroupDesign.sectionGap,
     },
     pressed: {
       opacity: 0.7,

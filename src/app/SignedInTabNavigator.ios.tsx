@@ -22,6 +22,7 @@ export function SignedInTabNavigator(props: SignedInTabNavigatorProps) {
         headerShown: false,
         lazy: false,
         tabBarActiveTintColor: getAppColors().primary,
+        tabBarLabelStyle: Ui.labelStyle,
         tabBarMinimizeBehavior: "none",
         tabBarControllerMode: "tabBar",
         overrideScrollViewContentInsetAdjustmentBehavior: false,

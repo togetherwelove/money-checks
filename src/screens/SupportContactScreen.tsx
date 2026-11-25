@@ -1,27 +1,22 @@
+import { AppFontSize } from "../constants/typography";
+import { useSupportContactHeader } from "../hooks/useSupportContactHeader";
+import { useSupportContactDraft } from "../hooks/useSupportContactDraft";
+import { AppLayout } from "../constants/layout";
+import { BottomContentInsetContext } from "../contexts/BottomContentInsetContext";
+import { SettingsGroup } from "../components/appSettings/SettingsGroup";
+import { getSettingsGroupStyles, SettingsGroupDesign } from "../constants/settingsGroupStyles";
 import { createThemeValue } from "../lib/appTheme";
 import { useAppTheme } from "../hooks/useAppTheme";
-import { type ReactNode, useState } from "react";
+import type { ReactNode } from "react";
 import { Image, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import { getMenuStyles } from "../constants/menuStyles";
 import { AppScrollBehavior } from "../constants/scroll";
 
-import { ActionButton } from "../components/ActionButton";
 import { AppFooterContentInset } from "../components/AppFooterContentInset";
 import { IconActionButton } from "../components/IconActionButton";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { TextLinkButton } from "../components/TextLinkButton";
 import { getAppColors } from "../constants/colors";
-import {
-  getFormInputTextStyle,
-  getFormMultilineInputTextStyle,
-  getSupportingTextStyle,
-} from "../constants/uiStyles";
-import { showNativeToast } from "../lib/nativeToast";
-import {
-  type SupportAttachment,
-  composeSupportMail,
-  pickSupportAttachments,
-} from "../lib/supportContact";
+import { getSupportingTextStyle } from "../constants/uiStyles";
 
 type SupportContactScreenProps = {
   email: string;
@@ -31,116 +26,107 @@ type SupportContactScreenProps = {
 export function SupportContactScreen({ email, screenTitle }: SupportContactScreenProps) {
   const styles = getStyles();
   useAppTheme();
-  const [attachments, setAttachments] = useState<SupportAttachment[]>([]);
-  const [messageBody, setMessageBody] = useState("");
-  const [subject, setSubject] = useState("");
-
-  const handlePickAttachments = async () => {
-    try {
-      const nextAttachments = await pickSupportAttachments();
-      if (nextAttachments.length > 0) {
-        setAttachments((currentAttachments) => [...currentAttachments, ...nextAttachments]);
-      }
-    } catch {
-      showNativeToast("사진을 불러오지 못했어요.");
-    }
-  };
-
-  const handleSendSupportMail = async () => {
-    if (!subject.trim()) {
-      showNativeToast("문의 제목을 입력해 주세요.");
-      return;
-    }
-
-    if (!messageBody.trim()) {
-      showNativeToast("문의 내용을 입력해 주세요.");
-      return;
-    }
-
-    try {
-      await composeSupportMail({
-        attachments,
-        body: messageBody.trim(),
-        subject: subject.trim(),
-        userEmail: email,
-      });
-    } catch (error) {
-      showNativeToast(error instanceof Error ? error.message : "문의 메일을 준비하지 못했어요.");
-    }
-  };
+  const {
+    attachments,
+    subject,
+    messageBody,
+    setSubject,
+    setMessageBody,
+    removeAttachment,
+    handlePickAttachments,
+    handleSendSupportMail,
+    isBusy,
+  } = useSupportContactDraft(email);
+  useSupportContactHeader(
+    handleSendSupportMail,
+    !isBusy && Boolean(subject.trim() && messageBody.trim()),
+  );
 
   return (
-    <KeyboardAwareScrollView contentContainerStyle={styles.content} style={styles.screen}>
-      {screenTitle}
-      <View style={styles.card}>
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>가입 이메일</Text>
-          <Text style={styles.emailValue}>{email}</Text>
-        </View>
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>제목</Text>
-          <TextInput
-            onChangeText={setSubject}
-            placeholder="문의 제목을 입력해 주세요"
-            style={styles.input}
-            value={subject}
-          />
-        </View>
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>내용</Text>
-          <TextInput
-            multiline
-            onChangeText={setMessageBody}
-            placeholder="문제 상황이나 개선 요청을 자세히 적어 주세요"
-            style={[styles.input, styles.bodyInput]}
-            textAlignVertical="top"
-            value={messageBody}
-          />
-        </View>
-        <View style={styles.fieldGroup}>
-          <View style={styles.attachmentHeader}>
-            <View style={styles.attachmentHeaderInfo}>
-              <IconActionButton
-                accessibilityLabel="사진 고르기"
-                icon="paperclip"
-                onPress={handlePickAttachments}
-                size="compact"
+    <BottomContentInsetContext.Provider value={AppLayout.cardContentPadding}>
+      <KeyboardAwareScrollView contentContainerStyle={styles.content} style={styles.screen}>
+        {screenTitle}
+        <View style={getSettingsGroupStyles().sections}>
+          <SettingsGroup>
+            <View style={getSettingsGroupStyles().row}>
+              <Text style={getSettingsGroupStyles().label}>가입 이메일</Text>
+              <Text
+                selectable
+                numberOfLines={1}
+                ellipsizeMode="middle"
+                accessibilityLabel={email}
+                style={styles.emailValue}
+              >
+                {email}
+              </Text>
+            </View>
+          </SettingsGroup>
+          <SettingsGroup>
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>제목</Text>
+              <TextInput
+                editable={!isBusy}
+                placeholderTextColor={getAppColors().mutedStrongText}
+                onChangeText={setSubject}
+                placeholder="문의 제목을 입력해 주세요"
+                style={styles.input}
+                value={subject}
               />
             </View>
-            <Text style={styles.attachmentCount}>{`첨부 ${attachments.length}개`}</Text>
-          </View>
-          {attachments.length > 0 ? (
-            <ScrollView
-              {...AppScrollBehavior}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.attachmentList}
-            >
-              {attachments.map((attachment) => (
-                <View key={attachment.uri} style={styles.attachmentCard}>
-                  <Image source={{ uri: attachment.uri }} style={styles.attachmentImage} />
-                  <Text numberOfLines={1} style={styles.attachmentName}>
-                    {attachment.fileName}
-                  </Text>
-                  <TextLinkButton
-                    label="삭제"
-                    onPress={() =>
-                      setAttachments((currentAttachments) =>
-                        currentAttachments.filter(
-                          (currentAttachment) => currentAttachment.uri !== attachment.uri,
-                        ),
-                      )
-                    }
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>내용</Text>
+              <TextInput
+                editable={!isBusy}
+                multiline
+                placeholderTextColor={getAppColors().mutedStrongText}
+                onChangeText={setMessageBody}
+                placeholder="문제 상황이나 개선 요청을 자세히 적어 주세요"
+                style={[styles.input, styles.bodyInput]}
+                textAlignVertical="top"
+                value={messageBody}
+              />
+            </View>
+            <View style={styles.fieldGroup}>
+              <View style={styles.attachmentHeader}>
+                <View style={styles.attachmentHeaderInfo}>
+                  <IconActionButton
+                    disabled={isBusy}
+                    accessibilityLabel="사진 고르기"
+                    icon="paperclip"
+                    onPress={handlePickAttachments}
+                    size="compact"
                   />
                 </View>
-              ))}
-            </ScrollView>
-          ) : null}
+                <Text style={styles.attachmentCount}>{`첨부 ${attachments.length}개`}</Text>
+              </View>
+              {attachments.length > 0 ? (
+                <ScrollView
+                  {...AppScrollBehavior}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.attachmentList}
+                >
+                  {attachments.map((attachment) => (
+                    <View key={attachment.uri} style={styles.attachmentCard}>
+                      <Image source={{ uri: attachment.uri }} style={styles.attachmentImage} />
+                      <Text numberOfLines={1} style={styles.attachmentName}>
+                        {attachment.fileName}
+                      </Text>
+                      <TextLinkButton
+                        label="삭제"
+                        disabled={isBusy}
+                        onPress={() => removeAttachment(attachment.uri)}
+                      />
+                    </View>
+                  ))}
+                </ScrollView>
+              ) : null}
+            </View>
+          </SettingsGroup>
         </View>
-        <ActionButton label="메일 전송하기" onPress={handleSendSupportMail} variant="primary" />
-      </View>
-      <AppFooterContentInset />
-    </KeyboardAwareScrollView>
+        <AppFooterContentInset />
+      </KeyboardAwareScrollView>
+    </BottomContentInsetContext.Provider>
   );
 }
 
@@ -151,26 +137,17 @@ const getStyles = createThemeValue(() =>
       backgroundColor: getAppColors().screenBackground,
     },
     content: {
-      ...getMenuStyles().content,
+      ...getSettingsGroupStyles().page,
       flexGrow: 1,
     },
-    card: {
-      ...getMenuStyles().panel,
-    },
-    fieldGroup: {
-      gap: getMenuStyles().textBlock.gap,
-    },
-    label: getMenuStyles().title,
-    input: getFormInputTextStyle(),
+    fieldGroup: getSettingsGroupStyles().field,
+    label: getSettingsGroupStyles().description,
+    input: getSettingsGroupStyles().input,
     bodyInput: {
-      ...getFormMultilineInputTextStyle(),
-      minHeight: 144,
+      ...getSettingsGroupStyles().input,
+      minHeight: SettingsGroupDesign.multilineMinHeight,
     },
-    emailValue: {
-      ...getSupportingTextStyle(),
-      color: getAppColors().text,
-      fontWeight: "700",
-    },
+    emailValue: { ...getSettingsGroupStyles().value, flex: 1, minWidth: 0, textAlign: "right" },
     attachmentHeader: {
       flexDirection: "row",
       alignItems: "center",
@@ -202,7 +179,7 @@ const getStyles = createThemeValue(() =>
     },
     attachmentName: {
       color: getAppColors().text,
-      fontSize: 11,
+      fontSize: AppFontSize.caption,
       fontWeight: "600",
     },
   }),

@@ -1,5 +1,6 @@
 export const LedgerQueryConfig = {
   allEntriesPageSize: 30,
+  filteredTotalsPageSize: 500,
   calendarBackgroundPreloadDelayMs: 600,
   realtimeRefreshDelayMs: 250,
 } as const;

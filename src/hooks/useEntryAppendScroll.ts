@@ -83,10 +83,19 @@ export function useEntryAppendScroll<T extends AppendScrollable>(
     cancelPendingScroll: cancel,
     suppressPagination,
     onLayout: (event: LayoutChangeEvent) => {
-      size.current.viewport = event.nativeEvent.layout.height;
+      const height = event.nativeEvent.layout.height;
+      if (size.current.viewport !== height && timer.current !== null) {
+        clearTimeout(timer.current);
+        timer.current = null;
+      }
+      size.current.viewport = height;
       revealAppend();
     },
     onContentSizeChange: (_width: number, height: number) => {
+      if (size.current.content !== height && timer.current !== null) {
+        clearTimeout(timer.current);
+        timer.current = null;
+      }
       size.current.content = height;
       revealAppend();
     },

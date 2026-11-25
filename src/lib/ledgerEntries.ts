@@ -1,8 +1,9 @@
+import type { LedgerEntryType } from "../types/ledger";
 import {
   DEFAULT_MEMBER_DISPLAY_NAME,
   DELETED_MEMBER_DISPLAY_NAME,
 } from "../constants/ledgerDisplay";
-import { LedgerEntrySelectColumns } from "../constants/ledgerQueries";
+import { LedgerQueryConfig, LedgerEntrySelectColumns } from "../constants/ledgerQueries";
 import type { LedgerEntry } from "../types/ledger";
 import type {
   EnrichedLedgerEntryRow,
@@ -112,6 +113,10 @@ export async function fetchLedgerEntriesPage(
     categoryIds?: readonly string[];
     orderBy?: LedgerEntryOrderBy;
     searchQuery?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    entryType?: LedgerEntryType;
+    signal?: AbortSignal;
   },
 ): Promise<{
   entries: LedgerEntry[];
@@ -129,25 +134,49 @@ export async function fetchLedgerEntriesPage(
   const normalizedSearchQuery = normalizeLedgerEntrySearchQuery(searchQuery);
   const usesOffsetPagination = Boolean(normalizedSearchQuery);
   const pageOffset = usesOffsetPagination ? (cursor?.offset ?? 0) : 0;
-  const rows = await fetchEnrichedLedgerEntryRows(bookId, {
-    ascending,
-    categoryIds,
-    cursor: usesOffsetPagination || orderBy !== "created_at" ? null : cursor,
-    limit: limit + 1,
-    orderBy,
-    pageOffset,
-    searchQuery: normalizedSearchQuery,
-  });
-  const visibleRows = rows.slice(0, limit);
+  const matchingRows: EnrichedLedgerEntryRow[] = [];
+  const matchedOffsets: number[] = [];
+  let scanCursor = usesOffsetPagination ? null : cursor;
+  let scanOffset = pageOffset;
+  while (matchingRows.length <= limit) {
+    if (params.signal?.aborted) throw new Error("Aborted");
+    const rows = await fetchEnrichedLedgerEntryRows(bookId, {
+      ascending,
+      categoryIds,
+      dateFrom: params.dateFrom,
+      dateTo: params.dateTo,
+      cursor: orderBy === "created_at" ? scanCursor : null,
+      limit: params.entryType
+        ? Math.max(limit + 1, LedgerQueryConfig.filteredTotalsPageSize)
+        : limit + 1,
+      signal: params.signal,
+      orderBy,
+      pageOffset: scanOffset,
+      searchQuery: normalizedSearchQuery,
+    });
+    if (!rows.length) break;
+    rows.forEach((row, index) => {
+      if (!params.entryType || row.entry_type === params.entryType) {
+        matchingRows.push(row);
+        matchedOffsets.push(scanOffset + index + 1);
+      }
+    });
+    if (!params.entryType || matchingRows.length > limit) break;
+    const last = rows[rows.length - 1];
+    if (scanCursor?.id === last.id) throw new Error("Repeated ledger page");
+    scanCursor = { createdAt: last.created_at, id: last.id };
+    if (usesOffsetPagination || orderBy !== "created_at") scanOffset += rows.length;
+  }
+  const visibleRows = matchingRows.slice(0, limit);
   const lastRow = visibleRows[visibleRows.length - 1];
   return {
     entries: await mapEnrichedLedgerEntries(visibleRows, { includePhotoAttachments: false }),
-    hasMore: rows.length > limit,
+    hasMore: matchingRows.length > limit,
     nextCursor: lastRow
       ? {
           createdAt: lastRow.created_at,
           id: lastRow.id,
-          offset: usesOffsetPagination ? pageOffset + visibleRows.length : undefined,
+          offset: usesOffsetPagination ? matchedOffsets[visibleRows.length - 1] : undefined,
         }
       : null,
   };
@@ -157,7 +186,7 @@ function normalizeLedgerEntrySearchQuery(searchQuery?: string): string {
   return searchQuery?.trim() ?? "";
 }
 
-async function fetchEnrichedLedgerEntryRows(
+export async function fetchEnrichedLedgerEntryRows(
   bookId: string,
   params: {
     ascending: boolean;
@@ -170,6 +199,7 @@ async function fetchEnrichedLedgerEntryRows(
     orderBy: LedgerEntryOrderBy;
     pageOffset?: number;
     searchQuery?: string;
+    signal?: AbortSignal;
   },
 ): Promise<EnrichedLedgerEntryRow[]> {
   const commonRpcParams = {
@@ -185,7 +215,7 @@ async function fetchEnrichedLedgerEntryRows(
     search_query: params.searchQuery ?? null,
     target_book_id: bookId,
   };
-  const query =
+  let query =
     params.categoryIds === undefined
       ? supabase.rpc(GET_ENRICHED_LEDGER_ENTRIES_FUNCTION, {
           ...commonRpcParams,
@@ -195,6 +225,7 @@ async function fetchEnrichedLedgerEntryRows(
           ...commonRpcParams,
           category_filters: params.categoryIds.length > 0 ? [...new Set(params.categoryIds)] : null,
         });
+  if (params.signal) query = query.abortSignal(params.signal);
   const { data, error } = await query.returns<EnrichedLedgerEntryRow[]>();
 
   if (error) {

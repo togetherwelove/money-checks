@@ -10,6 +10,7 @@ import { EntryComposerHeader } from "./entryComposer/EntryComposerHeader";
 
 export type SheetHeaderAction = {
   label: string;
+  icon?: "check" | "plus";
   onPress: () => void;
   disabled?: boolean;
   loading?: boolean;
@@ -25,6 +26,7 @@ export function NativeSelectionSheet({
   dismissible = true,
   requiresCloseConfirmation = false,
   header,
+  centerContent,
   action,
 }: {
   children: ReactNode;
@@ -36,6 +38,7 @@ export function NativeSelectionSheet({
   dismissible?: boolean;
   requiresCloseConfirmation?: boolean;
   header?: ReactNode;
+  centerContent?: ReactNode;
   action?: SheetHeaderAction;
 }) {
   const styles = getStyles();
@@ -67,11 +70,13 @@ export function NativeSelectionSheet({
             {header ?? (
               <EntryComposerHeader
                 title={title}
+                centerContent={centerContent}
                 saving={!canDismiss}
                 onClose={() => {
                   if (canDismiss) onClose();
                 }}
                 actionLabel={action?.label}
+                actionIcon={action?.icon}
                 actionDisabled={action?.disabled}
                 onAction={
                   action

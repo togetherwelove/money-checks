@@ -1,4 +1,12 @@
 export const LedgerBookManagementCopy = {
+  currentBookTitle: "현재 가계부",
+  otherBooksTitle: "다른 가계부",
+  readOnlyBadge: "조회 전용",
+  manageMembersAction: "가계부·멤버 관리",
+  renameAction: "가계부 이름 수정",
+  renamePlaceholder: "가계부 이름 입력",
+  cancelAction: "취소",
+
   createAction: "가계부 추가",
   createError: "가계부를 만들지 못했어요. 구독을 복원한 뒤 다시 시도해주세요.",
   createConfirmMessageSuffix: "가계부를 추가할까요?",

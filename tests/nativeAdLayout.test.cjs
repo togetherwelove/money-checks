@@ -1,6 +1,7 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 const { modules } = require("./annualReportHelpers.cjs");
+const { getThemeTestMock } = require("./themeTestMocks.cjs");
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
@@ -8,7 +9,7 @@ const ts = require("typescript");
 const ads = {
   exports: {},
   process: { env: {} },
-  require: () => modules()("src/constants/layout.ts"),
+  require: (name) => getThemeTestMock(name) ?? modules()("src/constants/layout.ts"),
 };
 vm.runInNewContext(
   ts.transpileModule(fs.readFileSync(path.join(__dirname, "../src/constants/ads.ts"), "utf8"), {

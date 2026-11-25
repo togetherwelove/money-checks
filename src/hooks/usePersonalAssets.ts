@@ -3,13 +3,20 @@ import { useIsFocused } from "@react-navigation/native";
 import { AppState } from "react-native";
 import { AssetCopy } from "../constants/assets";
 import { fetchPersonalAssets } from "../lib/personalAssets";
+import { fetchLedgerBookMembers } from "../lib/ledgerBooks";
+import type { LedgerBookMember } from "../types/ledgerBookMember";
 import type { AssetPortfolio } from "../types/asset";
 
 const emptyPortfolio: AssetPortfolio = { assets: [], valuations: [] };
+const emptyMembers: LedgerBookMember[] = [];
 
 export function usePersonalAssets(bookId: string) {
   const focused = useIsFocused();
-  const [snapshot, setSnapshot] = useState({ bookId, portfolio: emptyPortfolio });
+  const [snapshot, setSnapshot] = useState({
+    bookId,
+    portfolio: emptyPortfolio,
+    members: emptyMembers,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const generation = useRef(0);
@@ -18,8 +25,11 @@ export function usePersonalAssets(bookId: string) {
     setLoading(true);
     setError(null);
     try {
-      const portfolio = await fetchPersonalAssets(bookId);
-      if (request === generation.current) setSnapshot({ bookId, portfolio });
+      const [portfolio, members] = await Promise.all([
+        fetchPersonalAssets(bookId),
+        fetchLedgerBookMembers(bookId),
+      ]);
+      if (request === generation.current) setSnapshot({ bookId, portfolio, members });
     } catch {
       if (request === generation.current) setError(AssetCopy.loadError);
     } finally {
@@ -39,6 +49,7 @@ export function usePersonalAssets(bookId: string) {
   }, [focused, refresh]);
   return {
     portfolio: snapshot.bookId === bookId ? snapshot.portfolio : emptyPortfolio,
+    members: snapshot.bookId === bookId ? snapshot.members : emptyMembers,
     loading,
     error,
     refresh,

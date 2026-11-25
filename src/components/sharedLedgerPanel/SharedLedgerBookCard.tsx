@@ -1,12 +1,13 @@
+import { AppTextBreakProps } from "../../constants/textLayout";
+import { getSettingsGroupStyles, SettingsGroupDesign } from "../../constants/settingsGroupStyles";
 import { useAppTheme } from "../../hooks/useAppTheme";
 import { Feather } from "../AppIcons";
 import { useEffect, useRef, useState } from "react";
-import { Text, TextInput, View } from "react-native";
+import { Text, View } from "react-native";
 
 import { getAppColors } from "../../constants/colors";
 import { AppMessages } from "../../constants/messages";
 import { ShareLedgerMessages } from "../../constants/shareLedgerMessages";
-import { SharedLedgerPanelUi } from "../../constants/sharedLedgerPanel";
 import { copyLedgerShareCode } from "../../lib/copyLedgerShareCode";
 import type { LedgerBook } from "../../types/ledgerBook";
 import type {
@@ -14,43 +15,33 @@ import type {
   LedgerBookJoinRequest,
 } from "../../types/ledgerBookJoinRequest";
 import { ActionButton } from "../ActionButton";
-import { IconActionButton } from "../IconActionButton";
 import { LedgerBookJoinRequests } from "../LedgerBookJoinRequests";
 import { getSharedLedgerPanelStyles } from "./sharedLedgerPanelStyles";
 
 type SharedLedgerBookCardProps = {
+  showJoinRequests?: boolean;
   activeBook: LedgerBook | null;
-  bookName: string | null;
-  bookNameInput: string;
-  canEditBookName: boolean;
   currentUserId: string;
   isOwner: boolean;
   isReadOnlyDueToPlanLimit: boolean;
   onApproveJoinRequest: (requestId: string) => Promise<LedgerBookJoinApprovalAttempt>;
   onBeforeCopyShareCode: () => Promise<void> | void;
-  onChangeBookName: (value: string) => void;
   onRejectJoinRequest: (requestId: string) => Promise<boolean>;
-  onSaveBookName: () => Promise<boolean>;
   pendingJoinRequests: LedgerBookJoinRequest[];
 };
 
 export function SharedLedgerBookCard({
+  showJoinRequests = true,
   activeBook,
-  bookName,
-  bookNameInput,
-  canEditBookName,
   currentUserId,
   isOwner,
   isReadOnlyDueToPlanLimit,
   onApproveJoinRequest,
   onBeforeCopyShareCode,
-  onChangeBookName,
   onRejectJoinRequest,
-  onSaveBookName,
   pendingJoinRequests,
 }: SharedLedgerBookCardProps) {
   useAppTheme();
-  const [isEditingBookName, setIsEditingBookName] = useState(false);
   const [isCopying, setIsCopying] = useState(false);
   const copyInProgress = useRef(false);
   const mounted = useRef(true);
@@ -63,8 +54,7 @@ export function SharedLedgerBookCard({
     };
   }, []);
   const shareCode = activeBook?.shareCode ?? null;
-  const shouldShowJoinRequests = isOwner && Boolean(pendingJoinRequests.length);
-  const hasDetails = Boolean(shareCode || shouldShowJoinRequests);
+  const shouldShowJoinRequests = showJoinRequests && isOwner && Boolean(pendingJoinRequests.length);
 
   const handleCopyShareCode = async () => {
     if (!shareCode || isReadOnlyDueToPlanLimit || copyInProgress.current) {
@@ -89,129 +79,39 @@ export function SharedLedgerBookCard({
     }
   };
 
-  const handleStartEditingBookName = () => {
-    setIsEditingBookName(true);
-  };
-
-  const handleCancelEditingBookName = () => {
-    onChangeBookName(bookName ?? "나의 가계부");
-    setIsEditingBookName(false);
-  };
-
-  const handleSaveBookNamePress = () => {
-    void onSaveBookName().then((didSave) => {
-      if (didSave) {
-        setIsEditingBookName(false);
-      }
-    });
-  };
-
   return (
-    <View
-      style={[getSharedLedgerPanelStyles().section, getSharedLedgerPanelStyles().primarySection]}
-    >
-      <View
-        style={[
-          getSharedLedgerPanelStyles().sectionHeader,
-          hasDetails ? null : getSharedLedgerPanelStyles().sectionBottomInset,
-        ]}
-      >
-        {canEditBookName ? (
-          isEditingBookName ? (
-            <View style={getSharedLedgerPanelStyles().bookNameEditRow}>
-              <TextInput
-                autoCapitalize="words"
-                autoComplete="off"
-                autoCorrect={false}
-                importantForAutofill="no"
-                onChangeText={onChangeBookName}
-                onSubmitEditing={handleSaveBookNamePress}
-                placeholder="가계부 이름 입력"
-                returnKeyType="done"
-                spellCheck={false}
-                style={getSharedLedgerPanelStyles().bookNameHeaderInput}
-                submitBehavior="blurAndSubmit"
-                textContentType="none"
-                value={bookNameInput}
-              />
-              <View style={getSharedLedgerPanelStyles().bookNameActionSlot}>
-                <Text
-                  onPress={handleCancelEditingBookName}
-                  style={getSharedLedgerPanelStyles().bookNameCancelAction}
-                >
-                  취소
+    <View style={getSettingsGroupStyles().sections}>
+      {shareCode ? (
+        <View style={getSettingsGroupStyles().section}>
+          <ActionButton
+            shape="capsule"
+            label={ShareLedgerMessages.copyCodeAction}
+            labelContent={
+              <View style={getSharedLedgerPanelStyles().capsuleActionContent}>
+                <Feather
+                  color={getAppColors().text}
+                  name="copy"
+                  size={SettingsGroupDesign.iconSize}
+                />
+                <Text style={getSharedLedgerPanelStyles().capsuleActionText}>
+                  {ShareLedgerMessages.copyCodeAction}
                 </Text>
               </View>
-            </View>
-          ) : (
-            <View style={getSharedLedgerPanelStyles().bookNameRow}>
-              <Text numberOfLines={1} style={getSharedLedgerPanelStyles().bookName}>
-                {bookName ?? "나의 가계부"}
-              </Text>
-              <IconActionButton
-                accessibilityLabel="가계부 이름 수정"
-                icon="edit-3"
-                onPress={handleStartEditingBookName}
-                size="compact"
-              />
-            </View>
-          )
-        ) : (
-          <Text
-            numberOfLines={1}
-            style={[
-              getSharedLedgerPanelStyles().bookName,
-              getSharedLedgerPanelStyles().bookNameHeaderTitle,
-            ]}
-          >
-            {bookName ?? AppMessages.accountBookFallback}
-          </Text>
-        )}
-      </View>
-      {shareCode ? (
-        <View
-          style={[
-            getSharedLedgerPanelStyles().codeBlock,
-            shouldShowJoinRequests ? null : getSharedLedgerPanelStyles().sectionBottomInset,
-          ]}
-        >
-          <Text style={getSharedLedgerPanelStyles().helpText}>
+            }
+            onPress={() => {
+              void handleCopyShareCode();
+            }}
+            disabled={isReadOnlyDueToPlanLimit || isCopying}
+            loading={isCopying}
+            variant="secondary"
+          />
+          <Text {...AppTextBreakProps} style={getSettingsGroupStyles().caption}>
             {AppMessages.accountShareCodeHint}
           </Text>
-          <View style={getSharedLedgerPanelStyles().shareCodeRow}>
-            <ActionButton
-              fullWidth
-              label={ShareLedgerMessages.copyCodeAction}
-              labelContent={
-                <View style={getSharedLedgerPanelStyles().copyActionContent}>
-                  <Feather
-                    color={getAppColors().onPrimary}
-                    name="copy"
-                    size={SharedLedgerPanelUi.copyActionIconSize}
-                  />
-                  <Text style={getSharedLedgerPanelStyles().copyActionText}>
-                    {ShareLedgerMessages.copyCodeAction}
-                  </Text>
-                </View>
-              }
-              onPress={() => {
-                void handleCopyShareCode();
-              }}
-              disabled={isReadOnlyDueToPlanLimit || isCopying}
-              loading={isCopying}
-              variant="primary"
-            />
-          </View>
         </View>
       ) : null}
       {shouldShowJoinRequests ? (
-        <View
-          style={[
-            getSharedLedgerPanelStyles().sectionContent,
-            getSharedLedgerPanelStyles().subsection,
-            getSharedLedgerPanelStyles().sectionBottomInset,
-          ]}
-        >
+        <View style={[getSettingsGroupStyles().card, getSettingsGroupStyles().body]}>
           <LedgerBookJoinRequests
             disabled={isReadOnlyDueToPlanLimit}
             onApproveRequest={onApproveJoinRequest}

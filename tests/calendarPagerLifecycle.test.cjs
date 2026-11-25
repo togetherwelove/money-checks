@@ -3,6 +3,7 @@ const fs = require("node:fs");
 const vm = require("node:vm");
 const ts = require("typescript");
 const { test } = require("node:test");
+const { modules, currencyMock } = require("./annualReportHelpers.cjs");
 function load(file, dependencies) {
   const exports = {};
   vm.runInNewContext(
@@ -79,6 +80,7 @@ const jsx = (type, props, key) => ({ type, props, key });
 function mount() {
   const host = hookHost(),
     moves = [],
+    weekMoves = [],
     selected = [],
     resets = [];
   const { CalendarSwipeViewport } = load(
@@ -103,13 +105,19 @@ function mount() {
       { key: "11", height: 120 },
     ],
     onMoveMonth: (value) => moves.push(value),
+    onMoveWeekDate: (date) => weekMoves.push(date),
     onSelectDate: (date) => selected.push(date),
     onHeightChange() {},
+    collapsedWeeks: Array.from({ length: 3 }, () => ({ index: 0, top: 0, height: 50 })),
+    expanded: true,
+    weekSwipeDates: ["2026-09-24", "2026-10-01", "2026-10-08"],
+    expansionProgress: { interpolate: () => 0 },
+    onWeekLayout() {},
   };
   const render = () => host.render(() => CalendarSwipeViewport(props));
   const tree = render();
   tree.props.ref.current = { setPageWithoutAnimation: (value) => resets.push(value) };
-  return { props, moves, selected, resets, render, dispose: host.dispose };
+  return { props, moves, weekMoves, selected, resets, render, dispose: host.dispose };
 }
 const stateEvent = (pageScrollState) => ({ nativeEvent: { pageScrollState } });
 const selectedEvent = (position) => ({ nativeEvent: { position } });
@@ -121,6 +129,29 @@ test("calendar uses native horizontal paging with the current grid height", () =
   assert.equal(tree.props.orientation, "horizontal");
   assert.equal(tree.props.initialPage, 1);
   assert.equal(tree.props.style[1].height, 140);
+});
+
+test("opening and closing keeps the three native pages mounted on a full-height viewport", () => {
+  const ui = mount();
+  const monthly = ui.render();
+  const monthPages = ui.props.pages;
+  const pageKeys = (tree) => tree.props.children.map((page) => page.key);
+  for (let cycle = 0; cycle < 3; cycle++) {
+    ui.props.expanded = false;
+    ui.props.geometryKey = "week";
+    ui.props.pages = [monthPages[1], monthPages[1], monthPages[1]];
+    const weekly = ui.render();
+    assert.equal(weekly.key, monthly.key);
+    assert.deepEqual(pageKeys(weekly), pageKeys(monthly));
+    assert.equal(weekly.props.style[0].position, "absolute");
+    assert.equal(weekly.props.style[1].height, monthly.props.style[1].height);
+
+    ui.props.expanded = true;
+    ui.props.geometryKey = "month";
+    ui.props.pages = monthPages;
+    assert.deepEqual(pageKeys(ui.render()), pageKeys(monthly));
+  }
+  assert.deepEqual(ui.resets, []);
 });
 for (const [page, direction] of [
   [0, -1],
@@ -147,6 +178,35 @@ test("idle before page-selected still commits the final native scroll position",
   tree.props.onPageScroll(scrollEvent(2));
   tree.props.onPageScrollStateChanged(stateEvent("idle"));
   tree.props.onPageSelected(selectedEvent(2));
+  assert.deepEqual(ui.moves, [1]);
+});
+
+test("collapsed swipes select the previewed week without dispatching a month move", () => {
+  const ui = mount();
+  ui.props.expanded = false;
+  ui.props.geometryKey = "week";
+  const weekly = ui.render();
+  weekly.props.onPageScrollStateChanged(stateEvent("dragging"));
+  weekly.props.onPageScroll(scrollEvent(0));
+  weekly.props.onPageScrollStateChanged(stateEvent("idle"));
+  weekly.props.onPageScrollStateChanged(stateEvent("idle"));
+  assert.deepEqual(ui.weekMoves, ["2026-09-24"]);
+  assert.deepEqual(ui.moves, []);
+
+  ui.props.weekSwipeDates = ["2026-09-17", "2026-09-24", "2026-10-01"];
+  ui.props.geometryKey = "previous-week";
+  const previous = ui.render();
+  assert.equal(ui.resets.at(-1), 1);
+  previous.props.onPageScrollStateChanged(stateEvent("dragging"));
+  previous.props.onPageScroll(scrollEvent(2));
+  ui.props.expanded = true;
+  ui.props.geometryKey = "month";
+  const expanded = ui.render();
+  previous.props.onPageScrollStateChanged(stateEvent("idle"));
+  assert.deepEqual(ui.weekMoves, ["2026-09-24"]);
+  expanded.props.onPageScrollStateChanged(stateEvent("dragging"));
+  expanded.props.onPageScroll(scrollEvent(2));
+  expanded.props.onPageScrollStateChanged(stateEvent("idle"));
   assert.deepEqual(ui.moves, [1]);
 });
 test("a cancelled swipe keeps the month and does not select a date while dragging", () => {
@@ -197,6 +257,10 @@ test("geometry, focus, foreground, menu and data renders retain the viewport", (
     "react/jsx-runtime": { jsx, jsxs: jsx },
     "@react-navigation/native": { useIsFocused: () => focused },
     "react-native": {
+      Animated: { View: "AnimatedView" },
+      Pressable: "Pressable",
+      View: "View",
+      StyleSheet: { create: (styles) => styles },
       AppState: {
         currentState: "active",
         addEventListener(_, fn) {
@@ -209,17 +273,56 @@ test("geometry, focus, foreground, menu and data renders retain the viewport", (
         },
       },
     },
+    "../constants/authControls": { AuthControls: {} },
+    "../constants/colors": { getAppColors: () => ({}) },
+    "../constants/home": {
+      HomeScreenCopy: {},
+      HomeScreenUi: { calendarExpansionIconWidth: 18, calendarExpansionIconHeight: 7 },
+    },
+    "../constants/uiStyles": { FullBleedHorizontalStyle: {} },
+    "../hooks/useAppTheme": { useAppTheme() {} },
+    "../hooks/useCalendarExpansion": {
+      useCalendarExpansion() {
+        const [expanded, setExpanded] = host.react.useState(false);
+        return {
+          expanded,
+          progress: { interpolate: ({ outputRange }) => outputRange[expanded ? 1 : 0] },
+          toggle: () => setExpanded((value) => !value),
+        };
+      },
+    },
+    "./monthCalendarPager/calendarWeekCount": {
+      buildCalendarWeekNavigation: (pages) => ({ pages, dates: [] }),
+      resolveCollapsedCalendarWeek: (_days, height, _date, frames) => ({
+        index: 0,
+        top: 0,
+        height: frames?.[0]?.height ?? height / 5,
+      }),
+    },
     "./monthCalendarPager/CalendarSwipeViewport": { CalendarSwipeViewport: "Viewport" },
   });
   const props = {
-    previousPage: { key: "09", height: 100 },
-    currentPage: { key: "10", height: 100 },
-    nextPage: { key: "11", height: 100 },
+    previousPage: { key: "09", height: 100, summary: { days: [] } },
+    currentPage: { key: "10", height: 100, summary: { days: [] } },
+    nextPage: { key: "11", height: 100, summary: { days: [] } },
   };
-  const render = () => host.render(() => MonthCalendarPager(props));
+  const renderPanel = () => host.render(() => MonthCalendarPager(props));
+  const render = () => renderPanel().props.children[0].props.children;
   let tree = render(),
     key = tree.key,
     geometry = tree.props.geometryKey;
+  const collapsed = renderPanel();
+  assert.equal(collapsed.props.children[0].props.style[1].height, 20);
+  assert.equal(collapsed.props.children[1].props.accessibilityState.expanded, false);
+  tree.props.onWeekLayout("10", 0, { top: 0, height: 25 });
+  assert.equal(renderPanel().props.children[0].props.style[1].height, 25);
+  collapsed.props.children[1].props.onPress();
+  const expanded = renderPanel();
+  assert.equal(expanded.props.children[0].props.style[1].height, 100);
+  assert.notEqual(render().props.geometryKey, geometry);
+  expanded.props.children[1].props.onPress();
+  assert.equal(renderPanel().props.children[0].props.style[1].height, 25);
+  assert.equal(render().props.geometryKey, geometry);
   assert.equal(render().key, key);
   props.currentPage = { ...props.currentPage };
   assert.equal(render().key, key);
@@ -231,7 +334,7 @@ test("geometry, focus, foreground, menu and data renders retain the viewport", (
   assert.equal(tree.props.pages[0].height, 120);
   props.nextPage = props.currentPage;
   props.currentPage = props.previousPage;
-  props.previousPage = { key: "08", height: 100 };
+  props.previousPage = { key: "08", height: 100, summary: { days: [] } };
   tree = render();
   assert.equal(tree.key, key);
   assert.notEqual(tree.props.geometryKey, geometry);
@@ -249,4 +352,52 @@ test("geometry, focus, foreground, menu and data renders retain the viewport", (
   assert.equal(render().props.active, true);
   host.dispose();
   assert.equal(removed, true);
+});
+
+test("collapsed calendar uses today's week, follows a selected date, and ignores filler days", () => {
+  const { resolveCollapsedCalendarWeek } = modules({
+    "src/lib/currencyPreference.ts": currencyMock,
+  })("src/components/monthCalendarPager/calendarWeekCount.ts");
+  const days = Array.from({ length: 21 }, (_, index) => ({
+    isoDate: String(index + 1),
+    isCurrentMonth: index > 0,
+    isToday: index === 10,
+  }));
+  const measured = { 1: { top: 48, height: 52 } };
+  const today = resolveCollapsedCalendarWeek(days, 150, "1", measured);
+  assert.equal(today.index, 1);
+  assert.equal(today.top, 48);
+  assert.equal(today.height, 52);
+  const selected = resolveCollapsedCalendarWeek(days, 150, "17", measured);
+  assert.equal(selected.index, 2);
+  assert.equal(selected.top, 100);
+  assert.equal(selected.height, 50);
+  const anotherMonth = days.map((day) => ({ ...day, isToday: false }));
+  assert.equal(resolveCollapsedCalendarWeek(anotherMonth, 150, "other").index, 0);
+});
+
+test("weekly previews advance seven local days across weeks, months, and years", () => {
+  const loadCalendar = modules({ "src/lib/currencyPreference.ts": currencyMock });
+  const { buildCalendarWeekNavigation, resolveCollapsedCalendarWeek } = loadCalendar(
+    "src/components/monthCalendarPager/calendarWeekCount.ts",
+  );
+  const { buildMonthlyLedger } = loadCalendar("src/utils/calendar.ts");
+  const pages = ["2026-11", "2026-12", "2027-01"].map((key) => ({
+    key,
+    height: 250,
+    summary: buildMonthlyLedger(key, [], "2026-12-31"),
+  }));
+  const navigation = buildCalendarWeekNavigation(pages, "2026-12-31");
+  assert.deepEqual(Array.from(navigation.dates), ["2026-12-24", "2026-12-31", "2027-01-07"]);
+  assert.deepEqual(
+    Array.from(navigation.pages, (page) => page.key),
+    ["2026-12", "2026-12", "2027-01"],
+  );
+  assert.equal(
+    resolveCollapsedCalendarWeek(navigation.pages[2].summary.days, 250, navigation.dates[2]).index,
+    1,
+  );
+  const first = buildCalendarWeekNavigation(pages, "2026-12-01");
+  assert.equal(first.dates[0], "2026-11-24");
+  assert.equal(first.pages[0].key, "2026-11");
 });

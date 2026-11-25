@@ -1,161 +1,49 @@
 import { createThemeValue } from "../lib/appTheme";
 import { useAppTheme } from "../hooks/useAppTheme";
-import { type MutableRefObject, useEffect, useRef, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
-import { getAppColors } from "../constants/colors";
 import { AppLayout } from "../constants/layout";
-import {
-  MonthlyInsightChartCopy,
-  MonthlyInsightChartLayout,
-} from "../constants/monthlyInsightCharts";
-import { CompactTextProps } from "../constants/textLayout";
-import { getFormLabelTextStyle } from "../constants/uiStyles";
-import { useLedgerCategoryIconMap } from "../hooks/useLedgerCategoryIconMap";
-import type { CategoryIconName } from "../types/category";
+import type { OpenReportCategoryEntries } from "../constants/allEntries";
+import { getAppColors } from "../constants/colors";
+import { MonthlyInsightChartCopy } from "../constants/monthlyInsightCharts";
 import type { MonthlyInsights } from "../types/ledger";
-import { MonthlyBreakdownDonutChart } from "./monthlyInsights/MonthlyBreakdownDonutChart";
+import {
+  MonthlyCashflowSummary,
+  MonthlyCashflowTotals,
+} from "./monthlyInsights/MonthlyCashflowSummary";
+import { MonthlyShareBreakdown } from "./monthlyInsights/MonthlyShareBreakdown";
 import { MonthlyTrendLineChart } from "./monthlyInsights/MonthlyTrendLineChart";
 
 type MonthlyInsightsSectionProps = {
-  activeBookId?: string | null;
   insights: MonthlyInsights;
   scope?: "all" | "periodic";
+  onOpenCategories?: OpenReportCategoryEntries;
+  isActive?: boolean;
 };
-
-type BreakdownMode = "category" | "member";
-type BreakdownItem = {
-  amount: number;
-  iconName?: CategoryIconName;
-  key: string;
-  label: string;
-};
-type BreakdownFilterKey = "expenseCategory" | "expenseMember" | "incomeCategory" | "incomeMember";
-
-const BreakdownFilterKeys = {
-  expenseCategory: "expenseCategory",
-  expenseMember: "expenseMember",
-  incomeCategory: "incomeCategory",
-  incomeMember: "incomeMember",
-} as const satisfies Record<BreakdownFilterKey, BreakdownFilterKey>;
-
-const InitialDisabledBreakdownItemKeys = {
-  expenseCategory: [],
-  expenseMember: [],
-  incomeCategory: [],
-  incomeMember: [],
-} as const satisfies Record<BreakdownFilterKey, readonly string[]>;
-const InitialBreakdownItemSignatures: Record<BreakdownFilterKey, string> = {
-  expenseCategory: "",
-  expenseMember: "",
-  incomeCategory: "",
-  incomeMember: "",
-};
-const DEFAULT_ACTIVE_BREAKDOWN_ITEM_LIMIT = 10;
-const BREAKDOWN_ITEM_SIGNATURE_SEPARATOR = "|";
-const BREAKDOWN_ITEM_SIGNATURE_VALUE_SEPARATOR = ":";
 
 export function MonthlyInsightsSection({
-  activeBookId = null,
   insights,
   scope = "periodic",
+  onOpenCategories,
+  isActive = true,
 }: MonthlyInsightsSectionProps) {
   const styles = getStyles();
   useAppTheme();
-  const categoryIconByKey = useLedgerCategoryIconMap(activeBookId);
-  const [breakdownMode, setBreakdownMode] = useState<BreakdownMode>("category");
-  const [disabledItemKeysByChart, setDisabledItemKeysByChart] = useState<
-    Record<BreakdownFilterKey, readonly string[]>
-  >(InitialDisabledBreakdownItemKeys);
-  const itemSignaturesByChartRef = useRef<Record<BreakdownFilterKey, string>>(
-    InitialBreakdownItemSignatures,
-  );
-  const isCategoryMode = breakdownMode === "category";
-  const isIncomeCategoryMode = isCategoryMode;
-  const breakdownFilterKey = isCategoryMode
-    ? BreakdownFilterKeys.expenseCategory
-    : BreakdownFilterKeys.expenseMember;
-  const incomeBreakdownFilterKey = isIncomeCategoryMode
-    ? BreakdownFilterKeys.incomeCategory
-    : BreakdownFilterKeys.incomeMember;
-  const breakdownItems = isCategoryMode
-    ? insights.categoryExpenses.map((item) => ({
-        amount: item.amount,
-        iconName: categoryIconByKey.get(item.category),
-        key: item.category,
-        label: item.category,
-      }))
-    : insights.memberExpenses.map((item) => ({
-        amount: item.amount,
-        key: item.memberName,
-        label: item.memberName,
-      }));
-  const incomeBreakdownItems = isIncomeCategoryMode
-    ? insights.categoryIncomes.map((item) => ({
-        amount: item.amount,
-        iconName: categoryIconByKey.get(item.category),
-        key: item.category,
-        label: item.category,
-      }))
-    : insights.memberIncomes.map((item) => ({
-        amount: item.amount,
-        key: item.memberName,
-        label: item.memberName,
-      }));
-  const breakdownItemsSignature = buildBreakdownItemsSignature(breakdownItems);
-  const incomeBreakdownItemsSignature = buildBreakdownItemsSignature(incomeBreakdownItems);
-  const disabledBreakdownItemKeys = resolveCurrentDisabledBreakdownItemKeys({
-    disabledItemKeys: disabledItemKeysByChart[breakdownFilterKey],
-    filterKey: breakdownFilterKey,
-    items: breakdownItems,
-    itemSignaturesByChartRef,
-    signature: breakdownItemsSignature,
-  });
-  const disabledIncomeBreakdownItemKeys = resolveCurrentDisabledBreakdownItemKeys({
-    disabledItemKeys: disabledItemKeysByChart[incomeBreakdownFilterKey],
-    filterKey: incomeBreakdownFilterKey,
-    items: incomeBreakdownItems,
-    itemSignaturesByChartRef,
-    signature: incomeBreakdownItemsSignature,
-  });
-
-  useEffect(() => {
-    setDisabledItemKeysByChart((currentValue) =>
-      syncDefaultDisabledBreakdownItemKeys({
-        currentValue,
-        filterKey: breakdownFilterKey,
-        items: breakdownItems,
-        itemSignaturesByChartRef,
-        signature: breakdownItemsSignature,
-      }),
-    );
-  }, [breakdownFilterKey, breakdownItemsSignature]);
-
-  useEffect(() => {
-    setDisabledItemKeysByChart((currentValue) =>
-      syncDefaultDisabledBreakdownItemKeys({
-        currentValue,
-        filterKey: incomeBreakdownFilterKey,
-        items: incomeBreakdownItems,
-        itemSignaturesByChartRef,
-        signature: incomeBreakdownItemsSignature,
-      }),
-    );
-  }, [incomeBreakdownFilterKey, incomeBreakdownItemsSignature]);
-  const activeBreakdownItems = buildActiveBreakdownItems(breakdownItems, disabledBreakdownItemKeys);
-  const activeIncomeBreakdownItems = buildActiveBreakdownItems(
-    incomeBreakdownItems,
-    disabledIncomeBreakdownItemKeys,
-  );
-  const breakdownLegendItems = buildLegendItems(breakdownItems, activeBreakdownItems);
-  const incomeBreakdownLegendItems = buildLegendItems(
-    incomeBreakdownItems,
-    activeIncomeBreakdownItems,
-  );
-  const separatesFirstBreakdown = scope === "periodic";
+  const previousPeriod =
+    scope === "periodic"
+      ? insights.comparisonBasis === "month"
+        ? MonthlyInsightChartCopy.previousMonth
+        : MonthlyInsightChartCopy.previousPeriod
+      : undefined;
 
   return (
     <View style={styles.section}>
+      <View style={styles.summaryContent}>
+        <MonthlyCashflowTotals
+          expense={insights.expenseComparison.currentAmount}
+          income={insights.incomeComparison.currentAmount}
+        />
+      </View>
       {scope === "periodic" ? (
         <View style={styles.chartContent}>
           <MonthlyTrendLineChart
@@ -168,242 +56,49 @@ export function MonthlyInsightsSection({
           />
         </View>
       ) : null}
-      <View
-        style={[
-          styles.breakdownSection,
-          separatesFirstBreakdown ? styles.separatedBreakdownSection : null,
-        ]}
-      >
-        <View style={styles.segmentedControl}>
-          <SegmentButton
-            isSelected={isCategoryMode}
-            label={MonthlyInsightChartCopy.breakdownCategoryLabel}
-            onPress={() => setBreakdownMode("category")}
+      <View style={styles.summaryContent}>
+        {previousPeriod ? (
+          <MonthlyCashflowSummary
+            dailyExpenseComparison={insights.dailyExpenseComparison}
+            isActive={isActive}
+            expense={insights.expenseComparison}
+            previousPeriod={previousPeriod}
           />
-          <SegmentButton
-            isSelected={!isCategoryMode}
-            label={MonthlyInsightChartCopy.breakdownMemberLabel}
-            onPress={() => setBreakdownMode("member")}
-          />
-        </View>
-        <View style={styles.chartContent}>
-          <MonthlyBreakdownDonutChart
-            centerLabel={MonthlyInsightChartCopy.totalExpenseLabel}
-            emptyMessage={
-              breakdownItems.length
-                ? MonthlyInsightChartCopy.filteredEmpty
-                : isCategoryMode
-                  ? MonthlyInsightChartCopy.categoryEmpty
-                  : MonthlyInsightChartCopy.memberEmpty
-            }
-            items={activeBreakdownItems}
-            legendItems={breakdownLegendItems}
-            onToggleItem={(itemKey) => toggleBreakdownItem(breakdownFilterKey, itemKey)}
-            title={
-              isCategoryMode
-                ? MonthlyInsightChartCopy.categoryTitle
-                : MonthlyInsightChartCopy.memberTitle
-            }
-            variant="expense"
-          />
-        </View>
-      </View>
-      <View style={[styles.breakdownSection, styles.separatedBreakdownSection]}>
-        <View style={styles.chartContent}>
-          <MonthlyBreakdownDonutChart
-            centerLabel={MonthlyInsightChartCopy.totalIncomeLabel}
-            emptyMessage={
-              incomeBreakdownItems.length
-                ? MonthlyInsightChartCopy.filteredEmpty
-                : isIncomeCategoryMode
-                  ? MonthlyInsightChartCopy.incomeCategoryEmpty
-                  : MonthlyInsightChartCopy.incomeMemberEmpty
-            }
-            items={activeIncomeBreakdownItems}
-            legendItems={incomeBreakdownLegendItems}
-            onToggleItem={(itemKey) => toggleBreakdownItem(incomeBreakdownFilterKey, itemKey)}
-            title={
-              isIncomeCategoryMode
-                ? MonthlyInsightChartCopy.incomeCategoryTitle
-                : MonthlyInsightChartCopy.incomeMemberTitle
-            }
-            variant="income"
-          />
-        </View>
+        ) : null}
+        {!previousPeriod ? <View style={styles.divider} /> : null}
+        <MonthlyShareBreakdown
+          categories={insights.categoryExpenses}
+          members={insights.memberExpenses}
+          entryType="expense"
+          onOpenCategories={onOpenCategories}
+        />
+        <View style={styles.divider} />
+        <MonthlyShareBreakdown
+          categories={insights.categoryIncomes}
+          members={insights.memberIncomes}
+          entryType="income"
+          onOpenCategories={onOpenCategories}
+        />
       </View>
     </View>
-  );
-
-  function toggleBreakdownItem(filterKey: BreakdownFilterKey, itemKey: string) {
-    setDisabledItemKeysByChart((currentValue) => {
-      const disabledKeys = currentValue[filterKey];
-      const nextDisabledKeys = disabledKeys.includes(itemKey)
-        ? disabledKeys.filter((disabledKey) => disabledKey !== itemKey)
-        : [...disabledKeys, itemKey];
-
-      return {
-        ...currentValue,
-        [filterKey]: nextDisabledKeys,
-      };
-    });
-  }
-}
-
-function buildActiveBreakdownItems(
-  items: BreakdownItem[],
-  disabledItemKeys: readonly string[],
-): Array<BreakdownItem & { share: number }> {
-  const activeItems = items.filter((item) => !disabledItemKeys.includes(item.key));
-  const totalAmount = activeItems.reduce((sum, item) => sum + item.amount, 0);
-
-  if (totalAmount <= 0) {
-    return activeItems.map((item) => ({ ...item, share: 0 }));
-  }
-
-  return activeItems.map((item) => ({
-    ...item,
-    share: item.amount / totalAmount,
-  }));
-}
-
-function resolveCurrentDisabledBreakdownItemKeys({
-  disabledItemKeys,
-  filterKey,
-  items,
-  itemSignaturesByChartRef,
-  signature,
-}: {
-  disabledItemKeys: readonly string[];
-  filterKey: BreakdownFilterKey;
-  items: BreakdownItem[];
-  itemSignaturesByChartRef: MutableRefObject<Record<BreakdownFilterKey, string>>;
-  signature: string;
-}): readonly string[] {
-  return itemSignaturesByChartRef.current[filterKey] === signature
-    ? disabledItemKeys
-    : buildDefaultDisabledBreakdownItemKeys(items);
-}
-
-function syncDefaultDisabledBreakdownItemKeys({
-  currentValue,
-  filterKey,
-  items,
-  itemSignaturesByChartRef,
-  signature,
-}: {
-  currentValue: Record<BreakdownFilterKey, readonly string[]>;
-  filterKey: BreakdownFilterKey;
-  items: BreakdownItem[];
-  itemSignaturesByChartRef: MutableRefObject<Record<BreakdownFilterKey, string>>;
-  signature: string;
-}): Record<BreakdownFilterKey, readonly string[]> {
-  if (itemSignaturesByChartRef.current[filterKey] === signature) {
-    return currentValue;
-  }
-
-  itemSignaturesByChartRef.current = {
-    ...itemSignaturesByChartRef.current,
-    [filterKey]: signature,
-  };
-
-  return {
-    ...currentValue,
-    [filterKey]: buildDefaultDisabledBreakdownItemKeys(items),
-  };
-}
-
-function buildDefaultDisabledBreakdownItemKeys(items: BreakdownItem[]): string[] {
-  return items.slice(DEFAULT_ACTIVE_BREAKDOWN_ITEM_LIMIT).map((item) => item.key);
-}
-
-function buildBreakdownItemsSignature(items: BreakdownItem[]): string {
-  return items
-    .map((item) => [item.key, item.amount].join(BREAKDOWN_ITEM_SIGNATURE_VALUE_SEPARATOR))
-    .join(BREAKDOWN_ITEM_SIGNATURE_SEPARATOR);
-}
-
-function buildLegendItems(
-  items: BreakdownItem[],
-  activeItems: Array<BreakdownItem & { share: number }>,
-) {
-  const activeItemByKey = new Map(activeItems.map((item) => [item.key, item]));
-
-  return items.map((item) => {
-    const activeItem = activeItemByKey.get(item.key);
-
-    return {
-      ...item,
-      isActive: Boolean(activeItem),
-      share: activeItem?.share ?? 0,
-    };
-  });
-}
-
-function SegmentButton({
-  isSelected,
-  label,
-  onPress,
-}: {
-  isSelected: boolean;
-  label: string;
-  onPress: () => void;
-}) {
-  const styles = getStyles();
-  useAppTheme();
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected: isSelected }}
-      onPress={onPress}
-      style={[styles.segmentButton, isSelected ? styles.segmentButtonSelected : null]}
-    >
-      <Text
-        {...CompactTextProps}
-        style={[styles.segmentText, isSelected ? styles.segmentTextSelected : null]}
-      >
-        {label}
-      </Text>
-    </Pressable>
   );
 }
 
 const getStyles = createThemeValue(() =>
   StyleSheet.create({
-    breakdownSection: {
-      gap: 10,
+    divider: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: getAppColors().border,
     },
     chartContent: {
       paddingHorizontal: AppLayout.screenPadding,
     },
-    separatedBreakdownSection: {
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: getAppColors().border,
-      paddingTop: AppLayout.cardGap,
-    },
-    segmentButton: {
-      flex: 1,
-      borderBottomWidth: MonthlyInsightChartLayout.segmentIndicatorHeight,
-      borderBottomColor: getAppColors().transparent,
-      paddingVertical: 8,
-      alignItems: "center",
-    },
-    segmentButtonSelected: {
-      borderBottomColor: getAppColors().primary,
-    },
-    segmentText: {
-      ...getFormLabelTextStyle(),
-    },
-    segmentTextSelected: {
-      color: getAppColors().primary,
-    },
-    segmentedControl: {
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: getAppColors().border,
-      flexDirection: "row",
+    summaryContent: {
       paddingHorizontal: AppLayout.screenPadding,
+      gap: AppLayout.cardContentPadding,
     },
     section: {
-      gap: AppLayout.cardGap,
+      gap: AppLayout.cardContentPadding,
     },
   }),
 );

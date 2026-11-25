@@ -63,9 +63,11 @@ export function resolveCategoryGridScrollY(
   columns: number,
   scrollY: number,
   viewportHeight: number,
+  contentInset = 0,
 ): number {
-  const { y: top } = resolveCategoryGridPosition(index, cellSize, columns);
-  if (top < scrollY || viewportHeight <= 0) return top;
-  const bottom = top + cellSize;
+  const { y } = resolveCategoryGridPosition(index, cellSize, columns);
+  const top = y + contentInset;
+  if (top < scrollY || viewportHeight <= 0) return Math.max(0, top - contentInset);
+  const bottom = top + cellSize + contentInset;
   return bottom > scrollY + viewportHeight ? Math.max(0, bottom - viewportHeight) : scrollY;
 }

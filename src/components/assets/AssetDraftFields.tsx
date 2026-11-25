@@ -6,7 +6,6 @@ import { getAssetStyles } from "../../constants/assetStyles";
 import { getAppColors } from "../../constants/colors";
 import type { AssetDraft } from "../../types/asset";
 import { assetAmount, formatAssetAmount, isAssetDebt } from "../../utils/assets";
-import { EntryDateSelector } from "../EntryDateSelector";
 import { Feather } from "../AppIcons";
 import { LoanSettingsFields } from "./LoanSettingsFields";
 import { formatDecimalAmountInput } from "../../utils/amount";
@@ -78,15 +77,6 @@ export function AssetDraftFields({
     additional.push({ key: "maturity", label: Copy.maturity });
   return (
     <>
-      <Text style={getAssetStyles().label}>{Copy.date}</Text>
-      <View pointerEvents={disabled ? "none" : "auto"}>
-        <EntryDateSelector
-          inline
-          compact
-          selectedDate={draft.date}
-          onSelectDate={(value) => update("date", value)}
-        />
-      </View>
       {field({ key: "name", label: Copy.content })}
       {field({
         key: "amount",

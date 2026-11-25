@@ -19,6 +19,7 @@ export const SystemIcons = {
   percent: "percent",
   "plus-circle": "plus.circle",
   repeat: "repeat",
+  "refresh-cw": "arrow.clockwise",
   "rotate-ccw": "arrow.counterclockwise",
   scissors: "scissors",
   "shopping-bag": "bag",

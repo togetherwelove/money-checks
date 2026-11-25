@@ -1,3 +1,6 @@
+import type { AllEntriesDateRange, AllEntriesEntryTypeFilter } from "../constants/allEntries";
+import { useFilteredLedgerTotals } from "./useFilteredLedgerTotals";
+import { filteredLedgerQueryKey } from "../lib/filteredLedgerTotals";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { LedgerQueryConfig, LedgerRealtimeConfig } from "../constants/ledgerQueries";
@@ -11,6 +14,8 @@ type UseAllLedgerEntriesParams = {
   activeBookId: string | null;
   selectedCategoryIds: readonly string[];
   searchQuery: string;
+  dateRange?: AllEntriesDateRange | null;
+  entryTypeFilter?: AllEntriesEntryTypeFilter;
 };
 
 const EMPTY_ENTRIES: LedgerEntry[] = [];
@@ -19,7 +24,21 @@ export function useAllLedgerEntries({
   activeBookId,
   selectedCategoryIds,
   searchQuery,
+  dateRange,
+  entryTypeFilter,
 }: UseAllLedgerEntriesParams) {
+  const queryKey = filteredLedgerQueryKey({
+    activeBookId,
+    selectedCategoryIds,
+    searchQuery,
+    dateRange,
+    entryTypeFilter,
+  });
+  const [summaryRevision, setSummaryRevision] = useState(0);
+  const summary = useFilteredLedgerTotals(
+    { activeBookId, selectedCategoryIds, searchQuery, dateRange, entryTypeFilter },
+    summaryRevision,
+  );
   const [entries, setEntries] = useState<LedgerEntry[]>(EMPTY_ENTRIES);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
@@ -27,14 +46,19 @@ export function useAllLedgerEntries({
   const [isRefreshing, setIsRefreshing] = useState(Boolean(activeBookId));
   const [nextCursor, setNextCursor] = useState<LedgerEntriesPageCursor | null>(null);
   const queryRevisionRef = useRef(0);
-  const entriesBookRef = useRef(activeBookId);
+  const requestController = useRef<AbortController | null>(null);
+  const entriesBookRef = useRef(queryKey);
   const realtimeRefreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadFirstPage = useCallback(async () => {
+    requestController.current?.abort();
+    const controller = new AbortController();
+    requestController.current = controller;
+    setSummaryRevision((current) => current + 1);
     const queryRevision = queryRevisionRef.current + 1;
     queryRevisionRef.current = queryRevision;
-    if (entriesBookRef.current !== activeBookId) {
-      entriesBookRef.current = activeBookId;
+    if (entriesBookRef.current !== queryKey) {
+      entriesBookRef.current = queryKey;
       setEntries(EMPTY_ENTRIES);
       setHasMore(false);
       setNextCursor(null);
@@ -63,7 +87,11 @@ export function useAllLedgerEntries({
         ascending: false,
         categoryIds: selectedCategoryIds,
         limit: LedgerQueryConfig.allEntriesPageSize,
+        signal: controller.signal,
         searchQuery,
+        dateFrom: dateRange?.startDate,
+        dateTo: dateRange?.endDate,
+        entryType: entryTypeFilter === "all" ? undefined : entryTypeFilter,
       });
       if (queryRevisionRef.current !== queryRevision) {
         return;
@@ -85,12 +113,13 @@ export function useAllLedgerEntries({
         setIsRefreshing(false);
       }
     }
-  }, [activeBookId, searchQuery, selectedCategoryIds]);
+  }, [activeBookId, searchQuery, selectedCategoryIds, dateRange, entryTypeFilter, queryKey]);
 
   useEffect(() => {
     void loadFirstPage();
     return () => {
       queryRevisionRef.current += 1;
+      requestController.current?.abort();
     };
   }, [loadFirstPage]);
 
@@ -145,7 +174,11 @@ export function useAllLedgerEntries({
         categoryIds: selectedCategoryIds,
         cursor: nextCursor,
         limit: LedgerQueryConfig.allEntriesPageSize,
+        signal: requestController.current?.signal,
         searchQuery,
+        dateFrom: dateRange?.startDate,
+        dateTo: dateRange?.endDate,
+        entryType: entryTypeFilter === "all" ? undefined : entryTypeFilter,
       });
       if (queryRevisionRef.current !== queryRevision) {
         return;
@@ -174,20 +207,23 @@ export function useAllLedgerEntries({
     isLoadingMore,
     isRefreshing,
     nextCursor,
+    dateRange,
+    entryTypeFilter,
     searchQuery,
     selectedCategoryIds,
   ]);
 
   return {
-    entries: entriesBookRef.current === activeBookId ? entries : EMPTY_ENTRIES,
-    errorMessage: entriesBookRef.current === activeBookId ? errorMessage : null,
+    summary,
+    entries: entriesBookRef.current === queryKey ? entries : EMPTY_ENTRIES,
+    errorMessage: entriesBookRef.current === queryKey ? errorMessage : null,
     hasMore,
     isLoadingMore,
-    isRefreshing:
-      Boolean(activeBookId) && (entriesBookRef.current !== activeBookId || isRefreshing),
+    isRefreshing: Boolean(activeBookId) && (entriesBookRef.current !== queryKey || isRefreshing),
     loadMoreEntries,
     refreshEntries: loadFirstPage,
     removeEntriesFromFeed: (entryIds: readonly string[]) => {
+      setSummaryRevision((current) => current + 1);
       const deletedEntryIds = new Set(entryIds);
       setEntries((currentEntries) =>
         currentEntries.filter((entry) => !deletedEntryIds.has(entry.id)),

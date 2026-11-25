@@ -1,3 +1,4 @@
+import { AppFontSize, AppLineHeight } from "../constants/typography";
 import { createThemeValue } from "../lib/appTheme";
 import { useAppTheme } from "../hooks/useAppTheme";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -299,19 +300,19 @@ const getStyles = createThemeValue(() =>
     },
     brand: {
       color: getAppColors().primary,
-      fontSize: 13,
+      fontSize: AppFontSize.body,
       fontWeight: "700",
       letterSpacing: 0.4,
     },
     title: {
       color: getAppColors().text,
-      fontSize: 30,
+      fontSize: AppFontSize.display,
       fontWeight: "800",
     },
     subtitle: {
       color: getAppColors().mutedText,
-      fontSize: 14,
-      lineHeight: 20,
+      fontSize: AppFontSize.body,
+      lineHeight: AppLineHeight.body,
     },
   }),
 );

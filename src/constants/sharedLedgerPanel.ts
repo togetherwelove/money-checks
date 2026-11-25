@@ -1,6 +1,7 @@
+import { AppFontSize, AppLineHeight } from "./typography";
 export const SharedLedgerPanelUi = {
-  sectionTitleFontSize: 18,
-  sectionTitleLineHeight: 24,
+  sectionTitleFontSize: AppFontSize.title,
+  sectionTitleLineHeight: AppLineHeight.title,
   joinRequestActionGap: 8,
   joinRequestAvatarSize: 28,
   joinRequestCardGap: 10,
@@ -13,10 +14,10 @@ export const SharedLedgerPanelUi = {
   joinRequestStatusRadius: 8,
   joinRequestStatusBottom: 12,
   joinRequestStatusReservedWidth: 112,
-  joinRequestStatusTextLineHeight: 16,
+  joinRequestStatusTextLineHeight: AppLineHeight.caption,
   copyActionGap: 6,
   copyActionIconSize: 16,
-  copyActionTextFontSize: 15,
+  copyActionTextFontSize: AppFontSize.label,
   ledgerBookMembersBlockTopPadding: 8,
   pendingRequestBadgeSize: 8,
   shareCodePreviewPrefixLength: 4,

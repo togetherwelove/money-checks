@@ -1,3 +1,4 @@
+import { AppFontSize } from "./typography";
 import { createThemeValue } from "../lib/appTheme";
 import { getAppColors } from "./colors";
 
@@ -9,6 +10,6 @@ export const getToastUi = createThemeValue(
       durationMs: 2000,
       opacity: 0.96,
       textColor: getAppColors().onInverseSurface,
-      textSize: 13,
+      textSize: AppFontSize.body,
     }) as const,
 );

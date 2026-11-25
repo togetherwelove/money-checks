@@ -11,12 +11,22 @@ import { createDraft } from "../utils/ledgerEntries";
 import { AssetLinkConfig } from "../constants/assetLink";
 import { appStorage } from "../lib/appStorage";
 import { readEntryComposerDraft } from "../lib/entryComposerDraftStorage";
+import {
+  createRecentEntryAssetLink,
+  readRecentEntryAsset,
+  rememberEntryAsset,
+} from "../lib/recentEntryAsset";
 
 export function useEntryComposer(bookId: string | null, selectedDate: string, userId: string) {
+  const [recentCashAssetId, setRecentCashAssetId] = useState(() =>
+    readRecentEntryAsset(appStorage, userId, bookId),
+  );
   const [draft, setDraft] = useState(
     () =>
-      readEntryComposerDraft(appStorage, userId, bookId, selectedDate) ??
-      createDraft(selectedDate, userId),
+      readEntryComposerDraft(appStorage, userId, bookId, selectedDate) ?? {
+        ...createDraft(selectedDate, userId),
+        assetLink: createRecentEntryAssetLink(recentCashAssetId),
+      },
   );
   const [members, setMembers] = useState<LedgerBookMember[]>([]);
   const mounted = useRef(true);
@@ -99,12 +109,18 @@ export function useEntryComposer(bookId: string | null, selectedDate: string, us
       showNativeToast(EntryPhotoCopy.imagePickerError);
     }
   };
-  const reset = () => {
+  const reset = (rememberAsset = false) => {
+    const cashAssetId = rememberAsset ? (draft.assetLink?.cashAssetId ?? null) : recentCashAssetId;
+    if (rememberAsset) {
+      setRecentCashAssetId(cashAssetId);
+      rememberEntryAsset(appStorage, userId, bookId, cashAssetId);
+    }
     const member = members.find((item) => item.userId === userId) ?? members[0];
     setDraft({
       ...createDraft(selectedDate, member?.userId ?? userId),
+      assetLink: createRecentEntryAssetLink(cashAssetId),
       targetMemberName: member?.displayName,
     });
   };
-  return { draft, members, pickPhotos, setDraft, update, reset, userId };
+  return { draft, members, pickPhotos, setDraft, update, reset, userId, recentCashAssetId };
 }

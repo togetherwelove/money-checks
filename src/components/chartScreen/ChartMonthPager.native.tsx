@@ -5,6 +5,7 @@ import { StyleSheet } from "react-native";
 import PagerView from "react-native-pager-view";
 
 import type { ChartMonthData } from "../../hooks/ledgerScreenState/types";
+import type { OpenReportCategoryEntries } from "../../constants/allEntries";
 import { ChartMonthPageContent } from "./ChartMonthPageContent";
 
 const CURRENT_PAGE_INDEX = 1;
@@ -14,8 +15,10 @@ type ChartMonthPagerProps = {
   currentMonth: ChartMonthData;
   nextMonth: ChartMonthData;
   onMoveMonth: (monthOffset: -1 | 1) => void;
+  onOpenReportCategoryEntries?: OpenReportCategoryEntries;
   previousMonth: ChartMonthData;
   renderScreenTitle: (titleLabel: string) => ReactNode;
+  isActive?: boolean;
 };
 
 export function ChartMonthPager({
@@ -23,8 +26,10 @@ export function ChartMonthPager({
   currentMonth,
   nextMonth,
   onMoveMonth,
+  onOpenReportCategoryEntries,
   previousMonth,
   renderScreenTitle,
+  isActive = true,
 }: ChartMonthPagerProps) {
   const currentMonthKey = currentMonth.key;
   const isFocused = useIsFocused();
@@ -81,18 +86,24 @@ export function ChartMonthPager({
       }}
     >
       <ChartMonthPageContent
+        onOpenReportCategoryEntries={onOpenReportCategoryEntries}
         activeBookId={activeBookId}
         month={previousMonth}
+        isActive={false}
         screenTitle={renderScreenTitle(previousMonth.title)}
       />
       <ChartMonthPageContent
+        onOpenReportCategoryEntries={onOpenReportCategoryEntries}
         activeBookId={activeBookId}
         month={currentMonth}
+        isActive={isActive}
         screenTitle={renderScreenTitle(currentMonth.title)}
       />
       <ChartMonthPageContent
+        onOpenReportCategoryEntries={onOpenReportCategoryEntries}
         activeBookId={activeBookId}
         month={nextMonth}
+        isActive={false}
         screenTitle={renderScreenTitle(nextMonth.title)}
       />
     </PagerView>

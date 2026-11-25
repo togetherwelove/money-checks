@@ -1,3 +1,4 @@
+import { AppFontSize, AppLineHeight } from "./typography";
 import { AuthRequirements } from "./authRequirements";
 
 export const EmailAuthCopy = {
@@ -81,8 +82,8 @@ export const EmailSignUpAgreementUi = {
   checkBoxBorderRadius: 4,
   checkBoxBorderWidth: 1,
   dividerHeight: 1,
-  labelFontSize: 14,
-  labelLineHeight: 20,
+  labelFontSize: AppFontSize.body,
+  labelLineHeight: AppLineHeight.body,
   rowGap: 10,
 } as const;
 
@@ -90,8 +91,8 @@ export const EmailSignUpStepUi = {
   connectorHeight: 1,
   dotBorderWidth: 1,
   dotSize: 16,
-  labelFontSize: 11,
-  labelLineHeight: 16,
+  labelFontSize: AppFontSize.caption,
+  labelLineHeight: AppLineHeight.caption,
   rowGap: 8,
   stepGap: 6,
 } as const;

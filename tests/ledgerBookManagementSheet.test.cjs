@@ -13,7 +13,11 @@ test("one sheet exposes current-book management, refreshes on opening or switchi
   const h = hooks();
   let refreshed = 0;
   const load = modules({
-    react: h.react,
+    react: {
+      ...h.react,
+      createContext: () => ({ Provider: "HeaderContext" }),
+      useContext: () => null,
+    },
     "react/jsx-runtime": { jsx, jsxs: jsx },
     "src/contexts/BottomContentInsetContext.ts": {
       BottomContentInsetContext: { Provider: "Insets" },
@@ -79,9 +83,19 @@ test("book list retains unread badges and readonly switching; selecting the curr
     selected = [],
     toasts = [];
   const load = modules({
-    react: h.react,
+    react: {
+      ...h.react,
+      createContext: () => ({ Provider: "HeaderContext" }),
+      useContext: () => null,
+    },
     "react/jsx-runtime": { jsx, jsxs: jsx },
-    "react-native": { View: "View", Text: "Text", Pressable: "Pressable", Alert: {} },
+    "react-native": {
+      View: "View",
+      Text: "Text",
+      Pressable: "Pressable",
+      Alert: {},
+      StyleSheet: { create: (value) => value },
+    },
     "src/lib/appPlatform.ts": { appPlatform: { isIOS: true } },
     "src/constants/subscription.ts": {
       SubscriptionTiers: { free: "free", plus: "plus" },
@@ -91,6 +105,7 @@ test("book list retains unread badges and readonly switching; selecting the curr
     "src/lib/ledgerEditability.ts": {
       isLedgerBookEditableWithinPlanLimit: (_tier, _books, id) => id === "a",
     },
+    "src/components/AppIcons.tsx": { Feather: "Feather" },
     "src/components/IconActionButton.tsx": { IconActionButton: "Icon" },
     "src/components/LedgerBookMembers.tsx": { LedgerBookMembers: "Members" },
     "src/components/TextLinkButton.tsx": { TextLinkButton: "Link" },
@@ -119,15 +134,37 @@ test("book list retains unread badges and readonly switching; selecting the curr
       },
     }),
   );
-  const rows = nodes(tree).filter((node) => node.type === "Pressable");
-  rows[0].props.onPress();
+  const { LedgerBookChoice } = load("src/components/sharedLedgerPanel/LedgerBookChoice.tsx");
+  const choices = nodes(tree).filter((node) => node.type === LedgerBookChoice);
+  assert.equal(choices.length, 2);
+  const current = LedgerBookChoice(choices[0].props);
+  assert.equal(current.type, "View");
+  assert.equal(current.props.onPress, undefined);
+  assert.equal(
+    nodes(current).some((node) => node.props.name === "check"),
+    false,
+  );
   assert.deepEqual(selected, []);
-  rows[1].props.onPress();
+  const other = LedgerBookChoice(choices[1].props);
+  assert.equal(other.type, "Pressable");
+  other.props.onPress();
   await new Promise(setImmediate);
   assert.deepEqual(selected, ["b"]);
   assert.equal(toasts.length, 1);
-  assert.ok(nodes(rows[1]).some((node) => node.props.children === "조회 전용"));
-  assert.ok(nodes(rows[1]).some((node) => node.props.accessible && node.props.accessibilityLabel));
+  const readOnlyLabel = load("src/constants/ledgerBookManagement.ts").LedgerBookManagementCopy
+    .readOnlyBadge;
+  assert.ok(nodes(other).some((node) => node.props.children === readOnlyLabel));
+  assert.ok(nodes(other).some((node) => node.props.accessible && node.props.accessibilityLabel));
+  assert.equal(
+    nodes(other).some((node) => node.props.name === "chevron-right"),
+    false,
+  );
+  const topLevel = tree.props.children.filter(Boolean);
+  const memberIndex = topLevel.findIndex((node) =>
+    nodes(node).some((child) => child.type === "Members"),
+  );
+  const otherIndex = topLevel.findIndex((node) => nodes(node).includes(choices[1]));
+  assert.ok(memberIndex >= 0 && memberIndex < otherIndex);
   h.unmount();
 });
 
@@ -139,7 +176,11 @@ test("switching books cannot apply an old member fetch or delayed realtime event
     cache = new Map();
   let resolveName;
   const load = modules({
-    react: h.react,
+    react: {
+      ...h.react,
+      createContext: () => ({ Provider: "HeaderContext" }),
+      useContext: () => null,
+    },
     "react/jsx-runtime": { jsx, jsxs: jsx },
     "react-native": { View: "View", StyleSheet: { create: (value) => value } },
     "src/components/KeyboardAwareScrollView.tsx": { KeyboardAwareScrollView: "Scroll" },
@@ -203,4 +244,68 @@ test("switching books cannot apply an old member fetch or delayed realtime event
   );
   h.unmount();
   assert.equal(removed.length, 4);
+});
+
+test("book-list name editing preserves failed input and closes only after a successful save", async () => {
+  const h = hooks();
+  let saved = false;
+  const load = modules({
+    react: {
+      ...h.react,
+      createContext: () => ({ Provider: "HeaderContext" }),
+      useContext: () => null,
+    },
+    "react/jsx-runtime": { jsx, jsxs: jsx },
+    "react-native": { View: "View", Text: "Text", TextInput: "Input" },
+    "src/components/IconActionButton.tsx": { IconActionButton: "Edit" },
+    "src/components/sharedLedgerPanel/sharedLedgerPanelStyles.ts": {
+      getSharedLedgerPanelStyles: () => ({}),
+    },
+  });
+  const { LedgerBookNameEditor } = load(
+    "src/components/sharedLedgerPanel/LedgerBookNameEditor.tsx",
+  );
+  const props = {
+    bookName: "Book",
+    shareCode: "12345678",
+    bookNameInput: "Book",
+    canEditBookName: true,
+    onChangeBookName: (value) => {
+      props.bookNameInput = value;
+    },
+    onSaveBookName: async () => saved,
+  };
+  const render = () => nodes(h.render(() => LedgerBookNameEditor(props)));
+  const { formatLedgerBookTitle } = load("src/lib/ledgerShareCode.ts");
+  assert.ok(
+    render().some((node) => node.props.children === formatLedgerBookTitle("Book", props.shareCode)),
+  );
+
+  render()
+    .find((node) => node.type === "Edit")
+    .props.onPress();
+  assert.equal(render().find((node) => node.type === "Input").props.value, "Book");
+  render()
+    .find((node) => node.type === "Input")
+    .props.onChangeText("Renamed");
+  render()
+    .find((node) => node.type === "Input")
+    .props.onSubmitEditing();
+  await Promise.resolve();
+  assert.equal(render().find((node) => node.type === "Input").props.value, "Renamed");
+  saved = true;
+  render()
+    .find((node) => node.type === "Input")
+    .props.onSubmitEditing();
+  await Promise.resolve();
+  assert.equal(
+    render().some((node) => node.type === "Input"),
+    false,
+  );
+  props.canEditBookName = false;
+  assert.equal(
+    render().some((node) => node.type === "Edit"),
+    false,
+  );
+  h.unmount();
 });

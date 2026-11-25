@@ -29,7 +29,7 @@ export function EntryHeaderDatePicker({
     () =>
       variant === "navigation"
         ? [font(AppScreenTitleUi.datePickerFont), tint(getAppColors().primary)]
-        : [],
+        : [font({ size: EntryComposerUi.sheetFieldFontSize })],
     [variant, colorScheme],
   );
   return (

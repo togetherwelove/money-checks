@@ -20,11 +20,15 @@ function loader(react, extra = {}) {
       View: "View",
       StyleSheet: { create: (value) => value },
     },
+    "@expo/ui/swift-ui/modifiers": { tint: (value) => ({ name: "tint", value }) },
     "@expo/ui/swift-ui": Object.fromEntries(
       ["Host", "List", "Section", "Text", "VStack", "RNHostView", "Button", "Toggle"].map(
         (name) => [name, name],
       ),
     ),
+    "src/constants/nativeSettingsGroupStyles.ios.ts": {
+      getNativeSettingsGroupStyles: () => ({ row: [], title: [], description: [] }),
+    },
     "src/constants/nativeSettingsStyles.ts": {
       getNativeSettingsStyles: () => ({
         list: [],
@@ -37,6 +41,9 @@ function loader(react, extra = {}) {
     "src/components/KeyboardAwareScrollView.tsx": { KeyboardAwareScrollView: "Scroll" },
     "src/components/AppFooterContentInset.tsx": { AppFooterContentInset: "Inset" },
     "src/components/AppVersionFooter.tsx": { AppVersionFooter: "Footer" },
+    "src/components/appSettings/MenuSubscriptionCard.tsx": {
+      MenuSubscriptionCard: "SubscriptionCard",
+    },
     "src/components/appSettings/SettingsCategoryOrderModal.tsx": {
       SettingsCategoryOrderModal: "Categories",
     },
@@ -64,6 +71,7 @@ for (const suffix of ["", ".ios"]) {
     const { AllMenuScreen } = load(`src/screens/AllMenuScreen${suffix}.tsx`);
     const { buildAllMenuSections } = load("src/lib/menuItems.ts");
     const props = {
+      isPlusActive: false,
       activeBookId: "a",
       canManageCategories: true,
       menuSections: buildAllMenuSections({
@@ -78,6 +86,25 @@ for (const suffix of ["", ".ios"]) {
     const account = items.find((item) => item.targetScreen === "account");
     const download = items.find((item) => item.action === "annual-report-download");
     const render = () => nodes(h.render(() => AllMenuScreen(props)));
+    const card = render().find((node) => node.type === "SubscriptionCard");
+    assert.equal(card.props.isPlusActive, false);
+    const visible = render();
+    assert.ok(
+      visible.findIndex((node) => node.type === "SubscriptionCard") <
+        visible.findIndex((node) => node.type === "Links"),
+    );
+    card.props.onPress();
+    assert.equal(selected.pop().targetScreen, "subscription");
+    assert.equal(
+      items.some((item) => item.targetScreen === "subscription"),
+      false,
+    );
+    props.isPlusActive = true;
+    assert.equal(
+      render().find((node) => node.type === "SubscriptionCard").props.isPlusActive,
+      true,
+    );
+
     const select = (item) =>
       render()
         .find((node) => node.type === "Links")
@@ -121,18 +148,42 @@ for (const suffix of ["", ".ios"]) {
         showAnnualReportDownload: true,
         hasSharedLedgerNotifications: true,
       });
-    const rows = nodes(
-      SettingsMenuLinks({ sections, onSelect: (item) => selected.push(item) }),
-    ).filter((node) => node.type === "Row");
-    const downloadRow = rows.find((row) => row.props.trailingIcon === "download");
-    assert.equal(downloadRow.props.leadingIcon, undefined);
+    const all = nodes(SettingsMenuLinks({ sections, onSelect: (item) => selected.push(item) }));
+    const rows = all.filter((node) => node.type === "Row");
+    const downloadRow = rows.find((row) => row.props.leadingIcon === "file-excel-outline");
+    assert.ok(downloadRow);
+    assert.ok(rows.every((row) => row.props.trailingIcon !== "download"));
     assert.ok(rows.filter((row) => row !== downloadRow).every((row) => row.props.leadingIcon));
     assert.equal(rows.filter((row) => row.props.hasBadge).length, 1);
     const category = rows.find((row) => row.props.disabled);
-    assert.ok(category.props.description);
+    const disabledItem = sections.flatMap((section) => section.items).find((item) => item.disabled);
+    const describedGroup = all.find((node) => node.props.description === disabledItem.description);
+    assert.ok(describedGroup);
+    assert.deepEqual(
+      rows.slice(0, 3).map((row) => row.props.leadingIcon),
+      ["user", "users", "grid"],
+    );
+    assert.equal(rows[2].props.isLast, true);
+    assert.equal(rows[0].props.isLast, false);
+    if (downloadRow) assert.equal(nodes(describedGroup).includes(downloadRow), false);
+    assert.equal(category.props.description, undefined);
+    assert.equal(category.props.trailingIcon, null);
+    assert.equal(category.props.leadingIcon, "grid");
+    assert.equal(downloadRow.props.trailingIcon, null);
+    const contactRow = rows.find((row) => row.props.leadingIcon === "mail");
+    assert.equal(contactRow.props.trailingIcon, null);
+    assert.ok(
+      rows
+        .filter((row) => row !== category && row !== downloadRow && row !== contactRow)
+        .every((row) => row.props.trailingIcon !== null),
+    );
+    assert.deepEqual(
+      nodes(describedGroup).filter((node) => node.type === "Row"),
+      rows.slice(0, 3),
+    );
     category.props.onPress();
     assert.equal(selected.length, 0);
-    rows.find((row) => row.props.trailingIcon === "download").props.onPress();
+    downloadRow.props.onPress();
     assert.equal(selected.length, 1);
     assert.equal(selected[0].action, "annual-report-download");
   });
@@ -221,4 +272,26 @@ test("shared-ledger requests badge the all menu tab and its sharing row", () => 
     hasSharedLedgerNotifications: badges.includes("all-menu"),
   }).flatMap((section) => section.items);
   assert.equal(items.find((item) => item.targetScreen === "share").hasBadge, true);
+});
+
+test("Excel menu icon bypasses the system-symbol fallback and retains the standard trailing chevron", () => {
+  const load = loader(
+    {},
+    {
+      "src/components/appSettings/SettingsActionRow.tsx": undefined,
+      "@expo/vector-icons/MaterialCommunityIcons": "ExcelIcon",
+      "src/components/AppIcons.tsx": { Feather: "SystemIcon" },
+    },
+  );
+  const { SettingsActionRow } = load("src/components/appSettings/SettingsActionRow.tsx");
+  const tree = nodes(
+    SettingsActionRow({
+      label: "Export",
+      leadingIcon: "file-excel-outline",
+      grouped: true,
+      onPress() {},
+    }),
+  );
+  assert.equal(tree.find((node) => node.type === "ExcelIcon").props.name, "file-excel-outline");
+  assert.equal(tree.find((node) => node.type === "SystemIcon").props.name, "chevron-right");
 });

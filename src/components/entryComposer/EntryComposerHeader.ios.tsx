@@ -7,6 +7,7 @@ import {
   buttonStyle,
   controlSize,
   disabled,
+  font,
   frame,
   glassEffect,
   labelStyle,
@@ -51,6 +52,7 @@ export function EntryComposerHeader({
   saving = false,
   actionDisabled = false,
   actionLabel,
+  actionIcon = "check",
   onAction,
   onClose,
 }: EntryComposerHeaderProps) {
@@ -106,6 +108,7 @@ export function EntryComposerHeader({
               }}
               modifiers={[
                 pickerStyle("segmented"),
+                font({ size: Ui.sheetSegmentFontSize }),
                 controlSize("regular"),
                 ...pickerGlass,
                 disabled(typeDisabled),
@@ -139,7 +142,7 @@ export function EntryComposerHeader({
               <ProgressView modifiers={[buttonFrame]} />
             ) : (
               <Image
-                systemName="checkmark"
+                systemName={actionIcon === "plus" ? "plus" : "checkmark"}
                 size={Ui.sheetIconSize}
                 color={getAppColors().onPrimary}
                 modifiers={[buttonFrame]}

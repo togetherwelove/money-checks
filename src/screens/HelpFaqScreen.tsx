@@ -1,8 +1,8 @@
+import { getSettingsGroupStyles } from "../constants/settingsGroupStyles";
 import { createThemeValue } from "../lib/appTheme";
 import { useAppTheme } from "../hooks/useAppTheme";
 import type { ReactNode } from "react";
 import { ScrollView, StyleSheet } from "react-native";
-import { getMenuStyles } from "../constants/menuStyles";
 
 import { AppFooterContentInset } from "../components/AppFooterContentInset";
 import { HelpFaqSection } from "../components/HelpFaqSection";
@@ -30,7 +30,7 @@ const getStyles = createThemeValue(() =>
   StyleSheet.create({
     screen: { flex: 1, backgroundColor: getAppColors().screenBackground },
     content: {
-      ...getMenuStyles().content,
+      ...getSettingsGroupStyles().page,
     },
   }),
 );

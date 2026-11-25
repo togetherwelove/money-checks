@@ -27,6 +27,7 @@ function setup(os = "ios") {
     "src/components/ComposerBlockingModal.tsx": { ComposerBlockingModal: "Modal" },
     "src/components/ModalCloseButton.tsx": { ModalCloseButton: "Close" },
     "src/components/entryComposer/EntryComposerHeader.tsx": { EntryComposerHeader: "Header" },
+    "src/components/EntryInlineDatePicker.tsx": { EntryInlineDatePicker: "DatePicker" },
     "src/components/ActionButton.tsx": { ActionButton: "ActionButton" },
     "src/components/IconActionButton.tsx": { IconActionButton: "IconActionButton" },
     "src/constants/subscription.ts": {
@@ -40,7 +41,7 @@ function setup(os = "ios") {
 function nodes(node) {
   if (Array.isArray(node)) return node.flatMap(nodes);
   if (!node?.props) return [];
-  return [node, ...nodes(node.props.children)];
+  return [node, ...nodes(node.props.children), ...nodes(node.props.centerContent)];
 }
 
 test("subscription warning only runs the selected action and keeps cancellation safe", () => {
@@ -207,63 +208,103 @@ test("shared header preserves confirmation labels and rejects disabled or busy a
   assert.equal(closed, 0);
 });
 
-test("filter sheet income selection and reset update draft controls before explicit apply", () => {
+test("filter sheet has only its title, period and both category groups; category choices stay in the draft until apply", () => {
   const { h, load } = setup();
   const { AllEntriesFilterSheet } = load("src/components/allEntries/AllEntriesFilterSheet.tsx");
+  const { AllEntriesCategoryGroup } = load("src/components/allEntries/AllEntriesCategoryGroup.tsx");
   const applied = [];
-  let closed = 0;
-  const props = {
-    categories: [
-      { id: "food", label: "Food", type: "expense", iconName: "coffee" },
-      { id: "salary", label: "Salary", type: "income", iconName: "briefcase" },
-    ],
-    entryTypeFilter: "expense",
-    selectedCategoryIds: ["food"],
-    onApply: (type, ids) => applied.push([type, [...ids]]),
-    onClose: () => closed++,
-  };
-  const render = () => h.render(() => AllEntriesFilterSheet(props));
+  const render = () =>
+    h.render(() =>
+      AllEntriesFilterSheet({
+        categories: [
+          { id: "food", label: "Food", type: "expense", iconName: "coffee" },
+          { id: "salary", label: "Salary", type: "income", iconName: "briefcase" },
+        ],
+        selectedCategoryIds: ["food"],
+        onClose() {},
+        onApply: (type, ids) => applied.push([type, [...ids]]),
+      }),
+    );
   let tree = render();
-  tree.props.onClose();
+  assert.equal(tree.props.centerContent, undefined);
+  const groups = nodes(tree).filter((node) => node.type === AllEntriesCategoryGroup);
+  assert.deepEqual(
+    groups.map((node) => node.props.type),
+    ["expense", "income"],
+  );
+  assert.equal(nodes(tree).filter((node) => node.type === "Pressable").length, 0);
+  groups[1].props.onToggle("salary");
+  tree = render();
+  assert.equal(applied.length, 0);
+  tree.props.action.onPress();
+  assert.deepEqual(applied, [["all", ["food", "salary"]]]);
+  const copy = load("src/constants/allEntries.ts").AllEntriesFilterCopy;
+  const periodType = load(
+    "src/components/allEntries/AllEntriesPeriodFilter.tsx",
+  ).AllEntriesPeriodFilter;
+  const reset = nodes(tree).find((node) => node.type === periodType).props.headingAction;
+  assert.equal(reset.props.accessibilityLabel, copy.resetDraftAccessibilityLabel);
+  reset.props.onPress();
+  tree = render();
+  tree.props.action.onPress();
+  assert.deepEqual(applied[1], ["all", []]);
+  h.unmount();
+});
+
+test("period edits stay in the filter draft until apply and reset clears the period", () => {
+  const { h, load } = setup();
+  const { AllEntriesFilterSheet } = load("src/components/allEntries/AllEntriesFilterSheet.tsx");
+  const { AllEntriesPeriodFilter } = load("src/components/allEntries/AllEntriesPeriodFilter.tsx");
+  const applied = [];
+  const render = () =>
+    h.render(() =>
+      AllEntriesFilterSheet({
+        categories: [],
+        entryTypeFilter: "all",
+        selectedCategoryIds: [],
+        dateRange: null,
+        onClose() {},
+        onApply: (...args) => applied.push(args),
+      }),
+    );
+  let tree = render();
+  const range = { startDate: "2026-01-01", endDate: "2026-01-31" };
+  nodes(tree)
+    .find((n) => n.type === AllEntriesPeriodFilter)
+    .props.onChange(range);
+  tree = render();
+  assert.equal(applied.length, 0);
+  assert.equal(nodes(tree).find((n) => n.type === AllEntriesPeriodFilter).props.range, range);
+  tree.props.action.onPress();
+  assert.equal(applied[0][2], range);
+  const copy = load("src/constants/allEntries.ts").AllEntriesFilterCopy;
+  const reset = nodes(tree).find((n) => n.type === AllEntriesPeriodFilter).props.headingAction;
+  assert.equal(reset.props.accessibilityLabel, copy.resetDraftAccessibilityLabel);
+  reset.props.onPress();
+  tree = render();
+  tree.props.action.onPress();
+  assert.equal(applied[1][2], null);
+  h.unmount();
+});
+
+test("selection sheet places a custom selector in the header center while retaining close and apply", () => {
+  const { load } = setup();
+  const { NativeSelectionSheet } = load("src/components/NativeSelectionSheet.tsx");
+  const center = { type: "Selector", props: {} };
+  let applied = 0,
+    closed = 0;
+  const tree = NativeSelectionSheet({
+    isOpen: true,
+    title: "Filter",
+    centerContent: center,
+    children: null,
+    onClose: () => closed++,
+    action: { label: "Apply", onPress: () => applied++ },
+  });
+  const header = nodes(tree).find((node) => node.type === "Header");
+  assert.equal(header.props.centerContent, center);
+  header.props.onAction();
+  header.props.onClose();
+  assert.equal(applied, 1);
   assert.equal(closed, 1);
-  assert.deepEqual(applied, []);
-  let all = nodes(tree);
-  const income = all.find(
-    (node) =>
-      node.type === "Pressable" && nodes(node).some((child) => child.props.children === "수입"),
-  );
-  income.props.onPress();
-  tree = render();
-  all = nodes(tree);
-  const selectedIncome = all.find(
-    (node) =>
-      node.type === "Pressable" && nodes(node).some((child) => child.props.children === "수입"),
-  );
-  assert.equal(selectedIncome.props.accessibilityState.selected, true);
-  assert.ok(nodes(tree.props.children[0]).includes(selectedIncome));
-  assert.deepEqual(applied, []);
-  tree.props.action.onPress();
-  assert.deepEqual(applied, [["income", []]]);
-  all
-    .find(
-      (node) =>
-        node.type === "Pressable" && nodes(node).some((child) => child.props.children === "초기화"),
-    )
-    .props.onPress();
-  tree = render();
-  assert.deepEqual(applied, [["income", []]]);
-  all = nodes(tree);
-  assert.equal(
-    all.find(
-      (node) =>
-        node.type === "Pressable" && nodes(node).some((child) => child.props.children === "전체"),
-    ).props.accessibilityState.selected,
-    true,
-  );
-  tree.props.action.onPress();
-  assert.deepEqual(applied, [
-    ["income", []],
-    ["all", []],
-  ]);
-  assert.equal(closed, 3);
 });

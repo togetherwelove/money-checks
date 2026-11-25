@@ -27,7 +27,6 @@ export const LoanRepaymentMethods = [
 ] as const;
 export const AssetLinkCopy = {
   section: "자산 연동",
-  movementHistory: "거래 연동 이력",
   automatic: "거래 연동",
   cash: "현금·저축",
   withdrawal: "출금 자산",

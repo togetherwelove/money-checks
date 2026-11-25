@@ -1,3 +1,5 @@
+import { SubscriptionTiers, type SubscriptionTier } from "../constants/subscription";
+import type { ProfileSubscriptionRow } from "../types/supabase";
 import type { ProfileDisplayRow } from "../types/supabase";
 import { StartupCopy } from "../constants/startup";
 import { isValidDisplayName, normalizeDisplayNameCandidate } from "../utils/displayName";
@@ -76,4 +78,20 @@ export async function syncOwnProfileDisplayNameIfMissing(
   }
 
   return updateOwnProfileDisplayName(userId, normalizedFallbackDisplayName);
+}
+
+export async function fetchProfileSubscriptionTier(
+  userId: string,
+  signal: AbortSignal,
+): Promise<SubscriptionTier> {
+  const { data, error } = await supabase
+    .from(PROFILE_TABLE)
+    .select("id, subscription_tier")
+    .eq("id", userId)
+    .abortSignal(signal)
+    .single<ProfileSubscriptionRow>();
+  if (error) throw error;
+  return data.subscription_tier === SubscriptionTiers.plus
+    ? SubscriptionTiers.plus
+    : SubscriptionTiers.free;
 }

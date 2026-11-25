@@ -3,13 +3,17 @@ import {
   buildMonthPageFromSummary,
 } from "../../components/monthCalendarPager/monthCalendarPagerUtils";
 import { type CalendarSummaryMode, CalendarSummaryModes } from "../../constants/calendarSummary";
+import { AppMessages } from "../../constants/messages";
 import type { LedgerEntry, MonthlyInsights, MonthlyLedgerSummary } from "../../types/ledger";
 import {
   addMonths,
+  addDays,
   buildMonthlyLedger,
   formatMonthYear,
   getMonthKey,
   parseIsoDate,
+  startOfMonth,
+  toIsoDate,
 } from "../../utils/calendar";
 import { buildSelectedMonthSummaryRangeForMonth } from "../../utils/calendarSummaryRange";
 import {
@@ -77,7 +81,7 @@ export function getChartMonthDataFromCache(
       ),
       monthlyLedger: getMonthlyLedgerFromCache(entryCache, targetMonth),
       scope: "all",
-      title: "전체 차트",
+      title: `전체 ${AppMessages.chartScreenTitle}`,
     };
   }
 
@@ -90,6 +94,7 @@ export function getChartMonthDataFromCache(
       options.calendarSummaryBaseDay,
     );
     return {
+      dateRange: { startDate: currentRange.startDate, endDate: currentRange.endDate },
       key: getMonthKey(targetMonth),
       monthlyInsights: getPeriodInsightsFromCache(
         entryCache,
@@ -98,16 +103,20 @@ export function getChartMonthDataFromCache(
       ),
       monthlyLedger: getMonthlyLedgerFromCache(entryCache, targetMonth),
       scope: "periodic",
-      title: `${currentRange.label} 차트`,
+      title: `${currentRange.label} ${AppMessages.chartScreenTitle}`,
     };
   }
 
   return {
+    dateRange: {
+      startDate: toIsoDate(startOfMonth(targetMonth)),
+      endDate: toIsoDate(addDays(addMonths(targetMonth, 1), -1)),
+    },
     key: getMonthKey(targetMonth),
     monthlyInsights: getMonthlyInsightsFromCache(entryCache, targetMonth),
     monthlyLedger: getMonthlyLedgerFromCache(entryCache, targetMonth),
     scope: "periodic",
-    title: `${formatMonthYear(targetMonth)} 차트`,
+    title: `${formatMonthYear(targetMonth)} ${AppMessages.chartScreenTitle}`,
   };
 }
 
@@ -121,6 +130,8 @@ function getPeriodInsightsFromCache(
   const allEntries = getAllEntriesFromCache(entryCache);
 
   return buildPeriodInsights({
+    currentRange,
+    previousRange,
     currentLabel: currentRange.label,
     currentPeriodEntries: filterEntriesByDateRange(
       allEntries,

@@ -1,9 +1,10 @@
 import { useAppTheme } from "../../hooks/useAppTheme";
-import { Text, View } from "react-native";
-import { getMenuStyles } from "../../constants/menuStyles";
-import type { AppMenuItem, AppMenuSection } from "../../lib/menuItems";
-import { getAppMenuItemId } from "../../lib/menuItems";
+import { SettingsGroup } from "./SettingsGroup";
+import { getAppMenuItemId, groupAppMenuItems } from "../../lib/menuItems";
 import { SettingsActionRow } from "./SettingsActionRow";
+import { View } from "react-native";
+import { getSettingsGroupStyles } from "../../constants/settingsGroupStyles";
+import type { AppMenuItem, AppMenuSection } from "../../lib/menuItems";
 
 export type SettingsMenuLinksProps = {
   sections: AppMenuSection[];
@@ -13,35 +14,28 @@ export type SettingsMenuLinksProps = {
 export function SettingsMenuLinks({ sections, onSelect }: SettingsMenuLinksProps) {
   useAppTheme();
   return (
-    <View style={getMenuStyles().sections}>
-      {sections.map((section) => (
-        <View key={section.label} style={getMenuStyles().section}>
-          <Text accessibilityRole="header" style={getMenuStyles().sectionTitle}>
-            {section.label}
-          </Text>
-          <View style={getMenuStyles().group}>
-            {section.items.map((item, index) => (
+    <View style={getSettingsGroupStyles().sections}>
+      {sections.flatMap((section) =>
+        groupAppMenuItems(section.items, section.keepTogether).map((group) => (
+          <SettingsGroup key={group.key} description={group.description} hasLeadingIcons>
+            {group.items.map((item, index) => (
               <SettingsActionRow
                 key={getAppMenuItemId(item)}
+                grouped
                 label={item.label}
                 leadingIcon={item.icon}
-                description={item.description}
+                trailingIcon={"targetScreen" in item ? undefined : null}
                 disabled={item.disabled}
                 hasBadge={item.hasBadge}
-                trailingIcon={
-                  "action" in item && item.action === "annual-report-download"
-                    ? "download"
-                    : undefined
-                }
-                isLast={index === section.items.length - 1}
+                isLast={index === group.items.length - 1}
                 onPress={() => {
                   if (!item.disabled) onSelect(item);
                 }}
               />
             ))}
-          </View>
-        </View>
-      ))}
+          </SettingsGroup>
+        )),
+      )}
     </View>
   );
 }
